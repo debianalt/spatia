@@ -18,10 +18,12 @@
 		size?: number;
 	} = $props();
 
-	const r = $derived(size / 2);
-	const cx = $derived(r);
-	const cy = $derived(r);
-	const maxR = $derived(r * 0.78);
+	const pad = 70; // space for labels outside the chart
+	const vw = $derived(size + 2 * pad);
+	const vh = $derived(size + 2 * pad);
+	const cx = $derived(vw / 2);
+	const cy = $derived(vh / 2);
+	const maxR = $derived(size / 2 * 0.78);
 
 	// Animated values
 	const animVals = tweened([0, 0, 0, 0, 0, 0], { duration: 400, easing: cubicOut });
@@ -105,18 +107,18 @@
 	}
 </script>
 
-<svg width={size} height={size} viewBox="0 0 {size} {size}" overflow="visible" class="petal-chart">
+<svg width="100%" viewBox="0 0 {vw} {vh}" preserveAspectRatio="xMidYMid meet" class="petal-chart">
 	<!-- Background circles -->
 	{#each [0.25, 0.5, 0.75, 1.0] as frac}
 		<circle cx={cx} cy={cy} r={maxR * frac}
-			fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="0.7" />
+			fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.8" />
 	{/each}
 
 	<!-- Axes -->
 	{#each [0, 1, 2, 3, 4, 5] as i}
 		{@const end = axisEndpoint(i)}
 		<line x1={cx} y1={cy} x2={end.x} y2={end.y}
-			stroke="rgba(255,255,255,0.12)" stroke-width="0.6" />
+			stroke="rgba(255,255,255,0.25)" stroke-width="0.7" />
 	{/each}
 
 	<!-- Overlay petal (comparison) -->
@@ -145,7 +147,7 @@
 		{@const pos = labelPos(i)}
 		<text x={pos.x} y={pos.y}
 			text-anchor={pos.anchor} dominant-baseline="middle"
-			fill="#94a3b8" font-size="9" font-family="Inter, sans-serif">
+			fill="#e2e8f0" font-size="12" font-weight="500" font-family="Inter, sans-serif">
 			{labels[i] ?? ''}
 		</text>
 	{/each}

@@ -185,7 +185,7 @@
 		if (!isReady()) return;
 		if (!/^\d{9}$/.test(redcode)) return;
 		try {
-			const ENRICHMENT_COLS = 'redcode, total_personas, total_hogares, varones, tasa_empleo, pct_nbi';
+			const ENRICHMENT_COLS = 'redcode, total_personas, tasa_actividad, tasa_empleo, pct_universitario, pct_nbi, pct_hacinamiento';
 			const result = await query(
 				`SELECT ${ENRICHMENT_COLS} FROM '${PARQUETS.radio_stats_master}' WHERE redcode = '${redcode}' LIMIT 1`
 			);

@@ -23,7 +23,7 @@
 	} = $props();
 </script>
 
-<div class="sidebar absolute top-3 right-3 z-10 rounded-lg p-3 px-4 border border-border max-w-[360px] text-xs leading-relaxed"
+<div class="sidebar absolute top-3 right-3 z-10 rounded-lg p-3 px-4 border border-border max-w-[420px] text-xs leading-relaxed"
 	style="background: var(--color-panel); backdrop-filter: blur(8px);">
 
 	{#if lensStore.activeLens && lensStore.selectedOpportunity}

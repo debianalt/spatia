@@ -32,6 +32,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'label.unemploymentRate': { es: 'Tasa de desocupación', en: 'Unemployment rate', gn: "Tembiapo'ỹ" },
 	'label.avgHousehold': { es: 'Tamaño medio hogar', en: 'Avg household size', gn: "Óga tuichakue" },
 	'label.ubn': { es: 'NBI (%)', en: 'UBN (%)', gn: "NBI (%)" },
+	'label.overcrowding': { es: 'Hacinamiento (%)', en: 'Overcrowding (%)', gn: "Ñembyaty (%)" },
 	'label.masculinityRate': { es: 'Tasa de masculinidad', en: 'Masculinity rate', gn: "Kuimba'e jeku'e" },
 	'label.coverage': { es: 'Cobertura', en: 'Coverage', gn: "Joapy" },
 	'label.buildings': { es: 'Edificaciones', en: 'Buildings', gn: 'Óga' },
@@ -72,6 +73,10 @@ const dict: Record<string, Record<Locale, string>> = {
 	'chat.retry': { es: 'Reintentar', en: 'Retry', gn: "Eñeha'ã jey" },
 	'label.waterNetwork': { es: 'Red de agua (%)', en: 'Water network (%)', gn: 'Y juru (%)' },
 	'label.sewerage': { es: 'Cloacas (%)', en: 'Sewerage (%)', gn: 'Ykuaa (%)' },
+	'label.dependencyIndex': { es: 'Índ. dependencia', en: 'Dependency index', gn: "Ñemomba'e" },
+	'label.university': { es: 'Universitario (%)', en: 'University (%)', gn: "Mbo'ehára (%)" },
+	'label.healthCoverage': { es: 'Cobertura salud (%)', en: 'Health coverage (%)', gn: "Tesãi joapy (%)" },
+	'label.teenMotherhood': { es: 'Maternidad (%)', en: 'Motherhood (%)', gn: "Sy reko (%)" },
 
 	// ── Lens system ──────────────────────────────────────────────────────────
 	'lens.counter': { es: '{n} oportunidades diferenciales', en: '{n} differential opportunities', gn: '{n} oportunidade iñambuéva' },

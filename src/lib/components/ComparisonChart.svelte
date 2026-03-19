@@ -19,21 +19,19 @@
 			const v = d.enriched?.total_personas ?? d.census?.total_personas ?? d.census?.radio_personas;
 			return v != null ? parseInt(v) || null : null;
 		}},
-		{ key: 'households', label: 'label.households', getValue: (_, d) => {
-			const v = d.enriched?.total_hogares ?? d.census?.radio_hogares;
-			return v != null ? parseInt(v) || null : null;
-		}},
 	];
 
 	const rateVars: VarDef[] = [
-		{ key: 'masculinity', label: 'label.masculinityRate', getValue: (_, d) => {
-			const v = d.enriched?.varones; const t = d.enriched?.total_personas;
-			return v != null && t != null && t > 0 ? (parseFloat(v) / parseFloat(t)) * 100 : null;
-		}, unit: '%' },
+		{ key: 'activity', label: 'label.activityRate', getValue: (_, d) =>
+			d.enriched?.tasa_actividad != null ? parseFloat(d.enriched.tasa_actividad) : null, unit: '%' },
 		{ key: 'employment', label: 'label.employmentRate', getValue: (_, d) =>
 			d.enriched?.tasa_empleo != null ? parseFloat(d.enriched.tasa_empleo) : null, unit: '%' },
+		{ key: 'university', label: 'label.university', getValue: (_, d) =>
+			d.enriched?.pct_universitario != null ? parseFloat(d.enriched.pct_universitario) : null, unit: '%' },
 		{ key: 'nbi', label: 'label.ubn', getValue: (_, d) =>
 			d.enriched?.pct_nbi != null ? parseFloat(d.enriched.pct_nbi) : null, unit: '%' },
+		{ key: 'overcrowding', label: 'label.overcrowding', getValue: (_, d) =>
+			d.enriched?.pct_hacinamiento != null ? parseFloat(d.enriched.pct_hacinamiento) : null, unit: '%' },
 	];
 
 	function getBarData(vars: VarDef[]) {
