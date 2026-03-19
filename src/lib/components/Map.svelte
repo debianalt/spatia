@@ -6,6 +6,8 @@
 	import { getTilesUrl, BASEMAP, MAP_INIT } from '$lib/config';
 	import { MapStore } from '$lib/stores/map.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
+	import misionesBoundary from '$lib/data/misiones_boundary.geojson';
+	import misionesMask from '$lib/data/misiones_mask.geojson';
 
 	let { mapStore }: { mapStore: MapStore } = $props();
 
@@ -38,6 +40,15 @@
 			// Radios source (PMTiles) — province boundary context
 			map.addSource('radios', { type: 'vector', url: getTilesUrl('radios') });
 
+			// Mask: darken everything outside Misiones
+			map.addSource('mask', { type: 'geojson', data: misionesMask as any });
+			map.addLayer({
+				id: 'mask-fill',
+				type: 'fill',
+				source: 'mask',
+				paint: { 'fill-color': '#0a0a0f', 'fill-opacity': 0.6 }
+			});
+
 			// Province fill
 			map.addLayer({
 				id: 'province-fill',
@@ -63,11 +74,36 @@
 					],
 					'line-opacity': [
 						'interpolate', ['linear'], ['zoom'],
-						6, 0.7,
-						10, 0.4,
-						14, 0.2
+						6, 0.3,
+						10, 0.25,
+						14, 0.15
 					]
 				}
+			});
+
+			// Province border: bright white outline
+			map.addSource('province-boundary', { type: 'geojson', data: misionesBoundary as any });
+			map.addLayer({
+				id: 'province-border',
+				type: 'line',
+				source: 'province-boundary',
+				paint: {
+					'line-color': '#ffffff',
+					'line-width': [
+						'interpolate', ['linear'], ['zoom'],
+						6, 2.5,
+						9, 2.0,
+						12, 1.5,
+						16, 1.0
+					],
+					'line-opacity': [
+						'interpolate', ['linear'], ['zoom'],
+						6, 0.9,
+						12, 0.7,
+						16, 0.5
+					]
+				},
+				layout: { 'line-join': 'round', 'line-cap': 'round' }
 			});
 
 			// Buildings source (PMTiles)

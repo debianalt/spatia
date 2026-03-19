@@ -3,7 +3,18 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-	plugins: [tailwindcss(), sveltekit()],
+	plugins: [
+		{
+			name: 'geojson-loader',
+			transform(code, id) {
+				if (id.endsWith('.geojson')) {
+					return { code: `export default ${code}`, map: null };
+				}
+			}
+		},
+		tailwindcss(),
+		sveltekit()
+	],
 	optimizeDeps: {
 		exclude: ['@duckdb/duckdb-wasm']
 	},
