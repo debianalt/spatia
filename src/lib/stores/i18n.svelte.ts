@@ -72,6 +72,70 @@ const dict: Record<string, Record<Locale, string>> = {
 	'chat.retry': { es: 'Reintentar', en: 'Retry', gn: "Eñeha'ã jey" },
 	'label.waterNetwork': { es: 'Red de agua (%)', en: 'Water network (%)', gn: 'Y juru (%)' },
 	'label.sewerage': { es: 'Cloacas (%)', en: 'Sewerage (%)', gn: 'Ykuaa (%)' },
+
+	// ── Lens system ──────────────────────────────────────────────────────────
+	'lens.counter': { es: '{n} oportunidades diferenciales', en: '{n} differential opportunities', gn: '{n} oportunidade iñambuéva' },
+	'lens.none': { es: 'Sin lente activa', en: 'No active lens', gn: "Lente'ỹ" },
+	'lens.selectRadio': { es: 'Seleccioná un radio iluminado', en: 'Select a highlighted radio', gn: 'Eiporavo peteĩ radio' },
+	'lens.comparePrompt': { es: 'Seleccioná otro radio en el mapa', en: 'Select another radio on the map', gn: 'Eiporavo ambue radio' },
+
+	// Invertir sub-labels
+	'lens.inv.s1': { es: 'Aptitud', en: 'Suitability', gn: 'Oĩporã' },
+	'lens.inv.s2': { es: 'Ambiente', en: 'Environment', gn: 'Tekoha' },
+	'lens.inv.s3': { es: 'Infraestructura', en: 'Infrastructure', gn: 'Mba\'apo' },
+	'lens.inv.s4': { es: 'Accesibilidad', en: 'Access', gn: 'Jeike' },
+	'lens.inv.s5': { es: 'Precio', en: 'Price', gn: 'Hepy' },
+	'lens.inv.s6': { es: 'Atractivo', en: 'Attract.', gn: 'Hecharã' },
+
+	// Producir sub-labels
+	'lens.prod.s1': { es: 'Suelo', en: 'Soil', gn: 'Yvy' },
+	'lens.prod.s2': { es: 'Clima', en: 'Climate', gn: 'Ára' },
+	'lens.prod.s3': { es: 'Regulación', en: 'Regulation', gn: 'Léi' },
+	'lens.prod.s4': { es: 'Riesgo', en: 'Risk', gn: 'Mba\'asy' },
+	'lens.prod.s5': { es: 'Logística', en: 'Logistics', gn: 'Rape' },
+	'lens.prod.s6': { es: 'Cultivo', en: 'Crop', gn: 'Temity' },
+
+	// Servir sub-labels
+	'lens.serv.s1': { es: 'Salud', en: 'Health', gn: 'Tesãi' },
+	'lens.serv.s2': { es: 'Educación', en: 'Education', gn: 'Mbo\'e' },
+	'lens.serv.s3': { es: 'Vulnerabilidad', en: 'Vulnerability', gn: 'Mba\'asy' },
+	'lens.serv.s4': { es: 'Poder adq.', en: 'Purchase power', gn: 'Viru' },
+	'lens.serv.s5': { es: 'Crecimiento', en: 'Growth', gn: 'Kasõ' },
+	'lens.serv.s6': { es: 'Accesibilidad', en: 'Access', gn: 'Jeike' },
+
+	// Vivir sub-labels
+	'lens.viv.s1': { es: 'Servicios', en: 'Services', gn: 'Pytyvõ' },
+	'lens.viv.s2': { es: 'Ambiente', en: 'Environment', gn: 'Tekoha' },
+	'lens.viv.s3': { es: 'Seguridad', en: 'Safety', gn: 'Tekorosã' },
+	'lens.viv.s4': { es: 'Conectividad', en: 'Connectivity', gn: 'Joaju' },
+	'lens.viv.s5': { es: 'Costo', en: 'Cost', gn: 'Hepy' },
+	'lens.viv.s6': { es: 'Comunidad', en: 'Community', gn: 'Tetã' },
+
+	// Opportunity card sections
+	'card.territory': { es: 'Huella territorial', en: 'Territorial footprint', gn: 'Yvy rapykuere' },
+	'card.whyHere': { es: 'Por qué aquí', en: 'Why here', gn: "Mba'érepa ápe" },
+	'card.advantage': { es: 'Ventaja comparativa', en: 'Comparative advantage', gn: 'Oñembojovakéva' },
+	'card.risk': { es: 'Riesgo', en: 'Risk', gn: 'Mba\'asy' },
+	'card.compare': { es: 'Comparar con otra zona', en: 'Compare with another zone', gn: 'Ñembojoja ambue hendápe' },
+	'card.download': { es: 'Descargar análisis', en: 'Download analysis', gn: 'Emboguejy' },
+	'card.score': { es: 'Score', en: 'Score', gn: 'Score' },
+	'card.difference': { es: 'Diferencia más notable', en: 'Most notable difference', gn: 'Mba\'e iñambuéva' },
+
+	// Legend lens mode
+	'legend.lensOpportunity': { es: 'Oportunidad diferencial', en: 'Differential opportunity', gn: 'Oportunidade iñambuéva' },
+	'legend.lensRest': { es: 'Sin oportunidad destacada', en: 'No highlighted opportunity', gn: "Oportunidade'ỹ" },
+
+	// Chat paywall
+	'chat.paywall.title': { es: 'Análisis IA Premium', en: 'Premium AI Analysis', gn: 'IA Premium' },
+	'chat.paywall.soon': { es: 'Próximamente', en: 'Coming soon', gn: 'Oguerahátama' },
+
+	// Department drill-down
+	'lens.departments': { es: 'Departamentos', en: 'Departments', gn: 'Departamento kuéra' },
+	'lens.backToDepts': { es: '← Departamentos', en: '← Departments', gn: '← Departamento kuéra' },
+	'lens.opportunities': { es: 'oportunidades', en: 'opportunities', gn: 'oportunidade' },
+	'lens.avgScore': { es: 'Score promedio', en: 'Avg score', gn: 'Score mbytekue' },
+	'lens.loading': { es: 'Cargando...', en: 'Loading...', gn: 'Oñemyenyhẽ...' },
+	'lens.dptoRadios': { es: 'Radios en {dpto}', en: 'Radios in {dpto}', gn: 'Radio {dpto}-pe' },
 } as any;
 
 class I18nStore {

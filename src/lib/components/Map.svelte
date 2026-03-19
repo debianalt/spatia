@@ -95,14 +95,51 @@
 				position: [1.5, 200, 30]
 			});
 
-			// Radio highlight layer
+			// Opportunity glow layers (pre-created, updated by setOpportunityGlow)
+			const emptyFilter: any = ['==', ['get', 'redcode'], ''];
+			map.addLayer({
+				id: 'opportunity-fill',
+				type: 'fill',
+				source: 'radios',
+				'source-layer': 'radios',
+				paint: { 'fill-color': '#22c55e', 'fill-opacity': 0.25 },
+				filter: emptyFilter
+			});
+			map.addLayer({
+				id: 'opportunity-line',
+				type: 'line',
+				source: 'radios',
+				'source-layer': 'radios',
+				paint: { 'line-color': '#22c55e', 'line-width': 2, 'line-opacity': 0.7 },
+				filter: emptyFilter
+			});
+
+			// Selected radio layers (pre-created, updated by highlightSingleOpportunity)
+			map.addLayer({
+				id: 'selected-fill',
+				type: 'fill',
+				source: 'radios',
+				'source-layer': 'radios',
+				paint: { 'fill-color': '#ffffff', 'fill-opacity': 0.45 },
+				filter: emptyFilter
+			});
+			map.addLayer({
+				id: 'selected-line',
+				type: 'line',
+				source: 'radios',
+				'source-layer': 'radios',
+				paint: { 'line-color': '#ffffff', 'line-width': 3, 'line-opacity': 1 },
+				filter: emptyFilter
+			});
+
+			// Radio highlight layer (building outlines at high zoom)
 			map.addLayer({
 				id: 'radio-highlight',
 				type: 'line',
 				source: 'buildings',
 				'source-layer': 'buildings',
 				paint: { 'line-color': '#60a5fa', 'line-width': 1.5, 'line-opacity': 0.8 },
-				filter: ['==', ['get', 'redcode'], '']
+				filter: emptyFilter
 			});
 
 			setupInteractions();
@@ -227,7 +264,11 @@
 	}
 
 	export function clearRadioHighlight() {
-		map?.setFilter('radio-highlight', ['==', ['get', 'redcode'], '']);
+		if (!map) return;
+		const emptyFilter: any = ['==', ['get', 'redcode'], ''];
+		map.setFilter('radio-highlight', emptyFilter);
+		map.setFilter('selected-fill', emptyFilter);
+		map.setFilter('selected-line', emptyFilter);
 	}
 
 	export function flyToCoords(lat: number, lng: number, zoom?: number) {
@@ -361,6 +402,67 @@
 		if (map.getLayer('chat-highlight-line')) {
 			map.setFilter('chat-highlight-line', ['==', ['get', 'redcode'], '']);
 			map.setPaintProperty('chat-highlight-line', 'line-color', '#60a5fa');
+		}
+	}
+
+	// ── Lens opportunity glow layers ─────────────────────────────────────────
+
+	export function setOpportunityGlow(redcodes: string[], color: string) {
+		if (!map) return;
+
+		const filter: any = redcodes.length > 0
+			? ['in', ['get', 'redcode'], ['literal', redcodes]]
+			: ['==', ['get', 'redcode'], ''];
+
+		// Layers are pre-created on map load — always update
+		map.setPaintProperty('opportunity-fill', 'fill-color', color);
+		map.setPaintProperty('opportunity-fill', 'fill-opacity', 0.25);
+		map.setFilter('opportunity-fill', filter);
+
+		map.setPaintProperty('opportunity-line', 'line-color', color);
+		map.setFilter('opportunity-line', filter);
+	}
+
+	export function clearOpportunityGlow() {
+		if (!map) return;
+		const emptyFilter: any = ['==', ['get', 'redcode'], ''];
+		if (map.getLayer('opportunity-fill')) {
+			map.setFilter('opportunity-fill', emptyFilter);
+		}
+		if (map.getLayer('opportunity-line')) {
+			map.setFilter('opportunity-line', emptyFilter);
+		}
+	}
+
+	export function flyToProvince() {
+		map?.flyTo({ ...MAP_INIT, duration: 1200 });
+	}
+
+	export function highlightSingleOpportunity(redcode: string, color: string) {
+		if (!map) return;
+		const matchFilter: any = ['==', ['get', 'redcode'], redcode];
+
+		// Dedicated selection layers (pre-created on map load, always update)
+		map.setPaintProperty('selected-fill', 'fill-color', color);
+		map.setFilter('selected-fill', matchFilter);
+
+		map.setPaintProperty('selected-line', 'line-color', color);
+		map.setFilter('selected-line', matchFilter);
+
+		// Building outlines (visible at high zoom)
+		map.setPaintProperty('radio-highlight', 'line-color', color);
+		map.setPaintProperty('radio-highlight', 'line-width', 2.5);
+		map.setFilter('radio-highlight', matchFilter);
+	}
+
+	export function highlightComparisonPair(redcodeA: string, colorA: string, redcodeB: string, colorB: string) {
+		setRadioHighlight([
+			{ redcode: redcodeA, color: colorA },
+			{ redcode: redcodeB, color: colorB }
+		]);
+		// Use thicker line for comparison visibility
+		if (map?.getLayer('radio-highlight')) {
+			map.setPaintProperty('radio-highlight', 'line-width', 2.5);
 		}
 	}
 </script>

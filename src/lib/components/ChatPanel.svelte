@@ -281,24 +281,39 @@
 
 		<!-- Input bar (fixed at bottom) -->
 		<div class="chat-input-area">
-			<div class="flex gap-1.5">
-				<input
-					bind:this={inputEl}
-					bind:value={input}
-					type="text"
-					placeholder={i18n.t('chat.placeholder')}
-					class="flex-1 bg-btn-bg border border-btn-border text-text rounded-md px-2.5 py-1.5 text-[11px]"
-					onkeydown={handleKeydown}
-					disabled={loading}
-				/>
-				<button
-					onclick={() => send()}
-					disabled={loading || !input.trim()}
-					class="bg-accent-active border border-accent text-accent rounded-md px-3 py-1.5 text-[11px] font-semibold cursor-pointer disabled:opacity-50"
-				>
-					{loading ? '...' : i18n.t('chat.send')}
-				</button>
-			</div>
+			{#if !apiKey}
+				<!-- Paywall overlay -->
+				<div class="paywall">
+					<div class="paywall-title">{i18n.t('chat.paywall.title')}</div>
+					<div class="paywall-price">$5/día — $20/semana</div>
+					<div class="paywall-soon">{i18n.t('chat.paywall.soon')}</div>
+					<button
+						class="text-text-dim text-[10px] mt-1 cursor-pointer bg-transparent border border-btn-border rounded px-3 py-1 hover:text-text"
+						onclick={() => (showSettings = true)}
+					>
+						¿Tenés API key? Ingresala aquí
+					</button>
+				</div>
+			{:else}
+				<div class="flex gap-1.5">
+					<input
+						bind:this={inputEl}
+						bind:value={input}
+						type="text"
+						placeholder={i18n.t('chat.placeholder')}
+						class="flex-1 bg-btn-bg border border-btn-border text-text rounded-md px-2.5 py-1.5 text-[11px]"
+						onkeydown={handleKeydown}
+						disabled={loading}
+					/>
+					<button
+						onclick={() => send()}
+						disabled={loading || !input.trim()}
+						class="bg-accent-active border border-accent text-accent rounded-md px-3 py-1.5 text-[11px] font-semibold cursor-pointer disabled:opacity-50"
+					>
+						{loading ? '...' : i18n.t('chat.send')}
+					</button>
+				</div>
+			{/if}
 		</div>
 	</div>
 {/if}
@@ -538,5 +553,27 @@
 	.retry-btn:hover {
 		background: rgba(239, 68, 68, 0.2);
 		border-color: rgba(239, 68, 68, 0.6);
+	}
+
+	.paywall {
+		text-align: center;
+		padding: 8px 4px;
+	}
+	.paywall-title {
+		font-size: 12px;
+		font-weight: 600;
+		color: #f59e0b;
+		margin-bottom: 4px;
+	}
+	.paywall-price {
+		font-size: 11px;
+		color: #94a3b8;
+		margin-bottom: 2px;
+	}
+	.paywall-soon {
+		font-size: 10px;
+		color: #64748b;
+		font-style: italic;
+		margin-bottom: 6px;
 	}
 </style>

@@ -2,22 +2,39 @@
 	import Legend from './Legend.svelte';
 	import ComparisonChart from './ComparisonChart.svelte';
 	import ResponseChart from './ResponseChart.svelte';
+	import OpportunityCard from './OpportunityCard.svelte';
+	import DepartmentList from './DepartmentList.svelte';
 	import { MapStore } from '$lib/stores/map.svelte';
+	import type { LensStore } from '$lib/stores/lens.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
 
 	let {
 		mapStore,
-		onRemoveRadio
+		lensStore,
+		onRemoveRadio,
+		onSelectDpto,
+		onSelectRadio
 	}: {
 		mapStore: MapStore;
+		lensStore: LensStore;
 		onRemoveRadio: (redcode: string) => void;
+		onSelectDpto: (dpto: string) => void;
+		onSelectRadio: (redcode: string) => void;
 	} = $props();
 </script>
 
-<div class="sidebar absolute top-3 right-3 z-10 rounded-lg p-3 px-4 border border-border max-w-[280px] text-xs leading-relaxed"
+<div class="sidebar absolute top-3 right-3 z-10 rounded-lg p-3 px-4 border border-border max-w-[360px] text-xs leading-relaxed"
 	style="background: var(--color-panel); backdrop-filter: blur(8px);">
 
-	{#if mapStore.selectedRadios.size > 0}
+	{#if lensStore.activeLens && lensStore.selectedOpportunity}
+		<div class="chart-scroll">
+			<OpportunityCard {lensStore} />
+		</div>
+	{:else if lensStore.activeLens}
+		<div class="chart-scroll">
+			<DepartmentList {lensStore} {onSelectDpto} {onSelectRadio} />
+		</div>
+	{:else if mapStore.selectedRadios.size > 0}
 		<div class="chart-scroll">
 			<ComparisonChart radios={mapStore.selectedRadios} {onRemoveRadio} />
 		</div>
@@ -31,7 +48,7 @@
 		<p class="text-text-dim text-[10px] mt-1.5">{i18n.t('side.hover')}</p>
 	{/if}
 
-	<Legend {mapStore} />
+	<Legend {mapStore} {lensStore} />
 </div>
 
 <style>
