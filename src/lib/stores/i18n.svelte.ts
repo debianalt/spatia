@@ -32,6 +32,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'label.unemploymentRate': { es: 'Tasa de desocupación', en: 'Unemployment rate', gn: "Tembiapo'ỹ" },
 	'label.avgHousehold': { es: 'Tamaño medio hogar', en: 'Avg household size', gn: "Óga tuichakue" },
 	'label.ubn': { es: 'NBI (%)', en: 'UBN (%)', gn: "NBI (%)" },
+	'label.masculinityRate': { es: 'Tasa de masculinidad', en: 'Masculinity rate', gn: "Kuimba'e jeku'e" },
 	'label.coverage': { es: 'Cobertura', en: 'Coverage', gn: "Joapy" },
 	'label.buildings': { es: 'Edificaciones', en: 'Buildings', gn: 'Óga' },
 	'label.totalArea': { es: 'Área total', en: 'Total area', gn: 'Yvy opavave' },
@@ -58,6 +59,19 @@ const dict: Record<string, Record<Locale, string>> = {
 	// Chart
 	'chart.absolute': { es: 'Valores absolutos', en: 'Absolute values', gn: "Papapy" },
 	'chart.rates': { es: 'Tasas (%)', en: 'Rates (%)', gn: "Jeku'e (%)" },
+
+	// Chat
+	'chat.placeholder': { es: 'Preguntale a Spatia...', en: 'Ask Spatia...', gn: "Eporandu Spatia-pe..." },
+	'chat.thinking': { es: 'Pensando', en: 'Thinking', gn: "Oñeha'ã" },
+	'chat.searching': { es: 'Buscando', en: 'Searching', gn: "Oheka" },
+	'chat.error': { es: 'Error al procesar la consulta', en: 'Error processing query', gn: "Javy oĩ" },
+	'chat.noKey': { es: 'Configurá tu API key primero (click ⚙)', en: 'Set your API key first (click ⚙)', gn: "Emoĩ ne API key (⚙)" },
+	'chat.send': { es: 'Enviar', en: 'Send', gn: "Mondo" },
+	'chat.emptyHint': { es: 'Explorá los datos de Misiones', en: 'Explore Misiones data', gn: "Ehecha Misiones mba'ekuaa" },
+	'chat.errorApiKey': { es: 'API key inválida. Revisala en ⚙', en: 'Invalid API key. Check ⚙', gn: "API key ndoikói" },
+	'chat.retry': { es: 'Reintentar', en: 'Retry', gn: "Eñeha'ã jey" },
+	'label.waterNetwork': { es: 'Red de agua (%)', en: 'Water network (%)', gn: 'Y juru (%)' },
+	'label.sewerage': { es: 'Cloacas (%)', en: 'Sewerage (%)', gn: 'Ykuaa (%)' },
 } as any;
 
 class I18nStore {

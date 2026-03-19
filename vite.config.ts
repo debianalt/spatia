@@ -19,6 +19,10 @@ export default defineConfig({
 				target: 'https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev',
 				changeOrigin: true,
 				rewrite: (path) => path.replace(/^\/r2/, '')
+			},
+			'/api': {
+				target: 'http://localhost:8788',
+				changeOrigin: true
 			}
 		}
 	}

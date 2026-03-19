@@ -15,15 +15,25 @@
 	type VarDef = { key: string; label: string; getValue: (rc: string, d: RadioData) => number | null; unit?: string };
 
 	const absoluteVars: VarDef[] = [
-		{ key: 'males', label: 'label.males', getValue: (_, d) => d.enriched?.varones != null ? parseInt(d.enriched.varones) : null },
-		{ key: 'females', label: 'label.females', getValue: (_, d) => d.enriched?.mujeres != null ? parseInt(d.enriched.mujeres) : null },
-		{ key: 'households', label: 'label.households', getValue: (_, d) => parseInt(d.census.radio_hogares) || null },
+		{ key: 'population', label: 'label.population', getValue: (_, d) => {
+			const v = d.enriched?.total_personas ?? d.census?.total_personas ?? d.census?.radio_personas;
+			return v != null ? parseInt(v) || null : null;
+		}},
+		{ key: 'households', label: 'label.households', getValue: (_, d) => {
+			const v = d.enriched?.total_hogares ?? d.census?.radio_hogares;
+			return v != null ? parseInt(v) || null : null;
+		}},
 	];
 
 	const rateVars: VarDef[] = [
-		{ key: 'employment', label: 'label.employmentRate', getValue: (_, d) => d.enriched?.tasa_empleo != null ? parseFloat(d.enriched.tasa_empleo) : null, unit: '%' },
-		{ key: 'unemployment', label: 'label.unemploymentRate', getValue: (_, d) => d.enriched?.tasa_desocupacion != null ? parseFloat(d.enriched.tasa_desocupacion) : null, unit: '%' },
-		{ key: 'nbi', label: 'label.ubn', getValue: (_, d) => d.enriched?.pct_nbi != null ? parseFloat(d.enriched.pct_nbi) : null, unit: '%' },
+		{ key: 'masculinity', label: 'label.masculinityRate', getValue: (_, d) => {
+			const v = d.enriched?.varones; const t = d.enriched?.total_personas;
+			return v != null && t != null && t > 0 ? (parseFloat(v) / parseFloat(t)) * 100 : null;
+		}, unit: '%' },
+		{ key: 'employment', label: 'label.employmentRate', getValue: (_, d) =>
+			d.enriched?.tasa_empleo != null ? parseFloat(d.enriched.tasa_empleo) : null, unit: '%' },
+		{ key: 'nbi', label: 'label.ubn', getValue: (_, d) =>
+			d.enriched?.pct_nbi != null ? parseFloat(d.enriched.pct_nbi) : null, unit: '%' },
 	];
 
 	function getBarData(vars: VarDef[]) {

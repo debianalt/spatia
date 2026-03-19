@@ -14,7 +14,7 @@
 </script>
 
 {#if hasSelection}
-	<div class="absolute top-14 left-3 z-10 rounded-lg p-2.5 px-3.5 border border-border"
+	<div class="absolute top-3 left-3 z-10 rounded-lg p-2.5 px-3.5 border border-border"
 		style="background: var(--color-panel); backdrop-filter: blur(8px);">
 		<button
 			class="block bg-btn-bg text-text-muted border border-btn-border rounded-md py-1.5 px-2.5 text-[11px] font-semibold cursor-pointer text-left transition-all hover:text-text"

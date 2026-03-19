@@ -9,9 +9,18 @@ export type RadioData = {
 
 const RADIO_COLORS = ['#60a5fa', '#f97316', '#22c55e', '#a855f7', '#ef4444', '#eab308'];
 
+export type ChartDataSet = {
+	title: string;
+	type: 'bar' | 'ranking';
+	data: Array<{ label: string; value: number }>;
+	unit?: string;
+};
+
 export class MapStore {
 	selectedRadios: Map<string, RadioData> = $state(new Map());
 	pitch: number = $state(31);
+	chatHighlightedRedcodes: string[] = $state([]);
+	chatCharts: ChartDataSet[] = $state([]);
 
 	private colorIndex = 0;
 
@@ -28,10 +37,10 @@ export class MapStore {
 		];
 	}
 
-	addRadio(redcode: string, data: Omit<RadioData, 'color'>) {
+	addRadio(redcode: string, data: Omit<RadioData, 'color'>, colorOverride?: string) {
 		if (this.selectedRadios.has(redcode)) return;
-		const color = RADIO_COLORS[this.colorIndex % RADIO_COLORS.length];
-		this.colorIndex++;
+		const color = colorOverride || RADIO_COLORS[this.colorIndex % RADIO_COLORS.length];
+		if (!colorOverride) this.colorIndex++;
 		const updated = new Map(this.selectedRadios);
 		updated.set(redcode, { ...data, color });
 		this.selectedRadios = updated;
@@ -60,5 +69,26 @@ export class MapStore {
 		const updated = new Map(this.selectedRadios);
 		updated.set(redcode, { ...existing, enriched });
 		this.selectedRadios = updated;
+	}
+
+	updateCensus(redcode: string, census: Record<string, any>) {
+		const existing = this.selectedRadios.get(redcode);
+		if (!existing) return;
+		const updated = new Map(this.selectedRadios);
+		updated.set(redcode, { ...existing, census: { ...existing.census, ...census } });
+		this.selectedRadios = updated;
+	}
+
+	setChatHighlight(redcodes: string[]) {
+		this.chatHighlightedRedcodes = redcodes;
+	}
+
+	setChatCharts(charts: ChartDataSet[]) {
+		this.chatCharts = charts;
+	}
+
+	clearChatState() {
+		this.chatHighlightedRedcodes = [];
+		this.chatCharts = [];
 	}
 }

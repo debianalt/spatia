@@ -8,8 +8,8 @@
 
 <div class="mt-2 pt-2 border-t border-border text-[11px]">
 	<div class="font-semibold mb-1.5 text-text-muted">{i18n.t(mapStore.currentRamp.legendTitleKey)}</div>
-	<div class="w-40 h-2.5 rounded" style="background: {GRADIENT_CSS}"></div>
-	<div class="flex justify-between w-40 text-[9px] text-text-dim mt-0.5">
+	<div class="w-full h-2.5 rounded" style="background: {GRADIENT_CSS}"></div>
+	<div class="flex justify-between w-full text-[9px] text-text-dim mt-0.5">
 		{#each mapStore.currentRamp.legendLabels as label}
 			<span>{label}</span>
 		{/each}

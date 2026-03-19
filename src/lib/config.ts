@@ -1,7 +1,6 @@
 const R2_PROD = 'https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev';
 
 function getBase(): string {
-	if (typeof window !== 'undefined' && window.location.hostname === 'localhost') return '/r2';
 	return R2_PROD;
 }
 
@@ -20,12 +19,10 @@ export const PARQUETS = {
 	get magyp_estimaciones() { return getParquetUrl('magyp_estimaciones'); },
 	get ndvi_annual() { return getParquetUrl('ndvi_annual'); },
 	get buildings_stats() { return getParquetUrl('buildings_stats'); },
-	get localidades() { return getParquetUrl('localidades'); },
-	get barrios() { return getParquetUrl('barrios'); },
 	get radio_stats_master() { return getParquetUrl('radio_stats_master'); }
 };
 
-export const BASEMAP = 'https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json';
+export const BASEMAP = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
 
 export const MAP_INIT = {
 	center: [-54.4, -27.0] as [number, number],

@@ -25,10 +25,12 @@
 			bearing: MAP_INIT.bearing,
 			minZoom: MAP_INIT.minZoom,
 			maxZoom: MAP_INIT.maxZoom,
-			antialias: true
+			antialias: true,
+			attributionControl: false
 		});
 
 		map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+		map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
 
 		map.on('error', (e) => console.error('MAP ERROR:', e.error?.message || e));
 
@@ -207,17 +209,159 @@
 		}
 	}
 
-	export function setRadioHighlight(redcodes: string[]) {
+	export function setRadioHighlight(radios: Array<{redcode: string, color: string}>) {
 		if (!map?.getLayer('radio-highlight')) return;
-		if (redcodes.length === 0) {
+		if (radios.length === 0) {
 			map.setFilter('radio-highlight', ['==', ['get', 'redcode'], '']);
 		} else {
+			const redcodes = radios.map(r => r.redcode);
+			// Build match expression for per-radio colors
+			const matchExpr: any[] = ['match', ['get', 'redcode']];
+			for (const r of radios) {
+				matchExpr.push(r.redcode, r.color);
+			}
+			matchExpr.push('#60a5fa'); // fallback
+			map.setPaintProperty('radio-highlight', 'line-color', matchExpr);
 			map.setFilter('radio-highlight', ['in', ['get', 'redcode'], ['literal', redcodes]]);
 		}
 	}
 
 	export function clearRadioHighlight() {
 		map?.setFilter('radio-highlight', ['==', ['get', 'redcode'], '']);
+	}
+
+	export function flyToCoords(lat: number, lng: number, zoom?: number) {
+		map?.flyTo({
+			center: [lng, lat],
+			zoom: zoom || 12,
+			pitch: 45,
+			duration: 1500
+		});
+	}
+
+	export function highlightChatRadios(redcodes: string[], color: string = '#60a5fa') {
+		if (!map || !map.isStyleLoaded()) return;
+		if (!map.getLayer('chat-highlight')) {
+			map.addLayer({
+				id: 'chat-highlight',
+				type: 'fill',
+				source: 'radios',
+				'source-layer': 'radios',
+				paint: {
+					'fill-color': color,
+					'fill-opacity': 0.25
+				},
+				filter: ['==', ['get', 'redcode'], '']
+			});
+		}
+		if (!map.getLayer('chat-highlight-line')) {
+			map.addLayer({
+				id: 'chat-highlight-line',
+				type: 'line',
+				source: 'radios',
+				'source-layer': 'radios',
+				paint: {
+					'line-color': color,
+					'line-width': 3,
+					'line-opacity': 0.9
+				},
+				filter: ['==', ['get', 'redcode'], '']
+			});
+		}
+		if (redcodes.length === 0) {
+			map.setFilter('chat-highlight', ['==', ['get', 'redcode'], '']);
+			map.setFilter('chat-highlight-line', ['==', ['get', 'redcode'], '']);
+		} else {
+			// Update paint before filter to avoid flash
+			map.setPaintProperty('chat-highlight', 'fill-color', color);
+			map.setPaintProperty('chat-highlight', 'fill-opacity', color === '#ef4444' ? 0.55 : 0.25);
+			map.setFilter('chat-highlight', ['in', ['get', 'redcode'], ['literal', redcodes]]);
+			map.setPaintProperty('chat-highlight-line', 'line-color', color);
+			map.setFilter('chat-highlight-line', ['in', ['get', 'redcode'], ['literal', redcodes]]);
+		}
+	}
+
+	export function setChatChoropleth(entries: { redcode: string; value: number }[]) {
+		if (!map || !map.isStyleLoaded()) return;
+
+		// Ensure the chat-highlight layer exists
+		if (!map.getLayer('chat-highlight')) {
+			map.addLayer({
+				id: 'chat-highlight',
+				type: 'fill',
+				source: 'radios',
+				'source-layer': 'radios',
+				paint: {
+					'fill-color': '#60a5fa',
+					'fill-opacity': 0.35
+				},
+				filter: ['==', ['get', 'redcode'], '']
+			});
+		}
+
+		// Ensure the chat-highlight-line layer exists
+		if (!map.getLayer('chat-highlight-line')) {
+			map.addLayer({
+				id: 'chat-highlight-line',
+				type: 'line',
+				source: 'radios',
+				'source-layer': 'radios',
+				paint: {
+					'line-color': '#60a5fa',
+					'line-width': 2.5,
+					'line-opacity': 0.9
+				},
+				filter: ['==', ['get', 'redcode'], '']
+			});
+		}
+
+		if (entries.length === 0) {
+			map.setFilter('chat-highlight', ['==', ['get', 'redcode'], '']);
+			map.setPaintProperty('chat-highlight', 'fill-color', '#60a5fa');
+			map.setPaintProperty('chat-highlight', 'fill-opacity', 0.25);
+			map.setFilter('chat-highlight-line', ['==', ['get', 'redcode'], '']);
+			return;
+		}
+
+		// Compute min/max for interpolation
+		const values = entries.map(e => e.value);
+		const minVal = Math.min(...values);
+		const maxVal = Math.max(...values);
+		const range = maxVal - minVal || 1;
+
+		// Build a match expression: map each redcode to a color
+		// Scale: blue (#2166ac) → white (#f7f7f7) → red (#b2182b)
+		const matchExpr: any[] = ['match', ['get', 'redcode']];
+		for (const entry of entries) {
+			const t = (entry.value - minVal) / range; // 0..1
+			matchExpr.push(entry.redcode);
+			// Interpolate blue → red through white
+			const r = Math.round(t < 0.5 ? 33 + t * 2 * (247 - 33) : 247 + (t - 0.5) * 2 * (178 - 247));
+			const g = Math.round(t < 0.5 ? 102 + t * 2 * (247 - 102) : 247 + (t - 0.5) * 2 * (24 - 247));
+			const b = Math.round(t < 0.5 ? 172 + t * 2 * (247 - 172) : 247 + (t - 0.5) * 2 * (43 - 247));
+			matchExpr.push(`rgb(${r},${g},${b})`);
+		}
+		matchExpr.push('rgba(0,0,0,0)'); // fallback: transparent
+
+		const redcodes = entries.map(e => e.redcode);
+		map.setFilter('chat-highlight', ['in', ['get', 'redcode'], ['literal', redcodes]]);
+		map.setPaintProperty('chat-highlight', 'fill-color', matchExpr);
+		map.setPaintProperty('chat-highlight', 'fill-opacity', 0.35);
+		map.setFilter('chat-highlight-line', ['in', ['get', 'redcode'], ['literal', redcodes]]);
+		map.setPaintProperty('chat-highlight-line', 'line-color', '#1e293b');
+	}
+
+	export function clearChatHighlights() {
+		if (!map || !map.isStyleLoaded()) return;
+		if (map.getLayer('chat-highlight')) {
+			map.setFilter('chat-highlight', ['==', ['get', 'redcode'], '']);
+			map.setPaintProperty('chat-highlight', 'fill-color', '#60a5fa');
+			map.setPaintProperty('chat-highlight', 'fill-opacity', 0.25);
+		}
+		if (map.getLayer('chat-highlight-line')) {
+			map.setFilter('chat-highlight-line', ['==', ['get', 'redcode'], '']);
+			map.setPaintProperty('chat-highlight-line', 'line-color', '#60a5fa');
+		}
 	}
 </script>
 

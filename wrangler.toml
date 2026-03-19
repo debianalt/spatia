@@ -1,0 +1,7 @@
+name = "neahub"
+compatibility_date = "2024-12-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "spatia-db"
+database_id = "b4231170-281e-4f25-bb8b-94ac0a6faa34"
