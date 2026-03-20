@@ -8,13 +8,15 @@
 	import { MapStore } from '$lib/stores/map.svelte';
 	import { LensStore } from '$lib/stores/lens.svelte';
 	import { LassoStore } from '$lib/stores/lasso.svelte';
+	import { HexStore } from '$lib/stores/hex.svelte';
 	import { initDuckDB, query, isReady } from '$lib/stores/duckdb';
-	import { PARQUETS, LENS_CONFIG, MAP_INIT, type AnalysisConfig } from '$lib/config';
+	import { PARQUETS, LENS_CONFIG, MAP_INIT, HEX_LAYER_REGISTRY, type AnalysisConfig } from '$lib/config';
 	import { i18n, type Locale } from '$lib/stores/i18n.svelte';
 
 	const mapStore = new MapStore();
 	const lensStore = new LensStore();
 	const lassoStore = new LassoStore();
+	const hexStore = new HexStore();
 
 	let mapComponent: ReturnType<typeof MapComponent>;
 	let mapContainer: HTMLDivElement;
@@ -49,16 +51,22 @@
 
 		mapContainer?.addEventListener('hex-select', ((e: CustomEvent) => {
 			const { h3index, properties } = e.detail;
-			mapStore.setSelectedHex({
-				h3index,
-				flood_recurrence_mean: properties.flood_recurrence_mean,
-				flood_extent_pct: properties.flood_extent_pct,
-				flood_risk_score: properties.flood_risk_score,
-				...properties
-			});
-			mapComponent?.highlightHexagon(h3index);
-			// Fetch full data from parquet for this hex
-			fetchHexData(h3index);
+			if (hexStore.activeLayer) {
+				hexStore.toggleHex(h3index);
+				// Ensure provincial avg is loaded for petal normalization
+				hexStore.ensureProvincialAvgLoaded();
+			} else {
+				// Legacy single-hex mode (direct analysis)
+				mapStore.setSelectedHex({
+					h3index,
+					flood_recurrence_mean: properties.flood_recurrence_mean,
+					flood_extent_pct: properties.flood_extent_pct,
+					flood_risk_score: properties.flood_risk_score,
+					...properties
+				});
+				mapComponent?.highlightHexagon(h3index);
+				fetchHexData(h3index);
+			}
 		}) as EventListener);
 
 		document.addEventListener('keydown', (e) => {
@@ -101,11 +109,19 @@
 			mapComponent?.clearLassoDraw();
 			if (polygon.length < 4) return; // need at least 3 points + closing
 
-			const redcodes = lassoStore.findRadiosInPolygon(polygon);
-			if (redcodes.length === 0) return;
-
-			await lassoStore.createZone(redcodes, polygon);
-			updateZoneHighlights();
+			if (hexStore.activeLayer) {
+				// Hex mode: find hexagons in polygon
+				const h3indices = hexStore.findHexesInPolygon(polygon);
+				if (h3indices.length === 0) return;
+				await hexStore.createHexZone(h3indices, polygon);
+				updateHexZoneHighlights();
+			} else {
+				// Radio mode
+				const redcodes = lassoStore.findRadiosInPolygon(polygon);
+				if (redcodes.length === 0) return;
+				await lassoStore.createZone(redcodes, polygon);
+				updateZoneHighlights();
+			}
 		});
 	});
 
@@ -209,15 +225,23 @@
 			mapComponent?.clearAnalysisChoropleth();
 			mapComponent?.clearHexChoropleth();
 			mapStore.clearHexState();
+			hexStore.clearAll();
 			analysisDataLoaded = false;
 			return;
 		}
 
-		// Hex-based analyses use hex choropleth
+		// Hex-based analyses use HexStore multi-resolution system
 		if (analysis.spatialUnit === 'hexagon' && analysis.choropleth) {
 			analysisDataLoaded = false;
 			mapComponent?.clearAnalysisChoropleth();
-			loadHexChoropleth(analysis);
+			const layerCfg = HEX_LAYER_REGISTRY[analysis.id];
+			if (layerCfg) {
+				hexStore.setLayer(analysis.id);
+				mapStore.setActiveHexLayer(analysis.id);
+			} else {
+				// Fallback: direct load (legacy)
+				loadHexChoropleth(analysis);
+			}
 			return;
 		}
 
@@ -229,6 +253,34 @@
 			mapStore.clearHexState();
 			loadAnalysisChoropleth(analysis);
 		}
+	});
+
+	// ── HexStore reactivity: sync hex selection highlights with map ───────
+	$effect(() => {
+		const hexes = [...hexStore.selectedHexes.entries()].map(([h3index, d]) => ({
+			h3index, color: d.color
+		}));
+		mapComponent?.highlightHexagons(hexes);
+	});
+
+	// ── HexStore reactivity: re-render choropleth when data changes ──────
+	let prevHexDataSize = 0;
+
+	$effect(() => {
+		const entries = hexStore.choroplethEntries;
+
+		if (entries.length === 0 && prevHexDataSize === 0) return;
+		if (entries.length === prevHexDataSize) return;
+		prevHexDataSize = entries.length;
+
+		if (entries.length === 0) {
+			mapComponent?.clearHexChoropleth();
+			return;
+		}
+
+		const colorScale = (hexStore.activeLayer?.colorScale ?? 'flood') as 'flood' | 'sequential';
+		mapComponent?.setHexChoropleth(entries, colorScale);
+		analysisDataLoaded = true;
 	});
 
 	async function loadAnalysisChoropleth(analysis: AnalysisConfig) {
@@ -354,14 +406,33 @@
 		mapComponent?.clearZoneHighlight();
 	}
 
+	// ── Hex selection + zone helpers ─────────────────────────────────────
+
+	function updateHexZoneHighlights() {
+		const zones = hexStore.hexZones.map(z => ({ h3indices: z.h3indices, color: z.color }));
+		mapComponent?.setHexZoneHighlight(zones);
+	}
+
+	function handleRemoveHexZone(id: string) {
+		hexStore.removeHexZone(id);
+		updateHexZoneHighlights();
+	}
+
+	function handleClearHexZones() {
+		hexStore.clearHexZones();
+		mapComponent?.clearHexZoneHighlight();
+	}
+
 	function clearAll() {
 		mapStore.clearRadios();
 		mapStore.clearChatState();
 		mapStore.clearHexState();
+		hexStore.clearAll();
 		mapComponent?.clearRadioHighlight();
 		mapComponent?.clearChatHighlights();
 		mapComponent?.clearAnalysisChoropleth();
 		mapComponent?.clearHexChoropleth();
+		mapComponent?.clearHexZoneHighlight();
 		lensStore.clearSelection();
 		lensStore.clearDpto();
 		lensStore.clearAnalysis();
@@ -457,8 +528,8 @@
 				onClear={clearAll}
 				lassoActive={lassoStore.active}
 				onToggleLasso={handleToggleLasso}
-				hasZones={lassoStore.zones.length > 0}
-				onClearZones={handleClearZones}
+				hasZones={lassoStore.zones.length > 0 || hexStore.hexZones.length > 0}
+				onClearZones={() => { handleClearZones(); handleClearHexZones(); }}
 			/>
 
 			<!-- Sidebar (positioned relative to map) -->
@@ -466,12 +537,15 @@
 				{mapStore}
 				{lensStore}
 				{lassoStore}
+				{hexStore}
 				onRemoveRadio={handleRemoveRadio}
 				onSelectDpto={handleSelectDpto}
 				onSelectRadio={handleSelectRadio}
 				onSelectAnalysis={handleSelectAnalysis}
 				onRemoveZone={handleRemoveZone}
 				onClearZones={handleClearZones}
+				onRemoveHexZone={handleRemoveHexZone}
+				onClearHexZones={handleClearHexZones}
 			/>
 		</div>
 	</div>

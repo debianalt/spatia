@@ -7,9 +7,12 @@
 	import AnalysisMenu from './AnalysisMenu.svelte';
 	import AnalysisView from './AnalysisView.svelte';
 	import ZoneComparison from './ZoneComparison.svelte';
+	import HexComparison from './HexComparison.svelte';
+	import HexZoneComparison from './HexZoneComparison.svelte';
 	import { MapStore } from '$lib/stores/map.svelte';
 	import type { LensStore } from '$lib/stores/lens.svelte';
 	import type { LassoStore } from '$lib/stores/lasso.svelte';
+	import type { HexStore } from '$lib/stores/hex.svelte';
 	import type { AnalysisConfig } from '$lib/config';
 	import { i18n } from '$lib/stores/i18n.svelte';
 
@@ -17,22 +20,28 @@
 		mapStore,
 		lensStore,
 		lassoStore,
+		hexStore,
 		onRemoveRadio,
 		onSelectDpto,
 		onSelectRadio,
 		onSelectAnalysis,
 		onRemoveZone,
 		onClearZones,
+		onRemoveHexZone,
+		onClearHexZones,
 	}: {
 		mapStore: MapStore;
 		lensStore: LensStore;
 		lassoStore: LassoStore;
+		hexStore: HexStore;
 		onRemoveRadio: (redcode: string) => void;
 		onSelectDpto: (dpto: string) => void;
 		onSelectRadio: (redcode: string) => void;
 		onSelectAnalysis: (analysis: AnalysisConfig) => void;
 		onRemoveZone: (id: string) => void;
 		onClearZones: () => void;
+		onRemoveHexZone: (id: string) => void;
+		onClearHexZones: () => void;
 	} = $props();
 
 	function handleBack() {
@@ -43,9 +52,17 @@
 <div class="sidebar absolute top-3 right-3 z-10 rounded-lg p-3 px-4 border border-border max-w-[420px] text-xs leading-relaxed"
 	style="background: var(--color-panel); backdrop-filter: blur(8px);">
 
-	{#if lassoStore.zones.length > 0}
+	{#if hexStore.hexZones.length > 0}
+		<div class="chart-scroll">
+			<HexZoneComparison {hexStore} {onRemoveHexZone} {onClearHexZones} />
+		</div>
+	{:else if lassoStore.zones.length > 0}
 		<div class="chart-scroll">
 			<ZoneComparison {lassoStore} {onRemoveZone} {onClearZones} />
+		</div>
+	{:else if hexStore.selectedHexes.size > 0}
+		<div class="chart-scroll">
+			<HexComparison {hexStore} />
 		</div>
 	{:else if lensStore.activeLens && lensStore.activeAnalysis}
 		<!-- Analysis active: show analysis view (with or without radio) -->

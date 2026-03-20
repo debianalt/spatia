@@ -3,6 +3,7 @@
 	import maplibregl from 'maplibre-gl';
 	import 'maplibre-gl/dist/maplibre-gl.css';
 	import { Protocol } from 'pmtiles';
+	import { cellToBoundary, cellToLatLng } from 'h3-js';
 	import { getTilesUrl, BASEMAP, MAP_INIT, TERRAIN_CONFIG } from '$lib/config';
 	import { MapStore } from '$lib/stores/map.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
@@ -248,32 +249,48 @@
 				filter: emptyFilter
 			});
 
-			// ── Hexagon H3 layers (PMTiles) ──────────────────────────────
-			map.addSource('hexagons', { type: 'vector', url: getTilesUrl('hexagons') });
+			// ── Hexagon H3 layers (GeoJSON, loaded dynamically) ─────────
+			map.addSource('hexagons', {
+				type: 'geojson',
+				data: { type: 'FeatureCollection', features: [] }
+			});
 
 			map.addLayer({
 				id: 'hex-fill',
 				type: 'fill',
 				source: 'hexagons',
-				'source-layer': 'hexagons',
-				paint: { 'fill-color': '#3b82f6', 'fill-opacity': 0 },
-				filter: emptyFilter
+				paint: { 'fill-color': '#3b82f6', 'fill-opacity': 0 }
 			});
 			map.addLayer({
 				id: 'hex-line',
 				type: 'line',
 				source: 'hexagons',
-				'source-layer': 'hexagons',
-				paint: { 'line-color': '#1e293b', 'line-width': 0.5, 'line-opacity': 0 },
-				filter: emptyFilter
+				paint: { 'line-color': '#1e293b', 'line-width': 0.5, 'line-opacity': 0 }
 			});
 			map.addLayer({
 				id: 'hex-selected',
 				type: 'line',
 				source: 'hexagons',
-				'source-layer': 'hexagons',
 				paint: { 'line-color': '#ffffff', 'line-width': 3, 'line-opacity': 0.9 },
-				filter: emptyFilter
+				filter: ['==', ['get', 'h3index'], '']
+			});
+
+			// ── Hex zone highlight layers (GeoJSON, for lasso zones) ────────
+			map.addSource('hex-zones', {
+				type: 'geojson',
+				data: { type: 'FeatureCollection', features: [] }
+			});
+			map.addLayer({
+				id: 'hex-zone-fill',
+				type: 'fill',
+				source: 'hex-zones',
+				paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.35 }
+			});
+			map.addLayer({
+				id: 'hex-zone-line',
+				type: 'line',
+				source: 'hex-zones',
+				paint: { 'line-color': ['get', 'color'], 'line-width': 2, 'line-opacity': 0.8 }
 			});
 
 			setupInteractions();
@@ -376,6 +393,36 @@
 				bubbles: true,
 				detail: { h3index, properties: e.features![0].properties! }
 			}));
+		});
+
+		// Click on selected hex border (thick line intercepts before hex-fill)
+		map.on('click', 'hex-selected', (e) => {
+			if (lassoActive) return;
+			const h3index = e.features![0].properties!.h3index;
+			if (!h3index) return;
+			container.dispatchEvent(new CustomEvent('hex-select', {
+				bubbles: true,
+				detail: { h3index, properties: e.features![0].properties! }
+			}));
+		});
+
+		// Hex hover tooltip
+		map.on('mousemove', 'hex-fill', (e) => {
+			if (lassoActive) return;
+			const p = e.features![0].properties!;
+			if (!p.h3index) return;
+			map.getCanvas().style.cursor = 'pointer';
+			const score = p.value != null ? Number(p.value).toFixed(1) : '—';
+			const h3short = p.h3index.slice(0, 4) + '...' + p.h3index.slice(-4);
+			tooltip.innerHTML = `<b style="color:#60a5fa">${h3short}</b><br>Score: <span style="color:#e2e8f0;font-weight:600">${score}</span>`;
+			tooltip.style.display = 'block';
+			tooltip.style.left = (e.originalEvent.clientX + 14) + 'px';
+			tooltip.style.top = (e.originalEvent.clientY + 14) + 'px';
+		});
+
+		map.on('mouseleave', 'hex-fill', () => {
+			if (!lassoActive) map.getCanvas().style.cursor = '';
+			tooltip.style.display = 'none';
 		});
 	}
 
@@ -692,70 +739,78 @@
 
 	// ── Hexagon H3 choropleth functions ──────────────────────────────────
 
-	export function setHexChoropleth(entries: { h3index: string; value: number }[], colorScale: 'flood' | 'sequential' = 'flood') {
+	export function setHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number> }[], colorScale: 'flood' | 'sequential' = 'flood') {
 		if (!map || !map.isStyleLoaded()) return;
-		if (!map.getLayer('hex-fill')) return;
+
+		const src = map.getSource('hexagons') as maplibregl.GeoJSONSource | undefined;
+		if (!src) return;
 
 		if (entries.length === 0) {
-			map.setFilter('hex-fill', ['==', ['get', 'h3index'], '']);
+			src.setData({ type: 'FeatureCollection', features: [] });
 			map.setPaintProperty('hex-fill', 'fill-opacity', 0);
-			map.setFilter('hex-line', ['==', ['get', 'h3index'], '']);
 			map.setPaintProperty('hex-line', 'line-opacity', 0);
 			return;
 		}
 
+		// Build color map
 		const values = entries.map(e => e.value);
 		const minVal = Math.min(...values);
 		const maxVal = Math.max(...values);
 		const range = maxVal - minVal || 1;
 
-		const matchExpr: any[] = ['match', ['get', 'h3index']];
-		for (const entry of entries) {
-			const t = (entry.value - minVal) / range;
-			matchExpr.push(entry.h3index);
-
+		function getColor(value: number): string {
+			const t = (value - minVal) / range;
 			let r: number, g: number, b: number;
 			if (colorScale === 'flood') {
-				// Blue (low risk) → Yellow → Red (high risk)
 				r = Math.round(t < 0.5 ? 59 + t * 2 * (234 - 59) : 234 + (t - 0.5) * 2 * (220 - 234));
 				g = Math.round(t < 0.5 ? 130 + t * 2 * (179 - 130) : 179 + (t - 0.5) * 2 * (38 - 179));
 				b = Math.round(t < 0.5 ? 246 + t * 2 * (8 - 246) : 8 + (t - 0.5) * 2 * (38 - 8));
 			} else {
-				// Blue → White → Red
 				r = Math.round(t < 0.5 ? 33 + t * 2 * (247 - 33) : 247 + (t - 0.5) * 2 * (178 - 247));
 				g = Math.round(t < 0.5 ? 102 + t * 2 * (247 - 102) : 247 + (t - 0.5) * 2 * (24 - 247));
 				b = Math.round(t < 0.5 ? 172 + t * 2 * (247 - 172) : 247 + (t - 0.5) * 2 * (43 - 247));
 			}
-			matchExpr.push(`rgb(${r},${g},${b})`);
+			return `rgb(${r},${g},${b})`;
 		}
-		matchExpr.push('rgba(0,0,0,0)');
 
-		const h3indices = entries.map(e => e.h3index);
-		const filter: any = ['in', ['get', 'h3index'], ['literal', h3indices]];
+		// Build GeoJSON features from h3-js
+		const features: any[] = [];
+		for (const entry of entries) {
+			try {
+				const boundary = cellToBoundary(entry.h3index);
+				// h3-js returns [lat, lng] pairs; GeoJSON needs [lng, lat]
+				const coords = boundary.map(([lat, lng]) => [lng, lat]);
+				coords.push(coords[0]); // close ring
+				features.push({
+					type: 'Feature',
+					properties: {
+						h3index: entry.h3index,
+						value: entry.value,
+						color: getColor(entry.value),
+						...(entry.properties || {})
+					},
+					geometry: { type: 'Polygon', coordinates: [coords] }
+				});
+			} catch { /* skip invalid h3 */ }
+		}
 
-		map.setFilter('hex-fill', filter);
-		map.setPaintProperty('hex-fill', 'fill-color', matchExpr);
-		map.setPaintProperty('hex-fill', 'fill-opacity', 0.45);
+		src.setData({ type: 'FeatureCollection', features });
 
-		map.setFilter('hex-line', filter);
-		map.setPaintProperty('hex-line', 'line-color', '#1e293b');
-		map.setPaintProperty('hex-line', 'line-opacity', 0.6);
+		// Style by precomputed color property
+		map.setPaintProperty('hex-fill', 'fill-color', ['get', 'color']);
+		map.setPaintProperty('hex-fill', 'fill-opacity', 0.35);
+		map.setPaintProperty('hex-line', 'line-color', '#0f172a');
+		map.setPaintProperty('hex-line', 'line-width', 0.5);
+		map.setPaintProperty('hex-line', 'line-opacity', 0.4);
 	}
 
 	export function clearHexChoropleth() {
 		if (!map || !map.isStyleLoaded()) return;
-		const emptyFilter: any = ['==', ['get', 'h3index'], ''];
-		if (map.getLayer('hex-fill')) {
-			map.setFilter('hex-fill', emptyFilter);
-			map.setPaintProperty('hex-fill', 'fill-opacity', 0);
-		}
-		if (map.getLayer('hex-line')) {
-			map.setFilter('hex-line', emptyFilter);
-			map.setPaintProperty('hex-line', 'line-opacity', 0);
-		}
-		if (map.getLayer('hex-selected')) {
-			map.setFilter('hex-selected', emptyFilter);
-		}
+		const src = map.getSource('hexagons') as maplibregl.GeoJSONSource | undefined;
+		if (src) src.setData({ type: 'FeatureCollection', features: [] });
+		if (map.getLayer('hex-fill')) map.setPaintProperty('hex-fill', 'fill-opacity', 0);
+		if (map.getLayer('hex-line')) map.setPaintProperty('hex-line', 'line-opacity', 0);
+		if (map.getLayer('hex-selected')) map.setFilter('hex-selected', ['==', ['get', 'h3index'], '']);
 	}
 
 	export function highlightHexagon(h3index: string) {
@@ -765,6 +820,59 @@
 			return;
 		}
 		map.setFilter('hex-selected', ['==', ['get', 'h3index'], h3index]);
+	}
+
+	export function highlightHexagons(hexes: { h3index: string; color: string }[]) {
+		if (!map || !map.getLayer('hex-selected')) return;
+		if (hexes.length === 0) {
+			map.setFilter('hex-selected', ['==', ['get', 'h3index'], '']);
+			return;
+		}
+		const ids = hexes.map(h => h.h3index);
+		// Build match expression for per-hex colors
+		const matchExpr: any[] = ['match', ['get', 'h3index']];
+		for (const h of hexes) {
+			matchExpr.push(h.h3index, h.color);
+		}
+		matchExpr.push('#ffffff');
+		map.setPaintProperty('hex-selected', 'line-color', matchExpr);
+		map.setFilter('hex-selected', ['in', ['get', 'h3index'], ['literal', ids]]);
+	}
+
+	// ── Hex zone highlight functions ──────────────────────────────────────
+
+	export function setHexZoneHighlight(zones: { h3indices: string[]; color: string }[]) {
+		if (!map) return;
+		const src = map.getSource('hex-zones') as maplibregl.GeoJSONSource | undefined;
+		if (!src) return;
+
+		if (zones.length === 0) {
+			src.setData({ type: 'FeatureCollection', features: [] });
+			return;
+		}
+
+		const features: any[] = [];
+		for (const zone of zones) {
+			for (const h3index of zone.h3indices) {
+				try {
+					const boundary = cellToBoundary(h3index);
+					const coords = boundary.map(([lat, lng]: [number, number]) => [lng, lat]);
+					coords.push(coords[0]);
+					features.push({
+						type: 'Feature',
+						properties: { h3index, color: zone.color },
+						geometry: { type: 'Polygon', coordinates: [coords] }
+					});
+				} catch { /* skip */ }
+			}
+		}
+		src.setData({ type: 'FeatureCollection', features });
+	}
+
+	export function clearHexZoneHighlight() {
+		if (!map) return;
+		const src = map.getSource('hex-zones') as maplibregl.GeoJSONSource | undefined;
+		if (src) src.setData({ type: 'FeatureCollection', features: [] });
 	}
 
 	// ── Lasso / Zone functions ────────────────────────────────────────────

@@ -25,6 +25,7 @@
     "@anthropic-ai/sdk": "^0.80.0",
     "@duckdb/duckdb-wasm": "^1.29.0",
     "apache-arrow": "^18.1.0",
+    "h3-js": "^4.4.0",
     "maplibre-gl": "^5.1.0",
     "pmtiles": "^4.4.0"
   }

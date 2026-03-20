@@ -244,6 +244,13 @@ const dict: Record<string, Record<Locale, string>> = {
 	'zone.radios': { es: 'Radios', en: 'Radios', gn: 'Radio' },
 	'zone.noRadios': { es: 'Sin radios en la selección', en: 'No radios in selection', gn: "Radio'ỹ jeporavópe" },
 	'zone.petalNote': { es: 'Relativo al promedio provincial (línea punteada = promedio)', en: 'Relative to provincial average (dashed line = average)', gn: 'Tetã guasu mbytekue rehe (línea = mbytekue)' },
+
+	// ── Hex comparison / hex zones ──────────────────────────────────────
+	'hex.comparison': { es: 'Comparación de hexágonos', en: 'Hexagon comparison', gn: 'Hexágono jojaha' },
+	'hex.hexCount': { es: 'Hexágonos', en: 'Hexagons', gn: 'Hexágono' },
+	'hexZone.title': { es: 'Zonas hexagonales', en: 'Hex zones', gn: 'Hexágono zona' },
+	'hex.resolution': { es: 'Resolución H3', en: 'H3 resolution', gn: 'H3 tuichakue' },
+	'hex.loading': { es: 'Cargando hexágonos...', en: 'Loading hexagons...', gn: 'Oñemyenyhẽ hexágono...' },
 } as any;
 
 class I18nStore {

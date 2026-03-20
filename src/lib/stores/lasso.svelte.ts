@@ -1,6 +1,7 @@
 import { query, isReady } from '$lib/stores/duckdb';
 import { PARQUETS } from '$lib/config';
 import { i18n } from '$lib/stores/i18n.svelte';
+import { pointInPolygon } from '$lib/utils/geometry';
 import centroids from '$lib/data/centroids.json';
 
 const centroidMap = centroids as unknown as Record<string, [number, number]>;
@@ -31,17 +32,6 @@ export interface Zone {
 	redcodes: string[];
 	polygon: [number, number][];
 	stats: ZoneStats;
-}
-
-function pointInPolygon(point: [number, number], polygon: [number, number][]): boolean {
-	let inside = false;
-	for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-		const [xi, yi] = polygon[i], [xj, yj] = polygon[j];
-		if ((yi > point[1]) !== (yj > point[1]) &&
-			point[0] < (xj - xi) * (point[1] - yi) / (yj - yi) + xi)
-			inside = !inside;
-	}
-	return inside;
 }
 
 export class LassoStore {

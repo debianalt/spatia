@@ -53,7 +53,8 @@ export const PARQUETS = {
 	get buildings_stats() { return getParquetUrl('buildings_stats'); },
 	get radio_stats_master() { return getParquetUrl('radio_stats_master'); },
 	get hex_flood_risk() { return getParquetUrl('hex_flood_risk'); },
-	get h3_radio_crosswalk() { return getParquetUrl('h3_radio_crosswalk'); }
+	get h3_radio_crosswalk() { return getParquetUrl('h3_radio_crosswalk'); },
+	get h3_parent_crosswalk() { return getParquetUrl('h3_parent_crosswalk'); }
 };
 
 export const BASEMAP = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
@@ -130,6 +131,46 @@ export const LENS_CONFIG: Record<LensId, LensConfig> = {
 		threshold: 70,
 	},
 } as const;
+
+// ── Hex layer system (multi-resolution) ──────────────────────────────────────
+
+export interface HexVariable {
+	col: string;
+	labelKey: string;
+	aggregation: 'mean' | 'sum' | 'max';
+}
+
+export interface HexLayerConfig {
+	id: string;
+	parquet: string;
+	variables: HexVariable[];
+	primaryVariable: string;
+	colorScale: 'flood' | 'sequential' | 'diverging';
+	aggregation: 'mean' | 'sum' | 'max';
+	petalVars?: HexVariable[];
+	titleKey: string;
+}
+
+export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
+	flood_risk: {
+		id: 'flood_risk',
+		parquet: 'hex_flood_risk',
+		variables: [
+			{ col: 'flood_risk_score', labelKey: 'analysis.flood.riskScore', aggregation: 'mean' },
+			{ col: 'flood_recurrence_mean', labelKey: 'analysis.flood.recurrence', aggregation: 'mean' },
+			{ col: 'flood_extent_pct', labelKey: 'analysis.flood.currentExtent', aggregation: 'mean' },
+		],
+		primaryVariable: 'flood_risk_score',
+		colorScale: 'flood',
+		aggregation: 'mean',
+		petalVars: [
+			{ col: 'flood_risk_score', labelKey: 'analysis.flood.riskScore', aggregation: 'mean' },
+			{ col: 'flood_recurrence_mean', labelKey: 'analysis.flood.recurrence', aggregation: 'mean' },
+			{ col: 'flood_extent_pct', labelKey: 'analysis.flood.currentExtent', aggregation: 'mean' },
+		],
+		titleKey: 'analysis.floodRisk.title',
+	},
+};
 
 // ── Analysis system ─────────────────────────────────────────────────────────
 

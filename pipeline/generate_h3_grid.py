@@ -102,7 +102,7 @@ def main():
 
     print(f"Generating H3 grid at resolution {H3_RESOLUTION}...")
     hex_ids = generate_h3_hexagons(boundary)
-    print(f"  → {len(hex_ids):,} hexagons generated")
+    print(f"  -> {len(hex_ids):,} hexagons generated")
 
     print("Building GeoDataFrame...")
     gdf = hexagons_to_geodataframe(hex_ids)
@@ -111,14 +111,14 @@ def main():
     geojson_path = os.path.join(OUTPUT_DIR, "hexagons.geojson")
     gdf.to_file(geojson_path, driver="GeoJSON")
     size_mb = os.path.getsize(geojson_path) / (1024 * 1024)
-    print(f"  → Saved {geojson_path} ({size_mb:.1f} MB)")
+    print(f"  -> Saved {geojson_path} ({size_mb:.1f} MB)")
 
     # Build crosswalk (placeholder without radios shapefile)
-    print("Building H3 ↔ radio crosswalk...")
+    print("Building H3 <-> radio crosswalk...")
     crosswalk = build_crosswalk(gdf)
     crosswalk_path = os.path.join(OUTPUT_DIR, "h3_radio_crosswalk.parquet")
     crosswalk.to_parquet(crosswalk_path, index=False)
-    print(f"  → Saved {crosswalk_path}")
+    print(f"  -> Saved {crosswalk_path}")
 
     print(f"\nDone! Next steps:")
     print(f"  1. Run tippecanoe to generate PMTiles:")
