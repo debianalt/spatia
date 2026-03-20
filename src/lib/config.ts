@@ -4,14 +4,15 @@ function getBase(): string {
 	return R2_PROD;
 }
 
-export function getTilesUrl(name: 'buildings' | 'radios' | 'radios-chm' | 'terrain'): string {
+export function getTilesUrl(name: 'buildings' | 'radios' | 'radios-chm' | 'terrain' | 'hexagons'): string {
 	if (name === 'terrain') {
 		return '/api/terrain/{z}/{x}/{y}.png';
 	}
 	const files = {
 		buildings: 'tiles/buildings-v4.pmtiles',
 		radios: 'tiles/radios-v2.pmtiles',
-		'radios-chm': 'tiles/radios-chm.pmtiles'
+		'radios-chm': 'tiles/radios-chm.pmtiles',
+		hexagons: 'tiles/hexagons-v1.pmtiles'
 	};
 	return `pmtiles://${getBase()}/${files[name]}`;
 }
@@ -50,7 +51,9 @@ export const PARQUETS = {
 	get magyp_estimaciones() { return getParquetUrl('magyp_estimaciones'); },
 	get ndvi_annual() { return getParquetUrl('ndvi_annual'); },
 	get buildings_stats() { return getParquetUrl('buildings_stats'); },
-	get radio_stats_master() { return getParquetUrl('radio_stats_master'); }
+	get radio_stats_master() { return getParquetUrl('radio_stats_master'); },
+	get hex_flood_risk() { return getParquetUrl('hex_flood_risk'); },
+	get h3_radio_crosswalk() { return getParquetUrl('h3_radio_crosswalk'); }
 };
 
 export const BASEMAP = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
@@ -137,10 +140,11 @@ export interface AnalysisConfig {
 	descKey: string;
 	icon: string;
 	status: 'available' | 'coming_soon';
+	spatialUnit?: 'radio' | 'hexagon';
 	choropleth?: {
 		parquet: string;
 		column: string;
-		colorScale: 'price' | 'score' | 'diverging' | 'sequential';
+		colorScale: 'price' | 'score' | 'diverging' | 'sequential' | 'flood';
 		legendKey: string;
 	};
 }
@@ -302,6 +306,21 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		descKey: 'analysis.environment.desc',
 		icon: '🌿',
 		status: 'coming_soon',
+	},
+	{
+		id: 'flood_risk',
+		lensId: 'vivir',
+		titleKey: 'analysis.floodRisk.title',
+		descKey: 'analysis.floodRisk.desc',
+		icon: '🌊',
+		status: 'available',
+		spatialUnit: 'hexagon',
+		choropleth: {
+			parquet: 'hex_flood_risk',
+			column: 'flood_risk_score',
+			colorScale: 'flood',
+			legendKey: 'analysis.floodRisk.legend',
+		},
 	},
 	{
 		id: 'natural_risks',

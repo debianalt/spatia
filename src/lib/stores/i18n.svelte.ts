@@ -189,6 +189,25 @@ const dict: Record<string, Record<Locale, string>> = {
 	'analysis.waterNetwork.title': { es: 'Red de agua', en: 'Water network', gn: 'Y juru' },
 	'analysis.waterNetwork.desc': { es: '17K segmentos de red, pozos, tanques por radio', en: '17K network segments, wells, tanks by tract', gn: "Y juru, ykuaa radio rupi" },
 
+	// Flood risk analysis
+	'analysis.floodRisk.title': { es: 'Riesgo hídrico', en: 'Flood risk', gn: "Y tuicha mba'asy" },
+	'analysis.floodRisk.desc': { es: 'Recurrencia de inundación e índice de riesgo por hexágono H3 (Sentinel-1 SAR)', en: 'Flood recurrence and risk index per H3 hexagon (Sentinel-1 SAR)', gn: "Y tuicha jey ha mba'asy H3 rupi (Sentinel-1 SAR)" },
+	'analysis.floodRisk.legend': { es: 'Riesgo hídrico (0–100)', en: 'Flood risk (0–100)', gn: "Y tuicha mba'asy (0–100)" },
+	'analysis.flood.riskScore': { es: 'Score de riesgo', en: 'Risk score', gn: "Mba'asy score" },
+	'analysis.flood.recurrence': { es: 'Recurrencia', en: 'Recurrence', gn: 'Jey' },
+	'analysis.flood.recurrenceDesc': { es: '% de meses con agua detectada', en: '% of months with water detected', gn: '% jasy y reheve' },
+	'analysis.flood.currentExtent': { es: 'Extensión actual', en: 'Current extent', gn: "Ko'ãga tuichakue" },
+	'analysis.flood.currentExtentDesc': { es: '% del hexágono inundado', en: '% of hexagon flooded', gn: '% hexágono y guýpe' },
+	'analysis.flood.riskHigh': { es: 'Riesgo alto', en: 'High risk', gn: "Mba'asy guasu" },
+	'analysis.flood.riskMedium': { es: 'Riesgo medio', en: 'Medium risk', gn: "Mba'asy mbyte" },
+	'analysis.flood.riskLow': { es: 'Riesgo bajo', en: 'Low risk', gn: "Mba'asy michĩ" },
+	'analysis.flood.totalHex': { es: 'Hexágonos', en: 'Hexagons', gn: 'Hexágono' },
+	'analysis.flood.highRecurrence': { es: 'Recurrencia >10%', en: 'Recurrence >10%', gn: 'Jey >10%' },
+	'analysis.flood.avgScore': { es: 'Score promedio', en: 'Avg score', gn: 'Score mbytekue' },
+	'analysis.flood.topDepts': { es: 'Departamentos por riesgo', en: 'Departments by risk', gn: "Departamento mba'asy rupi" },
+	'analysis.flood.clickHint': { es: 'Hacé click en un hexágono para ver detalle', en: 'Click a hexagon for details', gn: 'Ehesakutu hexágono ehecha hag̃ua' },
+	'analysis.flood.source': { es: 'Fuente: Sentinel-1 SAR (Copernicus), procesado con GEE', en: 'Source: Sentinel-1 SAR (Copernicus), processed with GEE', gn: 'Moñe\'ẽha: Sentinel-1 SAR (Copernicus), GEE ndive' },
+
 	// Vivir analyses
 	'analysis.environment.title': { es: 'Ambiente y vegetación', en: 'Environment & vegetation', gn: "Ka'aguy ha ñu" },
 	'analysis.environment.desc': { es: 'NDVI/EVI series, canopy cover, deforestación, OTBN', en: 'NDVI/EVI series, canopy cover, deforestation, OTBN', gn: "Ka'aguy rekokatu" },

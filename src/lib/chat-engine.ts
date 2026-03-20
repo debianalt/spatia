@@ -11,8 +11,9 @@ import centroids from '$lib/data/centroids.json';
 // ── Types ──
 
 interface MapAction {
-	type: 'highlight' | 'flyTo' | 'choropleth';
+	type: 'highlight' | 'flyTo' | 'choropleth' | 'hex_choropleth';
 	redcodes?: string[];
+	h3indices?: string[];
 	values?: number[];
 	indicator?: string;
 	lat?: number;
@@ -37,7 +38,7 @@ export interface ChatResponse {
 // ── System prompt ──
 
 const SYSTEM_PROMPT = `Sos Spatia, asistente de inteligencia territorial de Misiones, Argentina.
-Tenés acceso a datos del Censo Nacional 2022, imágenes satelitales (NDVI), edificaciones detectadas por IA, e indicadores socioeconómicos para los 2.012 radios censales de la provincia.
+Tenés acceso a datos del Censo Nacional 2022, imágenes satelitales (NDVI), edificaciones detectadas por IA, indicadores socioeconómicos para los 2.012 radios censales de la provincia, y datos satelitales de riesgo hídrico por hexágono H3 (Sentinel-1 SAR).
 
 INTEGRACIÓN CON MAPA:
 - Estás integrado en un mapa interactivo 3D. Cuando usás tools, los radios se resaltan automáticamente en el mapa y la cámara vuela hacia ellos.
@@ -70,6 +71,7 @@ REGLAS:
 - Sé conciso pero informativo. Mencioná las fuentes (Censo 2022, NDVI satelital, edificaciones IA).
 - Cuando reportes rankings, mencioná el departamento de cada radio para dar contexto geográfico.
 - Para preguntas sobre pobreza o vulnerabilidad, usá pct_nbi (NBI = Necesidades Básicas Insatisfechas).
+- Para preguntas sobre inundación, riesgo hídrico, o zonas inundables, usá get_flood_risk. Los datos son hexágonos H3 basados en Sentinel-1 SAR con score de riesgo 0-100. Los hexágonos se muestran como choropleth en el mapa.
 - Usá formato Markdown para listas y énfasis cuando mejore la legibilidad.
 
 FLUJO DE CONSULTA GEOGRÁFICA:
@@ -177,6 +179,20 @@ const TOOL_DEFINITIONS = [
 			},
 			required: ['indicator', 'order']
 		}
+	},
+	{
+		name: 'get_flood_risk',
+		description:
+			'Get satellite-based flood risk data for hexagonal zones (H3 resolution 8). Returns flood recurrence, current flood extent, and composite risk score (0-100). Data from Sentinel-1 SAR radar. Shows hexagonal choropleth on the map.',
+		input_schema: {
+			type: 'object' as const,
+			properties: {
+				departamento: { type: 'string', description: 'Filter by departamento name' },
+				min_risk_score: { type: 'number', description: 'Minimum risk score threshold (0-100)' },
+				limit: { type: 'number', description: 'Max results (default 20, max 100)' }
+			},
+			required: ['departamento']
+		}
 	}
 ];
 
@@ -266,6 +282,7 @@ async function executeTool(toolName: string, input: any): Promise<ToolResult> {
 		case 'filter_radios': return execFilterRadios(input);
 		case 'time_series': return execTimeSeries(input);
 		case 'compare_departments': return execCompareDepartments(input);
+		case 'get_flood_risk': return execGetFloodRisk(input);
 		default: throw new Error(`Unknown tool: ${toolName}`);
 	}
 }
@@ -460,12 +477,65 @@ async function execCompareDepartments(input: { indicator: string; order: string;
 	return { data: rows, mapActions };
 }
 
+async function execGetFloodRisk(input: { departamento: string; min_risk_score?: number; limit?: number }): Promise<ToolResult> {
+	const dept = input.departamento.replace(/'/g, "''");
+	const minScore = input.min_risk_score ?? 0;
+	const limit = Math.min(input.limit || 20, 100);
+
+	const rows = await duckQuery(
+		`SELECT f.h3index, f.flood_recurrence_mean, f.flood_extent_pct, f.flood_risk_score,
+		        r.departamento
+		 FROM '${PARQUETS.hex_flood_risk}' f
+		 JOIN '${PARQUETS.h3_radio_crosswalk}' c ON f.h3index = c.h3index
+		 JOIN '${PARQUETS.radio_stats_master}' r ON c.redcode = r.redcode
+		 WHERE r.departamento = '${dept}'
+		   AND f.flood_risk_score >= ${minScore}
+		   AND f.flood_risk_score IS NOT NULL
+		 ORDER BY f.flood_risk_score DESC
+		 LIMIT ${limit}`
+	);
+
+	const mapActions: MapAction[] = [];
+
+	if (rows.length > 0) {
+		const h3indices = rows.map(r => String(r.h3index));
+		const values = rows.map(r => Number(r.flood_risk_score));
+		mapActions.push({ type: 'hex_choropleth', h3indices, values });
+
+		// Fly to department area
+		const deptRows = await duckQuery(
+			`SELECT redcode FROM '${PARQUETS.radio_stats_master}' WHERE departamento = '${dept}'`
+		);
+		const deptRedcodes = deptRows.map(r => String(r.redcode));
+		const center = getCentroid(deptRedcodes);
+		if (center) mapActions.push({ type: 'flyTo', ...center, zoom: 10 });
+	}
+
+	// Summary stats
+	const summary = {
+		departamento: input.departamento,
+		hexagons_returned: rows.length,
+		avg_risk_score: rows.length > 0 ? rows.reduce((s, r) => s + Number(r.flood_risk_score), 0) / rows.length : 0,
+		high_risk_count: rows.filter(r => Number(r.flood_risk_score) >= 70).length,
+		medium_risk_count: rows.filter(r => Number(r.flood_risk_score) >= 40 && Number(r.flood_risk_score) < 70).length,
+		top_hexagons: rows.slice(0, 5).map(r => ({
+			h3index: r.h3index,
+			flood_risk_score: Number(r.flood_risk_score).toFixed(1),
+			recurrence: (Number(r.flood_recurrence_mean) * 100).toFixed(1) + '%',
+			current_extent: Number(r.flood_extent_pct).toFixed(1) + '%',
+		}))
+	};
+
+	return { data: summary, mapActions };
+}
+
 // ── Deduplication ──
 
 function deduplicateMapActions(actions: MapAction[]): MapAction[] {
 	const allRedcodes = new Set<string>();
 	let lastFlyTo: MapAction | null = null;
 	let lastChoropleth: MapAction | null = null;
+	let lastHexChoropleth: MapAction | null = null;
 
 	for (const a of actions) {
 		if (a.type === 'highlight' && a.redcodes) {
@@ -474,10 +544,15 @@ function deduplicateMapActions(actions: MapAction[]): MapAction[] {
 			lastFlyTo = a;
 		} else if (a.type === 'choropleth') {
 			lastChoropleth = a;
+		} else if (a.type === 'hex_choropleth') {
+			lastHexChoropleth = a;
 		}
 	}
 
 	const result: MapAction[] = [];
+	if (lastHexChoropleth) {
+		result.push(lastHexChoropleth);
+	}
 	if (lastChoropleth) {
 		result.push(lastChoropleth);
 	} else if (allRedcodes.size > 0) {
@@ -594,6 +669,18 @@ export async function sendChat(
 						title: toolBlock.input.indicator || 'compare_departments',
 						type: 'ranking',
 						data: result.data.map((r: any) => ({ label: r.departamento, value: r.value }))
+					});
+				}
+
+				// Flood risk → ranking chart
+				if (toolBlock.name === 'get_flood_risk' && result.data?.top_hexagons?.length > 0) {
+					allChartData.push({
+						title: `Flood risk — ${result.data.departamento}`,
+						type: 'ranking',
+						data: result.data.top_hexagons.map((h: any) => ({
+							label: `${h.h3index.slice(-6)}`,
+							value: Number(h.flood_risk_score)
+						}))
 					});
 				}
 

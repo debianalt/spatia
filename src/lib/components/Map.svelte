@@ -248,6 +248,34 @@
 				filter: emptyFilter
 			});
 
+			// ── Hexagon H3 layers (PMTiles) ──────────────────────────────
+			map.addSource('hexagons', { type: 'vector', url: getTilesUrl('hexagons') });
+
+			map.addLayer({
+				id: 'hex-fill',
+				type: 'fill',
+				source: 'hexagons',
+				'source-layer': 'hexagons',
+				paint: { 'fill-color': '#3b82f6', 'fill-opacity': 0 },
+				filter: emptyFilter
+			});
+			map.addLayer({
+				id: 'hex-line',
+				type: 'line',
+				source: 'hexagons',
+				'source-layer': 'hexagons',
+				paint: { 'line-color': '#1e293b', 'line-width': 0.5, 'line-opacity': 0 },
+				filter: emptyFilter
+			});
+			map.addLayer({
+				id: 'hex-selected',
+				type: 'line',
+				source: 'hexagons',
+				'source-layer': 'hexagons',
+				paint: { 'line-color': '#ffffff', 'line-width': 3, 'line-opacity': 0.9 },
+				filter: emptyFilter
+			});
+
 			setupInteractions();
 		});
 
@@ -337,6 +365,17 @@
 					detail: { redcode, selected, census: e.features![0].properties! }
 				}));
 			}
+		});
+
+		// Click on hexagon: emit hex-select event
+		map.on('click', 'hex-fill', (e) => {
+			if (lassoActive) return;
+			const h3index = e.features![0].properties!.h3index;
+			if (!h3index) return;
+			container.dispatchEvent(new CustomEvent('hex-select', {
+				bubbles: true,
+				detail: { h3index, properties: e.features![0].properties! }
+			}));
 		});
 	}
 
@@ -649,6 +688,83 @@
 		if (map?.getLayer('radio-highlight')) {
 			map.setPaintProperty('radio-highlight', 'line-width', 5);
 		}
+	}
+
+	// ── Hexagon H3 choropleth functions ──────────────────────────────────
+
+	export function setHexChoropleth(entries: { h3index: string; value: number }[], colorScale: 'flood' | 'sequential' = 'flood') {
+		if (!map || !map.isStyleLoaded()) return;
+		if (!map.getLayer('hex-fill')) return;
+
+		if (entries.length === 0) {
+			map.setFilter('hex-fill', ['==', ['get', 'h3index'], '']);
+			map.setPaintProperty('hex-fill', 'fill-opacity', 0);
+			map.setFilter('hex-line', ['==', ['get', 'h3index'], '']);
+			map.setPaintProperty('hex-line', 'line-opacity', 0);
+			return;
+		}
+
+		const values = entries.map(e => e.value);
+		const minVal = Math.min(...values);
+		const maxVal = Math.max(...values);
+		const range = maxVal - minVal || 1;
+
+		const matchExpr: any[] = ['match', ['get', 'h3index']];
+		for (const entry of entries) {
+			const t = (entry.value - minVal) / range;
+			matchExpr.push(entry.h3index);
+
+			let r: number, g: number, b: number;
+			if (colorScale === 'flood') {
+				// Blue (low risk) → Yellow → Red (high risk)
+				r = Math.round(t < 0.5 ? 59 + t * 2 * (234 - 59) : 234 + (t - 0.5) * 2 * (220 - 234));
+				g = Math.round(t < 0.5 ? 130 + t * 2 * (179 - 130) : 179 + (t - 0.5) * 2 * (38 - 179));
+				b = Math.round(t < 0.5 ? 246 + t * 2 * (8 - 246) : 8 + (t - 0.5) * 2 * (38 - 8));
+			} else {
+				// Blue → White → Red
+				r = Math.round(t < 0.5 ? 33 + t * 2 * (247 - 33) : 247 + (t - 0.5) * 2 * (178 - 247));
+				g = Math.round(t < 0.5 ? 102 + t * 2 * (247 - 102) : 247 + (t - 0.5) * 2 * (24 - 247));
+				b = Math.round(t < 0.5 ? 172 + t * 2 * (247 - 172) : 247 + (t - 0.5) * 2 * (43 - 247));
+			}
+			matchExpr.push(`rgb(${r},${g},${b})`);
+		}
+		matchExpr.push('rgba(0,0,0,0)');
+
+		const h3indices = entries.map(e => e.h3index);
+		const filter: any = ['in', ['get', 'h3index'], ['literal', h3indices]];
+
+		map.setFilter('hex-fill', filter);
+		map.setPaintProperty('hex-fill', 'fill-color', matchExpr);
+		map.setPaintProperty('hex-fill', 'fill-opacity', 0.45);
+
+		map.setFilter('hex-line', filter);
+		map.setPaintProperty('hex-line', 'line-color', '#1e293b');
+		map.setPaintProperty('hex-line', 'line-opacity', 0.6);
+	}
+
+	export function clearHexChoropleth() {
+		if (!map || !map.isStyleLoaded()) return;
+		const emptyFilter: any = ['==', ['get', 'h3index'], ''];
+		if (map.getLayer('hex-fill')) {
+			map.setFilter('hex-fill', emptyFilter);
+			map.setPaintProperty('hex-fill', 'fill-opacity', 0);
+		}
+		if (map.getLayer('hex-line')) {
+			map.setFilter('hex-line', emptyFilter);
+			map.setPaintProperty('hex-line', 'line-opacity', 0);
+		}
+		if (map.getLayer('hex-selected')) {
+			map.setFilter('hex-selected', emptyFilter);
+		}
+	}
+
+	export function highlightHexagon(h3index: string) {
+		if (!map || !map.getLayer('hex-selected')) return;
+		if (!h3index) {
+			map.setFilter('hex-selected', ['==', ['get', 'h3index'], '']);
+			return;
+		}
+		map.setFilter('hex-selected', ['==', ['get', 'h3index'], h3index]);
 	}
 
 	// ── Lasso / Zone functions ────────────────────────────────────────────

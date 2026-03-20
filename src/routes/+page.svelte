@@ -47,6 +47,20 @@
 			mapComponent?.setRadioHighlight(getRadioHighlightEntries());
 		}) as EventListener);
 
+		mapContainer?.addEventListener('hex-select', ((e: CustomEvent) => {
+			const { h3index, properties } = e.detail;
+			mapStore.setSelectedHex({
+				h3index,
+				flood_recurrence_mean: properties.flood_recurrence_mean,
+				flood_extent_pct: properties.flood_extent_pct,
+				flood_risk_score: properties.flood_risk_score,
+				...properties
+			});
+			mapComponent?.highlightHexagon(h3index);
+			// Fetch full data from parquet for this hex
+			fetchHexData(h3index);
+		}) as EventListener);
+
 		document.addEventListener('keydown', (e) => {
 			if (e.key === 'Escape') {
 				if (lassoStore.drawing) {
@@ -193,7 +207,17 @@
 
 		if (!id || !analysis) {
 			mapComponent?.clearAnalysisChoropleth();
+			mapComponent?.clearHexChoropleth();
+			mapStore.clearHexState();
 			analysisDataLoaded = false;
+			return;
+		}
+
+		// Hex-based analyses use hex choropleth
+		if (analysis.spatialUnit === 'hexagon' && analysis.choropleth) {
+			analysisDataLoaded = false;
+			mapComponent?.clearAnalysisChoropleth();
+			loadHexChoropleth(analysis);
 			return;
 		}
 
@@ -201,6 +225,8 @@
 		// and we poll for it via a timeout. This avoids tight coupling.
 		if (analysis.choropleth && analysis.id === 'real_estate') {
 			analysisDataLoaded = false;
+			mapComponent?.clearHexChoropleth();
+			mapStore.clearHexState();
 			loadAnalysisChoropleth(analysis);
 		}
 	});
@@ -223,6 +249,46 @@
 			analysisDataLoaded = true;
 		} catch (e) {
 			console.warn('Failed to load analysis choropleth:', e);
+		}
+	}
+
+	async function fetchHexData(h3index: string): Promise<void> {
+		if (!isReady()) return;
+		try {
+			const result = await query(
+				`SELECT h3index, flood_recurrence_mean, flood_extent_pct, flood_risk_score
+				 FROM '${PARQUETS.hex_flood_risk}'
+				 WHERE h3index = '${h3index.replace(/'/g, "''")}'
+				 LIMIT 1`
+			);
+			if (result.numRows > 0) {
+				const row = result.get(0)!.toJSON();
+				mapStore.setSelectedHex(row as any);
+			}
+		} catch (e) {
+			console.warn('Failed to fetch hex data:', e);
+		}
+	}
+
+	async function loadHexChoropleth(analysis: AnalysisConfig) {
+		if (!analysis.choropleth || !isReady()) return;
+		try {
+			const { getParquetUrl } = await import('$lib/config');
+			const url = getParquetUrl(analysis.choropleth.parquet);
+			const col = analysis.choropleth.column;
+			const result = await query(
+				`SELECT h3index, ${col} as value FROM '${url}' WHERE ${col} IS NOT NULL AND ${col} > 0`
+			);
+			const entries: Array<{ h3index: string; value: number }> = [];
+			for (let i = 0; i < result.numRows; i++) {
+				const row = result.get(i)!.toJSON() as { h3index: string; value: number };
+				entries.push(row);
+			}
+			mapComponent?.setHexChoropleth(entries, analysis.choropleth.colorScale as any);
+			mapStore.setActiveHexLayer(analysis.id);
+			analysisDataLoaded = true;
+		} catch (e) {
+			console.warn('Failed to load hex choropleth:', e);
 		}
 	}
 
@@ -291,9 +357,11 @@
 	function clearAll() {
 		mapStore.clearRadios();
 		mapStore.clearChatState();
+		mapStore.clearHexState();
 		mapComponent?.clearRadioHighlight();
 		mapComponent?.clearChatHighlights();
 		mapComponent?.clearAnalysisChoropleth();
+		mapComponent?.clearHexChoropleth();
 		lensStore.clearSelection();
 		lensStore.clearDpto();
 		lensStore.clearAnalysis();
@@ -307,13 +375,16 @@
 
 	function handleChatResponse(response: {
 		text: string;
-		mapActions: Array<{ type: string; redcodes?: string[]; values?: number[]; indicator?: string; lat?: number; lng?: number; zoom?: number }>;
+		mapActions: Array<{ type: string; redcodes?: string[]; values?: number[]; h3indices?: string[]; indicator?: string; lat?: number; lng?: number; zoom?: number }>;
 		chartData: Array<{ title: string; type: string; data: Array<{ label: string; value: number }>; unit?: string }>;
 		toolCalls: Array<{ name: string; elapsed: number }>;
 	}) {
 		// Process map actions
 		for (const action of response.mapActions) {
-			if (action.type === 'choropleth' && action.redcodes && action.values) {
+			if (action.type === 'hex_choropleth' && action.h3indices && action.values) {
+				const entries = action.h3indices.map((h, i) => ({ h3index: h, value: action.values![i] }));
+				mapComponent?.setHexChoropleth(entries, 'flood');
+			} else if (action.type === 'choropleth' && action.redcodes && action.values) {
 				const entries = action.redcodes.map((rc, i) => ({ redcode: rc, value: action.values![i] }));
 				mapStore.setChatHighlight(action.redcodes);
 				mapComponent?.setChatChoropleth(entries);

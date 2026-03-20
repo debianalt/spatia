@@ -16,11 +16,20 @@ export type ChartDataSet = {
 	unit?: string;
 };
 
+export type HexData = {
+	h3index: string;
+	flood_recurrence_mean?: number;
+	flood_extent_pct?: number;
+	flood_risk_score?: number;
+};
+
 export class MapStore {
 	selectedRadios: Map<string, RadioData> = $state(new Map());
 	pitch: number = $state(31);
 	chatHighlightedRedcodes: string[] = $state([]);
 	chatCharts: ChartDataSet[] = $state([]);
+	activeHexLayer: string | null = $state(null);
+	selectedHex: HexData | null = $state(null);
 	private colorIndex = 0;
 
 	get currentRamp() {
@@ -89,5 +98,18 @@ export class MapStore {
 	clearChatState() {
 		this.chatHighlightedRedcodes = [];
 		this.chatCharts = [];
+	}
+
+	setActiveHexLayer(layer: string | null) {
+		this.activeHexLayer = layer;
+	}
+
+	setSelectedHex(hex: HexData | null) {
+		this.selectedHex = hex;
+	}
+
+	clearHexState() {
+		this.activeHexLayer = null;
+		this.selectedHex = null;
 	}
 }

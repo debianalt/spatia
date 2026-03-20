@@ -5,6 +5,7 @@
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import RealEstateAnalysis from './analyses/RealEstateAnalysis.svelte';
 	import TerritorialProfileAnalysis from './analyses/TerritorialProfileAnalysis.svelte';
+	import FloodRiskAnalysis from './analyses/FloodRiskAnalysis.svelte';
 
 	let {
 		lensStore,
@@ -51,6 +52,8 @@
 			</div>
 		{:else if analysis.id === 'real_estate'}
 			<RealEstateAnalysis {lensStore} {mapStore} {onRemoveRadio} />
+		{:else if analysis.id === 'flood_risk'}
+			<FloodRiskAnalysis {lensStore} {mapStore} {onRemoveRadio} />
 		{:else if isTerritorialProfile}
 			<TerritorialProfileAnalysis {lensStore} {mapStore} {onRemoveRadio} />
 		{:else}
