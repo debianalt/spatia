@@ -154,6 +154,24 @@
 			</div>
 		</div>
 
+		<details class="method-details">
+			<summary class="method-summary">{i18n.t('analysis.flood.methodTitle')}</summary>
+			<div class="method-body">
+				<div class="method-item">
+					<span class="method-term">{i18n.t('analysis.flood.recurrence')}</span>
+					<p>{i18n.t('analysis.flood.methodRecurrence')}</p>
+				</div>
+				<div class="method-item">
+					<span class="method-term">{i18n.t('analysis.flood.currentExtent')}</span>
+					<p>{i18n.t('analysis.flood.methodExtent')}</p>
+				</div>
+				<div class="method-item">
+					<span class="method-term">{i18n.t('analysis.flood.riskScore')}</span>
+					<p>{i18n.t('analysis.flood.methodScore')}</p>
+				</div>
+			</div>
+		</details>
+
 		<div class="source-note">{i18n.t('analysis.flood.source')}</div>
 	</div>
 {:else}
@@ -193,6 +211,25 @@
 		{/if}
 
 		<div class="hint">{i18n.t('analysis.flood.clickHint')}</div>
+
+		<details class="method-details">
+			<summary class="method-summary">{i18n.t('analysis.flood.methodTitle')}</summary>
+			<div class="method-body">
+				<div class="method-item">
+					<span class="method-term">{i18n.t('analysis.flood.recurrence')}</span>
+					<p>{i18n.t('analysis.flood.methodRecurrence')}</p>
+				</div>
+				<div class="method-item">
+					<span class="method-term">{i18n.t('analysis.flood.currentExtent')}</span>
+					<p>{i18n.t('analysis.flood.methodExtent')}</p>
+				</div>
+				<div class="method-item">
+					<span class="method-term">{i18n.t('analysis.flood.riskScore')}</span>
+					<p>{i18n.t('analysis.flood.methodScore')}</p>
+				</div>
+			</div>
+		</details>
+
 		<div class="source-note">{i18n.t('analysis.flood.source')}</div>
 	</div>
 {/if}
@@ -354,5 +391,54 @@
 		font-size: 8px;
 		color: #475569;
 		margin-top: 8px;
+	}
+	.method-details {
+		margin-top: 10px;
+		border: 1px solid rgba(100,116,139,0.15);
+		border-radius: 6px;
+		overflow: hidden;
+	}
+	.method-summary {
+		font-size: 9px;
+		font-weight: 600;
+		color: #94a3b8;
+		padding: 6px 8px;
+		cursor: pointer;
+		user-select: none;
+		list-style: none;
+		display: flex;
+		align-items: center;
+		gap: 4px;
+	}
+	.method-summary::before {
+		content: '\25B8';
+		font-size: 8px;
+		transition: transform 0.15s;
+	}
+	.method-details[open] > .method-summary::before {
+		transform: rotate(90deg);
+	}
+	.method-summary::-webkit-details-marker {
+		display: none;
+	}
+	.method-body {
+		padding: 4px 8px 8px;
+	}
+	.method-item {
+		margin-bottom: 6px;
+	}
+	.method-item:last-child {
+		margin-bottom: 0;
+	}
+	.method-term {
+		font-size: 9px;
+		font-weight: 600;
+		color: #cbd5e1;
+	}
+	.method-item p {
+		font-size: 8.5px;
+		color: #64748b;
+		margin: 2px 0 0;
+		line-height: 1.4;
 	}
 </style>

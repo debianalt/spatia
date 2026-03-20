@@ -12,12 +12,12 @@
 		size?: number;
 	} = $props();
 
-	const pad = 90;
+	const pad = 50;
 	const vw = $derived(size + 2 * pad);
 	const vh = $derived(size + 2 * pad);
 	const cx = $derived(vw / 2);
 	const cy = $derived(vh / 2);
-	const maxR = $derived(size / 2 * 0.78);
+	const maxR = $derived(size / 2 * 0.85);
 
 	const animAll = tweened([] as number[], {
 		duration: 400,

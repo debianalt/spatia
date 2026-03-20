@@ -13,12 +13,13 @@ import os
 import subprocess
 import sys
 
-R2_BUCKET = "neahub-public"
+R2_BUCKET = "neahub"
 
 UPLOAD_MAP = {
     "hex_flood_risk.parquet": "data/hex_flood_risk.parquet",
     "h3_radio_crosswalk.parquet": "data/h3_radio_crosswalk.parquet",
-    "hexagons-v1.pmtiles": "tiles/hexagons-v1.pmtiles",
+    "h3_parent_crosswalk.parquet": "data/h3_parent_crosswalk.parquet",
+    "hexagons-v2.pmtiles": "tiles/hexagons-v2.pmtiles",
 }
 
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
@@ -27,24 +28,27 @@ OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
 def upload_file(local_path: str, r2_key: str):
     """Upload a single file to R2 using wrangler."""
     if not os.path.exists(local_path):
-        print(f"  ✗ File not found: {local_path}")
+        print(f"  [x] File not found: {local_path}")
         return False
 
     size_mb = os.path.getsize(local_path) / (1024 * 1024)
-    print(f"  Uploading {local_path} → {r2_key} ({size_mb:.1f} MB)...")
+    print(f"  Uploading {local_path} -> {r2_key} ({size_mb:.1f} MB)...")
 
     result = subprocess.run(
         ["npx", "wrangler", "r2", "object", "put",
-         f"{R2_BUCKET}/{r2_key}", "--file", local_path, "--remote"],
+         f"{R2_BUCKET}/{r2_key}", "--file", local_path],
         capture_output=True,
-        text=True,
+        shell=True,
+        encoding="utf-8",
+        errors="replace",
     )
 
     if result.returncode == 0:
-        print(f"  ✓ Uploaded {r2_key}")
+        print(f"  [ok] Uploaded {r2_key}")
         return True
     else:
-        print(f"  ✗ Failed: {result.stderr.strip()}")
+        err = result.stderr.strip().encode("ascii", "replace").decode("ascii")
+        print(f"  [x] Failed: {err}")
         return False
 
 

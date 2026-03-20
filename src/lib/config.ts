@@ -12,7 +12,7 @@ export function getTilesUrl(name: 'buildings' | 'radios' | 'radios-chm' | 'terra
 		buildings: 'tiles/buildings-v4.pmtiles',
 		radios: 'tiles/radios-v2.pmtiles',
 		'radios-chm': 'tiles/radios-chm.pmtiles',
-		hexagons: 'tiles/hexagons-v1.pmtiles'
+		hexagons: 'tiles/hexagons-v2.pmtiles'
 	};
 	return `pmtiles://${getBase()}/${files[name]}`;
 }

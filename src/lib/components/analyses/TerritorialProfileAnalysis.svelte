@@ -69,7 +69,7 @@
 			<PetalChart
 				layers={[{values: subScores, color: entries[0]?.color ?? cfg.color}]}
 				labels={subLabels}
-				size={240}
+				size={420}
 			/>
 		</div>
 

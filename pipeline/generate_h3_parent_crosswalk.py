@@ -1,8 +1,8 @@
 """
-Generate H3 parent crosswalk parquet: maps each res-8 hexagon to its parent at res 4-7.
+Generate H3 parent crosswalk parquet: maps each res-9 hexagon to its parent at res 4-8.
 
 Outputs:
-  - h3_parent_crosswalk.parquet  (h3index, lat, lng, h3_res7, h3_res6, h3_res5, h3_res4)
+  - h3_parent_crosswalk.parquet  (h3index, lat, lng, h3_res8, h3_res7, h3_res6, h3_res5, h3_res4)
 
 Usage:
   python pipeline/generate_h3_parent_crosswalk.py
@@ -23,8 +23,8 @@ PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 BOUNDARY_PATH = os.path.join(PROJECT_ROOT, "src", "lib", "data", "misiones_boundary.json")
 OUTPUT_DIR = os.path.join(SCRIPT_DIR, "output")
 
-H3_BASE_RES = 8
-PARENT_RESOLUTIONS = [7, 6, 5, 4]
+H3_BASE_RES = 9
+PARENT_RESOLUTIONS = [8, 7, 6, 5, 4]
 
 
 def load_boundary() -> dict:

@@ -65,7 +65,7 @@
 		<PetalChart
 			{layers}
 			labels={subLabels}
-			size={240}
+			size={420}
 		/>
 
 		<!-- Score comparison -->

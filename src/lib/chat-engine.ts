@@ -183,7 +183,7 @@ const TOOL_DEFINITIONS = [
 	{
 		name: 'get_flood_risk',
 		description:
-			'Get satellite-based flood risk data for hexagonal zones (H3 resolution 8). Returns flood recurrence, current flood extent, and composite risk score (0-100). Data from Sentinel-1 SAR radar. Shows hexagonal choropleth on the map.',
+			'Get satellite-based flood risk data for hexagonal zones (H3 resolution 9). Returns flood recurrence, current flood extent, and composite risk score (0-100). Data from Sentinel-1 SAR radar. Shows hexagonal choropleth on the map.',
 		input_schema: {
 			type: 'object' as const,
 			properties: {

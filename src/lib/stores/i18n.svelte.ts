@@ -207,6 +207,22 @@ const dict: Record<string, Record<Locale, string>> = {
 	'analysis.flood.topDepts': { es: 'Departamentos por riesgo', en: 'Departments by risk', gn: "Departamento mba'asy rupi" },
 	'analysis.flood.clickHint': { es: 'Hacé click en un hexágono para ver detalle', en: 'Click a hexagon for details', gn: 'Ehesakutu hexágono ehecha hag̃ua' },
 	'analysis.flood.source': { es: 'Fuente: Sentinel-1 SAR (Copernicus), procesado con GEE', en: 'Source: Sentinel-1 SAR (Copernicus), processed with GEE', gn: 'Moñe\'ẽha: Sentinel-1 SAR (Copernicus), GEE ndive' },
+	'analysis.flood.methodTitle': { es: 'Metodologia', en: 'Methodology', gn: "Mba'eichapa" },
+	'analysis.flood.methodRecurrence': {
+		es: 'Frecuencia historica de inundacion, derivada de series temporales Sentinel-1 SAR. Un valor de 30% significa que el 30% de las observaciones SAR detectaron agua en esa zona. Mide que tan seguido se inunda.',
+		en: 'Historical flood frequency derived from Sentinel-1 SAR time series. A value of 30% means 30% of SAR observations detected water in that zone. Measures how often it floods.',
+		gn: "Ysoguy jey historia guive, Sentinel-1 SAR guive. 30% he'ise 30% SAR ohecha y ko'a pe. Ohechakuaa mboy jey oysoguy."
+	},
+	'analysis.flood.methodExtent': {
+		es: 'Porcentaje del hexagono cubierto por agua en la observacion mas reciente (ultima imagen SAR procesada). Mide cuanto del hexagono esta inundado actualmente.',
+		en: 'Percentage of the hexagon covered by water in the most recent observation (latest processed SAR image). Measures how much of the hexagon is currently flooded.',
+		gn: "Mboy % hexagono y guype oime ko'ag̃a imagen SAR ipahague rupi."
+	},
+	'analysis.flood.methodScore': {
+		es: 'Indice compuesto 0-100 que combina recurrencia y extension. Un hexagono con alta recurrencia y alta extension actual tendra un score cercano a 100.',
+		en: 'Composite index 0-100 combining recurrence and extent. A hexagon with high recurrence and high current extent will score close to 100.',
+		gn: "Indice 0-100 ombyaty recurrencia ha extension. Hexagono tuicha recurrencia ha extension oguereko score 100 ypype."
+	},
 
 	// Vivir analyses
 	'analysis.environment.title': { es: 'Ambiente y vegetación', en: 'Environment & vegetation', gn: "Ka'aguy ha ñu" },

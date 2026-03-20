@@ -41,7 +41,7 @@
 	<!-- Petal chart (normalized: 50 = provincial avg) -->
 	{#if layers.length > 0 && labels.length >= 3}
 		<p class="text-[8px] text-text-dim text-center m-0 mb-0.5">{i18n.t('zone.petalNote')}</p>
-		<PetalChart {layers} {labels} size={220} />
+		<PetalChart {layers} {labels} size={400} />
 	{/if}
 
 	<!-- Summary table -->

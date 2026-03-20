@@ -1,18 +1,18 @@
 """
-Generate H3 resolution-8 hexagonal grid for Misiones province.
+Generate H3 resolution-9 hexagonal grid for Misiones province.
 
 Outputs:
-  - hexagons.geojson  (GeoJSON FeatureCollection, ~40K hexagons)
-  - h3_radio_crosswalk.parquet  (h3index × redcode spatial join)
+  - hexagons.geojson  (GeoJSON FeatureCollection, ~280K hexagons)
+  - h3_radio_crosswalk.parquet  (h3index × redcode × weight, intersection-weighted)
 
 Usage:
   python pipeline/generate_h3_grid.py
 
 Tippecanoe (run once manually after GeoJSON generation):
-  tippecanoe -o hexagons-v1.pmtiles -z12 -Z5 -l hexagons \
+  tippecanoe -o hexagons-v2.pmtiles -z12 -Z5 -l hexagons \
     --no-feature-limit --no-tile-size-limit \
     --coalesce-densest-as-needed \
-    pipeline/output/hexagons.geojson
+    pipeline/output/hexagons-lite.geojson
 """
 
 import json
@@ -29,9 +29,9 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 BOUNDARY_PATH = os.path.join(PROJECT_ROOT, "src", "lib", "data", "misiones_boundary.json")
 OUTPUT_DIR = os.path.join(SCRIPT_DIR, "output")
-RADIOS_PMT = os.path.join(PROJECT_ROOT, "db", "parquets")
+RADIOS_PATH = os.path.join(OUTPUT_DIR, "radios_misiones.parquet")
 
-H3_RESOLUTION = 8  # ~0.74 km² per hexagon, ~40K hexagons for Misiones
+H3_RESOLUTION = 9  # ~0.105 km² per hexagon, ~280K hexagons for Misiones
 
 
 def load_boundary() -> dict:
@@ -75,23 +75,37 @@ def hexagons_to_geodataframe(hex_ids: list[str]) -> gpd.GeoDataFrame:
     return gdf
 
 
-def build_crosswalk(hex_gdf: gpd.GeoDataFrame, radios_path: str | None = None) -> pd.DataFrame:
+def build_weighted_crosswalk(hex_gdf: gpd.GeoDataFrame, radios_path: str) -> pd.DataFrame:
     """
-    Spatial join: assign each H3 centroid to the radio censal it falls within.
+    Intersection-weighted crosswalk: each H3 hexagon is linked to every
+    radio censal it overlaps, with a weight proportional to the fraction
+    of the radio's area covered by the intersection.
 
-    If radios GeoJSON/parquet is not available, creates a placeholder
-    crosswalk with h3index and empty redcode (to be filled later).
+    weight = intersection_area / radio_area  (sums to ~1.0 per redcode)
     """
-    if radios_path and os.path.exists(radios_path):
-        radios = gpd.read_file(radios_path)
-        # Use centroid of each hex for point-in-polygon join
-        centroids = hex_gdf.copy()
-        centroids["geometry"] = centroids.geometry.centroid
-        joined = gpd.sjoin(centroids, radios[["redcode", "geometry"]], how="left", predicate="within")
-        return joined[["h3index", "redcode"]].drop_duplicates()
+    if not os.path.exists(radios_path):
+        print(f"  WARNING: {radios_path} not found — run export_radios.py first")
+        return pd.DataFrame({"h3index": hex_gdf["h3index"], "redcode": None, "weight": None})
 
-    # Placeholder: no radios shapefile available
-    return pd.DataFrame({"h3index": hex_gdf["h3index"], "redcode": None})
+    radios = gpd.read_parquet(radios_path)
+    radios = radios.to_crs(epsg=32721)   # UTM 21S for area in m²
+    hex_proj = hex_gdf.to_crs(epsg=32721)
+
+    # Pre-compute radio areas
+    radios["radio_area"] = radios.geometry.area
+
+    print("  Computing spatial overlay (intersection)...")
+    overlay = gpd.overlay(hex_proj, radios, how="intersection")
+    overlay["intersection_area"] = overlay.geometry.area
+
+    # Map radio_area back and compute weight
+    radio_area_map = radios.set_index("redcode")["radio_area"]
+    overlay["radio_area"] = overlay["redcode"].map(radio_area_map)
+    overlay["weight"] = overlay["intersection_area"] / overlay["radio_area"]
+
+    result = overlay[["h3index", "redcode", "weight"]].reset_index(drop=True)
+    print(f"  -> {len(result):,} crosswalk rows")
+    return result
 
 
 def main():
@@ -113,22 +127,21 @@ def main():
     size_mb = os.path.getsize(geojson_path) / (1024 * 1024)
     print(f"  -> Saved {geojson_path} ({size_mb:.1f} MB)")
 
-    # Build crosswalk (placeholder without radios shapefile)
-    print("Building H3 <-> radio crosswalk...")
-    crosswalk = build_crosswalk(gdf)
+    # Build weighted crosswalk
+    print("Building weighted H3 <-> radio crosswalk...")
+    crosswalk = build_weighted_crosswalk(gdf, RADIOS_PATH)
     crosswalk_path = os.path.join(OUTPUT_DIR, "h3_radio_crosswalk.parquet")
     crosswalk.to_parquet(crosswalk_path, index=False)
     print(f"  -> Saved {crosswalk_path}")
 
     print(f"\nDone! Next steps:")
-    print(f"  1. Run tippecanoe to generate PMTiles:")
-    print(f"     tippecanoe -o hexagons-v1.pmtiles -z12 -Z5 -l hexagons \\")
+    print(f"  1. Simplify: python pipeline/simplify_geojson.py")
+    print(f"  2. Tippecanoe:")
+    print(f"     tippecanoe -o pipeline/output/hexagons-v2.pmtiles -z12 -Z5 -l hexagons \\")
     print(f"       --no-feature-limit --no-tile-size-limit \\")
     print(f"       --coalesce-densest-as-needed \\")
-    print(f"       {geojson_path}")
-    print(f"  2. Upload to R2:")
-    print(f"     wrangler r2 object put neahub-public/tiles/hexagons-v1.pmtiles --file hexagons-v1.pmtiles --remote")
-    print(f"     wrangler r2 object put neahub-public/data/h3_radio_crosswalk.parquet --file {crosswalk_path} --remote")
+    print(f"       pipeline/output/hexagons-lite.geojson")
+    print(f"  3. Upload: python pipeline/upload_to_r2.py --all")
 
 
 if __name__ == "__main__":
