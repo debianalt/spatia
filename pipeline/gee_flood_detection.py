@@ -19,6 +19,7 @@ import argparse
 import json
 import os
 import sys
+import time
 from datetime import datetime, timedelta
 
 import ee
@@ -163,6 +164,73 @@ def export_to_gcs(image: ee.Image, description: str, aoi: ee.Geometry):
     return task
 
 
+def wait_for_tasks(tasks, poll_interval=60, timeout=14400):
+    """
+    Poll GEE task status until all tasks complete or fail.
+
+    Args:
+        tasks: list of ee.batch.Task objects
+        poll_interval: seconds between status checks (default 60)
+        timeout: max wait time in seconds (default 4 hours)
+
+    Returns:
+        list of dicts with task metadata (id, state, description, output_uri)
+
+    Raises:
+        RuntimeError: if any task fails or timeout is reached
+    """
+    if not tasks:
+        return []
+
+    task_ids = {t.id: t for t in tasks}
+    start_time = time.time()
+    completed = {}
+
+    print(f"\nWaiting for {len(tasks)} GEE task(s)...")
+
+    while len(completed) < len(tasks):
+        elapsed = time.time() - start_time
+        if elapsed > timeout:
+            pending = [tid for tid in task_ids if tid not in completed]
+            raise RuntimeError(
+                f"Timeout after {timeout/3600:.1f}h. "
+                f"Pending tasks: {pending}"
+            )
+
+        statuses = ee.data.getTaskStatus([t.id for t in tasks])
+
+        for status in statuses:
+            tid = status["id"]
+            state = status["state"]
+
+            if tid in completed:
+                continue
+
+            if state == "COMPLETED":
+                desc = status.get("description", tid)
+                output_uri = status.get("destination_uris", [""])[0]
+                print(f"  [OK] {desc} — {output_uri}")
+                completed[tid] = {
+                    "id": tid,
+                    "state": state,
+                    "description": desc,
+                    "output_uri": output_uri,
+                }
+            elif state in ("FAILED", "CANCELLED"):
+                desc = status.get("description", tid)
+                error = status.get("error_message", "unknown error")
+                raise RuntimeError(f"Task {desc} {state}: {error}")
+
+        if len(completed) < len(tasks):
+            remaining = len(tasks) - len(completed)
+            mins = int(elapsed // 60)
+            print(f"  [{mins}m] {remaining} task(s) still running...", flush=True)
+            time.sleep(poll_interval)
+
+    print(f"All {len(tasks)} task(s) completed in {int(elapsed // 60)}m.")
+    return list(completed.values())
+
+
 def export_to_drive(image: ee.Image, description: str, aoi: ee.Geometry):
     """Export image to Google Drive (fallback for no GCS)."""
     task = ee.batch.Export.image.toDrive(
@@ -180,12 +248,39 @@ def export_to_drive(image: ee.Image, description: str, aoi: ee.Geometry):
     return task
 
 
+def launch_exports(historical=False, current=True, drive=False, days=12):
+    """
+    Launch GEE export tasks. Returns list of (task, description) tuples.
+    Called by orchestrator or CLI.
+    """
+    aoi = get_misiones_aoi()
+    export_fn = export_to_drive if drive else export_to_gcs
+    tasks = []
+
+    if historical:
+        print("Computing historical flood recurrence (2015-present)...")
+        recurrence = compute_historical_recurrence(aoi)
+        task = export_fn(recurrence, "flood_recurrence_historical", aoi)
+        tasks.append(task)
+
+    if current:
+        date_str = datetime.now().strftime("%Y%m%d")
+        print(f"Computing current flood extent (last {days} days)...")
+        extent = compute_current_extent(aoi, days_back=days)
+        task = export_fn(extent, f"flood_current_{date_str}", aoi)
+        tasks.append(task)
+
+    print(f"\n{len(tasks)} export task(s) started.")
+    return tasks
+
+
 def main():
     parser = argparse.ArgumentParser(description="Sentinel-1 flood detection for Misiones")
     parser.add_argument("--historical", action="store_true", help="Compute historical recurrence (slow, one-time)")
     parser.add_argument("--current", action="store_true", help="Compute current flood extent (fast, biweekly)")
     parser.add_argument("--drive", action="store_true", help="Export to Google Drive instead of GCS")
     parser.add_argument("--days", type=int, default=12, help="Days to look back for current extent")
+    parser.add_argument("--wait", action="store_true", help="Poll tasks until completion (for automation)")
     args = parser.parse_args()
 
     if not args.historical and not args.current:
@@ -194,25 +289,19 @@ def main():
     print("Authenticating to Google Earth Engine...")
     authenticate()
 
-    aoi = get_misiones_aoi()
-    export_fn = export_to_drive if args.drive else export_to_gcs
-    tasks = []
+    tasks = launch_exports(
+        historical=args.historical,
+        current=args.current,
+        drive=args.drive,
+        days=args.days,
+    )
 
-    if args.historical:
-        print("Computing historical flood recurrence (2015–present)...")
-        recurrence = compute_historical_recurrence(aoi)
-        task = export_fn(recurrence, "flood_recurrence_historical", aoi)
-        tasks.append(task)
-
-    if args.current:
-        date_str = datetime.now().strftime("%Y%m%d")
-        print(f"Computing current flood extent (last {args.days} days)...")
-        current = compute_current_extent(aoi, days_back=args.days)
-        task = export_fn(current, f"flood_current_{date_str}", aoi)
-        tasks.append(task)
-
-    print(f"\n{len(tasks)} export task(s) started.")
-    print("Monitor progress at: https://code.earthengine.google.com/tasks")
+    if args.wait and tasks:
+        results = wait_for_tasks(tasks)
+        for r in results:
+            print(f"  {r['description']}: {r['output_uri']}")
+    else:
+        print("Monitor progress at: https://code.earthengine.google.com/tasks")
 
 
 if __name__ == "__main__":
