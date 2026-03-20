@@ -3,20 +3,12 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-	plugins: [
-		{
-			name: 'geojson-loader',
-			transform(code, id) {
-				if (id.endsWith('.geojson')) {
-					return { code: `export default ${code}`, map: null };
-				}
-			}
-		},
-		tailwindcss(),
-		sveltekit()
-	],
+	plugins: [tailwindcss(), sveltekit()],
 	optimizeDeps: {
-		exclude: ['@duckdb/duckdb-wasm']
+		exclude: ['@duckdb/duckdb-wasm'],
+		esbuildOptions: {
+			target: 'esnext'
+		}
 	},
 	worker: {
 		format: 'es'
@@ -30,6 +22,11 @@ export default defineConfig({
 				target: 'https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev',
 				changeOrigin: true,
 				rewrite: (path) => path.replace(/^\/r2/, '')
+			},
+			'/api/terrain': {
+				target: 'https://s3.amazonaws.com',
+				changeOrigin: true,
+				rewrite: (path) => path.replace('/api/terrain', '/elevation-tiles-prod/terrarium')
 			},
 			'/api': {
 				target: 'http://localhost:8788',

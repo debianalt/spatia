@@ -209,7 +209,16 @@ const ALLOWED_COLUMNS = new Set([
 	'n_buildings',
 	'ndvi_mean',
 	'vulnerability_score',
-	'vulnerability_class'
+	'vulnerability_class',
+	// Lens opportunity scores (percentile ranks 0-100)
+	'inv_score',
+	'prod_score',
+	'serv_score',
+	'viv_score',
+	'inv_sub1', 'inv_sub2', 'inv_sub3', 'inv_sub4', 'inv_sub5', 'inv_sub6',
+	'prod_sub1', 'prod_sub2', 'prod_sub3', 'prod_sub4', 'prod_sub5', 'prod_sub6',
+	'serv_sub1', 'serv_sub2', 'serv_sub3', 'serv_sub4', 'serv_sub5', 'serv_sub6',
+	'viv_sub1', 'viv_sub2', 'viv_sub3', 'viv_sub4', 'viv_sub5', 'viv_sub6'
 ]);
 
 function validateColumn(col: string): string {

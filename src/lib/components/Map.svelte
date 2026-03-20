@@ -3,11 +3,11 @@
 	import maplibregl from 'maplibre-gl';
 	import 'maplibre-gl/dist/maplibre-gl.css';
 	import { Protocol } from 'pmtiles';
-	import { getTilesUrl, BASEMAP, MAP_INIT } from '$lib/config';
+	import { getTilesUrl, BASEMAP, MAP_INIT, TERRAIN_CONFIG } from '$lib/config';
 	import { MapStore } from '$lib/stores/map.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
-	import misionesBoundary from '$lib/data/misiones_boundary.geojson';
-	import misionesMask from '$lib/data/misiones_mask.geojson';
+	import misionesBoundary from '$lib/data/misiones_boundary.json';
+	import misionesMask from '$lib/data/misiones_mask.json';
 
 	let { mapStore }: { mapStore: MapStore } = $props();
 
@@ -37,16 +37,40 @@
 		map.on('error', (e) => console.error('MAP ERROR:', e.error?.message || e));
 
 		map.on('load', () => {
+			// Terrain DEM source (AWS Terrain Tiles, Terrarium encoding)
+			map.addSource('terrain-dem', {
+				type: 'raster-dem',
+				tiles: [getTilesUrl('terrain')],
+				encoding: 'terrarium',
+				tileSize: 256
+			});
+
+			// Activate 3D terrain
+			map.setTerrain({ source: 'terrain-dem', exaggeration: TERRAIN_CONFIG.exaggeration });
+
 			// Radios source (PMTiles) — province boundary context
 			map.addSource('radios', { type: 'vector', url: getTilesUrl('radios') });
 
-			// Mask: darken everything outside Misiones
+			// Mask: fog outside Misiones (light overlay on dark basemap)
 			map.addSource('mask', { type: 'geojson', data: misionesMask as any });
 			map.addLayer({
 				id: 'mask-fill',
 				type: 'fill',
 				source: 'mask',
-				paint: { 'fill-color': '#0a0a0f', 'fill-opacity': 0.6 }
+				paint: { 'fill-color': '#1a1a2e', 'fill-opacity': 0.75 }
+			});
+
+			// Hillshade (subtle, complements dark basemap)
+			map.addLayer({
+				id: 'hillshade',
+				type: 'hillshade',
+				source: 'terrain-dem',
+				paint: {
+					'hillshade-shadow-color': TERRAIN_CONFIG.hillshade.shadowColor,
+					'hillshade-highlight-color': TERRAIN_CONFIG.hillshade.highlightColor,
+					'hillshade-illumination-direction': TERRAIN_CONFIG.hillshade.illuminationDirection,
+					'hillshade-exaggeration': TERRAIN_CONFIG.hillshade.exaggeration
+				}
 			});
 
 			// Province fill
@@ -81,26 +105,26 @@
 				}
 			});
 
-			// Province border: bright white outline
+			// Province border: neon green outline
 			map.addSource('province-boundary', { type: 'geojson', data: misionesBoundary as any });
 			map.addLayer({
 				id: 'province-border',
 				type: 'line',
 				source: 'province-boundary',
 				paint: {
-					'line-color': '#ffffff',
+					'line-color': '#f472b6',
 					'line-width': [
 						'interpolate', ['linear'], ['zoom'],
-						6, 2.5,
-						9, 2.0,
-						12, 1.5,
-						16, 1.0
+						6, 1.2,
+						9, 1.0,
+						12, 0.8,
+						16, 0.5
 					],
 					'line-opacity': [
 						'interpolate', ['linear'], ['zoom'],
-						6, 0.9,
-						12, 0.7,
-						16, 0.5
+						6, 0.7,
+						12, 0.5,
+						16, 0.3
 					]
 				},
 				layout: { 'line-join': 'round', 'line-cap': 'round' }
@@ -123,12 +147,12 @@
 				}
 			});
 
-			// Lighting
+			// Lighting (adjusted for terrain + buildings interaction)
 			map.setLight({
 				anchor: 'viewport',
 				color: '#ffffff',
-				intensity: 0.3,
-				position: [1.5, 200, 30]
+				intensity: 0.4,
+				position: [1.5, 210, 35]
 			});
 
 			// Opportunity glow layers (pre-created, updated by setOpportunityGlow)
@@ -174,7 +198,7 @@
 				type: 'line',
 				source: 'buildings',
 				'source-layer': 'buildings',
-				paint: { 'line-color': '#60a5fa', 'line-width': 1.5, 'line-opacity': 0.8 },
+				paint: { 'line-color': '#60a5fa', 'line-width': 4.5, 'line-opacity': 0.8 },
 				filter: emptyFilter
 			});
 
@@ -215,6 +239,7 @@
 			const radioViv = parseInt(p.radio_viviendas) || 0;
 			const radioHog = parseInt(p.radio_hogares) || 0;
 			const radioAreaKm2 = p.radio_area_km2 != null ? parseFloat(p.radio_area_km2).toFixed(1) : '?';
+
 			let html = `<b style="color:#60a5fa">${i18n.t('tip.building')}</b> ${i18n.t('tip.height')} ${h} m | ${i18n.t('tip.area')} ${a} m\u00B2<br>` +
 				`<b style="color:#60a5fa">${i18n.t('tip.estPersons')}</b> <span style="color:#60a5fa;font-weight:600">${pers}</span>`;
 			if (redcode) {
@@ -223,7 +248,6 @@
 					`<b style="color:#94a3b8">${i18n.t('tip.pop')}</b> ${radioPop.toLocaleString()} &nbsp; <b style="color:#94a3b8">${i18n.t('tip.density')}</b> ${radioDens} hab/km\u00B2<br>` +
 					`<b style="color:#94a3b8">${i18n.t('label.dwellings')}:</b> ${radioViv.toLocaleString()} &nbsp; <b style="color:#94a3b8">${i18n.t('label.households')}:</b> ${radioHog.toLocaleString()} &nbsp; <b style="color:#94a3b8">${i18n.t('label.area')}:</b> ${radioAreaKm2} km\u00B2`;
 			}
-
 			tooltip.innerHTML = html;
 			tooltip.style.display = 'block';
 			tooltip.style.left = (e.originalEvent.clientX + 14) + 'px';
@@ -295,6 +319,7 @@
 			}
 			matchExpr.push('#60a5fa'); // fallback
 			map.setPaintProperty('radio-highlight', 'line-color', matchExpr);
+			map.setPaintProperty('radio-highlight', 'line-width', 4.5);
 			map.setFilter('radio-highlight', ['in', ['get', 'redcode'], ['literal', redcodes]]);
 		}
 	}
@@ -311,7 +336,7 @@
 		map?.flyTo({
 			center: [lng, lat],
 			zoom: zoom || 12,
-			pitch: 45,
+			pitch: 50,
 			duration: 1500
 		});
 	}
@@ -487,7 +512,7 @@
 
 		// Building outlines (visible at high zoom)
 		map.setPaintProperty('radio-highlight', 'line-color', color);
-		map.setPaintProperty('radio-highlight', 'line-width', 2.5);
+		map.setPaintProperty('radio-highlight', 'line-width', 5);
 		map.setFilter('radio-highlight', matchFilter);
 	}
 
@@ -498,7 +523,7 @@
 		]);
 		// Use thicker line for comparison visibility
 		if (map?.getLayer('radio-highlight')) {
-			map.setPaintProperty('radio-highlight', 'line-width', 2.5);
+			map.setPaintProperty('radio-highlight', 'line-width', 5);
 		}
 	}
 </script>

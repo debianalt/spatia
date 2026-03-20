@@ -64,7 +64,7 @@
 
 		<!-- Score -->
 		<div class="card-score">
-			{i18n.t('card.score')}: {score.toFixed(0)}/100
+			{i18n.t('card.score')}: {score.toFixed(0)} — Top {Math.max(1, Math.round(100 - score))}%
 		</div>
 
 		{#if entries.length >= 2}

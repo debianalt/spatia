@@ -4,13 +4,31 @@ function getBase(): string {
 	return R2_PROD;
 }
 
-export function getTilesUrl(name: 'buildings' | 'radios' | 'terrain'): string {
+export function getTilesUrl(name: 'buildings' | 'radios' | 'radios-chm' | 'terrain'): string {
 	if (name === 'terrain') {
 		return '/api/terrain/{z}/{x}/{y}.png';
 	}
-	const files = { buildings: 'tiles/buildings-v4.pmtiles', radios: 'tiles/radios-v2.pmtiles' };
+	const files = {
+		buildings: 'tiles/buildings-v4.pmtiles',
+		radios: 'tiles/radios-v2.pmtiles',
+		'radios-chm': 'tiles/radios-chm.pmtiles'
+	};
 	return `pmtiles://${getBase()}/${files[name]}`;
 }
+
+export const CHM_COLORS: Record<number, string> = {
+	0: '#15803d', // Selva alta continua
+	1: '#65a30d', // Mosaico agro-forestal
+	2: '#ca8a04', // Agrícola/pasturas
+	3: '#6b7280', // Urbano/periurbano
+} as const;
+
+export const CHM_LABELS: Record<number, string> = {
+	0: 'Selva alta continua',
+	1: 'Mosaico agro-forestal',
+	2: 'Agrícola/pasturas',
+	3: 'Urbano/periurbano',
+} as const;
 
 export const TERRAIN_CONFIG = {
 	exaggeration: 1.5,

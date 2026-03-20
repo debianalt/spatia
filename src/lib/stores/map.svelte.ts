@@ -21,8 +21,6 @@ export class MapStore {
 	pitch: number = $state(31);
 	chatHighlightedRedcodes: string[] = $state([]);
 	chatCharts: ChartDataSet[] = $state([]);
-	lensActive: boolean = $state(false);
-
 	private colorIndex = 0;
 
 	get currentRamp() {
@@ -30,17 +28,6 @@ export class MapStore {
 	}
 
 	getColorExpr(): unknown[] {
-		if (this.lensActive) {
-			// Neutral grey buildings when lens is active
-			return [
-				'interpolate', ['linear'],
-				['coalesce', ['get', 'best_height_m'], 5],
-				5, '#12121f',
-				10, '#1a1a2e',
-				20, '#222240',
-				40, '#2a2a4a'
-			];
-		}
 		const ramp = this.currentRamp;
 		return [
 			'interpolate', ['linear'],

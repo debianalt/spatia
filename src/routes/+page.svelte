@@ -26,19 +26,7 @@
 		mapContainer?.addEventListener('radio-select', ((e: CustomEvent) => {
 			const { redcode, selected, census } = e.detail;
 
-			// If lens is active and radio is an opportunity, let $effects handle map
-			if (lensStore.activeLens) {
-				if (lensStore.comparisonMode) {
-					lensStore.selectOpportunity(redcode);
-					return;
-				}
-				if (lensStore.isOpportunity(redcode)) {
-					lensStore.selectOpportunity(redcode);
-					return;
-				}
-			}
-
-			// Default behavior: clear chat highlights, add radio
+			// Unified behavior: clear chat highlights, add radio
 			mapStore.clearChatState();
 			mapComponent?.clearChatHighlights();
 
@@ -59,11 +47,7 @@
 
 		document.addEventListener('keydown', (e) => {
 			if (e.key === 'Escape') {
-				if (lensStore.comparisonMode) {
-					lensStore.cancelComparison();
-				} else if (lensStore.selectedOpportunity) {
-					lensStore.clearSelection();
-				} else if (lensStore.selectedDpto) {
+				if (lensStore.selectedDpto) {
 					handleBackToDepts();
 				} else {
 					clearAll();
@@ -84,16 +68,13 @@
 
 		if (lens) {
 			const cfg = LENS_CONFIG[lens];
-			mapStore.lensActive = true;
-			mapComponent?.updateColorExpr();
 			const redcodes = [...lensStore.opportunityRadios.keys()];
 			mapComponent?.setOpportunityGlow(redcodes, cfg.color);
-			// Clear any existing selection highlights
+			// Clear any existing radio selections and highlights
+			mapStore.clearRadios();
 			mapComponent?.clearRadioHighlight();
 			mapComponent?.clearChatHighlights();
 		} else {
-			mapStore.lensActive = false;
-			mapComponent?.updateColorExpr();
 			mapComponent?.clearOpportunityGlow();
 		}
 	});
@@ -124,56 +105,20 @@
 		}
 	});
 
-	// ── Selected opportunity reactivity ──────────────────────────────────────
-	let prevOpp: string | null = null;
-
-	$effect(() => {
-		const opp = lensStore.selectedOpportunity;
-		if (opp === prevOpp) return;
-		prevOpp = opp;
-
-		if (!lensStore.activeLens) return;
-		const cfg = LENS_CONFIG[lensStore.activeLens];
-
-		if (opp) {
-			mapComponent?.highlightSingleOpportunity(opp, cfg.color);
-			const c = lensStore.radioCentroid(opp);
-			if (c) mapComponent?.flyToCoords(c[0], c[1], 14);
-		} else {
-			mapComponent?.clearRadioHighlight();
-		}
-	});
-
-	// ── Comparison radio reactivity ──────────────────────────────────────────
-	let prevCompRadio: string | null = null;
-
-	$effect(() => {
-		const compRadio = lensStore.comparisonRadio;
-		if (compRadio === prevCompRadio) return;
-		prevCompRadio = compRadio;
-
-		if (!lensStore.activeLens || !lensStore.selectedOpportunity) return;
-		const cfg = LENS_CONFIG[lensStore.activeLens];
-
-		if (compRadio) {
-			// Both radios highlighted: A with lens color, B with violet
-			mapComponent?.highlightComparisonPair(
-				lensStore.selectedOpportunity, cfg.color,
-				compRadio, '#a78bfa'
-			);
-		} else {
-			// Comparison cancelled: restore only radio A
-			mapComponent?.highlightSingleOpportunity(lensStore.selectedOpportunity, cfg.color);
-		}
-	});
-
 	function handleSelectDpto(dpto: string) {
 		lensStore.selectDpto(dpto);
 	}
 
 	function handleSelectRadio(redcode: string) {
-		if (lensStore.activeLens && lensStore.isOpportunity(redcode)) {
-			lensStore.selectOpportunity(redcode);
+		if (mapStore.hasRadio(redcode)) {
+			mapStore.removeRadio(redcode);
+			mapComponent?.setRadioHighlight(getRadioHighlightEntries());
+		} else {
+			mapStore.addRadio(redcode, { census: {}, enriched: null, buildingCount: 0 });
+			mapComponent?.setRadioHighlight(getRadioHighlightEntries());
+			fetchRadioEnrichment(redcode);
+			const c = lensStore.radioCentroid(redcode);
+			if (c) mapComponent?.flyToCoords(c[0], c[1], 14);
 		}
 	}
 

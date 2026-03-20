@@ -125,6 +125,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'card.download': { es: 'Descargar análisis', en: 'Download analysis', gn: 'Emboguejy' },
 	'card.score': { es: 'Score', en: 'Score', gn: 'Score' },
 	'card.difference': { es: 'Diferencia más notable', en: 'Most notable difference', gn: 'Mba\'e iñambuéva' },
+	'card.back': { es: '← Volver a ficha', en: '← Back to card', gn: '← Ejevy' },
 
 	// Legend lens mode
 	'legend.lensOpportunity': { es: 'Oportunidad diferencial', en: 'Differential opportunity', gn: 'Oportunidade iñambuéva' },

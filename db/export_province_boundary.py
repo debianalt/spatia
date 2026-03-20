@@ -22,8 +22,8 @@ DB_PASS = os.getenv("PGPASSWORD", "")
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(BASE_DIR, "src", "lib", "data")
 
-BOUNDARY_FILE = os.path.join(OUT_DIR, "misiones_boundary.geojson")
-MASK_FILE = os.path.join(OUT_DIR, "misiones_mask.geojson")
+BOUNDARY_FILE = os.path.join(OUT_DIR, "misiones_boundary.json")
+MASK_FILE = os.path.join(OUT_DIR, "misiones_mask.json")
 
 # Large bbox covering South America for the mask exterior ring
 WORLD_BBOX = [[-80, -60], [-80, 10], [-30, 10], [-30, -60], [-80, -60]]
