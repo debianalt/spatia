@@ -7,12 +7,14 @@
 	import LensSelector from '$lib/components/LensSelector.svelte';
 	import { MapStore } from '$lib/stores/map.svelte';
 	import { LensStore } from '$lib/stores/lens.svelte';
+	import { LassoStore } from '$lib/stores/lasso.svelte';
 	import { initDuckDB, query, isReady } from '$lib/stores/duckdb';
-	import { PARQUETS, LENS_CONFIG, MAP_INIT } from '$lib/config';
+	import { PARQUETS, LENS_CONFIG, MAP_INIT, type AnalysisConfig } from '$lib/config';
 	import { i18n, type Locale } from '$lib/stores/i18n.svelte';
 
 	const mapStore = new MapStore();
 	const lensStore = new LensStore();
+	const lassoStore = new LassoStore();
 
 	let mapComponent: ReturnType<typeof MapComponent>;
 	let mapContainer: HTMLDivElement;
@@ -47,12 +49,49 @@
 
 		document.addEventListener('keydown', (e) => {
 			if (e.key === 'Escape') {
-				if (lensStore.selectedDpto) {
+				if (lassoStore.drawing) {
+					lassoStore.cancelDraw();
+					mapComponent?.clearLassoDraw();
+				} else if (lassoStore.active) {
+					handleToggleLasso();
+				} else if (lensStore.selectedDpto) {
 					handleBackToDepts();
 				} else {
 					clearAll();
 				}
 			}
+		});
+
+		// Lasso mouse events on the map container
+		mapContainer?.addEventListener('mousedown', (e: MouseEvent) => {
+			if (!lassoStore.active || e.button !== 0) return;
+			lassoStore.startDraw();
+			const m = mapComponent?.getMap();
+			if (!m) return;
+			const lngLat = m.unproject([e.offsetX, e.offsetY]);
+			lassoStore.addPoint([lngLat.lng, lngLat.lat]);
+		});
+
+		mapContainer?.addEventListener('mousemove', (e: MouseEvent) => {
+			if (!lassoStore.drawing) return;
+			const m = mapComponent?.getMap();
+			if (!m) return;
+			const lngLat = m.unproject([e.offsetX, e.offsetY]);
+			lassoStore.addPoint([lngLat.lng, lngLat.lat]);
+			mapComponent?.updateLassoDraw(lassoStore.currentPolygon);
+		});
+
+		mapContainer?.addEventListener('mouseup', async (e: MouseEvent) => {
+			if (!lassoStore.drawing) return;
+			const polygon = lassoStore.finishDraw();
+			mapComponent?.clearLassoDraw();
+			if (polygon.length < 4) return; // need at least 3 points + closing
+
+			const redcodes = lassoStore.findRadiosInPolygon(polygon);
+			if (redcodes.length === 0) return;
+
+			await lassoStore.createZone(redcodes, polygon);
+			updateZoneHighlights();
 		});
 	});
 
@@ -74,8 +113,10 @@
 			mapStore.clearRadios();
 			mapComponent?.clearRadioHighlight();
 			mapComponent?.clearChatHighlights();
+			mapComponent?.clearAnalysisChoropleth();
 		} else {
 			mapComponent?.clearOpportunityGlow();
+			mapComponent?.clearAnalysisChoropleth();
 		}
 	});
 
@@ -126,6 +167,65 @@
 		lensStore.clearDpto();
 	}
 
+	function handleSelectAnalysis(analysis: AnalysisConfig) {
+		if (analysis.status === 'coming_soon') {
+			// Still set it so AnalysisView shows the coming-soon card
+			lensStore.setAnalysis(analysis);
+			mapComponent?.clearAnalysisChoropleth();
+			return;
+		}
+		lensStore.setAnalysis(analysis);
+
+		// For analyses with choropleth, load will happen inside the component
+		// The choropleth is triggered via the $effect below
+	}
+
+	// ── Analysis choropleth reactivity ──────────────────────────────────────
+	let prevAnalysisId: string | null = null;
+	let analysisDataLoaded = $state(false);
+
+	$effect(() => {
+		const analysis = lensStore.activeAnalysis;
+		const id = analysis?.id ?? null;
+
+		if (id === prevAnalysisId) return;
+		prevAnalysisId = id;
+
+		if (!id || !analysis) {
+			mapComponent?.clearAnalysisChoropleth();
+			analysisDataLoaded = false;
+			return;
+		}
+
+		// Choropleth loading is deferred — the analysis component loads data
+		// and we poll for it via a timeout. This avoids tight coupling.
+		if (analysis.choropleth && analysis.id === 'real_estate') {
+			analysisDataLoaded = false;
+			loadAnalysisChoropleth(analysis);
+		}
+	});
+
+	async function loadAnalysisChoropleth(analysis: AnalysisConfig) {
+		if (!analysis.choropleth || !isReady()) return;
+		try {
+			const { getParquetUrl } = await import('$lib/config');
+			const url = getParquetUrl(analysis.choropleth.parquet);
+			const col = analysis.choropleth.column;
+			const result = await query(
+				`SELECT redcode, ${col} as value FROM '${url}' WHERE ${col} IS NOT NULL AND ${col} > 0`
+			);
+			const entries: Array<{ redcode: string; value: number }> = [];
+			for (let i = 0; i < result.numRows; i++) {
+				const row = result.get(i)!.toJSON() as { redcode: string; value: number };
+				entries.push(row);
+			}
+			mapComponent?.setAnalysisChoropleth(entries, analysis.choropleth.colorScale);
+			analysisDataLoaded = true;
+		} catch (e) {
+			console.warn('Failed to load analysis choropleth:', e);
+		}
+	}
+
 	async function fetchRadioEnrichment(redcode: string): Promise<void> {
 		if (!isReady()) return;
 		if (!/^\d{9}$/.test(redcode)) return;
@@ -166,13 +266,43 @@
 		mapComponent?.setRadioHighlight(getRadioHighlightEntries());
 	}
 
+	// ── Lasso handlers ──────────────────────────────────────────────────────
+
+	function handleToggleLasso() {
+		lassoStore.toggle();
+		mapComponent?.setLassoMode(lassoStore.active);
+	}
+
+	function updateZoneHighlights() {
+		const zones = lassoStore.zones.map(z => ({ redcodes: z.redcodes, color: z.color }));
+		mapComponent?.setZoneHighlight(zones);
+	}
+
+	function handleRemoveZone(id: string) {
+		lassoStore.removeZone(id);
+		updateZoneHighlights();
+	}
+
+	function handleClearZones() {
+		lassoStore.clearZones();
+		mapComponent?.clearZoneHighlight();
+	}
+
 	function clearAll() {
 		mapStore.clearRadios();
 		mapStore.clearChatState();
 		mapComponent?.clearRadioHighlight();
 		mapComponent?.clearChatHighlights();
+		mapComponent?.clearAnalysisChoropleth();
 		lensStore.clearSelection();
 		lensStore.clearDpto();
+		lensStore.clearAnalysis();
+		lassoStore.clearZones();
+		mapComponent?.clearZoneHighlight();
+		if (lassoStore.active) {
+			lassoStore.toggle();
+			mapComponent?.setLassoMode(false);
+		}
 	}
 
 	function handleChatResponse(response: {
@@ -254,15 +384,23 @@
 				{mapStore}
 				hasSelection={mapStore.selectedRadios.size > 0}
 				onClear={clearAll}
+				lassoActive={lassoStore.active}
+				onToggleLasso={handleToggleLasso}
+				hasZones={lassoStore.zones.length > 0}
+				onClearZones={handleClearZones}
 			/>
 
 			<!-- Sidebar (positioned relative to map) -->
 			<Sidebar
 				{mapStore}
 				{lensStore}
+				{lassoStore}
 				onRemoveRadio={handleRemoveRadio}
 				onSelectDpto={handleSelectDpto}
 				onSelectRadio={handleSelectRadio}
+				onSelectAnalysis={handleSelectAnalysis}
+				onRemoveZone={handleRemoveZone}
+				onClearZones={handleClearZones}
 			/>
 		</div>
 	</div>

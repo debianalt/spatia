@@ -127,3 +127,220 @@ export const LENS_CONFIG: Record<LensId, LensConfig> = {
 		threshold: 70,
 	},
 } as const;
+
+// ── Analysis system ─────────────────────────────────────────────────────────
+
+export interface AnalysisConfig {
+	id: string;
+	lensId: LensId;
+	titleKey: string;
+	descKey: string;
+	icon: string;
+	status: 'available' | 'coming_soon';
+	choropleth?: {
+		parquet: string;
+		column: string;
+		colorScale: 'price' | 'score' | 'diverging' | 'sequential';
+		legendKey: string;
+	};
+}
+
+export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
+	// ── Invertir ──
+	{
+		id: 'real_estate',
+		lensId: 'invertir',
+		titleKey: 'analysis.realEstate.title',
+		descKey: 'analysis.realEstate.desc',
+		icon: '🏠',
+		status: 'available',
+		choropleth: {
+			parquet: 'real_estate_by_radio',
+			column: 'median_usd_m2',
+			colorScale: 'price',
+			legendKey: 'analysis.realEstate.legend',
+		},
+	},
+	{
+		id: 'building_suitability',
+		lensId: 'invertir',
+		titleKey: 'analysis.buildingSuitability.title',
+		descKey: 'analysis.buildingSuitability.desc',
+		icon: '🏗️',
+		status: 'coming_soon',
+	},
+	{
+		id: 'territorial_profile_inv',
+		lensId: 'invertir',
+		titleKey: 'analysis.territorialProfile.title',
+		descKey: 'analysis.territorialProfile.desc',
+		icon: '🌸',
+		status: 'available',
+	},
+	{
+		id: 'building_permits',
+		lensId: 'invertir',
+		titleKey: 'analysis.buildingPermits.title',
+		descKey: 'analysis.buildingPermits.desc',
+		icon: '📋',
+		status: 'coming_soon',
+	},
+	{
+		id: 'vehicle_registrations',
+		lensId: 'invertir',
+		titleKey: 'analysis.vehicleRegistrations.title',
+		descKey: 'analysis.vehicleRegistrations.desc',
+		icon: '🚗',
+		status: 'coming_soon',
+	},
+	{
+		id: 'mortgage_credit',
+		lensId: 'invertir',
+		titleKey: 'analysis.mortgageCredit.title',
+		descKey: 'analysis.mortgageCredit.desc',
+		icon: '🏦',
+		status: 'coming_soon',
+	},
+
+	// ── Producir ──
+	{
+		id: 'crop_production',
+		lensId: 'producir',
+		titleKey: 'analysis.cropProduction.title',
+		descKey: 'analysis.cropProduction.desc',
+		icon: '🌾',
+		status: 'coming_soon',
+	},
+	{
+		id: 'soil_suitability',
+		lensId: 'producir',
+		titleKey: 'analysis.soilSuitability.title',
+		descKey: 'analysis.soilSuitability.desc',
+		icon: '🧪',
+		status: 'coming_soon',
+	},
+	{
+		id: 'crop_suitability',
+		lensId: 'producir',
+		titleKey: 'analysis.cropSuitability.title',
+		descKey: 'analysis.cropSuitability.desc',
+		icon: '🌱',
+		status: 'coming_soon',
+	},
+	{
+		id: 'forestry',
+		lensId: 'producir',
+		titleKey: 'analysis.forestry.title',
+		descKey: 'analysis.forestry.desc',
+		icon: '🌲',
+		status: 'coming_soon',
+	},
+	{
+		id: 'territorial_profile_prod',
+		lensId: 'producir',
+		titleKey: 'analysis.territorialProfile.title',
+		descKey: 'analysis.territorialProfile.desc',
+		icon: '🌸',
+		status: 'available',
+	},
+	{
+		id: 'commodity_prices',
+		lensId: 'producir',
+		titleKey: 'analysis.commodityPrices.title',
+		descKey: 'analysis.commodityPrices.desc',
+		icon: '📈',
+		status: 'coming_soon',
+	},
+
+	// ── Servir ──
+	{
+		id: 'health_coverage',
+		lensId: 'servir',
+		titleKey: 'analysis.healthCoverage.title',
+		descKey: 'analysis.healthCoverage.desc',
+		icon: '🏥',
+		status: 'coming_soon',
+	},
+	{
+		id: 'education_coverage',
+		lensId: 'servir',
+		titleKey: 'analysis.educationCoverage.title',
+		descKey: 'analysis.educationCoverage.desc',
+		icon: '🎓',
+		status: 'coming_soon',
+	},
+	{
+		id: 'social_vulnerability',
+		lensId: 'servir',
+		titleKey: 'analysis.socialVulnerability.title',
+		descKey: 'analysis.socialVulnerability.desc',
+		icon: '🛡️',
+		status: 'coming_soon',
+	},
+	{
+		id: 'water_network',
+		lensId: 'servir',
+		titleKey: 'analysis.waterNetwork.title',
+		descKey: 'analysis.waterNetwork.desc',
+		icon: '💧',
+		status: 'coming_soon',
+	},
+	{
+		id: 'territorial_profile_serv',
+		lensId: 'servir',
+		titleKey: 'analysis.territorialProfile.title',
+		descKey: 'analysis.territorialProfile.desc',
+		icon: '🌸',
+		status: 'available',
+	},
+
+	// ── Vivir ──
+	{
+		id: 'environment',
+		lensId: 'vivir',
+		titleKey: 'analysis.environment.title',
+		descKey: 'analysis.environment.desc',
+		icon: '🌿',
+		status: 'coming_soon',
+	},
+	{
+		id: 'natural_risks',
+		lensId: 'vivir',
+		titleKey: 'analysis.naturalRisks.title',
+		descKey: 'analysis.naturalRisks.desc',
+		icon: '⚠️',
+		status: 'coming_soon',
+	},
+	{
+		id: 'transport',
+		lensId: 'vivir',
+		titleKey: 'analysis.transport.title',
+		descKey: 'analysis.transport.desc',
+		icon: '🚌',
+		status: 'coming_soon',
+	},
+	{
+		id: 'digital_connectivity',
+		lensId: 'vivir',
+		titleKey: 'analysis.digitalConnectivity.title',
+		descKey: 'analysis.digitalConnectivity.desc',
+		icon: '📡',
+		status: 'coming_soon',
+	},
+	{
+		id: 'territorial_profile_viv',
+		lensId: 'vivir',
+		titleKey: 'analysis.territorialProfile.title',
+		descKey: 'analysis.territorialProfile.desc',
+		icon: '🌸',
+		status: 'available',
+	},
+];
+
+export function getAnalysesForLens(lensId: LensId): AnalysisConfig[] {
+	return ANALYSIS_REGISTRY.filter(a => a.lensId === lensId);
+}
+
+export function getAnalysisById(id: string): AnalysisConfig | undefined {
+	return ANALYSIS_REGISTRY.find(a => a.id === id);
+}

@@ -7,10 +7,7 @@
 
 	const lensIds: LensId[] = ['invertir', 'producir', 'servir', 'vivir'];
 
-	function counterText(n: number): string {
-		const tpl = i18n.t('lens.counter');
-		return tpl.replace('{n}', String(n));
-	}
+
 </script>
 
 <div class="lens-bar">
@@ -28,15 +25,6 @@
 			</button>
 		{/each}
 	</div>
-	{#if lensStore.activeLens}
-		<div class="lens-counter">
-			{#if !lensStore.dataLoaded}
-				{i18n.t('lens.loading')}
-			{:else}
-				{counterText(lensStore.opportunityCount)}
-			{/if}
-		</div>
-	{/if}
 </div>
 
 <style>
@@ -78,11 +66,5 @@
 	}
 	.lens-label {
 		line-height: 1;
-	}
-	.lens-counter {
-		font-size: 10px;
-		font-weight: 500;
-		color: #e2e8f0;
-		opacity: 0.9;
 	}
 </style>

@@ -142,6 +142,89 @@ const dict: Record<string, Record<Locale, string>> = {
 	'lens.avgScore': { es: 'Score promedio', en: 'Avg score', gn: 'Score mbytekue' },
 	'lens.loading': { es: 'Cargando...', en: 'Loading...', gn: 'Oñemyenyhẽ...' },
 	'lens.dptoRadios': { es: 'Radios en {dpto}', en: 'Radios in {dpto}', gn: 'Radio {dpto}-pe' },
+
+	// ── Analysis system ─────────────────────────────────────────────────────
+	'analysis.menu.title': { es: 'Análisis disponibles', en: 'Available analyses', gn: "Mba'ekuaa oĩva" },
+	'analysis.status.available': { es: 'Disponible', en: 'Available', gn: 'Oĩma' },
+	'analysis.status.comingSoon': { es: 'En desarrollo', en: 'Coming soon', gn: 'Oguerahátama' },
+	'analysis.back': { es: '← Análisis', en: '← Analyses', gn: "← Mba'ekuaa" },
+	'analysis.noData': { es: 'Sin datos para este radio', en: 'No data for this radio', gn: "Mba'ekuaa'ỹ ko radio-pe" },
+	'analysis.loading': { es: 'Cargando datos...', en: 'Loading data...', gn: "Oñemyenyhẽ mba'ekuaa..." },
+	'analysis.comingSoon.body': { es: 'Este análisis está en desarrollo. Próximamente disponible con datos actualizados.', en: 'This analysis is under development. Coming soon with updated data.', gn: "Ko mba'ekuaa oñemoĩhína. Oguerahátama." },
+
+	// Analysis titles
+	'analysis.realEstate.title': { es: 'Mercado inmobiliario', en: 'Real estate market', gn: "Yvy ha óga rape" },
+	'analysis.realEstate.desc': { es: 'Precios, avisos y tipos de propiedad por radio censal', en: 'Prices, listings and property types by census tract', gn: "Hepy, óga ha yvy radio pegua" },
+	'analysis.realEstate.legend': { es: 'Mediana USD/m²', en: 'Median USD/m²', gn: 'USD/m² mbytekue' },
+	'analysis.buildingSuitability.title': { es: 'Aptitud constructiva', en: 'Building suitability', gn: "Óga apópe oĩporãva" },
+	'analysis.buildingSuitability.desc': { es: 'Pendiente, suelo, riesgo e infraestructura existente', en: 'Slope, soil, risk and existing infrastructure', gn: "Yvy, mba'asy ha mba'apo oĩva" },
+	'analysis.territorialProfile.title': { es: 'Perfil territorial', en: 'Territorial profile', gn: 'Yvy rekokatu' },
+	'analysis.territorialProfile.desc': { es: 'Resumen multidimensional con 6 ejes temáticos', en: 'Multidimensional summary with 6 thematic axes', gn: "Mba'ekuaa 6 rape rupi" },
+	'analysis.buildingPermits.title': { es: 'Permisos de construcción', en: 'Building permits', gn: "Óga apo ñemoneĩ" },
+	'analysis.buildingPermits.desc': { es: 'Permisos otorgados por municipio y año', en: 'Permits granted by municipality and year', gn: "Ñemoneĩ táva ha ary rupi" },
+	'analysis.vehicleRegistrations.title': { es: 'Patentamientos', en: 'Vehicle registrations', gn: "Mba'yru ñemoneĩ" },
+	'analysis.vehicleRegistrations.desc': { es: 'Patentamientos de automotores por departamento', en: 'Vehicle registrations by department', gn: "Mba'yru moĩ departamento rupi" },
+	'analysis.mortgageCredit.title': { es: 'Créditos hipotecarios', en: 'Mortgage credit', gn: "Viru ñeme'ẽ" },
+	'analysis.mortgageCredit.desc': { es: 'Volumen y accesibilidad de créditos hipotecarios', en: 'Volume and accessibility of mortgage loans', gn: "Viru ñeme'ẽ tuichakue" },
+
+	// Producir analyses
+	'analysis.cropProduction.title': { es: 'Producción por cultivo', en: 'Crop production', gn: "Temity rembiapokue" },
+	'analysis.cropProduction.desc': { es: 'Series anuales: yerba, té, tabaco, cítricos, granos', en: 'Annual series: yerba mate, tea, tobacco, citrus, grains', gn: "Ka'a, té, petỹ, narã, avati" },
+	'analysis.soilSuitability.title': { es: 'Aptitud de suelos', en: 'Soil suitability', gn: 'Yvy iporãva' },
+	'analysis.soilSuitability.desc': { es: 'pH, carbono orgánico, textura y capacidad del suelo', en: 'pH, organic carbon, texture and soil capacity', gn: "Yvy rekokatu" },
+	'analysis.cropSuitability.title': { es: 'Aptitud de cultivos', en: 'Crop suitability', gn: "Temity oĩporãva" },
+	'analysis.cropSuitability.desc': { es: 'Score de aptitud por especie y radio censal', en: 'Suitability score by species and census tract', gn: "Temity oĩporãva radio rupi" },
+	'analysis.forestry.title': { es: 'Plantaciones forestales', en: 'Forest plantations', gn: "Ka'aguy ñemitỹ" },
+	'analysis.forestry.desc': { es: 'Yerba mate (INTA), pino y eucalipto georeferenciados', en: 'Yerba mate (INTA), pine and eucalyptus geolocated', gn: "Ka'a, pino ha eucalipto" },
+	'analysis.commodityPrices.title': { es: 'Precios de commodities', en: 'Commodity prices', gn: "Hepy mba'e oñemba'apóva" },
+	'analysis.commodityPrices.desc': { es: 'Precios de referencia MAGyP y FAO', en: 'Reference prices from MAGyP and FAO', gn: "Hepy MAGyP ha FAO" },
+
+	// Servir analyses
+	'analysis.healthCoverage.title': { es: 'Cobertura de salud', en: 'Health coverage', gn: 'Tesãi joapy' },
+	'analysis.healthCoverage.desc': { es: 'Centros, distancia a hospital, cobertura obra social', en: 'Facilities, hospital distance, social insurance coverage', gn: "Tesãirenda, hospita'i, joapy" },
+	'analysis.educationCoverage.title': { es: 'Cobertura educativa', en: 'Education coverage', gn: "Mbo'e joapy" },
+	'analysis.educationCoverage.desc': { es: 'Escuelas, distancia a secundaria, asistencia escolar', en: 'Schools, distance to secondary, school attendance', gn: "Mbo'ehao, mbo'e jehe'a" },
+	'analysis.socialVulnerability.title': { es: 'Vulnerabilidad social', en: 'Social vulnerability', gn: "Teko'asy" },
+	'analysis.socialVulnerability.desc': { es: 'NBI, hacinamiento, empleo, fecundidad adolescente', en: 'UBN, overcrowding, employment, teen fertility', gn: "NBI, ñembyaty, tembiapo" },
+	'analysis.waterNetwork.title': { es: 'Red de agua', en: 'Water network', gn: 'Y juru' },
+	'analysis.waterNetwork.desc': { es: '17K segmentos de red, pozos, tanques por radio', en: '17K network segments, wells, tanks by tract', gn: "Y juru, ykuaa radio rupi" },
+
+	// Vivir analyses
+	'analysis.environment.title': { es: 'Ambiente y vegetación', en: 'Environment & vegetation', gn: "Ka'aguy ha ñu" },
+	'analysis.environment.desc': { es: 'NDVI/EVI series, canopy cover, deforestación, OTBN', en: 'NDVI/EVI series, canopy cover, deforestation, OTBN', gn: "Ka'aguy rekokatu" },
+	'analysis.naturalRisks.title': { es: 'Riesgos naturales', en: 'Natural risks', gn: "Mba'asy yvy rehegua" },
+	'analysis.naturalRisks.desc': { es: 'Fuego, inundación, deslizamiento, erosión', en: 'Fire, flood, landslide, erosion', gn: "Tata, y tuicha, yvy resay" },
+	'analysis.transport.title': { es: 'Transporte', en: 'Transport', gn: "Mba'yru rape" },
+	'analysis.transport.desc': { es: '223 rutas CNRT, densidad vial, tiempos de viaje', en: '223 CNRT routes, road density, travel times', gn: "Rape, mba'yru oñondive" },
+	'analysis.digitalConnectivity.title': { es: 'Conectividad digital', en: 'Digital connectivity', gn: 'Joaju digital' },
+	'analysis.digitalConnectivity.desc': { es: 'Internet y móvil por radio (ENACOM)', en: 'Internet and mobile by tract (ENACOM)', gn: "Internet ha celular radio rupi" },
+
+	// Real estate analysis labels
+	'analysis.re.provincial': { es: 'Resumen provincial', en: 'Provincial summary', gn: "Tetã guasu rehegua" },
+	'analysis.re.listings': { es: 'Avisos activos', en: 'Active listings', gn: "Mba'e oñevendéva" },
+	'analysis.re.medianPrice': { es: 'Precio mediano USD/m²', en: 'Median price USD/m²', gn: 'Hepy mbytekue USD/m²' },
+	'analysis.re.medianTotal': { es: 'Precio mediano USD', en: 'Median price USD', gn: 'Hepy mbytekue USD' },
+	'analysis.re.houses': { es: 'Casas', en: 'Houses', gn: 'Óga' },
+	'analysis.re.apartments': { es: 'Departamentos', en: 'Apartments', gn: "Óga guasu" },
+	'analysis.re.lots': { es: 'Lotes', en: 'Lots', gn: 'Yvy' },
+	'analysis.re.avgArea': { es: 'Superficie promedio', en: 'Average area', gn: "Yvy tuichakue" },
+	'analysis.re.vsMedian': { es: 'vs. mediana departamental', en: 'vs. department median', gn: 'vs. departamento mbytekue' },
+	'analysis.re.topDepts': { es: 'Top departamentos', en: 'Top departments', gn: 'Departamento iporãvéva' },
+	'analysis.re.radioDetail': { es: 'Detalle del radio', en: 'Radio detail', gn: 'Radio rehegua' },
+	'analysis.re.propertyTypes': { es: 'Tipos de propiedad', en: 'Property types', gn: "Mba'e lája" },
+
+	// ── Lasso / Zones ──────────────────────────────────────────────────────
+	'lasso.toggle': { es: 'Lazo', en: 'Lasso', gn: 'Lazo' },
+	'lasso.drawing': { es: 'Dibujando zona...', en: 'Drawing zone...', gn: 'Oñembosako\'i...' },
+	'lasso.cancel': { es: 'Cancelar lazo', en: 'Cancel lasso', gn: 'Eheja lazo' },
+	'lasso.clearZones': { es: 'Limpiar zonas', en: 'Clear zones', gn: 'Emopotĩ zona' },
+	'lasso.hint': { es: 'Dibujá una zona arrastrando sobre el mapa. El cálculo tarda unos segundos.', en: 'Draw a zone by dragging on the map. Calculation takes a few seconds.', gn: "Embosako'i zona mapa ári. Ohasa segundos." },
+	'zone.title': { es: 'Zona', en: 'Zone', gn: 'Zona' },
+	'zone.population': { es: 'Población', en: 'Population', gn: 'Yvypóra' },
+	'zone.area': { es: 'Área km²', en: 'Area km²', gn: 'Yvy km²' },
+	'zone.radios': { es: 'Radios', en: 'Radios', gn: 'Radio' },
+	'zone.noRadios': { es: 'Sin radios en la selección', en: 'No radios in selection', gn: "Radio'ỹ jeporavópe" },
+	'zone.petalNote': { es: 'Relativo al promedio provincial (línea punteada = promedio)', en: 'Relative to provincial average (dashed line = average)', gn: 'Tetã guasu mbytekue rehe (línea = mbytekue)' },
 } as any;
 
 class I18nStore {

@@ -1,4 +1,4 @@
-import { LENS_CONFIG, type LensId } from '$lib/config';
+import { LENS_CONFIG, type LensId, type AnalysisConfig } from '$lib/config';
 import { getParquetUrl } from '$lib/config';
 import { query, isReady } from '$lib/stores/duckdb';
 import centroids from '$lib/data/centroids.json';
@@ -20,6 +20,7 @@ const centroidMap = centroids as unknown as Record<string, [number, number]>;
 
 export class LensStore {
 	activeLens: LensId | null = $state(null);
+	activeAnalysis: AnalysisConfig | null = $state(null);
 	opportunityRadios: Map<string, OpportunityRow> = $state(new Map());
 	selectedOpportunity: string | null = $state(null);
 	comparisonRadio: string | null = $state(null);
@@ -57,10 +58,23 @@ export class LensStore {
 		}
 	}
 
+	setAnalysis(analysis: AnalysisConfig | null): void {
+		this.activeAnalysis = analysis;
+		this.selectedDpto = null;
+		this.selectedOpportunity = null;
+		this.comparisonRadio = null;
+		this.comparisonMode = false;
+	}
+
+	clearAnalysis(): void {
+		this.activeAnalysis = null;
+	}
+
 	setLens(id: LensId | null): void {
 		if (id === this.activeLens && this.dataLoaded) {
 			// Toggle off (only if data is loaded, otherwise it's a re-filter)
 			this.activeLens = null;
+			this.activeAnalysis = null;
 			this.opportunityRadios = new Map();
 			this.selectedOpportunity = null;
 			this.comparisonRadio = null;
@@ -70,6 +84,7 @@ export class LensStore {
 		}
 
 		this.activeLens = id;
+		this.activeAnalysis = null;
 		this.selectedOpportunity = null;
 		this.comparisonRadio = null;
 		this.comparisonMode = false;

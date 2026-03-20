@@ -13,6 +13,7 @@
 
 	let container: HTMLDivElement;
 	let map: maplibregl.Map;
+	let lassoActive = false;
 
 	onMount(() => {
 		const protocol = new Protocol();
@@ -202,6 +203,51 @@
 				filter: emptyFilter
 			});
 
+			// ── Lasso draw layers ──────────────────────────────────────────
+			map.addSource('lasso-draw', {
+				type: 'geojson',
+				data: { type: 'Feature', geometry: { type: 'Polygon', coordinates: [[]] }, properties: {} }
+			});
+			map.addLayer({
+				id: 'lasso-draw-fill',
+				type: 'fill',
+				source: 'lasso-draw',
+				paint: { 'fill-color': '#60a5fa', 'fill-opacity': 0.15 }
+			});
+			map.addLayer({
+				id: 'lasso-draw-line',
+				type: 'line',
+				source: 'lasso-draw',
+				paint: { 'line-color': '#60a5fa', 'line-width': 2, 'line-dasharray': [4, 2] }
+			});
+
+			// ── Zone highlight layers (radios + buildings) ─────────────
+			map.addLayer({
+				id: 'zone-fill',
+				type: 'fill',
+				source: 'radios',
+				'source-layer': 'radios',
+				paint: { 'fill-color': '#60a5fa', 'fill-opacity': 0.45 },
+				filter: emptyFilter
+			});
+			map.addLayer({
+				id: 'zone-line',
+				type: 'line',
+				source: 'radios',
+				'source-layer': 'radios',
+				paint: { 'line-color': '#60a5fa', 'line-width': 2.5, 'line-opacity': 0.9 },
+				filter: emptyFilter
+			});
+			// Building outlines tinted by zone color (visible in 3D)
+			map.addLayer({
+				id: 'zone-buildings',
+				type: 'line',
+				source: 'buildings',
+				'source-layer': 'buildings',
+				paint: { 'line-color': '#60a5fa', 'line-width': 3, 'line-opacity': 0.85 },
+				filter: emptyFilter
+			});
+
 			setupInteractions();
 		});
 
@@ -226,6 +272,7 @@
 		let leaveTimeout: ReturnType<typeof setTimeout> | null = null;
 
 		map.on('mousemove', 'buildings-3d', (e) => {
+			if (lassoActive) return; // keep crosshair, skip tooltip
 			if (leaveTimeout) { clearTimeout(leaveTimeout); leaveTimeout = null; }
 			map.getCanvas().style.cursor = 'pointer';
 			const p = e.features![0].properties!;
@@ -256,13 +303,14 @@
 
 		map.on('mouseleave', 'buildings-3d', () => {
 			leaveTimeout = setTimeout(() => {
-				map.getCanvas().style.cursor = '';
+				if (!lassoActive) map.getCanvas().style.cursor = '';
 				tooltip.style.display = 'none';
 			}, 80);
 		});
 
 		// Click-to-select/deselect radio (multi-select)
 		map.on('click', 'buildings-3d', (e) => {
+			if (lassoActive) return; // suppress building click during lasso
 			const redcode = e.features![0].properties!.redcode;
 			if (!redcode) return;
 
@@ -499,6 +547,82 @@
 		map?.flyTo({ ...MAP_INIT, duration: 1200 });
 	}
 
+	// ── Analysis choropleth layers ──────────────────────────────────────────
+
+	export function setAnalysisChoropleth(entries: { redcode: string; value: number }[], colorScale: 'price' | 'score' | 'diverging' | 'sequential' = 'price') {
+		if (!map || !map.isStyleLoaded()) return;
+
+		// Create analysis layers if they don't exist
+		if (!map.getLayer('analysis-fill')) {
+			map.addLayer({
+				id: 'analysis-fill',
+				type: 'fill',
+				source: 'radios',
+				'source-layer': 'radios',
+				paint: { 'fill-color': '#f59e0b', 'fill-opacity': 0.35 },
+				filter: ['==', ['get', 'redcode'], '']
+			});
+		}
+		if (!map.getLayer('analysis-line')) {
+			map.addLayer({
+				id: 'analysis-line',
+				type: 'line',
+				source: 'radios',
+				'source-layer': 'radios',
+				paint: { 'line-color': '#1e293b', 'line-width': 0.5, 'line-opacity': 0.6 },
+				filter: ['==', ['get', 'redcode'], '']
+			});
+		}
+
+		if (entries.length === 0) {
+			map.setFilter('analysis-fill', ['==', ['get', 'redcode'], '']);
+			map.setFilter('analysis-line', ['==', ['get', 'redcode'], '']);
+			return;
+		}
+
+		const values = entries.map(e => e.value);
+		const minVal = Math.min(...values);
+		const maxVal = Math.max(...values);
+		const range = maxVal - minVal || 1;
+
+		const matchExpr: any[] = ['match', ['get', 'redcode']];
+		for (const entry of entries) {
+			const t = (entry.value - minVal) / range;
+			matchExpr.push(entry.redcode);
+
+			let r: number, g: number, b: number;
+			if (colorScale === 'price') {
+				// Green (cheap) → Yellow → Red (expensive)
+				r = Math.round(t < 0.5 ? 34 + t * 2 * (234 - 34) : 234 + (t - 0.5) * 2 * (239 - 234));
+				g = Math.round(t < 0.5 ? 197 + t * 2 * (179 - 197) : 179 + (t - 0.5) * 2 * (68 - 179));
+				b = Math.round(t < 0.5 ? 94 + t * 2 * (8 - 94) : 8 + (t - 0.5) * 2 * (68 - 8));
+			} else {
+				// Blue → White → Red
+				r = Math.round(t < 0.5 ? 33 + t * 2 * (247 - 33) : 247 + (t - 0.5) * 2 * (178 - 247));
+				g = Math.round(t < 0.5 ? 102 + t * 2 * (247 - 102) : 247 + (t - 0.5) * 2 * (24 - 247));
+				b = Math.round(t < 0.5 ? 172 + t * 2 * (247 - 172) : 247 + (t - 0.5) * 2 * (43 - 247));
+			}
+			matchExpr.push(`rgb(${r},${g},${b})`);
+		}
+		matchExpr.push('rgba(0,0,0,0)');
+
+		const redcodes = entries.map(e => e.redcode);
+		map.setFilter('analysis-fill', ['in', ['get', 'redcode'], ['literal', redcodes]]);
+		map.setPaintProperty('analysis-fill', 'fill-color', matchExpr);
+		map.setPaintProperty('analysis-fill', 'fill-opacity', 0.4);
+		map.setFilter('analysis-line', ['in', ['get', 'redcode'], ['literal', redcodes]]);
+	}
+
+	export function clearAnalysisChoropleth() {
+		if (!map || !map.isStyleLoaded()) return;
+		if (map.getLayer('analysis-fill')) {
+			map.setFilter('analysis-fill', ['==', ['get', 'redcode'], '']);
+		}
+		if (map.getLayer('analysis-line')) {
+			map.setFilter('analysis-line', ['==', ['get', 'redcode'], '']);
+		}
+	}
+
 	export function highlightSingleOpportunity(redcode: string, color: string) {
 		if (!map) return;
 		const matchFilter: any = ['==', ['get', 'redcode'], redcode];
@@ -525,6 +649,100 @@
 		if (map?.getLayer('radio-highlight')) {
 			map.setPaintProperty('radio-highlight', 'line-width', 5);
 		}
+	}
+
+	// ── Lasso / Zone functions ────────────────────────────────────────────
+
+	export function setLassoMode(active: boolean) {
+		lassoActive = active;
+		if (!map) return;
+		map.getCanvas().style.cursor = active ? 'crosshair' : '';
+		if (active) {
+			map.dragPan.disable();
+		} else {
+			map.dragPan.enable();
+		}
+	}
+
+	export function updateLassoDraw(polygon: [number, number][]) {
+		if (!map) return;
+		const src = map.getSource('lasso-draw') as maplibregl.GeoJSONSource | undefined;
+		if (!src) return;
+		const coords = polygon.length >= 3
+			? [[...polygon, polygon[0]]]
+			: polygon.length >= 2
+				? [polygon]  // just show as open line during draw
+				: [[]];
+		src.setData({
+			type: 'Feature',
+			geometry: { type: 'Polygon', coordinates: coords },
+			properties: {}
+		});
+	}
+
+	export function clearLassoDraw() {
+		if (!map) return;
+		const src = map.getSource('lasso-draw') as maplibregl.GeoJSONSource | undefined;
+		if (!src) return;
+		src.setData({
+			type: 'Feature',
+			geometry: { type: 'Polygon', coordinates: [[]] },
+			properties: {}
+		});
+	}
+
+	export function setZoneHighlight(zones: { redcodes: string[]; color: string }[]) {
+		if (!map) return;
+		const emptyFilter: any = ['==', ['get', 'redcode'], ''];
+		if (zones.length === 0) {
+			if (map.getLayer('zone-fill')) map.setFilter('zone-fill', emptyFilter);
+			if (map.getLayer('zone-line')) map.setFilter('zone-line', emptyFilter);
+			if (map.getLayer('zone-buildings')) map.setFilter('zone-buildings', emptyFilter);
+			return;
+		}
+
+		// Collect all redcodes and build match expression for colors
+		const allRedcodes: string[] = [];
+		const matchExpr: any[] = ['match', ['get', 'redcode']];
+		for (const zone of zones) {
+			for (const rc of zone.redcodes) {
+				allRedcodes.push(rc);
+				matchExpr.push(rc, zone.color);
+			}
+		}
+		matchExpr.push('rgba(0,0,0,0)'); // fallback
+
+		const filter: any = ['in', ['get', 'redcode'], ['literal', allRedcodes]];
+
+		if (map.getLayer('zone-fill')) {
+			map.setPaintProperty('zone-fill', 'fill-color', matchExpr);
+			map.setFilter('zone-fill', filter);
+		}
+		if (map.getLayer('zone-line')) {
+			map.setPaintProperty('zone-line', 'line-color', matchExpr);
+			map.setFilter('zone-line', filter);
+		}
+		// Building outlines: same match expression, same filter
+		if (map.getLayer('zone-buildings')) {
+			map.setPaintProperty('zone-buildings', 'line-color', matchExpr);
+			map.setFilter('zone-buildings', filter);
+		}
+	}
+
+	export function clearZoneHighlight() {
+		if (!map) return;
+		const emptyFilter: any = ['==', ['get', 'redcode'], ''];
+		if (map.getLayer('zone-fill')) map.setFilter('zone-fill', emptyFilter);
+		if (map.getLayer('zone-line')) map.setFilter('zone-line', emptyFilter);
+		if (map.getLayer('zone-buildings')) map.setFilter('zone-buildings', emptyFilter);
+	}
+
+	export function getLassoActive(): boolean {
+		return lassoActive;
+	}
+
+	export function getMap(): maplibregl.Map | null {
+		return map ?? null;
 	}
 </script>
 
