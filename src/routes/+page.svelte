@@ -28,6 +28,7 @@
 			.catch(e => console.warn('DuckDB init failed:', e));
 
 		mapContainer?.addEventListener('radio-select', ((e: CustomEvent) => {
+			if (lassoStore.active) return;
 			const { redcode, selected, census } = e.detail;
 
 			// Unified behavior: clear chat highlights, add radio
@@ -50,6 +51,7 @@
 		}) as EventListener);
 
 		mapContainer?.addEventListener('hex-select', ((e: CustomEvent) => {
+			if (lassoStore.active) return;
 			const { h3index, properties } = e.detail;
 			if (hexStore.activeLayer) {
 				hexStore.toggleHex(h3index);
@@ -87,24 +89,27 @@
 		// Lasso mouse events on the map container
 		mapContainer?.addEventListener('mousedown', (e: MouseEvent) => {
 			if (!lassoStore.active || e.button !== 0) return;
+			e.stopPropagation();
 			lassoStore.startDraw();
 			const m = mapComponent?.getMap();
 			if (!m) return;
 			const lngLat = m.unproject([e.offsetX, e.offsetY]);
 			lassoStore.addPoint([lngLat.lng, lngLat.lat]);
-		});
+		}, { capture: true });
 
 		mapContainer?.addEventListener('mousemove', (e: MouseEvent) => {
 			if (!lassoStore.drawing) return;
+			e.stopPropagation();
 			const m = mapComponent?.getMap();
 			if (!m) return;
 			const lngLat = m.unproject([e.offsetX, e.offsetY]);
 			lassoStore.addPoint([lngLat.lng, lngLat.lat]);
 			mapComponent?.updateLassoDraw(lassoStore.currentPolygon);
-		});
+		}, { capture: true });
 
 		mapContainer?.addEventListener('mouseup', async (e: MouseEvent) => {
 			if (!lassoStore.drawing) return;
+			e.stopPropagation();
 			const polygon = lassoStore.finishDraw();
 			mapComponent?.clearLassoDraw();
 			if (polygon.length < 4) return; // need at least 3 points + closing
@@ -122,7 +127,7 @@
 				await lassoStore.createZone(redcodes, polygon);
 				updateZoneHighlights();
 			}
-		});
+		}, { capture: true });
 	});
 
 	// ── Lens reactivity ──────────────────────────────────────────────────────
@@ -134,6 +139,13 @@
 		const key = `${lens}:${count}`;
 		if (key === prevLensKey) return;
 		prevLensKey = key;
+
+		// Always clear hex state on any lens change (covers switch + deactivate)
+		mapComponent?.clearHexChoropleth();
+		mapComponent?.clearHexZoneHighlight();
+		mapStore.clearHexState();
+		hexStore.clearAll();
+		prevHexDataSize = 0;
 
 		if (lens) {
 			const cfg = LENS_CONFIG[lens];
@@ -348,7 +360,7 @@
 		if (!isReady()) return;
 		if (!/^\d{9}$/.test(redcode)) return;
 		try {
-			const ENRICHMENT_COLS = 'redcode, total_personas, tasa_actividad, tasa_empleo, pct_universitario, pct_nbi, pct_hacinamiento';
+			const ENRICHMENT_COLS = 'redcode, total_personas, tasa_actividad, tasa_empleo, pct_universitario, pct_nbi, pct_hacinamiento, pct_agua_red';
 			const result = await query(
 				`SELECT ${ENRICHMENT_COLS} FROM '${PARQUETS.radio_stats_master}' WHERE redcode = '${redcode}' LIMIT 1`
 			);

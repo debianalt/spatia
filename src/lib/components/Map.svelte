@@ -356,6 +356,7 @@
 		// Click-to-select/deselect radio (multi-select)
 		map.on('click', 'buildings-3d', (e) => {
 			if (lassoActive) return; // suppress building click during lasso
+			if (mapStore.activeHexLayer) return; // hex mode: only hex-select, not radio
 			const redcode = e.features![0].properties!.redcode;
 			if (!redcode) return;
 

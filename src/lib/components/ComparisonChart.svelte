@@ -1,5 +1,7 @@
 <script lang="ts">
 	import type { RadioData } from '$lib/stores/map.svelte';
+	import { PETAL_VARS, normalizeValues, getProvincialAvg } from '$lib/utils/petal';
+	import PetalChart from './PetalChart.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
 
 	let {
@@ -12,41 +14,36 @@
 
 	const fmt = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 0 });
 
-	type VarDef = { key: string; label: string; getValue: (rc: string, d: RadioData) => number | null; unit?: string };
+	let provAvg: number[] | null = $state(null);
 
-	const absoluteVars: VarDef[] = [
-		{ key: 'population', label: 'label.population', getValue: (_, d) => {
-			const v = d.enriched?.total_personas ?? d.census?.total_personas ?? d.census?.radio_personas;
-			return v != null ? parseInt(v) || null : null;
-		}},
-	];
+	// Load provincial averages once enriched data arrives
+	$effect(() => {
+		const hasEnriched = [...radios.values()].some(d => d.enriched != null);
+		if (hasEnriched && !provAvg) {
+			getProvincialAvg().then(avg => { provAvg = avg; }).catch(() => {});
+		}
+	});
 
-	const rateVars: VarDef[] = [
-		{ key: 'activity', label: 'label.activityRate', getValue: (_, d) =>
-			d.enriched?.tasa_actividad != null ? parseFloat(d.enriched.tasa_actividad) : null, unit: '%' },
-		{ key: 'employment', label: 'label.employmentRate', getValue: (_, d) =>
-			d.enriched?.tasa_empleo != null ? parseFloat(d.enriched.tasa_empleo) : null, unit: '%' },
-		{ key: 'university', label: 'label.university', getValue: (_, d) =>
-			d.enriched?.pct_universitario != null ? parseFloat(d.enriched.pct_universitario) : null, unit: '%' },
-		{ key: 'nbi', label: 'label.ubn', getValue: (_, d) =>
-			d.enriched?.pct_nbi != null ? parseFloat(d.enriched.pct_nbi) : null, unit: '%' },
-		{ key: 'overcrowding', label: 'label.overcrowding', getValue: (_, d) =>
-			d.enriched?.pct_hacinamiento != null ? parseFloat(d.enriched.pct_hacinamiento) : null, unit: '%' },
-	];
+	type RadioEntry = { redcode: string; color: string; data: RadioData; rawValues: number[]; normalizedValues: number[]; population: number };
 
-	function getBarData(vars: VarDef[]) {
-		const entries = [...radios.entries()];
-		return vars.map(v => {
-			const values = entries.map(([rc, d]) => ({
-				redcode: rc,
-				color: d.color,
-				value: v.getValue(rc, d)
-			}));
-			const hasAny = values.some(x => x.value != null);
-			const maxVal = Math.max(...values.map(x => x.value ?? 0), 1);
-			return { ...v, values, hasAny, maxVal };
-		}).filter(v => v.hasAny);
-	}
+	const entries = $derived.by((): RadioEntry[] => {
+		if (!provAvg) return [];
+		return [...radios.entries()]
+			.filter(([, d]) => d.enriched != null)
+			.map(([rc, d]) => {
+				const e = d.enriched!;
+				const rawValues = PETAL_VARS.map(v => {
+					const val = e[v.col];
+					return val != null ? parseFloat(val) : 0;
+				});
+				const normalizedValues = normalizeValues(rawValues, provAvg!);
+				const population = parseInt(e.total_personas ?? d.census?.total_personas ?? '0') || 0;
+				return { redcode: rc, color: d.color, data: d, rawValues, normalizedValues, population };
+			});
+	});
+
+	const petalLayers = $derived(entries.map(e => ({ values: e.normalizedValues, color: e.color })));
+	const petalLabels = $derived(PETAL_VARS.map(v => i18n.t(v.labelKey)));
 
 	function shortCode(rc: string): string {
 		return rc.length > 5 ? '...' + rc.slice(-4) : rc;
@@ -69,45 +66,45 @@
 		{/each}
 	</div>
 
-	<!-- Absolute values -->
-	{#each getBarData(absoluteVars) as row, i}
-		{#if i === 0}
-			<div class="section-label">{i18n.t('chart.absolute')}</div>
-		{/if}
-		<div class="var-row">
-			<div class="var-label">{i18n.t(row.label)}</div>
-			<div class="bars">
-				{#each row.values as bar}
-					{#if bar.value != null}
-						<div class="bar-wrap" title="{bar.redcode}: {fmt(bar.value)}">
-							<div class="bar" style="width: {Math.max((bar.value / row.maxVal) * 100, 4)}%; background: {bar.color};"></div>
-							<span class="bar-val">{fmt(bar.value)}</span>
-						</div>
-					{/if}
-				{/each}
-			</div>
+	<!-- Population summary -->
+	{#each entries as entry}
+		<div class="pop-row">
+			<span class="pop-dot" style="background: {entry.color};"></span>
+			<span class="pop-code">{shortCode(entry.redcode)}:</span>
+			<span class="pop-val">{fmt(entry.population)} hab</span>
 		</div>
 	{/each}
 
-	<!-- Rate values -->
-	{#each getBarData(rateVars) as row, i}
-		{#if i === 0}
-			<div class="section-label mt">{i18n.t('chart.rates')}</div>
-		{/if}
-		<div class="var-row">
-			<div class="var-label">{i18n.t(row.label)}</div>
-			<div class="bars">
-				{#each row.values as bar}
-					{#if bar.value != null}
-						<div class="bar-wrap" title="{bar.redcode}: {bar.value.toFixed(1)}{row.unit ?? ''}">
-							<div class="bar" style="width: {Math.max((bar.value / row.maxVal) * 100, 4)}%; background: {bar.color};"></div>
-							<span class="bar-val">{bar.value.toFixed(1)}{row.unit ?? ''}</span>
-						</div>
-					{/if}
-				{/each}
-			</div>
+	<!-- Petal chart (normalized: 50 = provincial avg) -->
+	{#if petalLayers.length > 0}
+		<p class="ref-note">{i18n.t('zone.petalNote')}</p>
+		<PetalChart layers={petalLayers} labels={petalLabels} size={300} />
+	{/if}
+
+	<!-- Dimension bars (raw values) -->
+	{#if entries.length > 0}
+		<div class="dim-section">
+			{#each petalLabels as label, i}
+				<div class="dim-row">
+					<div class="dim-label">{label}</div>
+					<div class="dim-bars-container">
+						{#each entries as entry}
+							{@const raw = entry.rawValues[i] ?? 0}
+							<div class="dim-bar-track">
+								<div class="dim-bar-fill" style:width="{raw}%" style:background={entry.color}></div>
+							</div>
+						{/each}
+					</div>
+					<div class="dim-values">
+						{#each entries as entry}
+							{@const raw = entry.rawValues[i] ?? 0}
+							<span class="dim-val">{raw.toFixed(1)}</span>
+						{/each}
+					</div>
+				</div>
+			{/each}
 		</div>
-	{/each}
+	{/if}
 </div>
 
 <style>
@@ -121,21 +118,47 @@
 	.chip:hover { opacity: 0.7; }
 	.chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 	.chip-x { font-size: 12px; margin-left: 1px; }
-	.section-label {
-		font-size: 9px; font-weight: 600; text-transform: uppercase;
-		letter-spacing: 0.05em; color: #64748b;
-		border-bottom: 1px solid #1e293b; padding-bottom: 2px; margin-bottom: 3px;
+
+	.pop-row {
+		display: flex; align-items: center; gap: 4px;
+		font-size: 10px; color: #cbd5e1; margin-bottom: 2px;
 	}
-	.section-label.mt { margin-top: 6px; }
-	.var-row { margin-bottom: 3px; }
-	.var-label { color: #94a3b8; font-size: 10px; margin-bottom: 0; }
-	.bars { display: flex; flex-direction: column; gap: 1px; }
-	.bar-wrap {
-		display: flex; align-items: center; gap: 3px; height: 5px;
+	.pop-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+	.pop-code { color: #94a3b8; font-family: monospace; }
+	.pop-val { font-weight: 600; }
+
+	.ref-note {
+		font-size: 8px; color: rgba(255,255,255,0.45);
+		text-align: center; margin: 4px 0 0;
 	}
-	.bar {
-		height: 3px; border-radius: 1px; min-width: 3px;
-		transition: width 0.3s ease;
+
+	.dim-section { margin: 8px 0; }
+	.dim-row {
+		display: flex; align-items: flex-start; gap: 4px; margin-bottom: 4px;
 	}
-	.bar-val { color: #cbd5e1; font-size: 9px; white-space: nowrap; }
+	.dim-label {
+		width: 65px; flex-shrink: 0;
+		color: #94a3b8; font-size: 9px;
+		text-align: right; padding-top: 1px;
+	}
+	.dim-bars-container {
+		flex: 1; display: flex; flex-direction: column; gap: 2px;
+	}
+	.dim-bar-track {
+		height: 5px; background: #1e293b;
+		border-radius: 3px; overflow: hidden;
+	}
+	.dim-bar-fill {
+		height: 100%; border-radius: 3px;
+		transition: width 0.3s ease; min-width: 2px;
+	}
+	.dim-values {
+		display: flex; flex-direction: column;
+		align-items: flex-end; gap: 0;
+		width: 32px; flex-shrink: 0;
+	}
+	.dim-val {
+		font-size: 8px; font-weight: 600;
+		line-height: 7px; color: #cbd5e1;
+	}
 </style>

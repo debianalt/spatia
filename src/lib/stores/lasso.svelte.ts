@@ -2,21 +2,15 @@ import { query, isReady } from '$lib/stores/duckdb';
 import { PARQUETS } from '$lib/config';
 import { i18n } from '$lib/stores/i18n.svelte';
 import { pointInPolygon } from '$lib/utils/geometry';
+import { PETAL_VARS, normalizeValues, getProvincialAvg } from '$lib/utils/petal';
 import centroids from '$lib/data/centroids.json';
+
+export { PETAL_VARS };
 
 const centroidMap = centroids as unknown as Record<string, [number, number]>;
 
 const ZONE_COLORS = ['#60a5fa', '#f97316', '#22c55e', '#a855f7', '#ef4444', '#eab308'];
 const ZONE_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
-
-export const PETAL_VARS = [
-	{ col: 'tasa_actividad', labelKey: 'label.activityRate' },
-	{ col: 'tasa_empleo', labelKey: 'label.employmentRate' },
-	{ col: 'pct_universitario', labelKey: 'label.university' },
-	{ col: 'pct_nbi', labelKey: 'label.ubn' },
-	{ col: 'pct_hacinamiento', labelKey: 'label.overcrowding' },
-	{ col: 'pct_agua_red', labelKey: 'label.waterNetwork' },
-];
 
 export interface ZoneStats {
 	population: number;
@@ -39,9 +33,6 @@ export class LassoStore {
 	drawing = $state(false);
 	currentPolygon: [number, number][] = $state([]);
 	zones: Zone[] = $state([]);
-
-	// Provincial weighted averages (computed once)
-	private provincialAvg: number[] | null = null;
 
 	toggle() {
 		this.active = !this.active;
@@ -84,33 +75,6 @@ export class LassoStore {
 		return result;
 	}
 
-	private async ensureProvincialAvg(): Promise<number[]> {
-		if (this.provincialAvg) return this.provincialAvg;
-
-		const cols = PETAL_VARS.map(v =>
-			`SUM(${v.col} * total_personas) / NULLIF(SUM(total_personas), 0) as avg_${v.col}`
-		).join(', ');
-
-		const sql = `SELECT ${cols} FROM '${PARQUETS.radio_stats_master}' WHERE total_personas > 0`;
-		const result = await query(sql);
-		const row = result.get(0)!.toJSON() as Record<string, any>;
-
-		this.provincialAvg = PETAL_VARS.map(v => Number(row[`avg_${v.col}`]) || 1);
-		return this.provincialAvg;
-	}
-
-	private normalize(rawValues: number[], provAvg: number[]): number[] {
-		// (zone / provincial) * 50, clamped 0-100
-		// 50 = equal to provincial average
-		// 100 = double the provincial average
-		// 0 = zero
-		return rawValues.map((v, i) => {
-			const avg = provAvg[i];
-			if (avg === 0) return 50;
-			return Math.min(100, Math.max(0, (v / avg) * 50));
-		});
-	}
-
 	async createZone(redcodes: string[], polygon: [number, number][]): Promise<void> {
 		if (redcodes.length === 0) return;
 		if (!isReady()) return;
@@ -124,7 +88,7 @@ export class LassoStore {
 
 		try {
 			// Fetch provincial averages (cached after first call)
-			const provAvg = await this.ensureProvincialAvg();
+			const provAvg = await getProvincialAvg();
 
 			const sql = `SELECT redcode, total_personas, ${cols}, area_km2 FROM '${PARQUETS.radio_stats_master}' WHERE redcode IN (${inClause})`;
 			const result = await query(sql);
@@ -149,7 +113,7 @@ export class LassoStore {
 				? weighted.map(w => w / totalPop)
 				: new Array(PETAL_VARS.length).fill(0);
 
-			const normalizedValues = this.normalize(rawValues, provAvg);
+			const normalizedValues = normalizeValues(rawValues, provAvg);
 
 			const zone: Zone = {
 				id,

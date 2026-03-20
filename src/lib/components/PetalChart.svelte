@@ -12,7 +12,7 @@
 		size?: number;
 	} = $props();
 
-	const pad = 50;
+	const pad = 75;
 	const vw = $derived(size + 2 * pad);
 	const vh = $derived(size + 2 * pad);
 	const cx = $derived(vw / 2);
@@ -78,7 +78,7 @@
 	}
 
 	function labelPos(i: number): { x: number; y: number; anchor: string } {
-		const dist = maxR * 1.22;
+		const dist = maxR * 1.15;
 		const x = cx + Math.cos(angles[i]) * dist;
 		const y = cy + Math.sin(angles[i]) * dist;
 		const anchor = Math.abs(Math.cos(angles[i])) < 0.3 ? 'middle'
@@ -86,7 +86,7 @@
 		return { x, y, anchor };
 	}
 
-	const LINE_MAX = 12;
+	const LINE_MAX = 14;
 
 	function splitLabel(text: string): string[] {
 		if (text.length <= LINE_MAX) return [text];
@@ -120,7 +120,7 @@
 	<circle cx={cx} cy={cy} r={refR}
 		fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1" stroke-dasharray="4 3" />
 	<text x={cx + refR + 4} y={cy - 4}
-		fill="rgba(255,255,255,0.45)" font-size="8" font-family="JetBrains Mono, monospace">
+		fill="rgba(255,255,255,0.45)" font-size="8" font-family="system-ui, sans-serif">
 		prov.
 	</text>
 
@@ -158,7 +158,7 @@
 		{@const offsetY = -(lines.length - 1) * 7}
 		<text x={pos.x} y={pos.y + offsetY}
 			text-anchor={pos.anchor} dominant-baseline="middle"
-			fill="#e2e8f0" font-size="13" font-weight="500" font-family="JetBrains Mono, monospace">
+			fill="#e2e8f0" font-size="11" font-weight="500" font-family="system-ui, sans-serif">
 			{#each lines as line, li}
 				<tspan x={pos.x} dy={li === 0 ? 0 : 15}>{line}</tspan>
 			{/each}

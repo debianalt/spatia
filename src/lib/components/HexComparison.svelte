@@ -37,7 +37,7 @@
 
 	<!-- Petal chart (normalized vs provincial avg) -->
 	{#if petalLayers.length > 0 && petalLabels.length >= 3}
-		<PetalChart layers={petalLayers} labels={petalLabels} size={420} />
+		<PetalChart layers={petalLayers} labels={petalLabels} size={340} />
 		<div class="hc-ref-note">
 			<span class="hc-ref-dash"></span> 50 = {i18n.t('hex.provAvg') ?? 'prov. avg'}
 		</div>

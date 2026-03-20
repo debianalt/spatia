@@ -267,6 +267,22 @@ const dict: Record<string, Record<Locale, string>> = {
 	'hexZone.title': { es: 'Zonas hexagonales', en: 'Hex zones', gn: 'Hexágono zona' },
 	'hex.resolution': { es: 'Resolución H3', en: 'H3 resolution', gn: 'H3 tuichakue' },
 	'hex.loading': { es: 'Cargando hexágonos...', en: 'Loading hexagons...', gn: 'Oñemyenyhẽ hexágono...' },
+
+	// ── Welcome panel ─────────────────────────────────────────────────────
+	'side.welcome.status': { es: 'En desarrollo', en: 'Under development', gn: 'Oñemoĩhína' },
+	'side.welcome.desc': {
+		es: 'Plataforma de análisis territorial que integra datos censales, ambientales y socioeconómicos a escala de radio censal y hexágono H3. Explorá indicadores, compará zonas y generá diagnósticos con inteligencia artificial.',
+		en: 'Territorial analysis platform integrating census, environmental and socioeconomic data at census tract and H3 hexagon scale. Explore indicators, compare zones and generate AI-powered diagnostics.',
+		gn: "Yvy rekokatu plataforma omoĩva papapy, tekoha ha teko porã mba'ekuaa radio ha H3 hexágono rupi. Ehecha, ñembojoja ha emoheñói diagnóstico IA ndive."
+	},
+	'side.welcome.pro': { es: 'Spatia Pro', en: 'Spatia Pro', gn: 'Spatia Pro' },
+	'side.welcome.pro.ia': { es: 'Asistente IA con contexto territorial completo', en: 'AI assistant with full territorial context', gn: "IA pytyvõhára yvy rekokatu reheve" },
+	'side.welcome.pro.pdf': { es: 'Reportes PDF automáticos por zona o radio', en: 'Automatic PDF reports by zone or tract', gn: "PDF reporte zona térã radio rupi" },
+	'side.welcome.pro.method': { es: 'Metodología y fuentes documentadas en cada reporte', en: 'Documented methodology and sources in every report', gn: "Mba'eichapa ha moñe'ẽha reporte pepápe" },
+	'side.welcome.pro.multi': { es: 'Análisis multi-capa con exportación de datos', en: 'Multi-layer analysis with data export', gn: "Mba'ekuaa heta capa ndive, exporta mba'ekuaa" },
+	'side.welcome.pro.support': { es: 'Soporte técnico prioritario', en: 'Priority technical support', gn: "Pytyvõ técnico tenondegua" },
+	'side.welcome.pro.cta': { es: 'Solicitar acceso', en: 'Request access', gn: 'Ejerure jeike' },
+	'side.welcome.backed': { es: 'Con el apoyo de', en: 'Supported by', gn: 'Pytyvõ reheve' },
 } as any;
 
 class I18nStore {

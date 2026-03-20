@@ -49,7 +49,7 @@
 	}
 </script>
 
-<div class="sidebar absolute top-3 right-3 z-10 rounded-lg p-3 px-4 border border-border max-w-[420px] text-xs leading-relaxed"
+<div class="sidebar absolute top-0 right-0 bottom-0 z-10 rounded-l-lg p-3 px-4 border-l border-border w-[440px] text-xs leading-relaxed"
 	style="background: var(--color-panel); backdrop-filter: blur(8px);">
 
 	{#if hexStore.hexZones.length > 0}
@@ -91,7 +91,60 @@
 			{/each}
 		</div>
 	{:else}
-		<p class="text-text-dim text-[10px] mt-1.5">{i18n.t('side.hover')}</p>
+		<!-- Welcome panel -->
+		<div class="chart-scroll flex flex-col gap-4 pt-1">
+			<!-- Bloque 1: Branding -->
+			<div class="flex flex-col gap-1">
+				<span class="text-lg font-bold text-accent">Spatia</span>
+				<span class="text-text-muted italic text-[11px]">{i18n.t('header.subtitle')}</span>
+				<span class="self-start mt-1 border border-accent text-accent text-[10px] px-2 py-0.5 rounded-full">{i18n.t('side.welcome.status')}</span>
+			</div>
+
+			<!-- Bloque 2: Pitch -->
+			<p class="text-text-muted text-[11px] leading-relaxed">
+				{i18n.t('side.welcome.desc')}
+			</p>
+
+			<!-- Bloque 3: Spatia Pro -->
+			<div class="flex flex-col gap-2">
+				<span class="text-sm font-semibold text-text">{i18n.t('side.welcome.pro')}</span>
+				<ul class="flex flex-col gap-1.5 text-[11px] text-text-muted">
+					<li class="flex items-start gap-1.5">
+						<span class="text-accent mt-px">✓</span>
+						<span>{i18n.t('side.welcome.pro.ia')}</span>
+					</li>
+					<li class="flex items-start gap-1.5">
+						<span class="text-accent mt-px">✓</span>
+						<span>{i18n.t('side.welcome.pro.pdf')}</span>
+					</li>
+					<li class="flex items-start gap-1.5">
+						<span class="text-accent mt-px">✓</span>
+						<span>{i18n.t('side.welcome.pro.method')}</span>
+					</li>
+					<li class="flex items-start gap-1.5">
+						<span class="text-accent mt-px">✓</span>
+						<span>{i18n.t('side.welcome.pro.multi')}</span>
+					</li>
+					<li class="flex items-start gap-1.5">
+						<span class="text-accent mt-px">✓</span>
+						<span>{i18n.t('side.welcome.pro.support')}</span>
+					</li>
+				</ul>
+				<a href="mailto:spatia@conicet.gov.ar"
+					class="self-start mt-1 bg-accent text-white text-[11px] font-medium px-4 py-1.5 rounded-md hover:opacity-90 transition-opacity">
+					{i18n.t('side.welcome.pro.cta')}
+				</a>
+			</div>
+
+			<!-- Bloque 4: Instituciones -->
+			<div class="flex flex-col gap-1 border-t border-border/30 pt-3">
+				<span class="text-text-dim text-[10px]">{i18n.t('side.welcome.backed')}:</span>
+				<span class="text-text-dim text-[10px]">CONICET · UNAM · INREFRO</span>
+			</div>
+
+			<!-- Bloque 5: Hint -->
+			<p class="text-text-dim text-[10px] mt-auto">{i18n.t('side.hover')}</p>
+		</div>
 	{/if}
 
 	<Legend {mapStore} {lensStore} />
@@ -99,7 +152,6 @@
 
 <style>
 	.sidebar {
-		max-height: calc(100vh - 80px);
 		display: flex;
 		flex-direction: column;
 	}
