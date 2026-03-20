@@ -39,7 +39,7 @@
 					{@const score = row[cfg.scoreCol] ?? 0}
 					<button class="radio-row" onclick={() => onSelectRadio(redcode)}>
 						<span class="radio-code">{redcode}</span>
-						<span class="radio-score" style:color={cfg.color}>{score.toFixed(2)}</span>
+						<span class="radio-score">{score.toFixed(2)}</span>
 					</button>
 				{/each}
 			</div>
@@ -48,9 +48,8 @@
 		<!-- Department list -->
 		<div class="dpto-list">
 			<div class="dpto-list-header">
-				<span class="header-icon">{cfg.icon}</span>
 				<span class="header-label">{cfg.label[i18n.locale as 'es' | 'en' | 'gn']}</span>
-				<span class="header-count" style:color={cfg.color}>{lensStore.opportunityCount} {i18n.t('lens.opportunities')}</span>
+				<span class="header-count">{lensStore.opportunityCount} {i18n.t('lens.opportunities')}</span>
 			</div>
 			<div class="dpto-items">
 				{#each summary as dept}
@@ -77,9 +76,8 @@
 		margin-bottom: 8px;
 		flex-wrap: wrap;
 	}
-	.header-icon { font-size: 14px; }
 	.header-label { font-size: 11px; font-weight: 600; color: #e2e8f0; }
-	.header-count { font-size: 10px; font-weight: 500; opacity: 0.85; margin-left: auto; }
+	.header-count { font-size: 10px; font-weight: 500; color: #e2e8f0; opacity: 0.85; margin-left: auto; }
 	.dpto-items {
 		display: flex;
 		flex-direction: column;
@@ -179,6 +177,6 @@
 		width: 100%;
 	}
 	.radio-row:hover { background: rgba(255,255,255,0.06); }
-	.radio-code { font-size: 10px; color: #94a3b8; font-family: monospace; }
-	.radio-score { font-size: 10px; font-weight: 600; }
+	.radio-code { font-size: 10px; color: #94a3b8; font-family: 'JetBrains Mono', monospace; }
+	.radio-score { font-size: 10px; font-weight: 600; color: #e2e8f0; }
 </style>

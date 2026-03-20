@@ -5,42 +5,41 @@
 	import { i18n } from '$lib/stores/i18n.svelte';
 
 	let {
+		entries,
 		lensStore,
-		redcodeA,
-		redcodeB
+		onRemoveRadio
 	}: {
+		entries: Array<{redcode: string, color: string}>;
 		lensStore: LensStore;
-		redcodeA: string;
-		redcodeB: string;
+		onRemoveRadio: (redcode: string) => void;
 	} = $props();
 
 	const lens = $derived(lensStore.activeLens);
 	const cfg = $derived(lens ? LENS_CONFIG[lens] : null);
-	const scoresA = $derived(lensStore.getSubScores(redcodeA));
-	const scoresB = $derived(lensStore.getSubScores(redcodeB));
 	const subLabels = $derived(cfg ? cfg.subLabelKeys.map(k => i18n.t(k)) : []);
-	const dptoA = $derived(lensStore.getDpto(redcodeA));
-	const dptoB = $derived(lensStore.getDpto(redcodeB));
-	const totalA = $derived(lensStore.getScore(redcodeA));
-	const totalB = $derived(lensStore.getScore(redcodeB));
 
-	const OVERLAY_COLOR = '#a78bfa';
+	// Build layers for PetalChart
+	const layers = $derived(
+		entries.map(e => ({
+			values: lensStore.getSubScores(e.redcode),
+			color: e.color
+		}))
+	);
 
-	// Find biggest delta dimension
-	const biggestDelta = $derived.by(() => {
-		if (!cfg) return { label: '', delta: 0, idx: 0 };
-		let maxDelta = 0;
-		let maxIdx = 0;
-		for (let i = 0; i < 6; i++) {
-			const d = Math.abs(scoresA[i] - scoresB[i]);
-			if (d > maxDelta) { maxDelta = d; maxIdx = i; }
-		}
-		return {
-			label: subLabels[maxIdx] ?? '',
-			delta: scoresA[maxIdx] - scoresB[maxIdx],
-			idx: maxIdx
-		};
-	});
+	// Scores per entry
+	const scores = $derived(
+		entries.map(e => ({
+			redcode: e.redcode,
+			color: e.color,
+			total: lensStore.getScore(e.redcode),
+			dpto: lensStore.getDpto(e.redcode)
+		}))
+	);
+
+	// SubScores per entry for dimension bars
+	const allSubScores = $derived(
+		entries.map(e => lensStore.getSubScores(e.redcode))
+	);
 
 	function shortCode(rc: string): string {
 		return rc.length > 5 ? '...' + rc.slice(-4) : rc;
@@ -51,75 +50,60 @@
 	<div class="comparison">
 		<!-- Identifiers -->
 		<div class="comp-ids">
-			<span class="comp-id" style:color={cfg.color}>
-				<span class="comp-dot" style:background={cfg.color}></span>
-				{shortCode(redcodeA)} <span class="comp-dpto">({dptoA})</span>
-			</span>
-			<span class="comp-vs">vs</span>
-			<span class="comp-id" style:color={OVERLAY_COLOR}>
-				<span class="comp-dot" style:background={OVERLAY_COLOR}></span>
-				{shortCode(redcodeB)} <span class="comp-dpto">({dptoB})</span>
-			</span>
+			{#each entries as entry, idx}
+				{#if idx > 0}
+					<span class="comp-vs">vs</span>
+				{/if}
+				<span class="comp-id">
+					<span class="comp-dot" style:background={entry.color}></span>
+					{shortCode(entry.redcode)} <span class="comp-dpto">({scores[idx]?.dpto})</span>
+				</span>
+			{/each}
 		</div>
 
 		<!-- Overlay petal chart -->
 		<PetalChart
-			values={scoresA}
+			{layers}
 			labels={subLabels}
-			color={cfg.color}
-			overlayValues={scoresB}
-			overlayColor={OVERLAY_COLOR}
 			size={240}
 		/>
 
 		<!-- Score comparison -->
 		<div class="comp-scores">
-			<span style:color={cfg.color}>{totalA.toFixed(0)}</span>
-			<span class="comp-vs-score">vs</span>
-			<span style:color={OVERLAY_COLOR}>{totalB.toFixed(0)}</span>
+			{#each scores as s, idx}
+				{#if idx > 0}
+					<span class="comp-vs-score">vs</span>
+				{/if}
+				<span class="comp-score-val">{s.total.toFixed(0)}</span>
+			{/each}
 		</div>
 
-		<!-- Delta bars -->
-		<div class="delta-section">
+		<!-- Dimension bars: N mini-bars per dimension -->
+		<div class="dim-section">
 			{#each subLabels as label, i}
-				{@const delta = scoresA[i] - scoresB[i]}
-				{@const pct = Math.abs(delta) / 100 * 100}
-				<div class="delta-row">
-					<div class="delta-label">{label}</div>
-					<div class="delta-bar-container">
-						{#if delta >= 0}
-							<div class="delta-bar-bg">
-								<div class="delta-bar positive" style:width="{pct}%" style:background={cfg.color}></div>
+				<div class="dim-row">
+					<div class="dim-label">{label}</div>
+					<div class="dim-bars-container">
+						{#each entries as entry, ei}
+							{@const val = allSubScores[ei]?.[i] ?? 0}
+							<div class="dim-bar-track">
+								<div class="dim-bar-fill" style:width="{val}%" style:background={entry.color}></div>
 							</div>
-						{:else}
-							<div class="delta-bar-bg">
-								<div class="delta-bar negative" style:width="{pct}%" style:background={OVERLAY_COLOR}></div>
-							</div>
-						{/if}
+						{/each}
 					</div>
-					<div class="delta-value" style:color={delta >= 0 ? cfg.color : OVERLAY_COLOR}>
-						{delta > 0 ? '+' : ''}{delta.toFixed(0)}
+					<div class="dim-values">
+						{#each entries as entry, ei}
+							{@const val = allSubScores[ei]?.[i] ?? 0}
+							<span class="dim-val">{val.toFixed(0)}</span>
+						{/each}
 					</div>
 				</div>
 			{/each}
 		</div>
 
-		<!-- Most notable difference -->
-		<div class="notable-diff">
-			<div class="diff-title">{i18n.t('card.difference')}</div>
-			<div class="diff-text">
-				<strong>{biggestDelta.label}</strong>:
-				{#if biggestDelta.delta > 0}
-					{shortCode(redcodeA)} supera en {Math.abs(biggestDelta.delta).toFixed(0)} pts
-				{:else}
-					{shortCode(redcodeB)} supera en {Math.abs(biggestDelta.delta).toFixed(0)} pts
-				{/if}
-			</div>
-		</div>
-
-		<!-- Back button -->
-		<button class="back-btn" onclick={() => lensStore.cancelComparison()}>
-			← Volver a ficha
+		<!-- Back button: remove last added radio -->
+		<button class="back-btn" onclick={() => onRemoveRadio(entries[entries.length - 1].redcode)}>
+			{i18n.t('card.back')}
 		</button>
 	</div>
 {/if}
@@ -132,8 +116,9 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 8px;
+		gap: 6px;
 		margin-bottom: 6px;
+		flex-wrap: wrap;
 	}
 	.comp-id {
 		display: flex;
@@ -141,6 +126,7 @@
 		gap: 4px;
 		font-size: 10px;
 		font-weight: 600;
+		color: #e2e8f0;
 	}
 	.comp-dot {
 		width: 8px;
@@ -165,67 +151,64 @@
 		font-size: 18px;
 		font-weight: 700;
 		margin: 4px 0 8px;
+		flex-wrap: wrap;
 	}
 	.comp-vs-score {
 		color: #475569;
 		font-size: 11px;
 		font-weight: 400;
 	}
-	.delta-section {
+	.comp-score-val {
+		color: #e2e8f0;
+	}
+	.dim-section {
 		margin: 6px 0;
 	}
-	.delta-row {
+	.dim-row {
 		display: flex;
-		align-items: center;
+		align-items: flex-start;
 		gap: 4px;
-		margin-bottom: 3px;
+		margin-bottom: 4px;
 	}
-	.delta-label {
+	.dim-label {
 		width: 65px;
 		flex-shrink: 0;
 		color: #94a3b8;
 		font-size: 9px;
 		text-align: right;
+		padding-top: 1px;
 	}
-	.delta-bar-container {
+	.dim-bars-container {
 		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
 	}
-	.delta-bar-bg {
-		height: 6px;
+	.dim-bar-track {
+		height: 5px;
 		background: #1e293b;
 		border-radius: 3px;
 		overflow: hidden;
 	}
-	.delta-bar {
+	.dim-bar-fill {
 		height: 100%;
 		border-radius: 3px;
 		transition: width 0.3s ease;
 		min-width: 2px;
 	}
-	.delta-value {
-		width: 30px;
-		text-align: right;
-		font-size: 9px;
+	.dim-values {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0;
+		width: 28px;
+		flex-shrink: 0;
+	}
+	.dim-val {
+		font-size: 8px;
 		font-weight: 600;
-	}
-	.notable-diff {
-		margin-top: 8px;
-		padding: 6px 8px;
-		background: rgba(255, 255, 255, 0.03);
-		border-radius: 6px;
-		border: 1px solid #1e293b;
-	}
-	.diff-title {
-		font-size: 9px;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: #64748b;
-		margin-bottom: 3px;
-	}
-	.diff-text {
+		line-height: 7px;
 		color: #cbd5e1;
-		font-size: 10px;
 	}
 	.back-btn {
 		margin-top: 8px;

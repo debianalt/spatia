@@ -24,13 +24,12 @@
 				style:--lc={cfg.color}
 				onclick={() => lensStore.setLens(id)}
 			>
-				<span class="lens-icon">{cfg.icon}</span>
 				<span class="lens-label">{cfg.label[i18n.locale as 'es' | 'en' | 'gn']}</span>
 			</button>
 		{/each}
 	</div>
 	{#if lensStore.activeLens}
-		<div class="lens-counter" style:color={LENS_CONFIG[lensStore.activeLens].color}>
+		<div class="lens-counter">
 			{#if !lensStore.dataLoaded}
 				{i18n.t('lens.loading')}
 			{:else}
@@ -68,18 +67,14 @@
 	}
 	.lens-pill:hover {
 		border-color: var(--lc);
-		color: var(--lc);
+		color: #e2e8f0;
 		background: color-mix(in srgb, var(--lc) 10%, transparent);
 	}
 	.lens-pill.active {
 		border-color: var(--lc);
-		color: var(--lc);
+		color: #e2e8f0;
 		background: color-mix(in srgb, var(--lc) 20%, transparent);
 		font-weight: 600;
-	}
-	.lens-icon {
-		font-size: 13px;
-		line-height: 1;
 	}
 	.lens-label {
 		line-height: 1;
@@ -87,6 +82,7 @@
 	.lens-counter {
 		font-size: 10px;
 		font-weight: 500;
+		color: #e2e8f0;
 		opacity: 0.9;
 	}
 </style>

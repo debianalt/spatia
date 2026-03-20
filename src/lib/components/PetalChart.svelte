@@ -3,18 +3,12 @@
 	import { cubicOut } from 'svelte/easing';
 
 	let {
-		values,
+		layers,
 		labels,
-		color,
-		overlayValues,
-		overlayColor,
 		size = 240
 	}: {
-		values: number[];
+		layers: Array<{values: number[], color: string}>;
 		labels: string[];
-		color: string;
-		overlayValues?: number[];
-		overlayColor?: string;
 		size?: number;
 	} = $props();
 
@@ -25,45 +19,36 @@
 	const cy = $derived(vh / 2);
 	const maxR = $derived(size / 2 * 0.78);
 
-	// Animated values
-	const animVals = tweened([0, 0, 0, 0, 0, 0], { duration: 400, easing: cubicOut });
-	const animOverlay = tweened([0, 0, 0, 0, 0, 0], { duration: 400, easing: cubicOut });
+	// Flatten all layer values into a single tweened array, then slice per layer
+	const animAll = tweened([] as number[], {
+		duration: 400,
+		easing: cubicOut,
+		interpolate: (a, b) => (t) => {
+			const len = Math.max(a.length, b.length);
+			const result = new Array(len);
+			for (let i = 0; i < len; i++) {
+				const from = a[i] ?? 0;
+				const to = b[i] ?? 0;
+				result[i] = from + (to - from) * t;
+			}
+			return result;
+		}
+	});
 
-	$effect(() => { animVals.set(values); });
-	$effect(() => { animOverlay.set(overlayValues ?? [0, 0, 0, 0, 0, 0]); });
+	$effect(() => {
+		const flat: number[] = [];
+		for (const layer of layers) {
+			for (let i = 0; i < 6; i++) flat.push(layer.values[i] ?? 0);
+		}
+		animAll.set(flat);
+	});
+
+	function layerValues(layerIdx: number): number[] {
+		const start = layerIdx * 6;
+		return $animAll.slice(start, start + 6);
+	}
 
 	const angles = [0, 1, 2, 3, 4, 5].map(i => (Math.PI * 2 * i) / 6 - Math.PI / 2);
-
-	function petalPath(vals: number[]): string {
-		const pts: string[] = [];
-		for (let i = 0; i < 6; i++) {
-			const v = Math.max(vals[i] ?? 0, 0) / 100;
-			const dist = v * maxR;
-			const angle = angles[i];
-			const tipX = cx + Math.cos(angle) * dist;
-			const tipY = cy + Math.sin(angle) * dist;
-
-			// Control points perpendicular to axis for petal width
-			const w = maxR * 0.18;
-			const prevAngle = angles[(i + 5) % 6];
-			const nextAngle = angles[(i + 1) % 6];
-			const midPrev = (angle + prevAngle) / 2;
-			const midNext = (angle + nextAngle) / 2;
-			const cp1x = cx + Math.cos(midPrev) * dist * 0.5;
-			const cp1y = cy + Math.sin(midPrev) * dist * 0.5;
-			const cp2x = cx + Math.cos(midNext) * dist * 0.5;
-			const cp2y = cy + Math.sin(midNext) * dist * 0.5;
-
-			pts.push(`Q ${cp1x},${cp1y} ${tipX},${tipY} Q ${cp2x},${cp2y}`);
-		}
-		// Close path by returning to first point
-		const v0 = Math.max(vals[0] ?? 0, 0) / 100;
-		const startX = cx + Math.cos(angles[0]) * v0 * maxR;
-		const startY = cy + Math.sin(angles[0]) * v0 * maxR;
-
-		// Simpler approach: connect center → tip for each petal as segments
-		return buildPolygonPath(vals);
-	}
 
 	function buildPolygonPath(vals: number[]): string {
 		const points: [number, number][] = [];
@@ -73,15 +58,11 @@
 			const angle = angles[i];
 			points.push([cx + Math.cos(angle) * dist, cy + Math.sin(angle) * dist]);
 		}
-		// Build smooth closed path with bezier curves through petal tips
 		let d = `M ${points[0][0]},${points[0][1]}`;
 		for (let i = 0; i < 6; i++) {
-			const curr = points[i];
 			const next = points[(i + 1) % 6];
-			// Curve through center-ish for petal effect
 			const cpDist = maxR * 0.12;
 			const midAngle = (angles[i] + angles[(i + 1) % 6]) / 2;
-			// Control point pulled towards center
 			const cpx = cx + Math.cos(midAngle) * cpDist;
 			const cpy = cy + Math.sin(midAngle) * cpDist;
 			d += ` Q ${cpx},${cpy} ${next[0]},${next[1]}`;
@@ -121,33 +102,32 @@
 			stroke="rgba(255,255,255,0.25)" stroke-width="0.7" />
 	{/each}
 
-	<!-- Overlay petal (comparison) -->
-	{#if overlayValues}
-		<path d={buildPolygonPath($animOverlay)}
-			fill={overlayColor ?? '#94a3b8'} fill-opacity="0.2"
-			stroke={overlayColor ?? '#94a3b8'} stroke-width="1" stroke-opacity="0.5" />
-	{/if}
-
-	<!-- Main petal -->
-	<path d={buildPolygonPath($animVals)}
-		fill={color} fill-opacity="0.35"
-		stroke={color} stroke-width="1.5" stroke-opacity="0.9" />
-
-	<!-- Dot at each tip -->
-	{#each [0, 1, 2, 3, 4, 5] as i}
-		{@const v = Math.max($animVals[i] ?? 0, 0) / 100}
-		<circle
-			cx={cx + Math.cos(angles[i]) * v * maxR}
-			cy={cy + Math.sin(angles[i]) * v * maxR}
-			r="3" fill={color} />
+	<!-- Layers: first drawn first (bottom), last on top -->
+	{#each layers as layer, li}
+		{@const vals = layerValues(li)}
+		<path d={buildPolygonPath(vals)}
+			fill={layer.color} fill-opacity="0.25"
+			stroke={layer.color} stroke-width="1.5" stroke-opacity="0.7" />
 	{/each}
+
+	<!-- Dots only for first layer -->
+	{#if layers.length > 0}
+		{@const vals0 = layerValues(0)}
+		{#each [0, 1, 2, 3, 4, 5] as i}
+			{@const v = Math.max(vals0[i] ?? 0, 0) / 100}
+			<circle
+				cx={cx + Math.cos(angles[i]) * v * maxR}
+				cy={cy + Math.sin(angles[i]) * v * maxR}
+				r="3" fill={layers[0].color} />
+		{/each}
+	{/if}
 
 	<!-- Labels -->
 	{#each [0, 1, 2, 3, 4, 5] as i}
 		{@const pos = labelPos(i)}
 		<text x={pos.x} y={pos.y}
 			text-anchor={pos.anchor} dominant-baseline="middle"
-			fill="#e2e8f0" font-size="12" font-weight="500" font-family="Inter, sans-serif">
+			fill="#e2e8f0" font-size="12" font-weight="500" font-family="JetBrains Mono, monospace">
 			{labels[i] ?? ''}
 		</text>
 	{/each}

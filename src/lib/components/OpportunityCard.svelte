@@ -3,25 +3,38 @@
 	import PetalComparison from './PetalComparison.svelte';
 	import { LENS_CONFIG } from '$lib/config';
 	import type { LensStore } from '$lib/stores/lens.svelte';
+	import type { MapStore } from '$lib/stores/map.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
 
-	let { lensStore }: { lensStore: LensStore } = $props();
+	let {
+		mapStore,
+		lensStore,
+		onRemoveRadio
+	}: {
+		mapStore: MapStore;
+		lensStore: LensStore;
+		onRemoveRadio: (redcode: string) => void;
+	} = $props();
 
 	const lens = $derived(lensStore.activeLens);
-	const redcode = $derived(lensStore.selectedOpportunity);
-	const compRedcode = $derived(lensStore.comparisonRadio);
 	const cfg = $derived(lens ? LENS_CONFIG[lens] : null);
+
+	// Derive entries with map colors from mapStore selection
+	const entries = $derived(
+		[...mapStore.selectedRadios.entries()].map(([rc, data]) => ({
+			redcode: rc,
+			color: data.color
+		}))
+	);
+	const redcode = $derived(entries[0]?.redcode ?? '');
+
+	// Primary radio data
 	const score = $derived(redcode ? lensStore.getScore(redcode) : 0);
 	const subScores = $derived(redcode ? lensStore.getSubScores(redcode) : [0,0,0,0,0,0]);
 	const subLabels = $derived(cfg ? cfg.subLabelKeys.map(k => i18n.t(k)) : []);
 	const notables = $derived(redcode ? lensStore.getNotables(redcode) : []);
 	const risk = $derived(redcode ? lensStore.getRisk(redcode) : '');
 	const dpto = $derived(redcode ? lensStore.getDpto(redcode) : '');
-
-	// Comparison data
-	const compSubScores = $derived(compRedcode ? lensStore.getSubScores(compRedcode) : null);
-	const compScore = $derived(compRedcode ? lensStore.getScore(compRedcode) : 0);
-	const compDpto = $derived(compRedcode ? lensStore.getDpto(compRedcode) : '');
 
 	function bestDimension(): string {
 		if (!cfg || subScores.length === 0) return '';
@@ -42,33 +55,32 @@
 				<div class="card-dpto">{dpto}</div>
 			</div>
 			<div class="card-header-right">
-				<span class="card-badge" style:background="{cfg.color}20" style:color={cfg.color} style:border-color="{cfg.color}40">
-					{cfg.icon} {cfg.label[i18n.locale as 'es' | 'en' | 'gn']}
+				<span class="card-badge" style:background="{cfg.color}20" style:border-color="{cfg.color}40">
+					{cfg.label[i18n.locale as 'es' | 'en' | 'gn']}
 				</span>
-				<button class="card-close" onclick={() => lensStore.clearSelection()}>×</button>
+				<button class="card-close" onclick={() => onRemoveRadio(redcode)}>×</button>
 			</div>
 		</div>
 
 		<!-- Score -->
-		<div class="card-score" style:color={cfg.color}>
+		<div class="card-score">
 			{i18n.t('card.score')}: {score.toFixed(0)}/100
 		</div>
 
-		{#if compRedcode && compSubScores}
-			<!-- Comparison mode -->
+		{#if entries.length >= 2}
+			<!-- Comparison mode: 2+ radios selected -->
 			<PetalComparison
+				{entries}
 				{lensStore}
-				redcodeA={redcode}
-				redcodeB={compRedcode}
+				{onRemoveRadio}
 			/>
 		{:else}
 			<!-- Single radio: petal chart -->
 			<div class="card-section">
 				<div class="card-section-title">{i18n.t('card.territory')}</div>
 				<PetalChart
-					values={subScores}
+					layers={[{values: subScores, color: entries[0]?.color ?? cfg.color}]}
 					labels={subLabels}
-					color={cfg.color}
 					size={240}
 				/>
 			</div>
@@ -102,20 +114,6 @@
 				</div>
 			{/if}
 
-			<!-- Actions -->
-			<div class="card-actions">
-				<button class="card-btn secondary" onclick={() => lensStore.startComparison()}>
-					{i18n.t('card.compare')}
-				</button>
-			</div>
-		{/if}
-
-		<!-- Comparison prompt -->
-		{#if lensStore.comparisonMode && !compRedcode}
-			<div class="comparison-prompt" style:border-color="{cfg.color}40">
-				{i18n.t('lens.comparePrompt')}
-				<button class="cancel-btn" onclick={() => lensStore.cancelComparison()}>×</button>
-			</div>
 		{/if}
 	</div>
 {/if}
@@ -154,6 +152,7 @@
 		border: 1px solid;
 		font-size: 10px;
 		font-weight: 600;
+		color: #e2e8f0;
 	}
 	.card-close {
 		background: none;
@@ -168,6 +167,7 @@
 	.card-score {
 		font-size: 14px;
 		font-weight: 700;
+		color: #e2e8f0;
 		margin-bottom: 8px;
 	}
 	.card-section {
@@ -210,50 +210,4 @@
 		color: #fbbf24;
 		font-size: 10px;
 	}
-	.card-actions {
-		display: flex;
-		gap: 6px;
-		margin-top: 8px;
-	}
-	.card-btn {
-		flex: 1;
-		padding: 5px 8px;
-		border-radius: 6px;
-		font-size: 10px;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.15s;
-	}
-	.card-btn.secondary {
-		background: rgba(255, 255, 255, 0.06);
-		border: 1px solid #334155;
-		color: #94a3b8;
-	}
-	.card-btn.secondary:hover {
-		border-color: #60a5fa;
-		color: #60a5fa;
-	}
-	.comparison-prompt {
-		margin-top: 8px;
-		padding: 6px 10px;
-		border-radius: 6px;
-		border: 1px dashed;
-		color: #94a3b8;
-		font-size: 10px;
-		text-align: center;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 8px;
-	}
-	.cancel-btn {
-		background: none;
-		border: none;
-		color: #64748b;
-		font-size: 14px;
-		cursor: pointer;
-		padding: 0;
-		line-height: 1;
-	}
-	.cancel-btn:hover { color: #e0e0e0; }
 </style>

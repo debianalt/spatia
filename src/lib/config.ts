@@ -4,10 +4,23 @@ function getBase(): string {
 	return R2_PROD;
 }
 
-export function getTilesUrl(name: 'buildings' | 'radios'): string {
+export function getTilesUrl(name: 'buildings' | 'radios' | 'terrain'): string {
+	if (name === 'terrain') {
+		return '/api/terrain/{z}/{x}/{y}.png';
+	}
 	const files = { buildings: 'tiles/buildings-v4.pmtiles', radios: 'tiles/radios-v2.pmtiles' };
 	return `pmtiles://${getBase()}/${files[name]}`;
 }
+
+export const TERRAIN_CONFIG = {
+	exaggeration: 1.5,
+	hillshade: {
+		shadowColor: '#0a0a1a',
+		highlightColor: '#8899bb',
+		illuminationDirection: 315,
+		exaggeration: 0.7
+	}
+} as const;
 
 export function getParquetUrl(name: string): string {
 	return `${getBase()}/data/${name}.parquet`;
@@ -27,7 +40,7 @@ export const BASEMAP = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/st
 export const MAP_INIT = {
 	center: [-54.4, -27.0] as [number, number],
 	zoom: 7.5,
-	pitch: 31,
+	pitch: 30,
 	bearing: -15,
 	minZoom: 6,
 	maxZoom: 18
@@ -61,7 +74,7 @@ export interface LensConfig {
 export const LENS_CONFIG: Record<LensId, LensConfig> = {
 	invertir: {
 		label: { es: 'Invertir', en: 'Invest', gn: 'Moĩ viru' },
-		icon: '📈',
+		icon: '',
 		color: '#f59e0b',
 		scoreCol: 'inv_score',
 		subCols: ['inv_sub1', 'inv_sub2', 'inv_sub3', 'inv_sub4', 'inv_sub5', 'inv_sub6'],
@@ -70,7 +83,7 @@ export const LENS_CONFIG: Record<LensId, LensConfig> = {
 	},
 	producir: {
 		label: { es: 'Producir', en: 'Produce', gn: 'Mba\'apo' },
-		icon: '🌱',
+		icon: '',
 		color: '#22c55e',
 		scoreCol: 'prod_score',
 		subCols: ['prod_sub1', 'prod_sub2', 'prod_sub3', 'prod_sub4', 'prod_sub5', 'prod_sub6'],
@@ -79,7 +92,7 @@ export const LENS_CONFIG: Record<LensId, LensConfig> = {
 	},
 	servir: {
 		label: { es: 'Servir', en: 'Serve', gn: 'Pytyvõ' },
-		icon: '🏥',
+		icon: '',
 		color: '#3b82f6',
 		scoreCol: 'serv_score',
 		subCols: ['serv_sub1', 'serv_sub2', 'serv_sub3', 'serv_sub4', 'serv_sub5', 'serv_sub6'],
@@ -88,7 +101,7 @@ export const LENS_CONFIG: Record<LensId, LensConfig> = {
 	},
 	vivir: {
 		label: { es: 'Vivir', en: 'Live', gn: 'Ñemity' },
-		icon: '🏡',
+		icon: '',
 		color: '#06b6d4',
 		scoreCol: 'viv_score',
 		subCols: ['viv_sub1', 'viv_sub2', 'viv_sub3', 'viv_sub4', 'viv_sub5', 'viv_sub6'],

@@ -59,7 +59,7 @@
 		{#each [...radios.entries()] as [rc, data]}
 			<button
 				class="chip"
-				style="border-color: {data.color}; color: {data.color};"
+				style="border-color: {data.color}; color: #e2e8f0;"
 				onclick={() => onRemoveRadio(rc)}
 				title={i18n.t('side.deselect')}>
 				<span class="chip-dot" style="background: {data.color};"></span>
