@@ -201,36 +201,6 @@ export interface AnalysisConfig {
 }
 
 export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
-	// ── Invertir ──
-	{
-		id: 'territorial_profile_inv',
-		lensId: 'invertir',
-		titleKey: 'analysis.territorialProfile.title',
-		descKey: 'analysis.territorialProfile.desc',
-		icon: '🌸',
-		status: 'available',
-	},
-
-	// ── Producir ──
-	{
-		id: 'territorial_profile_prod',
-		lensId: 'producir',
-		titleKey: 'analysis.territorialProfile.title',
-		descKey: 'analysis.territorialProfile.desc',
-		icon: '🌸',
-		status: 'available',
-	},
-
-	// ── Servir ──
-	{
-		id: 'territorial_profile_serv',
-		lensId: 'servir',
-		titleKey: 'analysis.territorialProfile.title',
-		descKey: 'analysis.territorialProfile.desc',
-		icon: '🌸',
-		status: 'available',
-	},
-
 	// ── Vivir ──
 	{
 		id: 'flood_risk',
@@ -246,14 +216,6 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 			colorScale: 'flood',
 			legendKey: 'analysis.floodRisk.legend',
 		},
-	},
-	{
-		id: 'territorial_profile_viv',
-		lensId: 'vivir',
-		titleKey: 'analysis.territorialProfile.title',
-		descKey: 'analysis.territorialProfile.desc',
-		icon: '🌸',
-		status: 'available',
 	},
 ];
 
