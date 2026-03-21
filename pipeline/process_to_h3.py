@@ -70,9 +70,13 @@ def zonal_stats_rasterio(gdf: gpd.GeoDataFrame, raster_path: str, stat: str = "m
                     values.append(float(np.max(valid)))
                 else:
                     values.append(float(np.mean(valid)))
-            except Exception:
+            except (rasterio.errors.WindowError, IndexError, ValueError):
+                # Expected: hexagon outside raster extent or empty window
                 values.append(np.nan)
 
+    valid_count = sum(1 for v in values if not (v != v))  # NaN != NaN
+    print(f"  Zonal stats (masking): {valid_count}/{len(values)} hexagons with valid data "
+          f"({valid_count/len(values)*100:.1f}%)")
     return pd.Series(values, index=gdf.index)
 
 
@@ -100,9 +104,13 @@ def zonal_stats_sampling(gdf: gpd.GeoDataFrame, raster_path: str) -> pd.Series:
                     values.append(np.nan)
                 else:
                     values.append(float(val))
-            except Exception:
+            except IndexError:
+                # Expected: centroid falls outside raster extent
                 values.append(np.nan)
 
+    valid_count = sum(1 for v in values if not (v != v))  # NaN != NaN
+    print(f"  Zonal stats (sampling): {valid_count}/{len(values)} hexagons with valid data "
+          f"({valid_count/len(values)*100:.1f}%)")
     return pd.Series(values, index=gdf.index)
 
 

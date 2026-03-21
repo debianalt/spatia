@@ -24,14 +24,7 @@ from datetime import datetime, timedelta
 
 import ee
 
-
-# ── Configuration ──────────────────────────────────────────────────────────
-
-MISIONES_BBOX = [-55.95, -28.17, -53.60, -25.47]  # [W, S, E, N]
-VV_THRESHOLD_DB = -15  # dB threshold for water detection
-EXPORT_SCALE = 30  # metres per pixel (S1 GRD native ~10m, 30m for efficiency)
-GCS_BUCKET = "spatia-satellite"  # Google Cloud Storage bucket
-EXPORT_PREFIX = "flood"
+from config import MISIONES_BBOX, VV_THRESHOLD_DB, EXPORT_SCALE, GCS_BUCKET, EXPORT_PREFIX
 
 
 def authenticate():

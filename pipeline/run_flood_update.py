@@ -7,8 +7,9 @@ Runs the full pipeline:
   3. Poll GEE tasks until completion
   4. Download GeoTIFFs from GCS
   5. Aggregate to H3 hexagons (zonal stats -> parquet)
-  6. Upload parquet to Cloudflare R2
-  7. Print summary
+  6. Validate parquet output
+  7. Upload parquet to Cloudflare R2
+  8. Print summary
 
 Usage:
   python pipeline/run_flood_update.py                    # current extent (default)
@@ -23,10 +24,10 @@ import os
 import sys
 import time
 
-PIPELINE_DIR = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_DIR = os.path.join(PIPELINE_DIR, "output")
-GRID_PATH = os.path.join(OUTPUT_DIR, "hexagons.geojson")
-PARQUET_PATH = os.path.join(OUTPUT_DIR, "hex_flood_risk.parquet")
+from config import (
+    PIPELINE_DIR, OUTPUT_DIR, GRID_PATH, PARQUET_PATH,
+    GCS_BUCKET, R2_BUCKET, MIN_HEXAGONS, SCORE_RANGE,
+)
 
 
 def step(n, msg):
@@ -146,20 +147,36 @@ def run(args):
     print(f"  Saved {len(df):,} hexagons to {PARQUET_PATH}")
     print(f"  Score range: {df['flood_risk_score'].min():.1f} - {df['flood_risk_score'].max():.1f}")
 
-    # ── Step 6: Upload to R2 ───────────────────────────────────────
-    step(6, "Upload parquet to Cloudflare R2")
+    # ── Step 6: Validate parquet before upload ─────────────────────
+    step(6, "Validate parquet output")
+    from validate import validate_parquet
+
+    is_valid = validate_parquet(
+        PARQUET_PATH,
+        min_rows=MIN_HEXAGONS,
+        schema_cols=["h3index", "flood_risk_score"],
+        value_ranges={"flood_risk_score": SCORE_RANGE},
+    )
+
+    if not is_valid:
+        print("  ERROR: Parquet validation failed. NOT uploading to R2.")
+        return 1
+
+    # ── Step 7: Upload to R2 ───────────────────────────────────────
+    step(7, "Upload parquet to Cloudflare R2")
     from upload_to_r2 import upload_file
     success = upload_file(PARQUET_PATH, "data/hex_flood_risk.parquet")
     if not success:
-        print("  WARNING: R2 upload failed. Parquet is available locally.")
+        print("  ERROR: R2 upload failed after retries.")
+        return 1
 
-    # ── Step 7: Summary ────────────────────────────────────────────
+    # ── Step 8: Summary ────────────────────────────────────────────
     elapsed = time.time() - start_time
-    step(7, "Summary")
+    step(8, "Summary")
     print(f"  Total time: {int(elapsed // 60)}m {int(elapsed % 60)}s")
     print(f"  Hexagons processed: {len(df):,}")
     print(f"  Output: {PARQUET_PATH}")
-    print(f"  R2 upload: {'OK' if success else 'FAILED'}")
+    print(f"  R2 upload: OK")
     print(f"  GEE skipped: {args.skip_gee}")
 
     return 0
@@ -177,7 +194,7 @@ def dry_run(args):
         products.append(f"current extent (last {args.days} days, ~15min)")
         print(f"  2. Launch GEE exports: {', '.join(products)}")
         print("  3. Poll GEE tasks every 60s (timeout: 4h)")
-        print("  4. Download GeoTIFFs from gs://spatia-satellite/flood/")
+        print(f"  4. Download GeoTIFFs from gs://{GCS_BUCKET}/{args.days}")
     else:
         print("  1-4. SKIP (--skip-gee): use local GeoTIFFs from pipeline/output/")
         local = find_local_geotiffs()
@@ -190,8 +207,9 @@ def dry_run(args):
     print(f"  5. H3 zonal stats -> {PARQUET_PATH}")
     print(f"     Grid: {GRID_PATH}")
     print(f"     Grid exists: {os.path.exists(GRID_PATH)}")
-    print("  6. Upload parquet to R2 (neahub-public/data/hex_flood_risk.parquet)")
-    print("  7. Print summary\n")
+    print(f"  6. Validate parquet (min {MIN_HEXAGONS:,} rows, score {SCORE_RANGE})")
+    print(f"  7. Upload parquet to R2 ({R2_BUCKET}/data/hex_flood_risk.parquet)")
+    print("  8. Print summary\n")
 
     # Check env vars
     print("Environment check:")
