@@ -60,42 +60,15 @@
 			<button class="profile-close" onclick={() => onRemoveRadio(redcode)}>x</button>
 		</div>
 
-		<div class="profile-score">
-			Score: {score.toFixed(0)} — Top {Math.max(1, Math.round(100 - score))}%
-		</div>
-
 		<div class="section">
 			<div class="section-title">{i18n.t('card.territory')}</div>
+			<p class="text-white/60 text-[9px] m-0 mb-1">Cada dimensión muestra el valor relativo al promedio provincial (50 = promedio). Fuente: Censo 2022 + imágenes satelitales.</p>
 			<PetalChart
 				layers={[{values: subScores, color: entries[0]?.color ?? cfg.color}]}
 				labels={subLabels}
 				size={420}
 			/>
 		</div>
-
-		{#if notables.length > 0}
-			<div class="section">
-				<div class="section-title">{i18n.t('card.whyHere')}</div>
-				{#each notables as note}
-					<div class="notable">
-						<span class="notable-check">+</span>
-						{note}
-					</div>
-				{/each}
-			</div>
-		{/if}
-
-		<div class="section">
-			<div class="section-title">{i18n.t('card.advantage')}</div>
-			<p class="card-text">{bestDimension()}: {Math.max(...subScores).toFixed(0)}/100</p>
-		</div>
-
-		{#if risk}
-			<div class="section">
-				<div class="section-title risk-title">{i18n.t('card.risk')}</div>
-				<p class="card-text risk-text">{risk}</p>
-			</div>
-		{/if}
 		<div class="source-note-box">
 			<div><strong>Fuente:</strong> INDEC — Censo Nacional de Población 2022</div>
 			<div><strong>Última revisión:</strong> {DATA_FRESHNESS.censo_radios.processedDate}</div>
