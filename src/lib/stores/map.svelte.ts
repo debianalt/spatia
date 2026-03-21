@@ -18,7 +18,9 @@ export type ChartDataSet = {
 
 export type HexData = {
 	h3index: string;
-	flood_recurrence_mean?: number;
+	jrc_occurrence?: number;
+	jrc_recurrence?: number;
+	jrc_seasonality?: number;
 	flood_extent_pct?: number;
 	flood_risk_score?: number;
 };

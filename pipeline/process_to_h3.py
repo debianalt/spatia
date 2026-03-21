@@ -42,7 +42,8 @@ def load_hex_grid(grid_path: str) -> gpd.GeoDataFrame:
     return gdf
 
 
-def zonal_stats_rasterio(gdf: gpd.GeoDataFrame, raster_path: str, stat: str = "mean") -> pd.Series:
+def zonal_stats_rasterio(gdf: gpd.GeoDataFrame, raster_path: str, stat: str = "mean",
+                         ignore_src_nodata: bool = False) -> pd.Series:
     """
     Compute zonal statistics for each hexagon using rasterio.
     Returns a Series indexed like gdf with the computed statistic.
@@ -51,14 +52,36 @@ def zonal_stats_rasterio(gdf: gpd.GeoDataFrame, raster_path: str, stat: str = "m
         return pd.Series(np.nan, index=gdf.index)
 
     import rasterio
-    from rasterio.mask import mask as rio_mask
+    from rasterio.features import geometry_mask
+    from rasterio.windows import from_bounds
 
     values = []
     with rasterio.open(raster_path) as src:
+        src_nodata = src.nodata
         for _, row in gdf.iterrows():
             try:
-                out_image, _ = rio_mask(src, [row.geometry], crop=True, nodata=np.nan)
-                data = out_image[0]
+                # Compute window from geometry bounds (bypass rasterio nodata handling)
+                window = from_bounds(*row.geometry.bounds, transform=src.transform)
+                window = window.round_offsets().round_lengths()
+                if window.width < 1 or window.height < 1:
+                    values.append(np.nan)
+                    continue
+                data = src.read(1, window=window).astype(float)
+                # Mark raster nodata (e.g. -32768) as NaN.
+                # For binary masks (S1), nodata=0 conflicts with valid "dry"
+                # pixels — pass ignore_src_nodata=True to skip this step.
+                if src_nodata is not None and not ignore_src_nodata:
+                    data[data == src_nodata] = np.nan
+                # JRC encodes "not water" as -128 → treat as 0
+                data[data < 0] = 0
+                # Mask only by geometry, NOT by raster nodata
+                gmask = geometry_mask(
+                    [row.geometry],
+                    transform=src.window_transform(window),
+                    out_shape=data.shape,
+                    invert=False,  # True where OUTSIDE geometry
+                )
+                data[gmask] = np.nan
                 valid = data[~np.isnan(data)]
                 if len(valid) == 0:
                     values.append(np.nan)
@@ -114,19 +137,21 @@ def zonal_stats_sampling(gdf: gpd.GeoDataFrame, raster_path: str) -> pd.Series:
     return pd.Series(values, index=gdf.index)
 
 
-def compute_flood_risk_score(recurrence: pd.Series, extent: pd.Series) -> pd.Series:
+def compute_flood_risk_score(jrc_occurrence: pd.Series, jrc_recurrence: pd.Series,
+                             s1_extent: pd.Series) -> pd.Series:
     """
     Composite flood risk score (0–100).
 
-    Formula: 70% recurrence weight + 30% current extent weight.
-    Recurrence is already 0–1 (fraction of months flooded).
-    Extent is 0–1 (fraction of hex currently flooded).
-    """
-    # Normalise both to 0–1
-    rec_norm = recurrence.clip(0, 1)
-    ext_norm = extent.clip(0, 1)
+    Combines JRC Global Surface Water (1984–2021) historical data with
+    Sentinel-1 SAR current flood extent.
 
-    score = (0.7 * rec_norm + 0.3 * ext_norm) * 100
+    Weights: 50% JRC occurrence + 20% JRC recurrence + 30% S1 current extent.
+    """
+    occ_norm = (jrc_occurrence / 100).clip(0, 1)
+    rec_norm = (jrc_recurrence / 100).clip(0, 1)
+    ext_norm = s1_extent.clip(0, 1)
+
+    score = (0.5 * occ_norm + 0.2 * rec_norm + 0.3 * ext_norm) * 100
     return score.round(1)
 
 
@@ -183,10 +208,10 @@ def main():
             sys.exit(1)
 
         print("Computing zonal statistics for recurrence...")
-        recurrence = zonal_stats_sampling(gdf, args.recurrence)
+        recurrence = zonal_stats_rasterio(gdf, args.recurrence)
 
         print("Computing zonal statistics for current extent...")
-        extent = zonal_stats_sampling(gdf, args.current)
+        extent = zonal_stats_rasterio(gdf, args.current)
 
         score = compute_flood_risk_score(recurrence, extent)
 

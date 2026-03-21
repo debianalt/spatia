@@ -18,7 +18,9 @@
 
 	type FloodRow = {
 		h3index: string;
-		flood_recurrence_mean: number;
+		jrc_occurrence: number;
+		jrc_recurrence: number;
+		jrc_seasonality: number;
 		flood_extent_pct: number;
 		flood_risk_score: number;
 	};
@@ -33,7 +35,7 @@
 	let loading = $state(true);
 	let allData: FloodRow[] = $state([]);
 	let deptSummaries: DeptSummary[] = $state([]);
-	let totalHighRisk = $derived(allData.filter(d => d.flood_recurrence_mean > 0.1).length);
+	let totalHighRisk = $derived(allData.filter(d => d.jrc_occurrence > 10).length);
 	let avgScore = $derived(allData.length > 0 ? allData.reduce((s, d) => s + d.flood_risk_score, 0) / allData.length : 0);
 
 	// Selected hex detail
@@ -48,7 +50,7 @@
 		try {
 			// Load all flood data
 			const result = await query(
-				`SELECT h3index, flood_recurrence_mean, flood_extent_pct, flood_risk_score
+				`SELECT h3index, jrc_occurrence, jrc_recurrence, jrc_seasonality, flood_extent_pct, flood_risk_score
 				 FROM '${PARQUETS.hex_flood_risk}'
 				 WHERE flood_risk_score IS NOT NULL
 				 ORDER BY flood_risk_score DESC`
@@ -65,7 +67,7 @@
 					`SELECT r.departamento,
 					        AVG(f.flood_risk_score) as avg_score,
 					        COUNT(*) as hex_count,
-					        SUM(CASE WHEN f.flood_recurrence_mean > 0.1 THEN 1 ELSE 0 END) as high_risk_count
+					        SUM(CASE WHEN f.jrc_occurrence > 10 THEN 1 ELSE 0 END) as high_risk_count
 					 FROM '${PARQUETS.hex_flood_risk}' f
 					 JOIN '${PARQUETS.h3_radio_crosswalk}' c ON f.h3index = c.h3index
 					 JOIN '${PARQUETS.radio_stats_master}' r ON c.redcode = r.redcode
@@ -143,9 +145,19 @@
 
 		<div class="detail-grid">
 			<div class="detail-item">
-				<div class="detail-label">{i18n.t('analysis.flood.recurrence')}</div>
-				<div class="detail-value">{((selectedHex.flood_recurrence_mean ?? 0) * 100).toFixed(1)}%</div>
-				<div class="detail-desc">{i18n.t('analysis.flood.recurrenceDesc')}</div>
+				<div class="detail-label">{i18n.t('analysis.flood.jrcOccurrence')}</div>
+				<div class="detail-value">{(selectedHex.jrc_occurrence ?? 0).toFixed(1)}%</div>
+				<div class="detail-desc">{i18n.t('analysis.flood.jrcOccurrenceDesc')}</div>
+			</div>
+			<div class="detail-item">
+				<div class="detail-label">{i18n.t('analysis.flood.jrcRecurrence')}</div>
+				<div class="detail-value">{(selectedHex.jrc_recurrence ?? 0).toFixed(1)}%</div>
+				<div class="detail-desc">{i18n.t('analysis.flood.jrcRecurrenceDesc')}</div>
+			</div>
+			<div class="detail-item">
+				<div class="detail-label">{i18n.t('analysis.flood.jrcSeasonality')}</div>
+				<div class="detail-value">{(selectedHex.jrc_seasonality ?? 0).toFixed(1)}</div>
+				<div class="detail-desc">{i18n.t('analysis.flood.jrcSeasonalityDesc')}</div>
 			</div>
 			<div class="detail-item">
 				<div class="detail-label">{i18n.t('analysis.flood.currentExtent')}</div>
@@ -158,7 +170,7 @@
 			<summary class="method-summary">{i18n.t('analysis.flood.methodTitle')}</summary>
 			<div class="method-body">
 				<div class="method-item">
-					<span class="method-term">{i18n.t('analysis.flood.recurrence')}</span>
+					<span class="method-term">{i18n.t('analysis.flood.jrcOccurrence')}</span>
 					<p>{i18n.t('analysis.flood.methodRecurrence')}</p>
 				</div>
 				<div class="method-item">
@@ -216,7 +228,7 @@
 			<summary class="method-summary">{i18n.t('analysis.flood.methodTitle')}</summary>
 			<div class="method-body">
 				<div class="method-item">
-					<span class="method-term">{i18n.t('analysis.flood.recurrence')}</span>
+					<span class="method-term">{i18n.t('analysis.flood.jrcOccurrence')}</span>
 					<p>{i18n.t('analysis.flood.methodRecurrence')}</p>
 				</div>
 				<div class="method-item">

@@ -42,7 +42,8 @@ export const TERRAIN_CONFIG = {
 } as const;
 
 export function getParquetUrl(name: string): string {
-	return `${getBase()}/data/${name}.parquet`;
+	const bust = name === 'hex_flood_risk' ? '?v=3' : '';
+	return `${getBase()}/data/${name}.parquet${bust}`;
 }
 
 export const PARQUETS = {
@@ -157,7 +158,9 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		parquet: 'hex_flood_risk',
 		variables: [
 			{ col: 'flood_risk_score', labelKey: 'analysis.flood.riskScore', aggregation: 'mean' },
-			{ col: 'flood_recurrence_mean', labelKey: 'analysis.flood.recurrence', aggregation: 'mean' },
+			{ col: 'jrc_occurrence', labelKey: 'analysis.flood.jrcOccurrence', aggregation: 'mean' },
+			{ col: 'jrc_recurrence', labelKey: 'analysis.flood.jrcRecurrence', aggregation: 'mean' },
+			{ col: 'jrc_seasonality', labelKey: 'analysis.flood.jrcSeasonality', aggregation: 'mean' },
 			{ col: 'flood_extent_pct', labelKey: 'analysis.flood.currentExtent', aggregation: 'mean' },
 		],
 		primaryVariable: 'flood_risk_score',
@@ -165,7 +168,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		petalVars: [
 			{ col: 'flood_risk_score', labelKey: 'analysis.flood.riskScore', aggregation: 'mean' },
-			{ col: 'flood_recurrence_mean', labelKey: 'analysis.flood.recurrence', aggregation: 'mean' },
+			{ col: 'jrc_occurrence', labelKey: 'analysis.flood.jrcOccurrence', aggregation: 'mean' },
+			{ col: 'jrc_recurrence', labelKey: 'analysis.flood.jrcRecurrence', aggregation: 'mean' },
 			{ col: 'flood_extent_pct', labelKey: 'analysis.flood.currentExtent', aggregation: 'mean' },
 		],
 		titleKey: 'analysis.floodRisk.title',

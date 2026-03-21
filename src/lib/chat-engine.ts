@@ -483,7 +483,7 @@ async function execGetFloodRisk(input: { departamento: string; min_risk_score?: 
 	const limit = Math.min(input.limit || 20, 100);
 
 	const rows = await duckQuery(
-		`SELECT f.h3index, f.flood_recurrence_mean, f.flood_extent_pct, f.flood_risk_score,
+		`SELECT f.h3index, f.jrc_occurrence, f.jrc_recurrence, f.flood_extent_pct, f.flood_risk_score,
 		        r.departamento
 		 FROM '${PARQUETS.hex_flood_risk}' f
 		 JOIN '${PARQUETS.h3_radio_crosswalk}' c ON f.h3index = c.h3index
@@ -521,7 +521,8 @@ async function execGetFloodRisk(input: { departamento: string; min_risk_score?: 
 		top_hexagons: rows.slice(0, 5).map(r => ({
 			h3index: r.h3index,
 			flood_risk_score: Number(r.flood_risk_score).toFixed(1),
-			recurrence: (Number(r.flood_recurrence_mean) * 100).toFixed(1) + '%',
+			jrc_occurrence: Number(r.jrc_occurrence).toFixed(1) + '%',
+			jrc_recurrence: Number(r.jrc_recurrence).toFixed(1) + '%',
 			current_extent: Number(r.flood_extent_pct).toFixed(1) + '%',
 		}))
 	};

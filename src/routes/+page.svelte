@@ -61,7 +61,9 @@
 				// Legacy single-hex mode (direct analysis)
 				mapStore.setSelectedHex({
 					h3index,
-					flood_recurrence_mean: properties.flood_recurrence_mean,
+					jrc_occurrence: properties.jrc_occurrence,
+					jrc_recurrence: properties.jrc_recurrence,
+					jrc_seasonality: properties.jrc_seasonality,
 					flood_extent_pct: properties.flood_extent_pct,
 					flood_risk_score: properties.flood_risk_score,
 					...properties
@@ -320,7 +322,7 @@
 		if (!isReady()) return;
 		try {
 			const result = await query(
-				`SELECT h3index, flood_recurrence_mean, flood_extent_pct, flood_risk_score
+				`SELECT h3index, jrc_occurrence, jrc_recurrence, jrc_seasonality, flood_extent_pct, flood_risk_score
 				 FROM '${PARQUETS.hex_flood_risk}'
 				 WHERE h3index = '${h3index.replace(/'/g, "''")}'
 				 LIMIT 1`

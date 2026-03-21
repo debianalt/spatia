@@ -187,11 +187,17 @@ const dict: Record<string, Record<Locale, string>> = {
 
 	// Flood risk analysis
 	'analysis.floodRisk.title': { es: 'Riesgo hídrico', en: 'Flood risk', gn: "Y tuicha mba'asy" },
-	'analysis.floodRisk.desc': { es: 'Recurrencia de inundación e índice de riesgo por hexágono H3 (Sentinel-1 SAR)', en: 'Flood recurrence and risk index per H3 hexagon (Sentinel-1 SAR)', gn: "Y tuicha jey ha mba'asy H3 rupi (Sentinel-1 SAR)" },
+	'analysis.floodRisk.desc': { es: 'Presencia histórica de agua (JRC 1984–2021) e inundación actual (Sentinel-1 SAR) por hexágono H3', en: 'Historical water presence (JRC 1984–2021) and current flooding (Sentinel-1 SAR) per H3 hexagon', gn: "Y rehegua historia guive (JRC 1984–2021) ha ko'ag̃a ysoguy (Sentinel-1 SAR) H3 rupi" },
 	'analysis.floodRisk.legend': { es: 'Riesgo hídrico (0–100)', en: 'Flood risk (0–100)', gn: "Y tuicha mba'asy (0–100)" },
 	'analysis.flood.riskScore': { es: 'Score de riesgo', en: 'Risk score', gn: "Mba'asy score" },
 	'analysis.flood.recurrence': { es: 'Recurrencia', en: 'Recurrence', gn: 'Jey' },
 	'analysis.flood.recurrenceDesc': { es: '% de meses con agua detectada', en: '% of months with water detected', gn: '% jasy y reheve' },
+	'analysis.flood.jrcOccurrence': { es: 'Presencia histórica (%)', en: 'Historical presence (%)', gn: "Y rehegua historia (%)" },
+	'analysis.flood.jrcOccurrenceDesc': { es: '% del tiempo con agua detectada (Landsat 1984–2021)', en: '% of time with water detected (Landsat 1984–2021)', gn: '% ára y reheve (Landsat 1984–2021)' },
+	'analysis.flood.jrcRecurrence': { es: 'Recurrencia interanual (%)', en: 'Year-to-year recurrence (%)', gn: 'Jey ary ha ary (%)' },
+	'analysis.flood.jrcRecurrenceDesc': { es: '% de años en que el agua vuelve a aparecer', en: '% of years water reappears', gn: '% ary y ojekuaa jey' },
+	'analysis.flood.jrcSeasonality': { es: 'Estacionalidad (meses)', en: 'Seasonality (months)', gn: "Ára reípe (jasy)" },
+	'analysis.flood.jrcSeasonalityDesc': { es: 'Cantidad de meses con agua por año', en: 'Number of months with water per year', gn: 'Mboy jasy y reheve ary pe' },
 	'analysis.flood.currentExtent': { es: 'Extensión actual', en: 'Current extent', gn: "Ko'ãga tuichakue" },
 	'analysis.flood.currentExtentDesc': { es: '% del hexágono inundado', en: '% of hexagon flooded', gn: '% hexágono y guýpe' },
 	'analysis.flood.riskHigh': { es: 'Riesgo alto', en: 'High risk', gn: "Mba'asy guasu" },
@@ -202,12 +208,12 @@ const dict: Record<string, Record<Locale, string>> = {
 	'analysis.flood.avgScore': { es: 'Score promedio', en: 'Avg score', gn: 'Score mbytekue' },
 	'analysis.flood.topDepts': { es: 'Departamentos por riesgo', en: 'Departments by risk', gn: "Departamento mba'asy rupi" },
 	'analysis.flood.clickHint': { es: 'Hacé click en un hexágono para ver detalle', en: 'Click a hexagon for details', gn: 'Ehesakutu hexágono ehecha hag̃ua' },
-	'analysis.flood.source': { es: 'Fuente: Sentinel-1 SAR (Copernicus), procesado con GEE', en: 'Source: Sentinel-1 SAR (Copernicus), processed with GEE', gn: 'Moñe\'ẽha: Sentinel-1 SAR (Copernicus), GEE ndive' },
+	'analysis.flood.source': { es: 'Fuente: JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus)', en: 'Source: JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus)', gn: 'Moñe\'ẽha: JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus)' },
 	'analysis.flood.methodTitle': { es: 'Metodologia', en: 'Methodology', gn: "Mba'eichapa" },
 	'analysis.flood.methodRecurrence': {
-		es: 'Frecuencia historica de inundacion, derivada de series temporales Sentinel-1 SAR. Un valor de 30% significa que el 30% de las observaciones SAR detectaron agua en esa zona. Mide que tan seguido se inunda.',
-		en: 'Historical flood frequency derived from Sentinel-1 SAR time series. A value of 30% means 30% of SAR observations detected water in that zone. Measures how often it floods.',
-		gn: "Ysoguy jey historia guive, Sentinel-1 SAR guive. 30% he'ise 30% SAR ohecha y ko'a pe. Ohechakuaa mboy jey oysoguy."
+		es: 'Presencia histórica de agua derivada de JRC Global Surface Water (Landsat, 1984–2021). Occurrence indica el % del tiempo con agua detectada; recurrence indica el % de años en que el agua vuelve a aparecer; estacionalidad indica cuántos meses al año hay agua.',
+		en: 'Historical water presence from JRC Global Surface Water (Landsat, 1984–2021). Occurrence indicates % of time with water detected; recurrence indicates % of years water reappears; seasonality indicates months of water per year.',
+		gn: "Y rehegua historia guive JRC Global Surface Water (Landsat, 1984–2021). Occurrence he'ise % ára y reheve; recurrence he'ise % ary y ojekuaa jey; estacionalidad he'ise mboy jasy y reheve ary pe."
 	},
 	'analysis.flood.methodExtent': {
 		es: 'Porcentaje del hexagono cubierto por agua en la observacion mas reciente (ultima imagen SAR procesada). Mide cuanto del hexagono esta inundado actualmente.',
@@ -215,9 +221,9 @@ const dict: Record<string, Record<Locale, string>> = {
 		gn: "Mboy % hexagono y guype oime ko'ag̃a imagen SAR ipahague rupi."
 	},
 	'analysis.flood.methodScore': {
-		es: 'Indice compuesto 0-100 que combina recurrencia y extension. Un hexagono con alta recurrencia y alta extension actual tendra un score cercano a 100.',
-		en: 'Composite index 0-100 combining recurrence and extent. A hexagon with high recurrence and high current extent will score close to 100.',
-		gn: "Indice 0-100 ombyaty recurrencia ha extension. Hexagono tuicha recurrencia ha extension oguereko score 100 ypype."
+		es: 'Índice compuesto 0–100: 50% presencia histórica (JRC) + 20% recurrencia interanual (JRC) + 30% extensión actual (Sentinel-1 SAR). Un hexágono permanentemente sobre un río tendrá score alto; un hexágono seco con inundación actual también.',
+		en: 'Composite index 0–100: 50% historical presence (JRC) + 20% year-to-year recurrence (JRC) + 30% current extent (Sentinel-1 SAR). A hexagon permanently on a river scores high; a dry hexagon with current flooding also scores high.',
+		gn: "Índice 0–100: 50% y rehegua (JRC) + 20% jey ary ha ary (JRC) + 30% ko'ag̃a tuichakue (Sentinel-1 SAR)."
 	},
 
 	// Vivir analyses

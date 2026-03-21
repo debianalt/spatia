@@ -42,10 +42,16 @@ def find_local_geotiffs():
     files = {}
     for f in glob.glob(os.path.join(OUTPUT_DIR, "*.tif")):
         name = os.path.basename(f).lower()
-        if "recurrence" in name:
-            files["recurrence"] = f
+        if "jrc_occurrence" in name:
+            files["jrc_occurrence"] = f
+        elif "jrc_recurrence" in name:
+            files["jrc_recurrence"] = f
+        elif "jrc_seasonality" in name:
+            files["jrc_seasonality"] = f
         elif "current" in name:
             files["current"] = f
+        elif "recurrence" in name:
+            files["recurrence"] = f
     return files
 
 
@@ -104,42 +110,60 @@ def run(args):
         print("  Run `python pipeline/generate_h3_grid.py` first.")
         return 1
 
-    from process_to_h3 import load_hex_grid, zonal_stats_sampling, compute_flood_risk_score
+    from process_to_h3 import load_hex_grid, zonal_stats_rasterio, compute_flood_risk_score
     import pandas as pd
+    import numpy as np
 
     gdf = load_hex_grid(GRID_PATH)
 
-    recurrence_path = downloaded.get("recurrence")
+    jrc_occ_path = downloaded.get("jrc_occurrence")
+    jrc_rec_path = downloaded.get("jrc_recurrence")
+    jrc_sea_path = downloaded.get("jrc_seasonality")
     current_path = downloaded.get("current")
 
-    if recurrence_path and current_path:
-        print("  Computing zonal stats for recurrence...")
-        recurrence = zonal_stats_sampling(gdf, recurrence_path)
-        print("  Computing zonal stats for current extent...")
-        extent = zonal_stats_sampling(gdf, current_path)
-        score = compute_flood_risk_score(recurrence, extent)
-
-        df = pd.DataFrame({
-            "h3index": gdf["h3index"],
-            "flood_recurrence_mean": recurrence.round(4),
-            "flood_extent_pct": (extent * 100).round(2),
-            "flood_risk_score": score,
-        })
-    elif current_path:
-        print("  Only current extent available (no recurrence raster).")
-        print("  Computing zonal stats for current extent...")
-        import numpy as np
-        extent = zonal_stats_sampling(gdf, current_path)
-        # Without recurrence, score = extent * 100
-        df = pd.DataFrame({
-            "h3index": gdf["h3index"],
-            "flood_recurrence_mean": np.nan,
-            "flood_extent_pct": (extent * 100).round(2),
-            "flood_risk_score": (extent * 100).round(1),
-        })
-    else:
+    if not current_path and not jrc_occ_path:
         print("  ERROR: No raster files to process.")
         return 1
+
+    # JRC Global Surface Water (historical, 1984-2021)
+    if jrc_occ_path:
+        print("  Computing zonal stats for JRC occurrence...")
+        jrc_occurrence = zonal_stats_rasterio(gdf, jrc_occ_path)
+    else:
+        jrc_occurrence = pd.Series(np.nan, index=gdf.index)
+
+    if jrc_rec_path:
+        print("  Computing zonal stats for JRC recurrence...")
+        jrc_recurrence = zonal_stats_rasterio(gdf, jrc_rec_path)
+    else:
+        jrc_recurrence = pd.Series(np.nan, index=gdf.index)
+
+    if jrc_sea_path:
+        print("  Computing zonal stats for JRC seasonality...")
+        jrc_seasonality = zonal_stats_rasterio(gdf, jrc_sea_path)
+    else:
+        jrc_seasonality = pd.Series(np.nan, index=gdf.index)
+
+    # Sentinel-1 current extent (binary mask: 0=dry, 1=water, nodata=0 conflicts)
+    if current_path:
+        print("  Computing zonal stats for S1 current extent...")
+        s1_extent = zonal_stats_rasterio(gdf, current_path, ignore_src_nodata=True)
+    else:
+        s1_extent = pd.Series(0.0, index=gdf.index)
+
+    # Composite score
+    score = compute_flood_risk_score(
+        jrc_occurrence.fillna(0), jrc_recurrence.fillna(0), s1_extent.fillna(0)
+    )
+
+    df = pd.DataFrame({
+        "h3index": gdf["h3index"],
+        "jrc_occurrence": jrc_occurrence.round(2),
+        "jrc_recurrence": jrc_recurrence.round(2),
+        "jrc_seasonality": jrc_seasonality.round(1),
+        "flood_extent_pct": (s1_extent * 100).round(2),
+        "flood_risk_score": score,
+    })
 
     df = df.dropna(subset=["flood_risk_score"])
     os.makedirs(os.path.dirname(PARQUET_PATH), exist_ok=True)

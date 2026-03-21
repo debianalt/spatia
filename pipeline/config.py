@@ -8,7 +8,7 @@ Import from this module instead of defining local constants.
 import os
 
 # ── Spatial ───────────────────────────────────────────────────────────────
-MISIONES_BBOX = [-55.95, -28.17, -53.60, -25.47]  # [W, S, E, N]
+MISIONES_BBOX = [-56.10, -28.20, -53.55, -25.44]  # [W, S, E, N] — padded to cover edge hexagons
 H3_RESOLUTION = 9
 
 # ── Google Cloud Storage ──────────────────────────────────────────────────
