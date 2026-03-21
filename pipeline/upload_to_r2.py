@@ -30,7 +30,7 @@ def _run_wrangler_upload(local_path: str, r2_key: str) -> bool:
     """Execute a single wrangler R2 upload, return True on success."""
     result = subprocess.run(
         ["npx", "wrangler", "r2", "object", "put",
-         f"{R2_BUCKET}/{r2_key}", "--file", local_path],
+         f"{R2_BUCKET}/{r2_key}", "--file", local_path, "--remote"],
         capture_output=True,
         shell=True,
         encoding="utf-8",

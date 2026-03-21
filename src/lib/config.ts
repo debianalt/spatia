@@ -46,6 +46,10 @@ export function getParquetUrl(name: string): string {
 	return `${getBase()}/data/${name}.parquet${bust}`;
 }
 
+export function getFloodDptoUrl(parquetKey: string): string {
+	return `${getBase()}/data/flood_dpto/hex_flood_${parquetKey}.parquet`;
+}
+
 export const PARQUETS = {
 	get censo_radios() { return getParquetUrl('censo_radios'); },
 	get censo_departamentos() { return getParquetUrl('censo_departamentos'); },
@@ -150,6 +154,7 @@ export interface HexLayerConfig {
 	aggregation: 'mean' | 'sum' | 'max';
 	petalVars?: HexVariable[];
 	titleKey: string;
+	perDepartment?: boolean;
 }
 
 export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
@@ -173,6 +178,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'flood_extent_pct', labelKey: 'analysis.flood.currentExtent', aggregation: 'mean' },
 		],
 		titleKey: 'analysis.floodRisk.title',
+		perDepartment: true,
 	},
 };
 
@@ -408,3 +414,28 @@ export function getAnalysesForLens(lensId: LensId): AnalysisConfig[] {
 export function getAnalysisById(id: string): AnalysisConfig | undefined {
 	return ANALYSIS_REGISTRY.find(a => a.id === id);
 }
+
+// ── Data freshness metadata ─────────────────────────────────────────────────
+
+export const DATA_FRESHNESS: Record<string, { dataDate: string; processedDate: string; sourceKey: string }> = {
+	hex_flood_risk: {
+		dataDate: 'marzo 2026',
+		processedDate: '21/03/2026',
+		sourceKey: 'analysis.flood.source',
+	},
+	censo_radios: {
+		dataDate: 'Censo 2022',
+		processedDate: '21/03/2026',
+		sourceKey: 'data.source.censo',
+	},
+	real_estate: {
+		dataDate: '01/2025',
+		processedDate: '21/03/2026',
+		sourceKey: 'data.source.realEstate',
+	},
+	buildings_stats: {
+		dataDate: '02/2025',
+		processedDate: '21/03/2026',
+		sourceKey: 'data.source.buildings',
+	},
+};

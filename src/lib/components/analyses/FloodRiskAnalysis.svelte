@@ -1,105 +1,33 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import type { LensStore } from '$lib/stores/lens.svelte';
 	import type { MapStore } from '$lib/stores/map.svelte';
+	import type { HexStore } from '$lib/stores/hex.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
-	import { query, isReady } from '$lib/stores/duckdb';
-	import { PARQUETS } from '$lib/config';
+	import { DATA_FRESHNESS } from '$lib/config';
+	import deptSummaryData from '$lib/data/flood_dept_summary.json';
 
 	let {
 		lensStore,
 		mapStore,
+		hexStore,
 		onRemoveRadio,
+		onSelectFloodDpto,
 	}: {
 		lensStore: LensStore;
 		mapStore: MapStore;
+		hexStore: HexStore;
 		onRemoveRadio: (redcode: string) => void;
+		onSelectFloodDpto: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
 	} = $props();
 
-	type FloodRow = {
-		h3index: string;
-		jrc_occurrence: number;
-		jrc_recurrence: number;
-		jrc_seasonality: number;
-		flood_extent_pct: number;
-		flood_risk_score: number;
-	};
+	// Static data — no DuckDB queries, instant load
+	const deptSummaries = deptSummaryData.departments.sort((a: any, b: any) => b.avg_score - a.avg_score);
+	const totalHexes = deptSummaryData.province.total_hexes;
+	const totalHighRisk = deptSummaryData.province.high_risk_count;
+	const avgScore = deptSummaryData.province.avg_score;
 
-	type DeptSummary = {
-		departamento: string;
-		avg_score: number;
-		hex_count: number;
-		high_risk_count: number;
-	};
-
-	let loading = $state(true);
-	let allData: FloodRow[] = $state([]);
-	let deptSummaries: DeptSummary[] = $state([]);
-	let totalHighRisk = $derived(allData.filter(d => d.jrc_occurrence > 10).length);
-	let avgScore = $derived(allData.length > 0 ? allData.reduce((s, d) => s + d.flood_risk_score, 0) / allData.length : 0);
-
-	// Selected hex detail
+	const selectedDpto = $derived(hexStore.selectedDpto);
 	const selectedHex = $derived(mapStore.selectedHex);
-
-	onMount(async () => {
-		await loadData();
-	});
-
-	async function loadData() {
-		if (!isReady()) { loading = false; return; }
-		try {
-			// Load all flood data
-			const result = await query(
-				`SELECT h3index, jrc_occurrence, jrc_recurrence, jrc_seasonality, flood_extent_pct, flood_risk_score
-				 FROM '${PARQUETS.hex_flood_risk}'
-				 WHERE flood_risk_score IS NOT NULL
-				 ORDER BY flood_risk_score DESC`
-			);
-			const rows: FloodRow[] = [];
-			for (let i = 0; i < result.numRows; i++) {
-				rows.push(result.get(i)!.toJSON() as FloodRow);
-			}
-			allData = rows;
-
-			// Department summary via crosswalk
-			try {
-				const deptResult = await query(
-					`SELECT r.departamento,
-					        AVG(f.flood_risk_score) as avg_score,
-					        COUNT(*) as hex_count,
-					        SUM(CASE WHEN f.jrc_occurrence > 10 THEN 1 ELSE 0 END) as high_risk_count
-					 FROM '${PARQUETS.hex_flood_risk}' f
-					 JOIN '${PARQUETS.h3_radio_crosswalk}' c ON f.h3index = c.h3index
-					 JOIN '${PARQUETS.radio_stats_master}' r ON c.redcode = r.redcode
-					 WHERE f.flood_risk_score IS NOT NULL AND c.redcode IS NOT NULL
-					 GROUP BY r.departamento
-					 ORDER BY avg_score DESC`
-				);
-				const depts: DeptSummary[] = [];
-				for (let i = 0; i < deptResult.numRows; i++) {
-					depts.push(deptResult.get(i)!.toJSON() as DeptSummary);
-				}
-				deptSummaries = depts;
-			} catch {
-				// Crosswalk may not exist yet — skip dept summaries
-			}
-		} catch (e) {
-			console.warn('Failed to load flood risk data:', e);
-		}
-		loading = false;
-	}
-
-	export function getChoroplethEntries(): { h3index: string; value: number }[] {
-		return allData
-			.filter(d => d.flood_risk_score > 0)
-			.map(d => ({ h3index: d.h3index, value: d.flood_risk_score }));
-	}
-
-	function getRiskClass(score: number): string {
-		if (score >= 70) return 'high';
-		if (score >= 40) return 'medium';
-		return 'low';
-	}
 
 	function getRiskLabel(score: number): string {
 		if (score >= 70) return i18n.t('analysis.flood.riskHigh');
@@ -116,13 +44,17 @@
 	function formatPct(v: number): string {
 		return `${v.toFixed(1)}%`;
 	}
+
+	function handleBackToDepts() {
+		hexStore.backToDepartments();
+		mapStore.clearHexState();
+	}
 </script>
 
-{#if loading}
-	<div class="loading">{i18n.t('analysis.loading')}</div>
-{:else if selectedHex}
+{#if selectedHex && selectedDpto}
 	<!-- Hex detail view -->
 	<div class="hex-detail">
+		<button class="back-btn" onclick={handleBackToDepts}>← {i18n.t('analysis.flood.topDepts')}</button>
 		<div class="hex-header">
 			<div class="hex-id" title={selectedHex.h3index}>
 				{selectedHex.h3index.slice(0, 4)}...{selectedHex.h3index.slice(-4)}
@@ -166,32 +98,32 @@
 			</div>
 		</div>
 
-		<details class="method-details">
-			<summary class="method-summary">{i18n.t('analysis.flood.methodTitle')}</summary>
-			<div class="method-body">
-				<div class="method-item">
-					<span class="method-term">{i18n.t('analysis.flood.jrcOccurrence')}</span>
-					<p>{i18n.t('analysis.flood.methodRecurrence')}</p>
-				</div>
-				<div class="method-item">
-					<span class="method-term">{i18n.t('analysis.flood.currentExtent')}</span>
-					<p>{i18n.t('analysis.flood.methodExtent')}</p>
-				</div>
-				<div class="method-item">
-					<span class="method-term">{i18n.t('analysis.flood.riskScore')}</span>
-					<p>{i18n.t('analysis.flood.methodScore')}</p>
-				</div>
-			</div>
-		</details>
-
-		<div class="source-note">{i18n.t('analysis.flood.source')}</div>
+		<div class="source-note-box">
+			<div><strong>Fuente:</strong> JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus, {DATA_FRESHNESS.hex_flood_risk.dataDate})</div>
+			<div><strong>Última revisión:</strong> {DATA_FRESHNESS.hex_flood_risk.processedDate} · Imágenes SAR disponibles cada ~12 días</div>
+		</div>
+	</div>
+{:else if selectedDpto}
+	<!-- Department selected, hexes loading or loaded -->
+	<div class="summary">
+		<button class="back-btn" onclick={handleBackToDepts}>← {i18n.t('analysis.flood.topDepts')}</button>
+		<div class="dept-active-title">{selectedDpto}</div>
+		{#if hexStore.loading}
+			<div class="loading">{i18n.t('analysis.loading')}</div>
+		{:else}
+			<div class="hint">{i18n.t('analysis.flood.clickHint')}</div>
+		{/if}
+		<div class="source-note-box">
+			<div><strong>Fuente:</strong> JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus, {DATA_FRESHNESS.hex_flood_risk.dataDate})</div>
+			<div><strong>Última revisión:</strong> {DATA_FRESHNESS.hex_flood_risk.processedDate} · Imágenes SAR disponibles cada ~12 días</div>
+		</div>
 	</div>
 {:else}
-	<!-- Provincial summary view -->
+	<!-- Department list (instant, from static JSON) -->
 	<div class="summary">
 		<div class="summary-cards">
 			<div class="summary-card">
-				<div class="card-value">{allData.length.toLocaleString()}</div>
+				<div class="card-value">{totalHexes.toLocaleString()}</div>
 				<div class="card-label">{i18n.t('analysis.flood.totalHex')}</div>
 			</div>
 			<div class="summary-card">
@@ -204,25 +136,22 @@
 			</div>
 		</div>
 
-		{#if deptSummaries.length > 0}
-			<div class="dept-section">
-				<div class="section-title">{i18n.t('analysis.flood.topDepts')}</div>
-				{#each deptSummaries.slice(0, 8) as dept}
-					<div class="dept-row">
-						<div class="dept-name">{dept.departamento}</div>
-						<div class="dept-bar-wrap">
-							<div class="dept-bar" style:width="{Math.min(dept.avg_score, 100)}%"
-								style:background={getRiskColor(dept.avg_score)}></div>
-						</div>
-						<div class="dept-score" style:color={getRiskColor(dept.avg_score)}>
-							{dept.avg_score.toFixed(1)}
-						</div>
+		<div class="dept-section">
+			<div class="section-title">{i18n.t('analysis.flood.topDepts')}</div>
+			{#each deptSummaries as dept}
+				<button class="dept-row dept-clickable"
+					onclick={() => onSelectFloodDpto(dept.dpto, dept.parquetKey, dept.centroid as [number, number])}>
+					<div class="dept-name">{dept.dpto}</div>
+					<div class="dept-bar-wrap">
+						<div class="dept-bar" style:width="{Math.min(dept.avg_score * 3, 100)}%"
+							style:background={getRiskColor(dept.avg_score)}></div>
 					</div>
-				{/each}
-			</div>
-		{/if}
-
-		<div class="hint">{i18n.t('analysis.flood.clickHint')}</div>
+					<div class="dept-score" style:color={getRiskColor(dept.avg_score)}>
+						{dept.avg_score.toFixed(1)}
+					</div>
+				</button>
+			{/each}
+		</div>
 
 		<details class="method-details">
 			<summary class="method-summary">{i18n.t('analysis.flood.methodTitle')}</summary>
@@ -242,7 +171,10 @@
 			</div>
 		</details>
 
-		<div class="source-note">{i18n.t('analysis.flood.source')}</div>
+		<div class="source-note-box">
+			<div><strong>Fuente:</strong> JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus, {DATA_FRESHNESS.hex_flood_risk.dataDate})</div>
+			<div><strong>Última revisión:</strong> {DATA_FRESHNESS.hex_flood_risk.processedDate} · Imágenes SAR disponibles cada ~12 días</div>
+		</div>
 	</div>
 {/if}
 
@@ -360,16 +292,43 @@
 		color: #cbd5e1;
 		margin-bottom: 6px;
 	}
+	.back-btn {
+		background: none;
+		border: none;
+		color: #60a5fa;
+		font-size: 10px;
+		cursor: pointer;
+		padding: 0;
+		margin-bottom: 8px;
+	}
+	.back-btn:hover { text-decoration: underline; }
+	.dept-active-title {
+		font-size: 14px;
+		font-weight: 700;
+		color: #e2e8f0;
+		margin-bottom: 8px;
+	}
 	.dept-row {
 		display: flex;
 		align-items: center;
 		gap: 6px;
 		margin-bottom: 3px;
 	}
+	.dept-clickable {
+		background: none;
+		border: none;
+		width: 100%;
+		padding: 4px 2px;
+		border-radius: 4px;
+		cursor: pointer;
+		transition: background 0.15s;
+	}
+	.dept-clickable:hover { background: rgba(96,165,250,0.1); }
 	.dept-name {
 		font-size: 9px;
 		color: #94a3b8;
 		width: 72px;
+		text-align: left;
 		flex-shrink: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -399,10 +358,18 @@
 		text-align: center;
 		margin-top: 8px;
 	}
-	.source-note {
-		font-size: 8px;
-		color: #475569;
-		margin-top: 8px;
+	.source-note-box {
+		margin-top: 10px;
+		padding: 8px 10px;
+		background: rgba(255,255,255,0.05);
+		border: 1px solid rgba(255,255,255,0.08);
+		border-radius: 6px;
+		font-size: 9px;
+		color: #e2e8f0;
+		line-height: 1.5;
+	}
+	.source-note-box strong {
+		color: #f8fafc;
 	}
 	.method-details {
 		margin-top: 10px;

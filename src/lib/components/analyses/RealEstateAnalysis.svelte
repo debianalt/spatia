@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { getParquetUrl } from '$lib/config';
+	import { getParquetUrl, DATA_FRESHNESS } from '$lib/config';
 	import { query, isReady } from '$lib/stores/duckdb';
 	import type { LensStore } from '$lib/stores/lens.svelte';
 	import type { MapStore } from '$lib/stores/map.svelte';
@@ -248,6 +248,10 @@
 				{/each}
 			</div>
 		{/if}
+		<div class="source-note-box">
+			<div><strong>Fuente:</strong> Relevamiento de mercado inmobiliario</div>
+			<div><strong>Última revisión:</strong> {DATA_FRESHNESS.real_estate.processedDate} · Se actualiza mensualmente</div>
+		</div>
 	</div>
 {/if}
 
@@ -434,5 +438,18 @@
 	.dept-count {
 		font-size: 8px;
 		color: #64748b;
+	}
+	.source-note-box {
+		margin-top: 10px;
+		padding: 8px 10px;
+		background: rgba(255,255,255,0.05);
+		border: 1px solid rgba(255,255,255,0.08);
+		border-radius: 6px;
+		font-size: 9px;
+		color: #e2e8f0;
+		line-height: 1.5;
+	}
+	.source-note-box strong {
+		color: #f8fafc;
 	}
 </style>

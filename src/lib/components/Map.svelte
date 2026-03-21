@@ -3,7 +3,6 @@
 	import maplibregl from 'maplibre-gl';
 	import 'maplibre-gl/dist/maplibre-gl.css';
 	import { Protocol } from 'pmtiles';
-	import { cellToBoundary, cellToLatLng } from 'h3-js';
 	import { getTilesUrl, BASEMAP, MAP_INIT, TERRAIN_CONFIG } from '$lib/config';
 	import { MapStore } from '$lib/stores/map.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
@@ -740,7 +739,7 @@
 
 	// ── Hexagon H3 choropleth functions ──────────────────────────────────
 
-	export function setHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number> }[], colorScale: 'flood' | 'sequential' = 'flood') {
+	export function setHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' = 'flood') {
 		if (!map || !map.isStyleLoaded()) return;
 
 		const src = map.getSource('hexagons') as maplibregl.GeoJSONSource | undefined;
@@ -753,7 +752,6 @@
 			return;
 		}
 
-		// Build color map
 		const values = entries.map(e => e.value);
 		const minVal = Math.min(...values);
 		const maxVal = Math.max(...values);
@@ -774,30 +772,22 @@
 			return `rgb(${r},${g},${b})`;
 		}
 
-		// Build GeoJSON features from h3-js
 		const features: any[] = [];
 		for (const entry of entries) {
-			try {
-				const boundary = cellToBoundary(entry.h3index);
-				// h3-js returns [lat, lng] pairs; GeoJSON needs [lng, lat]
-				const coords = boundary.map(([lat, lng]) => [lng, lat]);
-				coords.push(coords[0]); // close ring
-				features.push({
-					type: 'Feature',
-					properties: {
-						h3index: entry.h3index,
-						value: entry.value,
-						color: getColor(entry.value),
-						...(entry.properties || {})
-					},
-					geometry: { type: 'Polygon', coordinates: [coords] }
-				});
-			} catch { /* skip invalid h3 */ }
+			if (!entry.boundary) continue;
+			features.push({
+				type: 'Feature',
+				properties: {
+					h3index: entry.h3index,
+					value: entry.value,
+					color: getColor(entry.value),
+					...(entry.properties || {})
+				},
+				geometry: { type: 'Polygon', coordinates: [entry.boundary] }
+			});
 		}
 
 		src.setData({ type: 'FeatureCollection', features });
-
-		// Style by precomputed color property
 		map.setPaintProperty('hex-fill', 'fill-color', ['get', 'color']);
 		map.setPaintProperty('hex-fill', 'fill-opacity', 0.35);
 		map.setPaintProperty('hex-line', 'line-color', '#0f172a');
@@ -842,7 +832,7 @@
 
 	// ── Hex zone highlight functions ──────────────────────────────────────
 
-	export function setHexZoneHighlight(zones: { h3indices: string[]; color: string }[]) {
+	export function setHexZoneHighlight(zones: { h3indices: string[]; color: string }[], boundaryCache?: Map<string, number[][]>) {
 		if (!map) return;
 		const src = map.getSource('hex-zones') as maplibregl.GeoJSONSource | undefined;
 		if (!src) return;
@@ -855,16 +845,13 @@
 		const features: any[] = [];
 		for (const zone of zones) {
 			for (const h3index of zone.h3indices) {
-				try {
-					const boundary = cellToBoundary(h3index);
-					const coords = boundary.map(([lat, lng]: [number, number]) => [lng, lat]);
-					coords.push(coords[0]);
-					features.push({
-						type: 'Feature',
-						properties: { h3index, color: zone.color },
-						geometry: { type: 'Polygon', coordinates: [coords] }
-					});
-				} catch { /* skip */ }
+				const cached = boundaryCache?.get(h3index);
+				if (!cached) continue;
+				features.push({
+					type: 'Feature',
+					properties: { h3index, color: zone.color },
+					geometry: { type: 'Polygon', coordinates: [cached] }
+				});
 			}
 		}
 		src.setData({ type: 'FeatureCollection', features });

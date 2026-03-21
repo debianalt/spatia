@@ -1,7 +1,7 @@
 <script lang="ts">
 	import PetalChart from '../PetalChart.svelte';
 	import PetalComparison from '../PetalComparison.svelte';
-	import { LENS_CONFIG } from '$lib/config';
+	import { LENS_CONFIG, DATA_FRESHNESS } from '$lib/config';
 	import type { LensStore } from '$lib/stores/lens.svelte';
 	import type { MapStore } from '$lib/stores/map.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
@@ -96,6 +96,10 @@
 				<p class="card-text risk-text">{risk}</p>
 			</div>
 		{/if}
+		<div class="source-note-box">
+			<div><strong>Fuente:</strong> INDEC — Censo Nacional de Población 2022</div>
+			<div><strong>Última revisión:</strong> {DATA_FRESHNESS.censo_radios.processedDate}</div>
+		</div>
 	</div>
 {/if}
 
@@ -177,5 +181,18 @@
 	.risk-text {
 		color: #fbbf24;
 		font-size: 10px;
+	}
+	.source-note-box {
+		margin-top: 10px;
+		padding: 8px 10px;
+		background: rgba(255,255,255,0.05);
+		border: 1px solid rgba(255,255,255,0.08);
+		border-radius: 6px;
+		font-size: 9px;
+		color: #e2e8f0;
+		line-height: 1.5;
+	}
+	.source-note-box strong {
+		color: #f8fafc;
 	}
 </style>

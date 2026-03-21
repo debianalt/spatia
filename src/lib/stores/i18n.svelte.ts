@@ -209,6 +209,10 @@ const dict: Record<string, Record<Locale, string>> = {
 	'analysis.flood.topDepts': { es: 'Departamentos por riesgo', en: 'Departments by risk', gn: "Departamento mba'asy rupi" },
 	'analysis.flood.clickHint': { es: 'Hacé click en un hexágono para ver detalle', en: 'Click a hexagon for details', gn: 'Ehesakutu hexágono ehecha hag̃ua' },
 	'analysis.flood.source': { es: 'Fuente: JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus)', en: 'Source: JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus)', gn: 'Moñe\'ẽha: JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus)' },
+	'data.source.censo': { es: 'Fuente: INDEC — Censo Nacional de Población 2022', en: 'Source: INDEC — National Population Census 2022', gn: "Moñe'ẽha: INDEC — Censo Nacional 2022" },
+	'data.source.realEstate': { es: 'Fuente: Relevamiento de mercado inmobiliario', en: 'Source: Real estate market survey', gn: "Moñe'ẽha: Relevamiento óga ñemuhague" },
+	'data.source.buildings': { es: 'Fuente: Detección por IA sobre imágenes satelitales', en: 'Source: AI detection on satellite imagery', gn: "Moñe'ẽha: IA ohechaukáva satélite ra'ãnga rupi" },
+	'data.updatedAt': { es: 'Procesado al', en: 'Processed', gn: 'Oñembopyahu' },
 	'analysis.flood.methodTitle': { es: 'Metodologia', en: 'Methodology', gn: "Mba'eichapa" },
 	'analysis.flood.methodRecurrence': {
 		es: 'Presencia histórica de agua derivada de JRC Global Surface Water (Landsat, 1984–2021). Occurrence indica el % del tiempo con agua detectada; recurrence indica el % de años en que el agua vuelve a aparecer; estacionalidad indica cuántos meses al año hay agua.',

@@ -424,7 +424,7 @@
 
 	function updateHexZoneHighlights() {
 		const zones = hexStore.hexZones.map(z => ({ h3indices: z.h3indices, color: z.color }));
-		mapComponent?.setHexZoneHighlight(zones);
+		mapComponent?.setHexZoneHighlight(zones, hexStore.boundaryCache);
 	}
 
 	function handleRemoveHexZone(id: string) {
@@ -435,6 +435,13 @@
 	function handleClearHexZones() {
 		hexStore.clearHexZones();
 		mapComponent?.clearHexZoneHighlight();
+	}
+
+	async function handleSelectFloodDpto(dpto: string, parquetKey: string, centroid: [number, number]) {
+		mapComponent?.clearHexChoropleth();
+		mapComponent?.clearHexZoneHighlight();
+		await hexStore.loadDepartment(dpto, parquetKey);
+		mapComponent?.flyToCoords(centroid[1], centroid[0], 10);
 	}
 
 	function clearAll() {
@@ -560,6 +567,7 @@
 				onClearZones={handleClearZones}
 				onRemoveHexZone={handleRemoveHexZone}
 				onClearHexZones={handleClearHexZones}
+				onSelectFloodDpto={handleSelectFloodDpto}
 			/>
 		</div>
 	</div>

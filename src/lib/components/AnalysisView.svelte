@@ -2,6 +2,7 @@
 	import { LENS_CONFIG, type AnalysisConfig } from '$lib/config';
 	import type { LensStore } from '$lib/stores/lens.svelte';
 	import type { MapStore } from '$lib/stores/map.svelte';
+	import type { HexStore } from '$lib/stores/hex.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import RealEstateAnalysis from './analyses/RealEstateAnalysis.svelte';
 	import TerritorialProfileAnalysis from './analyses/TerritorialProfileAnalysis.svelte';
@@ -10,13 +11,17 @@
 	let {
 		lensStore,
 		mapStore,
+		hexStore,
 		onBack,
 		onRemoveRadio,
+		onSelectFloodDpto,
 	}: {
 		lensStore: LensStore;
 		mapStore: MapStore;
+		hexStore: HexStore;
 		onBack: () => void;
 		onRemoveRadio: (redcode: string) => void;
+		onSelectFloodDpto: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
 	} = $props();
 
 	const analysis = $derived(lensStore.activeAnalysis);
@@ -53,7 +58,7 @@
 		{:else if analysis.id === 'real_estate'}
 			<RealEstateAnalysis {lensStore} {mapStore} {onRemoveRadio} />
 		{:else if analysis.id === 'flood_risk'}
-			<FloodRiskAnalysis {lensStore} {mapStore} {onRemoveRadio} />
+			<FloodRiskAnalysis {lensStore} {mapStore} {hexStore} {onRemoveRadio} {onSelectFloodDpto} />
 		{:else if isTerritorialProfile}
 			<TerritorialProfileAnalysis {lensStore} {mapStore} {onRemoveRadio} />
 		{:else}

@@ -194,9 +194,32 @@ def run(args):
         print("  ERROR: R2 upload failed after retries.")
         return 1
 
-    # ── Step 8: Summary ────────────────────────────────────────────
+    # ── Step 8: Split by department + upload ──────────────────────
+    step(8, "Split by department and upload to R2")
+    try:
+        import subprocess as _sp
+        split_script = os.path.join(PIPELINE_DIR, "split_flood_by_dpto.py")
+        result = _sp.run([sys.executable, split_script], cwd=PIPELINE_DIR)
+        if result.returncode != 0:
+            print("  WARNING: Department splitting failed, continuing...")
+        else:
+            # Upload department parquets to R2
+            dept_dir = os.path.join(OUTPUT_DIR, "flood_dpto")
+            if os.path.isdir(dept_dir):
+                dept_files = [f for f in os.listdir(dept_dir) if f.endswith(".parquet")]
+                uploaded = 0
+                for fname in dept_files:
+                    fpath = os.path.join(dept_dir, fname)
+                    r2_key = f"data/flood_dpto/{fname}"
+                    if upload_file(fpath, r2_key, versioned=False):
+                        uploaded += 1
+                print(f"  Uploaded {uploaded}/{len(dept_files)} department parquets to R2")
+    except Exception as e:
+        print(f"  WARNING: Department split/upload failed: {e}")
+
+    # ── Step 9: Summary ────────────────────────────────────────────
     elapsed = time.time() - start_time
-    step(8, "Summary")
+    step(9, "Summary")
     print(f"  Total time: {int(elapsed // 60)}m {int(elapsed % 60)}s")
     print(f"  Hexagons processed: {len(df):,}")
     print(f"  Output: {PARQUET_PATH}")
@@ -233,7 +256,8 @@ def dry_run(args):
     print(f"     Grid exists: {os.path.exists(GRID_PATH)}")
     print(f"  6. Validate parquet (min {MIN_HEXAGONS:,} rows, score {SCORE_RANGE})")
     print(f"  7. Upload parquet to R2 ({R2_BUCKET}/data/hex_flood_risk.parquet)")
-    print("  8. Print summary\n")
+    print("  8. Split by department + upload department parquets to R2")
+    print("  9. Print summary\n")
 
     # Check env vars
     print("Environment check:")

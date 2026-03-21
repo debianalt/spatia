@@ -28,6 +28,7 @@
 		onClearZones,
 		onRemoveHexZone,
 		onClearHexZones,
+		onSelectFloodDpto,
 	}: {
 		mapStore: MapStore;
 		lensStore: LensStore;
@@ -41,6 +42,7 @@
 		onClearZones: () => void;
 		onRemoveHexZone: (id: string) => void;
 		onClearHexZones: () => void;
+		onSelectFloodDpto: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
 	} = $props();
 
 	function handleBack() {
@@ -66,7 +68,7 @@
 	{:else if lensStore.activeLens && lensStore.activeAnalysis}
 		<!-- Analysis active: show analysis view (with or without radio) -->
 		<div class="chart-scroll">
-			<AnalysisView {lensStore} {mapStore} onBack={handleBack} {onRemoveRadio} />
+			<AnalysisView {lensStore} {mapStore} {hexStore} onBack={handleBack} {onRemoveRadio} {onSelectFloodDpto} />
 		</div>
 	{:else if lensStore.activeLens && mapStore.selectedRadios.size > 0}
 		<!-- Lens + radio but no analysis: show OpportunityCard (legacy, keeps petal working) -->

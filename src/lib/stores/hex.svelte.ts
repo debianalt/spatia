@@ -1,11 +1,20 @@
 import { query, isReady } from '$lib/stores/duckdb';
-import { PARQUETS, HEX_LAYER_REGISTRY, type HexLayerConfig, type HexVariable } from '$lib/config';
+import { PARQUETS, HEX_LAYER_REGISTRY, getFloodDptoUrl, type HexLayerConfig, type HexVariable } from '$lib/config';
 import { pointInPolygon } from '$lib/utils/geometry';
 import { i18n } from '$lib/stores/i18n.svelte';
-import { cellToLatLng } from 'h3-js';
+import { cellToLatLng, cellToBoundary } from 'h3-js';
 
 const ZONE_COLORS = ['#60a5fa', '#f97316', '#22c55e', '#a855f7', '#ef4444', '#eab308'];
 const ZONE_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+// Persistent cache that survives clearAll() / layer toggling
+interface LayerCache {
+	data: Map<string, Record<string, number>>;
+	centroids: Map<string, [number, number]>;
+	boundaries: Map<string, number[][]>;
+	provincialAvg: number[] | null;
+}
+const layerDataCache = new Map<string, LayerCache>();
 
 export interface HexSelectionData {
 	color: string;
@@ -35,11 +44,19 @@ export class HexStore {
 
 	private colorIndex = 0;
 	private provincialAvg: number[] | null = $state(null);
+	selectedDpto: string | null = $state(null);
+
+	// Pre-computed geometry caches (built once at load, reused everywhere)
+	centroidCache: Map<string, [number, number]> = new Map(); // h3index → [lng, lat]
+	boundaryCache: Map<string, number[][]> = new Map(); // h3index → [[lng, lat], ...]
 
 	setLayer(layerId: string | null) {
 		if (!layerId) {
 			this.activeLayer = null;
 			this.visibleData = new Map();
+			this.centroidCache = new Map();
+			this.boundaryCache = new Map();
+			this.selectedDpto = null;
 			this.clearSelection();
 			this.clearHexZones();
 			return;
@@ -47,8 +64,106 @@ export class HexStore {
 		const cfg = HEX_LAYER_REGISTRY[layerId];
 		if (!cfg) return;
 		this.activeLayer = cfg;
+		this.selectedDpto = null;
+
+		// Per-department layers: don't load all data, wait for department selection
+		if (cfg.perDepartment) {
+			this.loading = false;
+			return;
+		}
+
+		// Restore from persistent cache if available (instant re-activation)
+		const cached = layerDataCache.get(layerId);
+		if (cached) {
+			this.visibleData = cached.data;
+			this.centroidCache = cached.centroids;
+			this.boundaryCache = cached.boundaries;
+			this.provincialAvg = cached.provincialAvg;
+			this.loading = false;
+			return;
+		}
+
 		this.provincialAvg = null;
 		this.loadVisibleData();
+	}
+
+	async loadDepartment(dpto: string, parquetKey: string) {
+		if (!this.activeLayer) return;
+		const layer = this.activeLayer;
+
+		// Check persistent cache first
+		const cacheKey = `${layer.id}:${parquetKey}`;
+		const cached = layerDataCache.get(cacheKey);
+		if (cached) {
+			this.selectedDpto = dpto;
+			this.visibleData = cached.data;
+			this.centroidCache = cached.centroids;
+			this.boundaryCache = cached.boundaries;
+			this.provincialAvg = cached.provincialAvg;
+			this.clearSelection();
+			this.clearHexZones();
+			this.loading = false;
+			return;
+		}
+
+		this.loading = true;
+		this.selectedDpto = dpto;
+		this.clearSelection();
+		this.clearHexZones();
+
+		try {
+			const url = getFloodDptoUrl(parquetKey);
+			const cols = layer.variables.map(v => v.col).join(', ');
+			const result = await query(
+				`SELECT h3index, ${cols} FROM '${url}' WHERE ${layer.primaryVariable} IS NOT NULL`
+			);
+
+			const data = new Map<string, Record<string, number>>();
+			const centroids = new Map<string, [number, number]>();
+			const boundaries = new Map<string, number[][]>();
+
+			for (let i = 0; i < result.numRows; i++) {
+				const row = result.get(i)!.toJSON() as Record<string, any>;
+				const h3index = row.h3index as string;
+				const values: Record<string, number> = {};
+				for (const v of layer.variables) {
+					values[v.col] = Number(row[v.col]) || 0;
+				}
+				data.set(h3index, values);
+
+				try {
+					const [lat, lng] = cellToLatLng(h3index);
+					centroids.set(h3index, [lng, lat]);
+					const boundary = cellToBoundary(h3index);
+					const coords = boundary.map(([lat, lng]) => [lng, lat]);
+					coords.push(coords[0]);
+					boundaries.set(h3index, coords);
+				} catch { /* skip invalid h3 */ }
+			}
+
+			this.visibleData = data;
+			this.centroidCache = centroids;
+			this.boundaryCache = boundaries;
+
+			// Cache for instant re-activation
+			layerDataCache.set(cacheKey, { data, centroids, boundaries, provincialAvg: null });
+
+			// Pre-cache provincial averages
+			this.ensureProvincialAvg().catch(() => {});
+		} catch (e) {
+			console.warn('Failed to load department hex data:', e);
+		}
+
+		this.loading = false;
+	}
+
+	backToDepartments() {
+		this.selectedDpto = null;
+		this.visibleData = new Map();
+		this.centroidCache = new Map();
+		this.boundaryCache = new Map();
+		this.clearSelection();
+		this.clearHexZones();
 	}
 
 	async loadVisibleData() {
@@ -59,6 +174,8 @@ export class HexStore {
 
 		try {
 			await this.loadBaseResolution(layer);
+			// Fire-and-forget: pre-cache provincial averages so lasso zones are instant
+			this.ensureProvincialAvg().catch(() => {});
 		} catch (e) {
 			console.warn('Failed to load hex data:', e);
 		}
@@ -76,6 +193,9 @@ export class HexStore {
 		);
 
 		const data = new Map<string, Record<string, number>>();
+		const centroids = new Map<string, [number, number]>();
+		const boundaries = new Map<string, number[][]>();
+
 		for (let i = 0; i < result.numRows; i++) {
 			const row = result.get(i)!.toJSON() as Record<string, any>;
 			const h3index = row.h3index as string;
@@ -84,8 +204,24 @@ export class HexStore {
 				values[v.col] = Number(row[v.col]) || 0;
 			}
 			data.set(h3index, values);
+
+			// Pre-compute geometry once for all subsequent operations
+			try {
+				const [lat, lng] = cellToLatLng(h3index);
+				centroids.set(h3index, [lng, lat]);
+				const boundary = cellToBoundary(h3index);
+				const coords = boundary.map(([lat, lng]) => [lng, lat]);
+				coords.push(coords[0]); // close ring
+				boundaries.set(h3index, coords);
+			} catch { /* skip invalid h3 */ }
 		}
+
 		this.visibleData = data;
+		this.centroidCache = centroids;
+		this.boundaryCache = boundaries;
+
+		// Persist in module-level cache for instant re-activation
+		layerDataCache.set(layer.id, { data, centroids, boundaries, provincialAvg: null });
 	}
 
 	// ── Selection ────────────────────────────────────────────────────────
@@ -127,14 +263,14 @@ export class HexStore {
 
 	// ── Choropleth entries ────────────────────────────────────────────────
 
-	get choroplethEntries(): { h3index: string; value: number; properties: Record<string, number> }[] {
+	get choroplethEntries(): { h3index: string; value: number; properties: Record<string, number>; boundary?: number[][] }[] {
 		if (!this.activeLayer) return [];
 		const primary = this.activeLayer.primaryVariable;
-		const entries: { h3index: string; value: number; properties: Record<string, number> }[] = [];
+		const entries: { h3index: string; value: number; properties: Record<string, number>; boundary?: number[][] }[] = [];
 		for (const [h3index, data] of this.visibleData) {
 			const value = data[primary] ?? 0;
 			if (value > 0) {
-				entries.push({ h3index, value, properties: data });
+				entries.push({ h3index, value, properties: data, boundary: this.boundaryCache.get(h3index) });
 			}
 		}
 		return entries;
@@ -143,14 +279,23 @@ export class HexStore {
 	// ── Hex zone (lasso) operations ──────────────────────────────────────
 
 	findHexesInPolygon(polygon: [number, number][]): string[] {
+		// Pre-compute bounding box of the lasso polygon to skip ~90% of candidates
+		let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+		for (const [lng, lat] of polygon) {
+			if (lng < minLng) minLng = lng;
+			if (lng > maxLng) maxLng = lng;
+			if (lat < minLat) minLat = lat;
+			if (lat > maxLat) maxLat = lat;
+		}
+
 		const result: string[] = [];
-		for (const [h3index] of this.visibleData) {
-			try {
-				const [lat, lng] = cellToLatLng(h3index);
-				if (pointInPolygon([lng, lat], polygon)) {
-					result.push(h3index);
-				}
-			} catch { /* skip invalid */ }
+		for (const [h3index, centroid] of this.centroidCache) {
+			const [lng, lat] = centroid;
+			// Fast bbox rejection
+			if (lng < minLng || lng > maxLng || lat < minLat || lat > maxLat) continue;
+			if (pointInPolygon([lng, lat], polygon)) {
+				result.push(h3index);
+			}
 		}
 		return result;
 	}
@@ -169,6 +314,9 @@ export class HexStore {
 		const row = result.get(0)!.toJSON() as Record<string, any>;
 
 		this.provincialAvg = layer.variables.map(v => Number(row[`avg_${v.col}`]) || 1);
+		// Update persistent cache with provincial avg
+		const cached = layerDataCache.get(layer.id);
+		if (cached) cached.provincialAvg = this.provincialAvg;
 		return this.provincialAvg;
 	}
 
@@ -275,6 +423,9 @@ export class HexStore {
 	clearAll() {
 		this.activeLayer = null;
 		this.visibleData = new Map();
+		this.centroidCache = new Map();
+		this.boundaryCache = new Map();
+		this.selectedDpto = null;
 		this.selectedHexes = new Map();
 		this.hexZones = [];
 		this.colorIndex = 0;
