@@ -194,7 +194,7 @@ def dry_run(args):
         products.append(f"current extent (last {args.days} days, ~15min)")
         print(f"  2. Launch GEE exports: {', '.join(products)}")
         print("  3. Poll GEE tasks every 60s (timeout: 4h)")
-        print(f"  4. Download GeoTIFFs from gs://{GCS_BUCKET}/{args.days}")
+        print(f"  4. Download GeoTIFFs from gs://{GCS_BUCKET}/flood/")
     else:
         print("  1-4. SKIP (--skip-gee): use local GeoTIFFs from pipeline/output/")
         local = find_local_geotiffs()
