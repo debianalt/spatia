@@ -74,20 +74,6 @@
 				}
 			});
 
-			// LULC background (Dynamic World land cover, updated monthly)
-			map.addSource('lulc', {
-				type: 'raster',
-				tiles: ['https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/tiles/lulc/{z}/{x}/{y}.png'],
-				tileSize: 256,
-				minzoom: 5,
-				maxzoom: 14
-			});
-			map.addLayer({
-				id: 'lulc-layer',
-				type: 'raster',
-				source: 'lulc',
-				paint: { 'raster-opacity': 0.55 }
-			});
 
 			// Province fill
 			map.addLayer({
