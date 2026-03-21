@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Legend from './Legend.svelte';
 	import ComparisonChart from './ComparisonChart.svelte';
 	import OpportunityCard from './OpportunityCard.svelte';
 	import ResponseChart from './ResponseChart.svelte';
@@ -147,7 +146,6 @@
 		</div>
 	{/if}
 
-	<Legend {mapStore} {lensStore} />
 </div>
 
 <style>

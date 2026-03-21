@@ -127,10 +127,6 @@ const dict: Record<string, Record<Locale, string>> = {
 	'card.difference': { es: 'Diferencia más notable', en: 'Most notable difference', gn: 'Mba\'e iñambuéva' },
 	'card.back': { es: '← Volver a ficha', en: '← Back to card', gn: '← Ejevy' },
 
-	// Legend lens mode
-	'legend.lensOpportunity': { es: 'Oportunidad diferencial', en: 'Differential opportunity', gn: 'Oportunidade iñambuéva' },
-	'legend.lensRest': { es: 'Sin oportunidad destacada', en: 'No highlighted opportunity', gn: "Oportunidade'ỹ" },
-
 	// Chat paywall
 	'chat.paywall.title': { es: 'Análisis IA Premium', en: 'Premium AI Analysis', gn: 'IA Premium' },
 	'chat.paywall.soon': { es: 'Próximamente', en: 'Coming soon', gn: 'Oguerahátama' },
@@ -267,6 +263,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'hexZone.title': { es: 'Zonas hexagonales', en: 'Hex zones', gn: 'Hexágono zona' },
 	'hex.resolution': { es: 'Resolución H3', en: 'H3 resolution', gn: 'H3 tuichakue' },
 	'hex.loading': { es: 'Cargando hexágonos...', en: 'Loading hexagons...', gn: 'Oñemyenyhẽ hexágono...' },
+	'hex.provAvg': { es: 'prom. provincial', en: 'prov. avg', gn: 'tetã guasu mbytekue' },
 
 	// ── Welcome panel ─────────────────────────────────────────────────────
 	'side.welcome.status': { es: 'En desarrollo', en: 'Under development', gn: 'Oñemoĩhína' },
