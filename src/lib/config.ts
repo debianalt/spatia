@@ -203,20 +203,6 @@ export interface AnalysisConfig {
 export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 	// ── Invertir ──
 	{
-		id: 'real_estate',
-		lensId: 'invertir',
-		titleKey: 'analysis.realEstate.title',
-		descKey: 'analysis.realEstate.desc',
-		icon: '🏠',
-		status: 'available',
-		choropleth: {
-			parquet: 'real_estate_by_radio',
-			column: 'median_usd_m2',
-			colorScale: 'price',
-			legendKey: 'analysis.realEstate.legend',
-		},
-	},
-	{
 		id: 'territorial_profile_inv',
 		lensId: 'invertir',
 		titleKey: 'analysis.territorialProfile.title',
