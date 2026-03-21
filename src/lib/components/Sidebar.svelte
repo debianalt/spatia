@@ -125,36 +125,6 @@
 				{i18n.t('side.welcome.desc')}
 			</p>
 
-			<!-- Spatia Pro -->
-			<div class="flex flex-col gap-2">
-				<span class="text-sm font-semibold text-white">Spatia Pro</span>
-				<ul class="flex flex-col gap-1.5 text-[11px] text-white/80">
-					<li class="flex items-start gap-1.5">
-						<span class="text-white mt-px">✓</span>
-						<span>Asistente IA con contexto territorial completo</span>
-					</li>
-					<li class="flex items-start gap-1.5">
-						<span class="text-white mt-px">✓</span>
-						<span>Reportes PDF automáticos por zona o radio</span>
-					</li>
-					<li class="flex items-start gap-1.5">
-						<span class="text-white mt-px">✓</span>
-						<span>Metodología y fuentes documentadas en cada reporte</span>
-					</li>
-					<li class="flex items-start gap-1.5">
-						<span class="text-white mt-px">✓</span>
-						<span>Análisis multi-capa con exportación de datos</span>
-					</li>
-					<li class="flex items-start gap-1.5">
-						<span class="text-white mt-px">✓</span>
-						<span>Soporte técnico prioritario</span>
-					</li>
-				</ul>
-				<a href="mailto:spatia@conicet.gov.ar"
-					class="self-start mt-1 bg-white text-black text-[11px] font-semibold px-4 py-1.5 rounded-md hover:opacity-90 transition-opacity">
-					Solicitar acceso
-				</a>
-			</div>
 		</div>
 	{/if}
 
