@@ -116,7 +116,7 @@
 		<div class="chart-scroll flex flex-col gap-4 pt-1">
 			<!-- Branding -->
 			<div class="flex flex-col gap-1">
-				<span class="text-lg font-bold text-white">Spatia</span>
+				<span class="text-lg font-bold text-white">spatia.ar</span>
 				<span class="text-white/70 italic text-[11px]">{i18n.t('header.subtitle')}</span>
 			</div>
 

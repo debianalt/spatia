@@ -2,7 +2,7 @@ export type Locale = 'es' | 'en' | 'gn';
 
 const dict: Record<string, Record<Locale, string>> = {
 	// Header
-	'header.title': { es: 'Spatia', en: 'Spatia', gn: 'Spatia' },
+	'header.title': { es: 'spatia.ar', en: 'spatia.ar', gn: 'spatia.ar' },
 	'header.subtitle': { es: 'Inteligencia Territorial para Misiones', en: 'Territorial Intelligence for Misiones', gn: "Yvy Rekokatu Misiones-pe" },
 
 	// Controls
