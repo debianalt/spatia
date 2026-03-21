@@ -39,7 +39,7 @@
 					<span
 						class="card-badge"
 						style:background={analysis.status === 'available' ? `${cfg.color}25` : 'rgba(100,116,139,0.2)'}
-						style:color={analysis.status === 'available' ? cfg.color : '#64748b'}
+						style:color={analysis.status === 'available' ? cfg.color : '#a3a3a3'}
 						style:border-color={analysis.status === 'available' ? `${cfg.color}40` : 'rgba(100,116,139,0.3)'}
 					>
 						{i18n.t(analysis.status === 'available' ? 'analysis.status.available' : 'analysis.status.comingSoon')}
@@ -67,7 +67,7 @@
 	}
 	.header-sub {
 		font-size: 10px;
-		color: #64748b;
+		color: #a3a3a3;
 		margin-left: auto;
 	}
 	.analysis-grid {
@@ -122,7 +122,7 @@
 	}
 	.card-desc {
 		font-size: 9px;
-		color: #64748b;
+		color: #a3a3a3;
 		line-height: 1.3;
 		margin-top: 2px;
 		display: -webkit-box;

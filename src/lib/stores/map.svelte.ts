@@ -28,6 +28,7 @@ export type HexData = {
 export class MapStore {
 	selectedRadios: Map<string, RadioData> = $state(new Map());
 	pitch: number = $state(31);
+	bearing: number = $state(-15);
 	chatHighlightedRedcodes: string[] = $state([]);
 	chatCharts: ChartDataSet[] = $state([]);
 	activeHexLayer: string | null = $state(null);

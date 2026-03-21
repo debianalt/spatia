@@ -135,7 +135,7 @@
 	.dpto-detail { display: flex; flex-direction: column; gap: 6px; }
 	.back-btn {
 		font-size: 10px;
-		color: #94a3b8;
+		color: #d4d4d4;
 		background: none;
 		border: none;
 		cursor: pointer;
@@ -177,6 +177,6 @@
 		width: 100%;
 	}
 	.radio-row:hover { background: rgba(255,255,255,0.06); }
-	.radio-code { font-size: 10px; color: #94a3b8; font-family: 'JetBrains Mono', monospace; }
+	.radio-code { font-size: 10px; color: #d4d4d4; font-family: 'JetBrains Mono', monospace; }
 	.radio-score { font-size: 10px; font-weight: 600; color: #e2e8f0; }
 </style>

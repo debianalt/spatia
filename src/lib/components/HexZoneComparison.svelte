@@ -114,7 +114,7 @@
 		border-radius: 4px;
 		background: rgba(255,255,255,0.06);
 		border: 1px solid #334155;
-		color: #94a3b8;
+		color: #d4d4d4;
 		cursor: pointer;
 		transition: all 0.15s;
 	}
@@ -154,7 +154,7 @@
 	.hzc-remove {
 		background: none;
 		border: none;
-		color: #64748b;
+		color: #a3a3a3;
 		cursor: pointer;
 		font-size: 9px;
 		padding: 0 2px;
@@ -173,7 +173,7 @@
 	.hzc-table-header .hzt-col {
 		font-size: 9px;
 		font-weight: 600;
-		color: #64748b;
+		color: #a3a3a3;
 		text-transform: uppercase;
 	}
 	.hzc-table-row {
@@ -195,7 +195,7 @@
 	.hzc-dim-label {
 		width: 65px;
 		flex-shrink: 0;
-		color: #94a3b8;
+		color: #d4d4d4;
 		font-size: 9px;
 		text-align: right;
 		padding-top: 1px;

@@ -538,7 +538,7 @@
 		<div class="flex items-center justify-between px-4 py-2.5 border-b border-border z-10 shrink-0"
 			style="background: rgba(10,12,18,0.88); backdrop-filter: blur(8px);">
 			<h1 class="text-[15px] font-bold text-white tracking-wide">
-				{i18n.t('header.title')} <span class="text-accent font-normal">&mdash; {i18n.t('header.subtitle')}</span>
+				{i18n.t('header.title')} <span class="text-white/70 font-normal">&mdash; {i18n.t('header.subtitle')}</span>
 			</h1>
 
 			<!-- Lens selector (center) -->
@@ -547,7 +547,7 @@
 			<div class="flex items-center gap-0.5">
 				{#each (['es', 'en', 'gn'] as Locale[]) as lang}
 					<button
-						class="px-2 py-0.5 text-[11px] font-semibold rounded-full cursor-pointer border transition-all {i18n.locale === lang ? 'bg-accent-active text-accent border-accent' : 'bg-transparent text-text-dim border-transparent hover:text-text-muted'}"
+						class="px-2 py-0.5 text-[11px] font-semibold rounded-full cursor-pointer border transition-all {i18n.locale === lang ? 'bg-white/10 text-white border-white/30' : 'bg-transparent text-white/50 border-transparent hover:text-white'}"
 						onclick={() => i18n.setLocale(lang)}>
 						{lang.toUpperCase()}
 					</button>

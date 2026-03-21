@@ -43,7 +43,7 @@
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		color: #64748b;
+		color: #a3a3a3;
 		border-bottom: 1px solid #1e293b;
 		padding-bottom: 2px;
 		margin-bottom: 4px;
@@ -52,7 +52,7 @@
 		margin-bottom: 2px;
 	}
 	.chart-label {
-		color: #94a3b8;
+		color: #d4d4d4;
 		font-size: 10px;
 		white-space: nowrap;
 		overflow: hidden;

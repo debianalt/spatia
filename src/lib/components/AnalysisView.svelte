@@ -69,7 +69,7 @@
 	}
 	.back-btn {
 		font-size: 10px;
-		color: #94a3b8;
+		color: #d4d4d4;
 		background: none;
 		border: none;
 		cursor: pointer;
@@ -111,7 +111,7 @@
 		display: inline-block;
 		font-size: 9px;
 		font-weight: 600;
-		color: #94a3b8;
+		color: #d4d4d4;
 		background: rgba(100,116,139,0.2);
 		padding: 2px 8px;
 		border-radius: 9999px;
@@ -124,7 +124,7 @@
 	}
 	.coming-soon-body {
 		font-size: 9px;
-		color: #64748b;
+		color: #a3a3a3;
 		margin: 0;
 		line-height: 1.4;
 	}

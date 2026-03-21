@@ -74,6 +74,21 @@
 				}
 			});
 
+			// LULC background (Dynamic World land cover, updated monthly)
+			map.addSource('lulc', {
+				type: 'raster',
+				tiles: ['https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/tiles/lulc/{z}/{x}/{y}.png'],
+				tileSize: 256,
+				minzoom: 5,
+				maxzoom: 14
+			});
+			map.addLayer({
+				id: 'lulc-layer',
+				type: 'raster',
+				source: 'lulc',
+				paint: { 'raster-opacity': 0.55 }
+			});
+
 			// Province fill
 			map.addLayer({
 				id: 'province-fill',
@@ -90,7 +105,7 @@
 				source: 'radios',
 				'source-layer': 'radios',
 				paint: {
-					'line-color': '#94a3b8',
+					'line-color': '#d4d4d4',
 					'line-width': [
 						'interpolate', ['linear'], ['zoom'],
 						6, 1.2,
@@ -334,10 +349,10 @@
 			let html = `<b style="color:#60a5fa">${i18n.t('tip.building')}</b> ${i18n.t('tip.height')} ${h} m | ${i18n.t('tip.area')} ${a} m\u00B2<br>` +
 				`<b style="color:#60a5fa">${i18n.t('tip.estPersons')}</b> <span style="color:#60a5fa;font-weight:600">${pers}</span>`;
 			if (redcode) {
-				html += `<br><span style="color:#475569">\u2500\u2500\u2500</span><br>` +
-					`<b style="color:#94a3b8">${i18n.t('tip.radio')}</b> <span style="color:#94a3b8">${redcode}</span><br>` +
-					`<b style="color:#94a3b8">${i18n.t('tip.pop')}</b> ${radioPop.toLocaleString()} &nbsp; <b style="color:#94a3b8">${i18n.t('tip.density')}</b> ${radioDens} hab/km\u00B2<br>` +
-					`<b style="color:#94a3b8">${i18n.t('label.dwellings')}:</b> ${radioViv.toLocaleString()} &nbsp; <b style="color:#94a3b8">${i18n.t('label.households')}:</b> ${radioHog.toLocaleString()} &nbsp; <b style="color:#94a3b8">${i18n.t('label.area')}:</b> ${radioAreaKm2} km\u00B2`;
+				html += `<br><span style="color:#a3a3a3">\u2500\u2500\u2500</span><br>` +
+					`<b style="color:#d4d4d4">${i18n.t('tip.radio')}</b> <span style="color:#d4d4d4">${redcode}</span><br>` +
+					`<b style="color:#d4d4d4">${i18n.t('tip.pop')}</b> ${radioPop.toLocaleString()} &nbsp; <b style="color:#d4d4d4">${i18n.t('tip.density')}</b> ${radioDens} hab/km\u00B2<br>` +
+					`<b style="color:#d4d4d4">${i18n.t('label.dwellings')}:</b> ${radioViv.toLocaleString()} &nbsp; <b style="color:#d4d4d4">${i18n.t('label.households')}:</b> ${radioHog.toLocaleString()} &nbsp; <b style="color:#d4d4d4">${i18n.t('label.area')}:</b> ${radioAreaKm2} km\u00B2`;
 			}
 			tooltip.innerHTML = html;
 			tooltip.style.display = 'block';
@@ -433,6 +448,7 @@
 	export function setPitch(p: number) {
 		map?.easeTo({ pitch: p, duration: 200 });
 	}
+
 
 	export function updateColorExpr() {
 		if (map?.getLayer('buildings-3d')) {

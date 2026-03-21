@@ -180,7 +180,7 @@
 
 <style>
 	.loading {
-		color: #94a3b8;
+		color: #d4d4d4;
 		font-size: 10px;
 		text-align: center;
 		padding: 20px 0;
@@ -197,7 +197,7 @@
 	.hex-id {
 		font-family: monospace;
 		font-size: 10px;
-		color: #94a3b8;
+		color: #d4d4d4;
 	}
 	.risk-badge {
 		font-size: 9px;
@@ -214,7 +214,7 @@
 	}
 	.score-label {
 		font-size: 9px;
-		color: #94a3b8;
+		color: #d4d4d4;
 		white-space: nowrap;
 	}
 	.score-track {
@@ -248,7 +248,7 @@
 	}
 	.detail-label {
 		font-size: 9px;
-		color: #94a3b8;
+		color: #d4d4d4;
 		margin-bottom: 2px;
 	}
 	.detail-value {
@@ -258,7 +258,7 @@
 	}
 	.detail-desc {
 		font-size: 8px;
-		color: #64748b;
+		color: #a3a3a3;
 		margin-top: 2px;
 	}
 	.summary-cards {
@@ -280,7 +280,7 @@
 	}
 	.card-label {
 		font-size: 8px;
-		color: #94a3b8;
+		color: #d4d4d4;
 		margin-top: 2px;
 	}
 	.dept-section {
@@ -326,7 +326,7 @@
 	.dept-clickable:hover { background: rgba(96,165,250,0.1); }
 	.dept-name {
 		font-size: 9px;
-		color: #94a3b8;
+		color: #d4d4d4;
 		width: 72px;
 		text-align: left;
 		flex-shrink: 0;
@@ -354,7 +354,7 @@
 	}
 	.hint {
 		font-size: 9px;
-		color: #64748b;
+		color: #a3a3a3;
 		text-align: center;
 		margin-top: 8px;
 	}
@@ -380,7 +380,7 @@
 	.method-summary {
 		font-size: 9px;
 		font-weight: 600;
-		color: #94a3b8;
+		color: #d4d4d4;
 		padding: 6px 8px;
 		cursor: pointer;
 		user-select: none;
@@ -416,7 +416,7 @@
 	}
 	.method-item p {
 		font-size: 8.5px;
-		color: #64748b;
+		color: #a3a3a3;
 		margin: 2px 0 0;
 		line-height: 1.4;
 	}

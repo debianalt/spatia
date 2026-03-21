@@ -124,7 +124,7 @@
 		font-size: 10px; color: #cbd5e1; margin-bottom: 2px;
 	}
 	.pop-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-	.pop-code { color: #94a3b8; font-family: monospace; }
+	.pop-code { color: #d4d4d4; font-family: monospace; }
 	.pop-val { font-weight: 600; }
 
 	.ref-note {
@@ -138,7 +138,7 @@
 	}
 	.dim-label {
 		width: 65px; flex-shrink: 0;
-		color: #94a3b8; font-size: 9px;
+		color: #d4d4d4; font-size: 9px;
 		text-align: right; padding-top: 1px;
 	}
 	.dim-bars-container {

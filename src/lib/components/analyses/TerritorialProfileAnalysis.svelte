@@ -105,7 +105,7 @@
 
 <style>
 	.hint {
-		color: #64748b;
+		color: #a3a3a3;
 		font-size: 10px;
 		margin: 8px 0;
 	}
@@ -125,13 +125,13 @@
 		font-size: 12px;
 	}
 	.profile-dpto {
-		color: #64748b;
+		color: #a3a3a3;
 		font-size: 10px;
 	}
 	.profile-close {
 		background: none;
 		border: none;
-		color: #64748b;
+		color: #a3a3a3;
 		font-size: 14px;
 		cursor: pointer;
 		padding: 0;
@@ -152,7 +152,7 @@
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		color: #64748b;
+		color: #a3a3a3;
 		border-bottom: 1px solid #1e293b;
 		padding-bottom: 2px;
 		margin-bottom: 4px;

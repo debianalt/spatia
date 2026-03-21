@@ -257,7 +257,7 @@
 
 <style>
 	.loading {
-		color: #64748b;
+		color: #a3a3a3;
 		font-size: 10px;
 		padding: 12px 0;
 	}
@@ -274,7 +274,7 @@
 	}
 	.stat-label {
 		font-size: 8px;
-		color: #64748b;
+		color: #a3a3a3;
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
 		margin-bottom: 2px;
@@ -295,7 +295,7 @@
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		color: #64748b;
+		color: #a3a3a3;
 		border-bottom: 1px solid #1e293b;
 		padding-bottom: 2px;
 		margin-bottom: 4px;
@@ -314,7 +314,7 @@
 	}
 	.type-label {
 		font-size: 9px;
-		color: #94a3b8;
+		color: #d4d4d4;
 		width: 70px;
 		flex-shrink: 0;
 	}
@@ -360,7 +360,7 @@
 	.above .vs-arrow { color: #ef4444; }
 	.below .vs-arrow { color: #22c55e; }
 	.vs-text {
-		color: #94a3b8;
+		color: #d4d4d4;
 		font-size: 9px;
 	}
 
@@ -380,13 +380,13 @@
 		font-size: 12px;
 	}
 	.detail-dpto {
-		color: #64748b;
+		color: #a3a3a3;
 		font-size: 10px;
 	}
 	.detail-close {
 		background: none;
 		border: none;
-		color: #64748b;
+		color: #a3a3a3;
 		font-size: 14px;
 		cursor: pointer;
 		padding: 0;
@@ -437,7 +437,7 @@
 	}
 	.dept-count {
 		font-size: 8px;
-		color: #64748b;
+		color: #a3a3a3;
 	}
 	.source-note-box {
 		margin-top: 10px;

@@ -140,7 +140,7 @@
 		font-size: 9px;
 	}
 	.comp-vs {
-		color: #475569;
+		color: #a3a3a3;
 		font-size: 9px;
 	}
 	.comp-scores {
@@ -154,7 +154,7 @@
 		flex-wrap: wrap;
 	}
 	.comp-vs-score {
-		color: #475569;
+		color: #a3a3a3;
 		font-size: 11px;
 		font-weight: 400;
 	}
@@ -173,7 +173,7 @@
 	.dim-label {
 		width: 65px;
 		flex-shrink: 0;
-		color: #94a3b8;
+		color: #d4d4d4;
 		font-size: 9px;
 		text-align: right;
 		padding-top: 1px;
@@ -220,7 +220,7 @@
 		cursor: pointer;
 		background: rgba(255, 255, 255, 0.06);
 		border: 1px solid #334155;
-		color: #94a3b8;
+		color: #d4d4d4;
 		transition: all 0.15s;
 	}
 	.back-btn:hover {

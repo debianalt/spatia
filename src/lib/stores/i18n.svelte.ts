@@ -10,7 +10,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'ctrl.clear': { es: 'Limpiar', en: 'Clear', gn: "Mopotĩ" },
 
 	// Sidebar
-	'side.hover': { es: 'Posicionar para ver detalles. Click para comparar radios.', en: 'Hover for details. Click to compare radios.', gn: "Eha'ã he'i hag̃ua. Ehesakutu jojaha hag̃ua." },
+	'side.hover': { es: 'Scroll para zoom · Click derecho + arrastrar para rotar el mapa', en: 'Scroll to zoom · Right-click + drag to rotate the map', gn: "Scroll zoom hag̃ua · Click derecho + arrastrar mapa mbojere hag̃ua" },
 	'side.deselect': { es: 'Click para quitar', en: 'Click to remove', gn: "Ehesakutu emboguete hag̃ua" },
 
 	// Radio stats sections
@@ -278,9 +278,9 @@ const dict: Record<string, Record<Locale, string>> = {
 	// ── Welcome panel ─────────────────────────────────────────────────────
 	'side.welcome.status': { es: 'En desarrollo', en: 'Under development', gn: 'Oñemoĩhína' },
 	'side.welcome.desc': {
-		es: 'Plataforma de análisis territorial que integra datos censales, ambientales y socioeconómicos a escala de radio censal y hexágono H3. Explorá indicadores, compará zonas y generá diagnósticos con inteligencia artificial.',
-		en: 'Territorial analysis platform integrating census, environmental and socioeconomic data at census tract and H3 hexagon scale. Explore indicators, compare zones and generate AI-powered diagnostics.',
-		gn: "Yvy rekokatu plataforma omoĩva papapy, tekoha ha teko porã mba'ekuaa radio ha H3 hexágono rupi. Ehecha, ñembojoja ha emoheñói diagnóstico IA ndive."
+		es: 'Datos ambientales, sociales y económicos actualizados para cada zona de Misiones. Seleccioná un área, compará indicadores y descargá diagnósticos listos para decisiones.',
+		en: 'Up-to-date environmental, social and economic data for every zone in Misiones. Select an area, compare indicators and download decision-ready diagnostics.',
+		gn: "Tekoha, teko porã ha teko economía mba'ekuaa pyahu Misiones pegua. Eiporavo peteĩ área, ñembojoja indicador ha emboguejy diagnóstico."
 	},
 	'side.welcome.pro': { es: 'Spatia Pro', en: 'Spatia Pro', gn: 'Spatia Pro' },
 	'side.welcome.pro.ia': { es: 'Asistente IA con contexto territorial completo', en: 'AI assistant with full territorial context', gn: "IA pytyvõhára yvy rekokatu reheve" },

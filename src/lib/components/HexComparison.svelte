@@ -87,7 +87,7 @@
 		border-radius: 4px;
 		background: rgba(255,255,255,0.06);
 		border: 1px solid #334155;
-		color: #94a3b8;
+		color: #d4d4d4;
 		cursor: pointer;
 		transition: all 0.15s;
 	}
@@ -120,7 +120,7 @@
 	.hc-remove {
 		background: none;
 		border: none;
-		color: #64748b;
+		color: #a3a3a3;
 		cursor: pointer;
 		font-size: 9px;
 		padding: 0 2px;
@@ -147,7 +147,7 @@
 	.hc-var-row { margin-bottom: 6px; }
 	.hc-var-label {
 		font-size: 9px;
-		color: #94a3b8;
+		color: #d4d4d4;
 		margin-bottom: 2px;
 	}
 	.hc-var-bars {

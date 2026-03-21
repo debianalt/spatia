@@ -46,7 +46,7 @@
 		border-radius: 9999px;
 		border: 1px solid #334155;
 		background: transparent;
-		color: #94a3b8;
+		color: #d4d4d4;
 		font-size: 11px;
 		font-weight: 500;
 		cursor: pointer;
@@ -55,12 +55,12 @@
 	}
 	.lens-pill:hover {
 		border-color: var(--lc);
-		color: #e2e8f0;
+		color: #ffffff;
 		background: color-mix(in srgb, var(--lc) 10%, transparent);
 	}
 	.lens-pill.active {
 		border-color: var(--lc);
-		color: #e2e8f0;
+		color: #ffffff;
 		background: color-mix(in srgb, var(--lc) 20%, transparent);
 		font-weight: 600;
 	}

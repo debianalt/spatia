@@ -45,13 +45,33 @@
 		onSelectFloodDpto: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
 	} = $props();
 
+	let collapsed = $state(true);
+
+	// Auto-open when there's content to show
+	$effect(() => {
+		const hasContent =
+			hexStore.hexZones.length > 0 ||
+			lassoStore.zones.length > 0 ||
+			hexStore.selectedHexes.size > 0 ||
+			(lensStore.activeLens && lensStore.activeAnalysis) ||
+			(lensStore.activeLens && mapStore.selectedRadios.size > 0) ||
+			mapStore.selectedRadios.size > 0 ||
+			lensStore.activeLens;
+		if (hasContent) collapsed = false;
+	});
+
 	function handleBack() {
 		lensStore.clearAnalysis();
 	}
 </script>
 
+{#if !collapsed}
 <div class="sidebar absolute top-0 right-0 bottom-0 z-10 rounded-l-lg p-3 px-4 border-l border-border w-[440px] text-xs leading-relaxed"
 	style="background: var(--color-panel); backdrop-filter: blur(8px);">
+
+	<button class="collapse-btn" onclick={() => collapsed = true} title="Ocultar panel">
+		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 4 L18 12 L10 20"/></svg>
+	</button>
 
 	{#if hexStore.hexZones.length > 0}
 		<div class="chart-scroll">
@@ -94,61 +114,56 @@
 	{:else}
 		<!-- Welcome panel -->
 		<div class="chart-scroll flex flex-col gap-4 pt-1">
-			<!-- Bloque 1: Branding -->
+			<!-- Branding -->
 			<div class="flex flex-col gap-1">
-				<span class="text-lg font-bold text-accent">Spatia</span>
-				<span class="text-text-muted italic text-[11px]">{i18n.t('header.subtitle')}</span>
-				<span class="self-start mt-1 border border-accent text-accent text-[10px] px-2 py-0.5 rounded-full">{i18n.t('side.welcome.status')}</span>
+				<span class="text-lg font-bold text-white">Spatia</span>
+				<span class="text-white/70 italic text-[11px]">{i18n.t('header.subtitle')}</span>
 			</div>
 
-			<!-- Bloque 2: Pitch -->
-			<p class="text-text-muted text-[11px] leading-relaxed">
+			<!-- Pitch -->
+			<p class="text-white text-[11px] leading-relaxed">
 				{i18n.t('side.welcome.desc')}
 			</p>
 
-			<!-- Bloque 3: Spatia Pro -->
+			<!-- Spatia Pro -->
 			<div class="flex flex-col gap-2">
-				<span class="text-sm font-semibold text-text">{i18n.t('side.welcome.pro')}</span>
-				<ul class="flex flex-col gap-1.5 text-[11px] text-text-muted">
+				<span class="text-sm font-semibold text-white">Spatia Pro</span>
+				<ul class="flex flex-col gap-1.5 text-[11px] text-white/80">
 					<li class="flex items-start gap-1.5">
-						<span class="text-accent mt-px">✓</span>
-						<span>{i18n.t('side.welcome.pro.ia')}</span>
+						<span class="text-white mt-px">✓</span>
+						<span>Asistente IA con contexto territorial completo</span>
 					</li>
 					<li class="flex items-start gap-1.5">
-						<span class="text-accent mt-px">✓</span>
-						<span>{i18n.t('side.welcome.pro.pdf')}</span>
+						<span class="text-white mt-px">✓</span>
+						<span>Reportes PDF automáticos por zona o radio</span>
 					</li>
 					<li class="flex items-start gap-1.5">
-						<span class="text-accent mt-px">✓</span>
-						<span>{i18n.t('side.welcome.pro.method')}</span>
+						<span class="text-white mt-px">✓</span>
+						<span>Metodología y fuentes documentadas en cada reporte</span>
 					</li>
 					<li class="flex items-start gap-1.5">
-						<span class="text-accent mt-px">✓</span>
-						<span>{i18n.t('side.welcome.pro.multi')}</span>
+						<span class="text-white mt-px">✓</span>
+						<span>Análisis multi-capa con exportación de datos</span>
 					</li>
 					<li class="flex items-start gap-1.5">
-						<span class="text-accent mt-px">✓</span>
-						<span>{i18n.t('side.welcome.pro.support')}</span>
+						<span class="text-white mt-px">✓</span>
+						<span>Soporte técnico prioritario</span>
 					</li>
 				</ul>
 				<a href="mailto:spatia@conicet.gov.ar"
-					class="self-start mt-1 bg-accent text-white text-[11px] font-medium px-4 py-1.5 rounded-md hover:opacity-90 transition-opacity">
-					{i18n.t('side.welcome.pro.cta')}
+					class="self-start mt-1 bg-white text-black text-[11px] font-semibold px-4 py-1.5 rounded-md hover:opacity-90 transition-opacity">
+					Solicitar acceso
 				</a>
 			</div>
-
-			<!-- Bloque 4: Instituciones -->
-			<div class="flex flex-col gap-1 border-t border-border/30 pt-3">
-				<span class="text-text-dim text-[10px]">{i18n.t('side.welcome.backed')}:</span>
-				<span class="text-text-dim text-[10px]">CONICET · UNAM · INREFRO</span>
-			</div>
-
-			<!-- Bloque 5: Hint -->
-			<p class="text-text-dim text-[10px] mt-auto">{i18n.t('side.hover')}</p>
 		</div>
 	{/if}
 
 </div>
+{:else}
+	<button class="expand-btn" onclick={() => collapsed = false} title="Mostrar panel">
+		<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 4 L6 12 L14 20"/></svg>
+	</button>
+{/if}
 
 <style>
 	.sidebar {
@@ -165,4 +180,70 @@
 	.chart-scroll::-webkit-scrollbar { width: 4px; }
 	.chart-scroll::-webkit-scrollbar-track { background: transparent; }
 	.chart-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+	.faq-item {
+		border: 1px solid rgba(255,255,255,0.08);
+		border-radius: 6px;
+		overflow: hidden;
+	}
+	.faq-q {
+		font-size: 10px;
+		font-weight: 600;
+		color: #ffffff;
+		padding: 6px 8px;
+		cursor: pointer;
+		user-select: none;
+		list-style: none;
+		display: flex;
+		align-items: center;
+		gap: 4px;
+	}
+	.faq-q::before { content: '\25B8'; font-size: 8px; transition: transform 0.15s; }
+	.faq-item[open] > .faq-q::before { transform: rotate(90deg); }
+	.faq-q::-webkit-details-marker { display: none; }
+	.faq-a {
+		padding: 2px 8px 8px;
+	}
+	.faq-a p {
+		font-size: 10px;
+		color: rgba(255,255,255,0.8);
+		margin: 0;
+		line-height: 1.5;
+	}
+	.collapse-btn {
+		position: absolute;
+		top: 8px;
+		left: -14px;
+		width: 28px;
+		height: 28px;
+		border: 1px solid rgba(255,255,255,0.1);
+		background: rgba(15, 23, 42, 0.9);
+		border-radius: 6px;
+		color: #a3a3a3;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.15s;
+		z-index: 11;
+	}
+	.collapse-btn:hover { color: #e2e8f0; border-color: #60a5fa; }
+	.expand-btn {
+		position: absolute;
+		top: 12px;
+		right: 12px;
+		z-index: 10;
+		width: 36px;
+		height: 36px;
+		border: 1px solid rgba(255,255,255,0.12);
+		background: rgba(15, 23, 42, 0.85);
+		backdrop-filter: blur(8px);
+		border-radius: 8px;
+		color: #d4d4d4;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.15s;
+	}
+	.expand-btn:hover { color: #e2e8f0; border-color: #60a5fa; background: rgba(59,130,246,0.1); }
 </style>

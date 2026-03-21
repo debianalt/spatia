@@ -435,7 +435,7 @@
 		border-radius: 50%;
 		border: none;
 		background: transparent;
-		color: #64748b;
+		color: #a3a3a3;
 		font-size: 10px;
 		cursor: pointer;
 		display: flex;
@@ -526,7 +526,7 @@
 		border-radius: 9999px;
 		font-size: 9px;
 		background: rgba(96, 165, 250, 0.1);
-		color: #64748b;
+		color: #a3a3a3;
 		border: 1px solid #1e293b;
 	}
 	.tool-pill.active {
@@ -567,12 +567,12 @@
 	}
 	.paywall-price {
 		font-size: 11px;
-		color: #94a3b8;
+		color: #d4d4d4;
 		margin-bottom: 2px;
 	}
 	.paywall-soon {
 		font-size: 10px;
-		color: #64748b;
+		color: #a3a3a3;
 		font-style: italic;
 		margin-bottom: 6px;
 	}
