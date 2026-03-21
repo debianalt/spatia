@@ -147,7 +147,7 @@
 		mapComponent?.clearHexZoneHighlight();
 		mapStore.clearHexState();
 		hexStore.clearAll();
-		prevHexDataSize = 0;
+		prevDataVersion = hexStore.dataVersion;
 
 		if (lens) {
 			const cfg = LENS_CONFIG[lens];
@@ -278,21 +278,27 @@
 	});
 
 	// ── HexStore reactivity: re-render choropleth when data changes ──────
-	let prevHexDataSize = 0;
+	// For perDepartment layers, rendering is handled directly by handleSelectFloodDpto.
+	// This $effect only handles non-perDepartment layers (legacy path).
+	let prevDataVersion = 0;
 
 	$effect(() => {
+		const version = hexStore.dataVersion;
 		const entries = hexStore.choroplethEntries;
+		const layer = hexStore.activeLayer;
 
-		if (entries.length === 0 && prevHexDataSize === 0) return;
-		if (entries.length === prevHexDataSize) return;
-		prevHexDataSize = entries.length;
+		if (version === prevDataVersion) return;
+		prevDataVersion = version;
+
+		// Skip for perDepartment layers — they render directly
+		if (layer?.perDepartment) return;
 
 		if (entries.length === 0) {
 			mapComponent?.clearHexChoropleth();
 			return;
 		}
 
-		const colorScale = (hexStore.activeLayer?.colorScale ?? 'flood') as 'flood' | 'sequential';
+		const colorScale = (layer?.colorScale ?? 'flood') as 'flood' | 'sequential';
 		mapComponent?.setHexChoropleth(entries, colorScale);
 		analysisDataLoaded = true;
 	});
@@ -440,8 +446,19 @@
 	async function handleSelectFloodDpto(dpto: string, parquetKey: string, centroid: [number, number]) {
 		mapComponent?.clearHexChoropleth();
 		mapComponent?.clearHexZoneHighlight();
+		mapStore.setActiveHexLayer(hexStore.activeLayer?.id ?? null);
 		await hexStore.loadDepartment(dpto, parquetKey);
-		mapComponent?.flyToCoords(centroid[1], centroid[0], 10);
+		prevDataVersion = hexStore.dataVersion;
+		// Render outside Svelte's reactive batch to prevent $effect interference
+		setTimeout(() => {
+			const entries = hexStore.choroplethEntries;
+			if (entries.length > 0) {
+				const colorScale = (hexStore.activeLayer?.colorScale ?? 'flood') as 'flood' | 'sequential';
+				mapComponent?.setHexChoropleth(entries, colorScale);
+				analysisDataLoaded = true;
+			}
+			mapComponent?.flyToCoords(centroid[1], centroid[0], 10);
+		}, 20);
 	}
 
 	function clearAll() {

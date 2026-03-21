@@ -60,33 +60,32 @@ def build_dept_polygons() -> dict[str, any]:
     radios["geom"] = radios["geometry"].apply(lambda b: wkb.loads(b))
     radios = radios.merge(radio_stats, on="redcode", how="inner")
 
-    # Dissolve by department
+    # Dissolve by department (no buffer — exact boundaries)
     dept_polys = {}
     for dpto, group in radios.groupby("dpto"):
         geoms = [g for g in group["geom"] if g is not None and g.is_valid]
         if geoms:
-            dissolved = unary_union(geoms)
-            # Buffer slightly to catch hexes at boundaries
-            dept_polys[dpto] = dissolved.buffer(0.02)  # ~2km buffer
+            dept_polys[dpto] = unary_union(geoms)
 
     print(f"  Built {len(dept_polys)} department polygons")
     return dept_polys
 
 
 def assign_hexes_to_depts(flood: pd.DataFrame, dept_polys: dict) -> pd.DataFrame:
-    """Assign each hex to a department via point-in-polygon on centroid."""
+    """Assign each hex to a department via point-in-polygon, then nearest for unmatched."""
     print("Assigning hexes to departments spatially...")
 
-    # Prepare polygons for fast containment tests
+    # Phase 1: exact containment (no buffer)
     prepared = {dpto: prep(poly) for dpto, poly in dept_polys.items()}
     dpto_list = list(dept_polys.keys())
 
     assignments = {}
+    unassigned_pts = {}  # h3index → Point
     total = len(flood)
 
     for i, h3index in enumerate(flood["h3index"]):
         if i % 50000 == 0 and i > 0:
-            print(f"  {i}/{total} ({len(assignments)} assigned)...")
+            print(f"  Phase 1: {i}/{total} ({len(assignments)} assigned)...")
 
         try:
             lat, lng = h3_to_latlng(h3index)
@@ -94,12 +93,34 @@ def assign_hexes_to_depts(flood: pd.DataFrame, dept_polys: dict) -> pd.DataFrame
             continue
 
         pt = Point(lng, lat)
+        found = False
         for dpto in dpto_list:
             if prepared[dpto].contains(pt):
                 assignments[h3index] = dpto
+                found = True
                 break
+        if not found:
+            unassigned_pts[h3index] = pt
 
-    print(f"  Assigned {len(assignments)}/{total} hexes")
+    print(f"  Phase 1 (exact): {len(assignments)}/{total} assigned, {len(unassigned_pts)} unassigned")
+
+    # Phase 2: assign unmatched hexes to nearest department polygon
+    if unassigned_pts:
+        print(f"  Phase 2: assigning {len(unassigned_pts)} hexes to nearest department...")
+        for i, (h3index, pt) in enumerate(unassigned_pts.items()):
+            if i % 10000 == 0 and i > 0:
+                print(f"    {i}/{len(unassigned_pts)}...")
+            min_dist = float("inf")
+            best_dpto = None
+            for dpto, poly in dept_polys.items():
+                d = poly.distance(pt)
+                if d < min_dist:
+                    min_dist = d
+                    best_dpto = dpto
+            if best_dpto:
+                assignments[h3index] = best_dpto
+
+    print(f"  Total assigned: {len(assignments)}/{total}")
     flood = flood.copy()
     flood["dpto"] = flood["h3index"].map(assignments)
     return flood

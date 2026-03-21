@@ -35,10 +35,6 @@
 
 {#if analysis && cfg}
 	<div class="analysis-view">
-		<button class="back-btn" onclick={onBack}>
-			{i18n.t('analysis.back')}
-		</button>
-
 		<div class="view-header">
 			<span class="view-icon">{analysis.icon}</span>
 			<div class="view-title-group">

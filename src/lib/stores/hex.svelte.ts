@@ -46,6 +46,10 @@ export class HexStore {
 	private provincialAvg: number[] | null = $state(null);
 	selectedDpto: string | null = $state(null);
 
+	// Monotonic counter: increments on every meaningful visibleData change.
+	// Used by $effect to detect changes regardless of data size.
+	dataVersion: number = $state(0);
+
 	// Pre-computed geometry caches (built once at load, reused everywhere)
 	centroidCache: Map<string, [number, number]> = new Map(); // h3index → [lng, lat]
 	boundaryCache: Map<string, number[][]> = new Map(); // h3index → [[lng, lat], ...]
@@ -57,6 +61,7 @@ export class HexStore {
 			this.centroidCache = new Map();
 			this.boundaryCache = new Map();
 			this.selectedDpto = null;
+			this.dataVersion++;
 			this.clearSelection();
 			this.clearHexZones();
 			return;
@@ -79,6 +84,7 @@ export class HexStore {
 			this.centroidCache = cached.centroids;
 			this.boundaryCache = cached.boundaries;
 			this.provincialAvg = cached.provincialAvg;
+			this.dataVersion++;
 			this.loading = false;
 			return;
 		}
@@ -91,25 +97,12 @@ export class HexStore {
 		if (!this.activeLayer) return;
 		const layer = this.activeLayer;
 
-		// Check persistent cache first
-		const cacheKey = `${layer.id}:${parquetKey}`;
-		const cached = layerDataCache.get(cacheKey);
-		if (cached) {
-			this.selectedDpto = dpto;
-			this.visibleData = cached.data;
-			this.centroidCache = cached.centroids;
-			this.boundaryCache = cached.boundaries;
-			this.provincialAvg = cached.provincialAvg;
-			this.clearSelection();
-			this.clearHexZones();
-			this.loading = false;
-			return;
-		}
-
 		this.loading = true;
 		this.selectedDpto = dpto;
+		this.visibleData = new Map();
 		this.clearSelection();
 		this.clearHexZones();
+		this.dataVersion++;
 
 		try {
 			const url = getFloodDptoUrl(parquetKey);
@@ -144,11 +137,8 @@ export class HexStore {
 			this.visibleData = data;
 			this.centroidCache = centroids;
 			this.boundaryCache = boundaries;
+			this.dataVersion++;
 
-			// Cache for instant re-activation
-			layerDataCache.set(cacheKey, { data, centroids, boundaries, provincialAvg: null });
-
-			// Pre-cache provincial averages
 			this.ensureProvincialAvg().catch(() => {});
 		} catch (e) {
 			console.warn('Failed to load department hex data:', e);
@@ -159,9 +149,6 @@ export class HexStore {
 
 	backToDepartments() {
 		this.selectedDpto = null;
-		this.visibleData = new Map();
-		this.centroidCache = new Map();
-		this.boundaryCache = new Map();
 		this.clearSelection();
 		this.clearHexZones();
 	}
@@ -219,6 +206,7 @@ export class HexStore {
 		this.visibleData = data;
 		this.centroidCache = centroids;
 		this.boundaryCache = boundaries;
+		this.dataVersion++;
 
 		// Persist in module-level cache for instant re-activation
 		layerDataCache.set(layer.id, { data, centroids, boundaries, provincialAvg: null });
@@ -426,6 +414,7 @@ export class HexStore {
 		this.centroidCache = new Map();
 		this.boundaryCache = new Map();
 		this.selectedDpto = null;
+		this.dataVersion++;
 		this.selectedHexes = new Map();
 		this.hexZones = [];
 		this.colorIndex = 0;
