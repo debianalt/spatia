@@ -4,3 +4,20 @@ build
 .env
 .env.*
 .DS_Store
+
+# Wrangler local state
+.wrangler/
+
+# Python
+__pycache__/
+*.pyc
+
+# Pipeline outputs (large rasters & generated data)
+pipeline/output/*.tif
+pipeline/output/*.geojson
+pipeline/output/*.pmtiles
+pipeline/output/*.parquet
+
+# DB seed (auto-generated, 7MB)
+db/seed.sql
+db/parquets/
