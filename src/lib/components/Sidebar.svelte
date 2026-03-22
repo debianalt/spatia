@@ -21,6 +21,7 @@
 		lassoStore,
 		hexStore,
 		onRemoveRadio,
+		onClearRadios,
 		onSelectDpto,
 		onSelectRadio,
 		onSelectAnalysis,
@@ -35,6 +36,7 @@
 		lassoStore: LassoStore;
 		hexStore: HexStore;
 		onRemoveRadio: (redcode: string) => void;
+		onClearRadios: () => void;
 		onSelectDpto: (dpto: string) => void;
 		onSelectRadio: (redcode: string) => void;
 		onSelectAnalysis: (analysis: AnalysisConfig) => void;
@@ -98,7 +100,7 @@
 	{:else if mapStore.selectedRadios.size > 0}
 		<!-- No lens, radios selected: comparison chart -->
 		<div class="chart-scroll">
-			<ComparisonChart radios={mapStore.selectedRadios} {onRemoveRadio} />
+			<ComparisonChart radios={mapStore.selectedRadios} {onRemoveRadio} {onClearRadios} />
 		</div>
 	{:else if lensStore.activeLens}
 		<!-- Lens active, no analysis, no radio: show analysis menu -->

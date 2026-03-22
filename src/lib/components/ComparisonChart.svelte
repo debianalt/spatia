@@ -6,10 +6,12 @@
 
 	let {
 		radios,
-		onRemoveRadio
+		onRemoveRadio,
+		onClearRadios
 	}: {
 		radios: Map<string, RadioData>;
 		onRemoveRadio: (redcode: string) => void;
+		onClearRadios: () => void;
 	} = $props();
 
 	const fmt = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 0 });
@@ -51,6 +53,13 @@
 </script>
 
 <div class="chart-root">
+	<div class="radio-header">
+		<span class="radio-title">{i18n.t('side.radios')}</span>
+		<button class="radio-clear-btn" onclick={onClearRadios}>
+			&#10005; {i18n.t('side.clearRadios')}
+		</button>
+	</div>
+
 	<!-- Radio chips -->
 	<div class="flex flex-wrap gap-1 mb-2">
 		{#each [...radios.entries()] as [rc, data]}
@@ -105,10 +114,29 @@
 			{/each}
 		</div>
 	{/if}
+
+	<div class="sources">
+		<span class="sources-title">{i18n.t('source.title')}</span>
+		<span>{i18n.t('source.census')}</span>
+		<span>{i18n.t('source.buildings')}</span>
+		<span>{i18n.t('source.basemap')}</span>
+		<span>{i18n.t('source.terrain')}</span>
+	</div>
 </div>
 
 <style>
 	.chart-root { font-size: 11px; line-height: 1.3; }
+	.radio-header {
+		display: flex; justify-content: space-between; align-items: center;
+		margin-bottom: 6px;
+	}
+	.radio-title { font-size: 10px; font-weight: 600; color: #e2e8f0; }
+	.radio-clear-btn {
+		font-size: 9px; padding: 2px 6px; border-radius: 4px;
+		background: rgba(255,255,255,0.06); border: 1px solid #334155;
+		color: #d4d4d4; cursor: pointer; transition: all 0.15s;
+	}
+	.radio-clear-btn:hover { border-color: #ef4444; color: #ef4444; }
 	.chip {
 		display: inline-flex; align-items: center; gap: 3px;
 		padding: 1px 6px; border-radius: 9999px;
@@ -160,5 +188,16 @@
 	.dim-val {
 		font-size: 8px; font-weight: 600;
 		line-height: 7px; color: #cbd5e1;
+	}
+
+	.sources {
+		display: flex; flex-direction: column; gap: 1px;
+		margin-top: 12px; padding-top: 8px;
+		border-top: 1px solid rgba(255,255,255,0.06);
+		font-size: 8px; color: rgba(255,255,255,0.35); line-height: 1.4;
+	}
+	.sources-title {
+		font-weight: 600; color: rgba(255,255,255,0.45);
+		margin-bottom: 1px;
 	}
 </style>

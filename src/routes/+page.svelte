@@ -24,7 +24,10 @@
 
 	onMount(() => {
 		initDuckDB()
-			.then(() => lensStore.loadData())
+			.then(() => {
+				lensStore.loadData();
+				warmupRadioStats();
+			})
 			.catch(e => console.warn('DuckDB init failed:', e));
 
 		mapContainer?.addEventListener('radio-select', ((e: CustomEvent) => {
@@ -364,8 +367,14 @@
 		}
 	}
 
+	async function warmupRadioStats(): Promise<void> {
+		try {
+			await query(`SELECT 1 FROM '${PARQUETS.radio_stats_master}' LIMIT 1`);
+		} catch (_) { /* non-critical */ }
+	}
+
 	async function fetchRadioEnrichment(redcode: string): Promise<void> {
-		if (!isReady()) return;
+		await initDuckDB();
 		if (!/^\d{9}$/.test(redcode)) return;
 		try {
 			const ENRICHMENT_COLS = 'redcode, total_personas, tasa_actividad, tasa_empleo, pct_universitario, pct_nbi, pct_hacinamiento, pct_agua_red';
@@ -381,7 +390,7 @@
 	}
 
 	async function fetchRadioCensus(redcode: string): Promise<Record<string, any>> {
-		if (!isReady()) return {};
+		await initDuckDB();
 		if (!/^\d{9}$/.test(redcode)) return {};
 		try {
 			const result = await query(
@@ -402,6 +411,11 @@
 	function handleRemoveRadio(redcode: string) {
 		mapStore.removeRadio(redcode);
 		mapComponent?.setRadioHighlight(getRadioHighlightEntries());
+	}
+
+	function handleClearRadios() {
+		mapStore.clearRadios();
+		mapComponent?.setRadioHighlight([]);
 	}
 
 	// ── Lasso handlers ──────────────────────────────────────────────────────
@@ -577,6 +591,7 @@
 				{lassoStore}
 				{hexStore}
 				onRemoveRadio={handleRemoveRadio}
+				onClearRadios={handleClearRadios}
 				onSelectDpto={handleSelectDpto}
 				onSelectRadio={handleSelectRadio}
 				onSelectAnalysis={handleSelectAnalysis}

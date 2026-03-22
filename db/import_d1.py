@@ -135,7 +135,7 @@ def export_indicator_catalog(f):
         ("tasa_empleo", "Tasa de empleo", "economia", "%", "Tasa de empleo de la poblacion en edad de trabajar"),
         ("tasa_desocupacion", "Tasa de desocupacion", "economia", "%", "Tasa de desocupacion abierta"),
         ("tasa_actividad", "Tasa de actividad", "economia", "%", "Tasa de actividad economica"),
-        ("pct_agua_red", "Agua de red", "servicios", "%", "Porcentaje de hogares con agua de red publica"),
+        ("pct_agua_red", "Sin red de agua", "servicios", "%", "Porcentaje de hogares sin provision de agua por red publica"),
         ("pct_cloacas", "Cloacas", "servicios", "%", "Porcentaje de hogares conectados a red cloacal"),
         ("pct_universitario", "Nivel universitario", "educacion", "%", "Porcentaje de poblacion con nivel universitario completo"),
         ("pct_secundario_comp", "Secundario completo", "educacion", "%", "Porcentaje de poblacion con secundario completo"),

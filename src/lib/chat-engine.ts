@@ -209,7 +209,7 @@ const INDICATOR_CATALOG = [
 	{ id: 'tasa_empleo', nombre: 'Tasa de empleo', tema: 'economia', unidad: '%', descripcion: 'Tasa de empleo de la poblacion en edad de trabajar' },
 	{ id: 'tasa_desocupacion', nombre: 'Tasa de desocupacion', tema: 'economia', unidad: '%', descripcion: 'Tasa de desocupacion abierta' },
 	{ id: 'tasa_actividad', nombre: 'Tasa de actividad', tema: 'economia', unidad: '%', descripcion: 'Tasa de actividad economica' },
-	{ id: 'pct_agua_red', nombre: 'Agua de red', tema: 'servicios', unidad: '%', descripcion: 'Porcentaje de hogares con agua de red publica' },
+	{ id: 'pct_agua_red', nombre: 'Sin red de agua', tema: 'servicios', unidad: '%', descripcion: 'Porcentaje de hogares sin provision de agua por red publica' },
 	{ id: 'pct_cloacas', nombre: 'Cloacas', tema: 'servicios', unidad: '%', descripcion: 'Porcentaje de hogares conectados a red cloacal' },
 	{ id: 'pct_universitario', nombre: 'Nivel universitario', tema: 'educacion', unidad: '%', descripcion: 'Porcentaje de poblacion con nivel universitario completo' },
 	{ id: 'pct_secundario_comp', nombre: 'Secundario completo', tema: 'educacion', unidad: '%', descripcion: 'Porcentaje de poblacion con secundario completo' },

@@ -9,7 +9,7 @@ export function getTilesUrl(name: 'buildings' | 'radios' | 'radios-chm' | 'terra
 		return '/api/terrain/{z}/{x}/{y}.png';
 	}
 	const files = {
-		buildings: 'tiles/buildings-v4.pmtiles',
+		buildings: 'tiles/buildings-v5.pmtiles',
 		radios: 'tiles/radios-v2.pmtiles',
 		'radios-chm': 'tiles/radios-chm.pmtiles',
 		hexagons: 'tiles/hexagons-v2.pmtiles'
