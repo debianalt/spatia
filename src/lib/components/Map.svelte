@@ -696,10 +696,35 @@
 			});
 		}
 
-		// Buildings nearly invisible but still clickable — light color so parcels show through
+		// Hide 3D buildings — add flat 2D fill version so catastro lines render on top
 		if (map.getLayer('buildings-3d')) {
-			map.setPaintProperty('buildings-3d', 'fill-extrusion-color', '#1e293b');
-			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.15);
+			map.setLayoutProperty('buildings-3d', 'visibility', 'none');
+		}
+		if (!map.getLayer('buildings-flat') && map.getSource('buildings')) {
+			map.addLayer({
+				id: 'buildings-flat',
+				type: 'fill',
+				source: 'buildings',
+				'source-layer': 'buildings',
+				paint: {
+					'fill-color': mapStore.getColorExpr() as any,
+					'fill-opacity': 0.5
+				}
+			});
+			// Click on flat buildings works the same as 3D
+			map.on('click', 'buildings-flat', (e) => {
+				if (lassoActive) return;
+				const redcode = e.features![0]?.properties?.redcode;
+				if (!redcode) return;
+				if (mapStore.hasRadio(redcode)) {
+					container.dispatchEvent(new CustomEvent('radio-deselect', { bubbles: true, detail: { redcode } }));
+				} else {
+					const selected = [e.features![0].properties!];
+					container.dispatchEvent(new CustomEvent('radio-select', {
+						bubbles: true, detail: { redcode, selected, census: e.features![0].properties! }
+					}));
+				}
+			});
 		}
 		for (const layerId of CARTO_BUILDING_LAYERS) {
 			if (map.getLayer(layerId)) {
@@ -713,9 +738,9 @@
 		catastroActive = false;
 		if (map.getLayer('catastro-fill')) map.removeLayer('catastro-fill');
 		if (map.getLayer('catastro-line')) map.removeLayer('catastro-line');
+		if (map.getLayer('buildings-flat')) map.removeLayer('buildings-flat');
 		if (map.getLayer('buildings-3d')) {
-			map.setPaintProperty('buildings-3d', 'fill-extrusion-color', mapStore.getColorExpr() as any);
-			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.85);
+			map.setLayoutProperty('buildings-3d', 'visibility', 'visible');
 		}
 		for (const layerId of CARTO_BUILDING_LAYERS) {
 			if (map.getLayer(layerId)) {
