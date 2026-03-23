@@ -637,6 +637,9 @@
 
 	// ── Catastro parcel layer (PMTiles) ─────────────────────────────────────
 
+	// CARTO basemap building layer IDs (dark-matter style)
+	const CARTO_BUILDING_LAYERS = ['building', 'building-top'];
+
 	export function showCatastroLayer() {
 		if (!map || !map.isStyleLoaded()) return;
 
@@ -645,13 +648,14 @@
 			map.addSource('catastro', { type: 'vector', url: getTilesUrl('catastro') });
 		}
 
-		// 1. Catastro parcel borders only (no fill — buildings render on top regardless)
+		// 1. Catastro parcel borders — minzoom 10 so tiles only load at department level
 		if (!map.getLayer('catastro-line')) {
 			map.addLayer({
 				id: 'catastro-line',
 				type: 'line',
 				source: 'catastro',
 				'source-layer': 'catastro',
+				minzoom: 10,
 				paint: {
 					'line-color': [
 						'match', ['get', 'tipo'],
@@ -659,8 +663,8 @@
 						'rural', '#4ade80',
 						'#22d3ee'
 					],
-					'line-width': ['interpolate', ['linear'], ['zoom'], 8, 0.2, 12, 0.6, 14, 1.2],
-					'line-opacity': ['interpolate', ['linear'], ['zoom'], 8, 0.5, 12, 0.7, 14, 0.9]
+					'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.3, 12, 0.6, 14, 1.2],
+					'line-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.6, 12, 0.7, 14, 0.9]
 				}
 			});
 		}
@@ -672,20 +676,31 @@
 			map.setPaintProperty('province-line', 'line-opacity', ['interpolate', ['linear'], ['zoom'], 6, 0.2, 10, 0.15, 14, 0.1]);
 		}
 
-		// 3. Hide buildings (inconsistent coverage, overlaps with parcels)
+		// 3. Hide our buildings + CARTO basemap buildings
 		if (map.getLayer('buildings-3d')) {
 			map.setLayoutProperty('buildings-3d', 'visibility', 'none');
+		}
+		for (const layerId of CARTO_BUILDING_LAYERS) {
+			if (map.getLayer(layerId)) {
+				map.setLayoutProperty(layerId, 'visibility', 'none');
+			}
 		}
 	}
 
 	export function hideCatastroLayer() {
 		if (!map || !map.isStyleLoaded()) return;
 		if (map.getLayer('catastro-line')) map.removeLayer('catastro-line');
-		// Restore buildings
+		// Restore our buildings
 		if (map.getLayer('buildings-3d')) {
 			map.setLayoutProperty('buildings-3d', 'visibility', 'visible');
 			map.setPaintProperty('buildings-3d', 'fill-extrusion-color', mapStore.getColorExpr() as any);
 			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.85);
+		}
+		// Restore CARTO basemap buildings
+		for (const layerId of CARTO_BUILDING_LAYERS) {
+			if (map.getLayer(layerId)) {
+				map.setLayoutProperty(layerId, 'visibility', 'visible');
+			}
 		}
 		// Restore radio borders
 		if (map.getLayer('province-line')) {
