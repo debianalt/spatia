@@ -241,6 +241,8 @@ const dict: Record<string, Record<Locale, string>> = {
 	'analysis.catastro.h.nbi': { es: 'NBI', en: 'Unmet needs', gn: "Oikotevẽva" },
 	'analysis.catastro.petalHint': { es: 'Pétalo: más grande = mejor · punteada = prom. provincial', en: 'Petal: larger = better · dashed = prov. avg', gn: "Pétalo: tuichavéva = iporãvéva" },
 	'analysis.catastro.clearAll': { es: 'Limpiar', en: 'Clear all', gn: "Mopotĩ" },
+	'analysis.catastro.legendUrban': { es: 'Parcela urbana', en: 'Urban parcel', gn: "Yvy táva" },
+	'analysis.catastro.legendRural': { es: 'Parcela rural', en: 'Rural parcel', gn: "Yvy ka'aguy" },
 	'data.updatedAt': { es: 'Procesado al', en: 'Processed', gn: 'Oñembopyahu' },
 	'analysis.flood.methodTitle': { es: 'Metodologia', en: 'Methodology', gn: "Mba'eichapa" },
 	'analysis.flood.methodRecurrence': {

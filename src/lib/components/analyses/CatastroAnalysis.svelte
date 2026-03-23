@@ -306,6 +306,10 @@
 			</div>
 		{/if}
 
+		<div class="map-legend">
+			<span class="legend-swatch" style:background="#22d3ee"></span> {i18n.t('analysis.catastro.legendUrban')}
+			<span class="legend-swatch legend-gap" style:background="#4ade80"></span> {i18n.t('analysis.catastro.legendRural')}
+		</div>
 		<div class="source-note-box">
 			<div><strong>{i18n.t('data.source.catastro')}</strong> · Censo 2022</div>
 		</div>
@@ -315,6 +319,10 @@
 		<button class="back-btn" onclick={handleBackToDepts}>← {i18n.t('analysis.catastro.topDepts')}</button>
 		<div class="dept-active-title">{getDptoName(selectedDpto)}</div>
 		<div class="hint">{i18n.t('analysis.catastro.clickDept')}</div>
+		<div class="map-legend">
+			<span class="legend-swatch" style:background="#22d3ee"></span> {i18n.t('analysis.catastro.legendUrban')}
+			<span class="legend-swatch legend-gap" style:background="#4ade80"></span> {i18n.t('analysis.catastro.legendRural')}
+		</div>
 		<div class="source-note-box">
 			<div><strong>{i18n.t('data.source.catastro')}</strong></div>
 			<div>{i18n.t('analysis.catastro.updateFreq')} · {DATA_FRESHNESS.catastro_by_radio?.processedDate ?? ''}</div>
@@ -360,6 +368,10 @@
 			</div>
 		{/if}
 
+		<div class="map-legend">
+			<span class="legend-swatch" style:background="#22d3ee"></span> {i18n.t('analysis.catastro.legendUrban')}
+			<span class="legend-swatch legend-gap" style:background="#4ade80"></span> {i18n.t('analysis.catastro.legendRural')}
+		</div>
 		<div class="source-note-box">
 			<div><strong>{i18n.t('data.source.catastro')}</strong></div>
 			<div>{i18n.t('analysis.catastro.updateFreq')} · {DATA_FRESHNESS.catastro_by_radio?.processedDate ?? ''}</div>
@@ -380,6 +392,11 @@
 	.chip-x:hover { color: #ef4444; }
 	.clear-btn { background: none; border: 1px solid rgba(239,68,68,0.3); color: #ef4444; font-size: 8px; padding: 2px 8px; border-radius: 10px; cursor: pointer; transition: all 0.15s; }
 	.clear-btn:hover { background: rgba(239,68,68,0.1); }
+
+	/* Map legend */
+	.map-legend { display: flex; align-items: center; gap: 4px; font-size: 8px; color: #a3a3a3; margin: 8px 0 4px; }
+	.legend-swatch { width: 10px; height: 3px; border-radius: 1px; flex-shrink: 0; }
+	.legend-gap { margin-left: 8px; }
 
 	/* Comparison table */
 	.cmp-table { margin-bottom: 10px; }
