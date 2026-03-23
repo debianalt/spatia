@@ -696,6 +696,28 @@
 			});
 		}
 
+		// Click on catastro parcels → find radio under click point (handler auto-removed when layer removed)
+		map.on('click', 'catastro-fill', (e) => {
+			if (lassoActive) return;
+			// Query the radios layer at click point to find redcode
+			const features = map.queryRenderedFeatures(e.point, { layers: ['province-fill'] });
+			const redcode = features[0]?.properties?.redcode;
+			if (!redcode) return;
+
+			if (mapStore.hasRadio(redcode)) {
+				container.dispatchEvent(new CustomEvent('radio-deselect', { bubbles: true, detail: { redcode } }));
+			} else {
+				container.dispatchEvent(new CustomEvent('radio-select', {
+					bubbles: true,
+					detail: { redcode, selected: [], census: features[0]?.properties ?? {} }
+				}));
+			}
+		});
+
+		// Pointer cursor on catastro parcels
+		map.on('mouseenter', 'catastro-fill', () => { map.getCanvas().style.cursor = 'pointer'; });
+		map.on('mouseleave', 'catastro-fill', () => { map.getCanvas().style.cursor = ''; });
+
 		// Hide all buildings — parcels are the focus
 		if (map.getLayer('buildings-3d')) {
 			map.setLayoutProperty('buildings-3d', 'visibility', 'none');
