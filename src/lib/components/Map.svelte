@@ -655,7 +655,7 @@
 			map.addSource('catastro', { type: 'vector', url: getTilesUrl('catastro') });
 		}
 
-		// Fill layer for parcels (renders under fill-extrusion buildings)
+		// Fill layer — visible cyan/green parcels
 		if (!map.getLayer('catastro-fill')) {
 			map.addLayer({
 				id: 'catastro-fill',
@@ -670,12 +670,12 @@
 						'rural', '#4ade80',
 						'#22d3ee'
 					],
-					'fill-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.08, 12, 0.12, 14, 0.15]
+					'fill-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.12, 12, 0.18, 14, 0.22]
 				}
-			}, map.getLayer('buildings-3d') ? 'buildings-3d' : undefined);
+			});
 		}
 
-		// Line layer for parcel borders (also under buildings but visible in gaps)
+		// Line layer — thin crisp borders
 		if (!map.getLayer('catastro-line')) {
 			map.addLayer({
 				id: 'catastro-line',
@@ -690,20 +690,20 @@
 						'rural', '#4ade80',
 						'#22d3ee'
 					],
-					'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.5, 12, 1.0, 14, 1.8],
-					'line-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.6, 12, 0.8, 14, 0.9]
+					'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.3, 12, 0.6, 14, 0.9],
+					'line-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.5, 12, 0.7, 14, 0.85]
 				}
-			}, map.getLayer('buildings-3d') ? 'buildings-3d' : undefined);
+			});
 		}
 
-		// Dim buildings to let parcels show through
+		// Buildings as ghost reference (20%)
 		if (map.getLayer('buildings-3d')) {
-			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.35);
+			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.2);
 		}
-		// Dim CARTO basemap buildings too
+		// Hide CARTO basemap buildings completely
 		for (const layerId of CARTO_BUILDING_LAYERS) {
 			if (map.getLayer(layerId)) {
-				map.setPaintProperty(layerId, 'fill-opacity', 0.15);
+				map.setLayoutProperty(layerId, 'visibility', 'none');
 			}
 		}
 	}
@@ -718,7 +718,7 @@
 		}
 		for (const layerId of CARTO_BUILDING_LAYERS) {
 			if (map.getLayer(layerId)) {
-				map.setPaintProperty(layerId, 'fill-opacity', 1);
+				map.setLayoutProperty(layerId, 'visibility', 'visible');
 			}
 		}
 	}
