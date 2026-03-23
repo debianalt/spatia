@@ -696,31 +696,9 @@
 			});
 		}
 
-		// Click on catastro parcels → query radios layer for redcode
-		map.on('click', 'catastro-fill', (e) => {
-			if (lassoActive) return;
-			const radioFeatures = map.queryRenderedFeatures(e.point, { layers: ['province-fill'] });
-			const redcode = radioFeatures[0]?.properties?.redcode;
-			if (!redcode) return;
-			if (mapStore.hasRadio(redcode)) {
-				container.dispatchEvent(new CustomEvent('radio-deselect', { bubbles: true, detail: { redcode } }));
-			} else {
-				container.dispatchEvent(new CustomEvent('radio-select', {
-					bubbles: true, detail: { redcode, selected: [], census: radioFeatures[0]?.properties ?? {} }
-				}));
-			}
-		});
-		map.on('mouseenter', 'catastro-fill', () => { map.getCanvas().style.cursor = 'pointer'; });
-		map.on('mouseleave', 'catastro-fill', () => { map.getCanvas().style.cursor = ''; });
-
-		// Make province-fill queryable for click detection (needs some opacity)
-		if (map.getLayer('province-fill')) {
-			map.setPaintProperty('province-fill', 'fill-opacity', 0.01);
-		}
-
-		// Hide all buildings — parcels are the focus
+		// Buildings at max transparency — clicks still work through buildings-3d handler
 		if (map.getLayer('buildings-3d')) {
-			map.setLayoutProperty('buildings-3d', 'visibility', 'none');
+			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.08);
 		}
 		for (const layerId of CARTO_BUILDING_LAYERS) {
 			if (map.getLayer(layerId)) {
@@ -735,10 +713,7 @@
 		if (map.getLayer('catastro-fill')) map.removeLayer('catastro-fill');
 		if (map.getLayer('catastro-line')) map.removeLayer('catastro-line');
 		if (map.getLayer('buildings-3d')) {
-			map.setLayoutProperty('buildings-3d', 'visibility', 'visible');
-		}
-		if (map.getLayer('province-fill')) {
-			map.setPaintProperty('province-fill', 'fill-opacity', 0.06);
+			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.85);
 		}
 		for (const layerId of CARTO_BUILDING_LAYERS) {
 			if (map.getLayer(layerId)) {
