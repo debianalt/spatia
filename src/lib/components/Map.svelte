@@ -650,8 +650,10 @@
 			map.addSource('catastro', { type: 'vector', url: getTilesUrl('catastro') });
 		}
 
-		// Catastro parcel borders as overlay on TOP of all layers
+		// Catastro parcel borders — visible beneath dimmed buildings
 		if (!map.getLayer('catastro-line')) {
+			// Insert BEFORE buildings-3d so lines render underneath, visible through transparency
+			const beforeLayer = map.getLayer('buildings-3d') ? 'buildings-3d' : undefined;
 			map.addLayer({
 				id: 'catastro-line',
 				type: 'line',
@@ -665,10 +667,15 @@
 						'rural', '#4ade80',
 						'#22d3ee'
 					],
-					'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.4, 12, 0.8, 14, 1.5],
-					'line-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.7, 12, 0.8, 14, 0.9]
+					'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.5, 12, 1.0, 14, 1.8],
+					'line-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.8, 12, 0.9, 14, 1.0]
 				}
-			}); // Added last = renders on top of everything including 3D buildings
+			}, beforeLayer);
+		}
+
+		// Dim buildings so catastro lines show through
+		if (map.getLayer('buildings-3d')) {
+			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.3);
 		}
 	}
 
@@ -676,6 +683,10 @@
 		if (!map || !map.isStyleLoaded() || !catastroActive) return;
 		catastroActive = false;
 		if (map.getLayer('catastro-line')) map.removeLayer('catastro-line');
+		// Restore building opacity
+		if (map.getLayer('buildings-3d')) {
+			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.85);
+		}
 	}
 
 	// ── Analysis choropleth layers (radio-based, for non-catastro analyses) ──
