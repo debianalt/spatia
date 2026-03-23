@@ -55,16 +55,26 @@ def step(n, msg):
 
 
 def download_state_from_r2():
-    """Download previous catastro state from R2 for change tracking."""
+    """Download previous catastro state + radios from R2."""
     from upload_to_r2 import download_file
 
     os.makedirs(STATE_DIR, exist_ok=True)
     downloaded = 0
+
+    # Download radios_misiones.parquet if not present locally
+    if not os.path.exists(RADIOS_PATH):
+        print("  Downloading radios_misiones.parquet from R2...")
+        if download_file("data/radios_misiones.parquet", RADIOS_PATH):
+            downloaded += 1
+        else:
+            print("  [x] CRITICAL: radios_misiones.parquet not found in R2")
+
+    # Download catastro state files
     for filename, r2_key in R2_STATE_FILES.items():
         local_path = os.path.join(STATE_DIR, filename)
         if download_file(r2_key, local_path):
             downloaded += 1
-    print(f"  Downloaded {downloaded}/{len(R2_STATE_FILES)} state files from R2")
+    print(f"  Downloaded {downloaded} files from R2")
     return downloaded
 
 
