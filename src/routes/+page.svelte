@@ -264,7 +264,7 @@
 
 		// Choropleth loading is deferred — the analysis component loads data
 		// and we poll for it via a timeout. This avoids tight coupling.
-		if (analysis.choropleth && analysis.id === 'real_estate') {
+		if (analysis.choropleth && analysis.spatialUnit === 'radio') {
 			analysisDataLoaded = false;
 			mapComponent?.clearHexChoropleth();
 			mapStore.clearHexState();
@@ -313,7 +313,7 @@
 			const url = getParquetUrl(analysis.choropleth.parquet);
 			const col = analysis.choropleth.column;
 			const result = await query(
-				`SELECT redcode, ${col} as value FROM '${url}' WHERE ${col} IS NOT NULL AND ${col} > 0`
+				`SELECT redcode, CAST(${col} AS DOUBLE) as value FROM '${url}' WHERE ${col} IS NOT NULL AND ${col} > 0`
 			);
 			const entries: Array<{ redcode: string; value: number }> = [];
 			for (let i = 0; i < result.numRows; i++) {
@@ -455,6 +455,15 @@
 	function handleClearHexZones() {
 		hexStore.clearHexZones();
 		mapComponent?.clearHexZoneHighlight();
+	}
+
+	function handleSelectCatastroDpto(centroid: [number, number] | null) {
+		if (centroid) {
+			mapComponent?.showCatastroLayer();
+			mapComponent?.flyToCoords(centroid[0], centroid[1], 10);
+		} else {
+			mapComponent?.hideCatastroLayer();
+		}
 	}
 
 	async function handleSelectFloodDpto(dpto: string, parquetKey: string, centroid: [number, number]) {
@@ -600,6 +609,7 @@
 				onRemoveHexZone={handleRemoveHexZone}
 				onClearHexZones={handleClearHexZones}
 				onSelectFloodDpto={handleSelectFloodDpto}
+			onSelectCatastroDpto={handleSelectCatastroDpto}
 			/>
 		</div>
 	</div>

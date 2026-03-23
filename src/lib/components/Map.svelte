@@ -635,12 +635,72 @@
 		map?.flyTo({ ...MAP_INIT, duration: 1200 });
 	}
 
-	// ── Analysis choropleth layers ──────────────────────────────────────────
+	// ── Catastro parcel layer (PMTiles) ─────────────────────────────────────
+
+	export function showCatastroLayer() {
+		if (!map || !map.isStyleLoaded()) return;
+
+		// Add catastro source if not exists
+		if (!map.getSource('catastro')) {
+			map.addSource('catastro', { type: 'vector', url: getTilesUrl('catastro') });
+		}
+
+		// 1. Catastro parcel borders only (no fill — buildings render on top regardless)
+		if (!map.getLayer('catastro-line')) {
+			map.addLayer({
+				id: 'catastro-line',
+				type: 'line',
+				source: 'catastro',
+				'source-layer': 'catastro',
+				paint: {
+					'line-color': [
+						'match', ['get', 'tipo'],
+						'urbano', '#22d3ee',
+						'rural', '#4ade80',
+						'#22d3ee'
+					],
+					'line-width': ['interpolate', ['linear'], ['zoom'], 8, 0.2, 12, 0.6, 14, 1.2],
+					'line-opacity': ['interpolate', ['linear'], ['zoom'], 8, 0.5, 12, 0.7, 14, 0.9]
+				}
+			});
+		}
+
+		// 2. Make radio borders white and visible
+		if (map.getLayer('province-line')) {
+			map.setPaintProperty('province-line', 'line-color', '#fbbf24');
+			map.setPaintProperty('province-line', 'line-width', ['interpolate', ['linear'], ['zoom'], 6, 1.5, 10, 1.2, 14, 0.8]);
+			map.setPaintProperty('province-line', 'line-opacity', ['interpolate', ['linear'], ['zoom'], 6, 0.6, 10, 0.5, 14, 0.4]);
+		}
+
+		// 3. Buildings stay visible, tinted to distinguish from parcels
+		if (map.getLayer('buildings-3d')) {
+			map.setPaintProperty('buildings-3d', 'fill-extrusion-color', '#94a3b8');
+			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.7);
+		}
+	}
+
+	export function hideCatastroLayer() {
+		if (!map || !map.isStyleLoaded()) return;
+		if (map.getLayer('catastro-line')) map.removeLayer('catastro-line');
+		// Restore buildings
+		if (map.getLayer('buildings-3d')) {
+			map.setPaintProperty('buildings-3d', 'fill-extrusion-color', mapStore.getColorExpr() as any);
+			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.85);
+		}
+		// Restore radio borders
+		if (map.getLayer('province-line')) {
+			map.setPaintProperty('province-line', 'line-color', '#d4d4d4');
+			map.setPaintProperty('province-line', 'line-width', ['interpolate', ['linear'], ['zoom'], 6, 1.2, 10, 0.6, 14, 0.3]);
+			map.setPaintProperty('province-line', 'line-opacity', ['interpolate', ['linear'], ['zoom'], 6, 0.3, 10, 0.25, 14, 0.15]);
+		}
+	}
+
+	// ── Analysis choropleth layers (radio-based, for non-catastro analyses) ──
 
 	export function setAnalysisChoropleth(entries: { redcode: string; value: number }[], colorScale: 'price' | 'score' | 'diverging' | 'sequential' = 'price') {
 		if (!map || !map.isStyleLoaded()) return;
 
-		// Create analysis layers if they don't exist
+		// All analysis types: use radios PMTiles (existing logic)
 		if (!map.getLayer('analysis-fill')) {
 			map.addLayer({
 				id: 'analysis-fill',
@@ -662,35 +722,32 @@
 			});
 		}
 
-		if (entries.length === 0) {
-			map.setFilter('analysis-fill', ['==', ['get', 'redcode'], '']);
-			map.setFilter('analysis-line', ['==', ['get', 'redcode'], '']);
-			return;
-		}
+		if (entries.length === 0) return;
 
 		const values = entries.map(e => e.value);
 		const minVal = Math.min(...values);
 		const maxVal = Math.max(...values);
 		const range = maxVal - minVal || 1;
 
-		const matchExpr: any[] = ['match', ['get', 'redcode']];
+		const matchExpr: any[] = ['match', ['to-string', ['get', 'redcode']]];
 		for (const entry of entries) {
 			const t = (entry.value - minVal) / range;
-			matchExpr.push(entry.redcode);
-
 			let r: number, g: number, b: number;
-			if (colorScale === 'price') {
-				// Green (cheap) → Yellow → Red (expensive)
+			if (colorScale === 'sequential') {
+				// Dark → cyan ramp for catastro density
+				r = Math.round(13 + t * (6 - 13));
+				g = Math.round(27 + t * (182 - 27));
+				b = Math.round(42 + t * (212 - 42));
+			} else if (colorScale === 'price') {
 				r = Math.round(t < 0.5 ? 34 + t * 2 * (234 - 34) : 234 + (t - 0.5) * 2 * (239 - 234));
 				g = Math.round(t < 0.5 ? 197 + t * 2 * (179 - 197) : 179 + (t - 0.5) * 2 * (68 - 179));
 				b = Math.round(t < 0.5 ? 94 + t * 2 * (8 - 94) : 8 + (t - 0.5) * 2 * (68 - 8));
 			} else {
-				// Blue → White → Red
 				r = Math.round(t < 0.5 ? 33 + t * 2 * (247 - 33) : 247 + (t - 0.5) * 2 * (178 - 247));
 				g = Math.round(t < 0.5 ? 102 + t * 2 * (247 - 102) : 247 + (t - 0.5) * 2 * (24 - 247));
 				b = Math.round(t < 0.5 ? 172 + t * 2 * (247 - 172) : 247 + (t - 0.5) * 2 * (43 - 247));
 			}
-			matchExpr.push(`rgb(${r},${g},${b})`);
+			matchExpr.push(String(entry.redcode), `rgb(${r},${g},${b})`);
 		}
 		matchExpr.push('rgba(0,0,0,0)');
 
@@ -703,11 +760,20 @@
 
 	export function clearAnalysisChoropleth() {
 		if (!map || !map.isStyleLoaded()) return;
+		// Remove catastro layers
+		hideCatastroLayer();
+		// Clear radio analysis layers
 		if (map.getLayer('analysis-fill')) {
 			map.setFilter('analysis-fill', ['==', ['get', 'redcode'], '']);
 		}
 		if (map.getLayer('analysis-line')) {
 			map.setFilter('analysis-line', ['==', ['get', 'redcode'], '']);
+		}
+		// Restore buildings
+		if (map.getLayer('buildings-3d')) {
+			map.setLayoutProperty('buildings-3d', 'visibility', 'visible');
+			map.setPaintProperty('buildings-3d', 'fill-extrusion-color', mapStore.getColorExpr() as any);
+			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.85);
 		}
 	}
 

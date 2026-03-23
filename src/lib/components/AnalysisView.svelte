@@ -7,6 +7,7 @@
 	import RealEstateAnalysis from './analyses/RealEstateAnalysis.svelte';
 	import TerritorialProfileAnalysis from './analyses/TerritorialProfileAnalysis.svelte';
 	import FloodRiskAnalysis from './analyses/FloodRiskAnalysis.svelte';
+	import CatastroAnalysis from './analyses/CatastroAnalysis.svelte';
 
 	let {
 		lensStore,
@@ -15,6 +16,7 @@
 		onBack,
 		onRemoveRadio,
 		onSelectFloodDpto,
+		onSelectCatastroDpto,
 	}: {
 		lensStore: LensStore;
 		mapStore: MapStore;
@@ -22,6 +24,7 @@
 		onBack: () => void;
 		onRemoveRadio: (redcode: string) => void;
 		onSelectFloodDpto: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
+		onSelectCatastroDpto?: (centroid: [number, number] | null) => void;
 	} = $props();
 
 	const analysis = $derived(lensStore.activeAnalysis);
@@ -55,6 +58,8 @@
 			<RealEstateAnalysis {lensStore} {mapStore} {onRemoveRadio} />
 		{:else if analysis.id === 'flood_risk'}
 			<FloodRiskAnalysis {lensStore} {mapStore} {hexStore} {onRemoveRadio} {onSelectFloodDpto} />
+		{:else if analysis.id === 'catastro'}
+			<CatastroAnalysis {lensStore} {mapStore} {onRemoveRadio} {onSelectCatastroDpto} />
 		{:else if isTerritorialProfile}
 			<TerritorialProfileAnalysis {lensStore} {mapStore} {onRemoveRadio} />
 		{:else}

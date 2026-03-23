@@ -4,7 +4,7 @@ function getBase(): string {
 	return R2_PROD;
 }
 
-export function getTilesUrl(name: 'buildings' | 'radios' | 'radios-chm' | 'terrain' | 'hexagons'): string {
+export function getTilesUrl(name: 'buildings' | 'radios' | 'radios-chm' | 'terrain' | 'hexagons' | 'catastro'): string {
 	if (name === 'terrain') {
 		return '/api/terrain/{z}/{x}/{y}.png';
 	}
@@ -12,7 +12,8 @@ export function getTilesUrl(name: 'buildings' | 'radios' | 'radios-chm' | 'terra
 		buildings: 'tiles/buildings-v5.pmtiles',
 		radios: 'tiles/radios-v2.pmtiles',
 		'radios-chm': 'tiles/radios-chm.pmtiles',
-		hexagons: 'tiles/hexagons-v2.pmtiles'
+		hexagons: 'tiles/hexagons-v2.pmtiles',
+		catastro: 'tiles/catastro.pmtiles'
 	};
 	return `pmtiles://${getBase()}/${files[name]}`;
 }
@@ -59,7 +60,9 @@ export const PARQUETS = {
 	get radio_stats_master() { return getParquetUrl('radio_stats_master'); },
 	get hex_flood_risk() { return getParquetUrl('hex_flood_risk'); },
 	get h3_radio_crosswalk() { return getParquetUrl('h3_radio_crosswalk'); },
-	get h3_parent_crosswalk() { return getParquetUrl('h3_parent_crosswalk'); }
+	get h3_parent_crosswalk() { return getParquetUrl('h3_parent_crosswalk'); },
+	get catastro_by_radio() { return getParquetUrl('catastro_by_radio'); },
+	get catastro_changes() { return getParquetUrl('catastro_changes_summary'); }
 };
 
 export const BASEMAP = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
@@ -217,6 +220,21 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 			legendKey: 'analysis.floodRisk.legend',
 		},
 	},
+	{
+		id: 'catastro',
+		lensId: 'vivir',
+		titleKey: 'analysis.catastro.title',
+		descKey: 'analysis.catastro.desc',
+		icon: '📐',
+		status: 'available',
+		spatialUnit: 'radio',
+		choropleth: {
+			parquet: 'catastro_by_radio',
+			column: 'n_parcelas_urbano',
+			colorScale: 'sequential',
+			legendKey: 'analysis.catastro.legend',
+		},
+	},
 ];
 
 export function getAnalysesForLens(lensId: LensId): AnalysisConfig[] {
@@ -244,6 +262,11 @@ export const DATA_FRESHNESS: Record<string, { dataDate: string; processedDate: s
 		dataDate: '01/2025',
 		processedDate: '21/03/2026',
 		sourceKey: 'data.source.realEstate',
+	},
+	catastro_by_radio: {
+		dataDate: 'marzo 2026',
+		processedDate: '22/03/2026',
+		sourceKey: 'data.source.catastro',
 	},
 	buildings_stats: {
 		dataDate: '02/2025',

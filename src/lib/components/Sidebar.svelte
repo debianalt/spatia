@@ -30,6 +30,7 @@
 		onRemoveHexZone,
 		onClearHexZones,
 		onSelectFloodDpto,
+		onSelectCatastroDpto,
 	}: {
 		mapStore: MapStore;
 		lensStore: LensStore;
@@ -45,6 +46,7 @@
 		onRemoveHexZone: (id: string) => void;
 		onClearHexZones: () => void;
 		onSelectFloodDpto: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
+		onSelectCatastroDpto?: (centroid: [number, number] | null) => void;
 	} = $props();
 
 	let collapsed = $state(true);
@@ -90,7 +92,7 @@
 	{:else if lensStore.activeLens && lensStore.activeAnalysis}
 		<!-- Analysis active: show analysis view (with or without radio) -->
 		<div class="chart-scroll">
-			<AnalysisView {lensStore} {mapStore} {hexStore} onBack={handleBack} {onRemoveRadio} {onSelectFloodDpto} />
+			<AnalysisView {lensStore} {mapStore} {hexStore} onBack={handleBack} {onRemoveRadio} {onSelectFloodDpto} {onSelectCatastroDpto} />
 		</div>
 	{:else if lensStore.activeLens && mapStore.selectedRadios.size > 0}
 		<!-- Lens + radio but no analysis: show OpportunityCard (legacy, keeps petal working) -->

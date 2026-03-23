@@ -28,8 +28,13 @@ MIN_HEXAGONS = 50_000       # Misiones has ~280K; <50K indicates corrupt data
 MAX_NULL_FRACTION = 0.20    # max 20% nulls acceptable
 SCORE_RANGE = (0, 100)
 
+# ── Catastro ─────────────────────────────────────────────────────────────
+MIN_RADIOS_CATASTRO = 1_800
+
 # ── Paths ────────────────────────────────────────────────────────────────
 PIPELINE_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(PIPELINE_DIR, "output")
 GRID_PATH = os.path.join(OUTPUT_DIR, "hexagons.geojson")
 PARQUET_PATH = os.path.join(OUTPUT_DIR, "hex_flood_risk.parquet")
+CATASTRO_PARQUET_PATH = os.path.join(OUTPUT_DIR, "catastro_by_radio.parquet")
+CATASTRO_CHANGES_PATH = os.path.join(OUTPUT_DIR, "catastro_changes_summary.parquet")
