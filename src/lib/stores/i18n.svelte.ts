@@ -227,6 +227,9 @@ const dict: Record<string, Record<Locale, string>> = {
 	'analysis.catastro.parcels': { es: 'parcelas', en: 'parcels', gn: 'yvy' },
 	'analysis.catastro.updateFreq': { es: 'Actualización quincenal', en: 'Biweekly update', gn: "Oñembopyahu 15 ára" },
 	'analysis.catastro.clickDept': { es: 'Parcelas visibles en el mapa — hacé click en un radio para detalle', en: 'Parcels visible on map — click a tract for detail', gn: "Yvy ojehecha mapápe — eñemí peteĩ radio-pe" },
+	'analysis.catastro.thisRadio': { es: 'Este radio', en: 'This tract', gn: 'Ko radio' },
+	'analysis.catastro.deptAvg': { es: 'Prom. depto', en: 'Dept avg', gn: 'Depto mbytekue' },
+	'analysis.catastro.provAvg': { es: 'Prom. provincia', en: 'Province avg', gn: 'Tetã mbytekue' },
 	'data.updatedAt': { es: 'Procesado al', en: 'Processed', gn: 'Oñembopyahu' },
 	'analysis.flood.methodTitle': { es: 'Metodologia', en: 'Methodology', gn: "Mba'eichapa" },
 	'analysis.flood.methodRecurrence': {

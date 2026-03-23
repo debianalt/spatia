@@ -665,17 +665,16 @@
 			});
 		}
 
-		// 2. Make radio borders white and visible
+		// 2. Radio borders very subtle (reference only)
 		if (map.getLayer('province-line')) {
-			map.setPaintProperty('province-line', 'line-color', '#fbbf24');
-			map.setPaintProperty('province-line', 'line-width', ['interpolate', ['linear'], ['zoom'], 6, 1.5, 10, 1.2, 14, 0.8]);
-			map.setPaintProperty('province-line', 'line-opacity', ['interpolate', ['linear'], ['zoom'], 6, 0.6, 10, 0.5, 14, 0.4]);
+			map.setPaintProperty('province-line', 'line-color', '#64748b');
+			map.setPaintProperty('province-line', 'line-width', ['interpolate', ['linear'], ['zoom'], 6, 0.8, 10, 0.5, 14, 0.3]);
+			map.setPaintProperty('province-line', 'line-opacity', ['interpolate', ['linear'], ['zoom'], 6, 0.2, 10, 0.15, 14, 0.1]);
 		}
 
-		// 3. Buildings stay visible, tinted to distinguish from parcels
+		// 3. Hide buildings (inconsistent coverage, overlaps with parcels)
 		if (map.getLayer('buildings-3d')) {
-			map.setPaintProperty('buildings-3d', 'fill-extrusion-color', '#94a3b8');
-			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.7);
+			map.setLayoutProperty('buildings-3d', 'visibility', 'none');
 		}
 	}
 
@@ -684,6 +683,7 @@
 		if (map.getLayer('catastro-line')) map.removeLayer('catastro-line');
 		// Restore buildings
 		if (map.getLayer('buildings-3d')) {
+			map.setLayoutProperty('buildings-3d', 'visibility', 'visible');
 			map.setPaintProperty('buildings-3d', 'fill-extrusion-color', mapStore.getColorExpr() as any);
 			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.85);
 		}

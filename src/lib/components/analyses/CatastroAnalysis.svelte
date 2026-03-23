@@ -26,6 +26,9 @@
 	let totalRural = $state(0);
 	let totalNew90d = $state(0);
 	let avgAreaUrban = $state(0);
+	// Per-department averages for comparison bars
+	let deptAvgs: Map<string, { avgUrban: number; avgAreaUrban: number; avgNew90d: number }> = $state(new Map());
+	let provAvg = $state({ avgUrban: 0, avgAreaUrban: 0, avgNew90d: 0 });
 
 	const selectedRedcode = $derived(
 		mapStore.selectedRadios.size === 1
@@ -83,6 +86,37 @@
 			avgAreaUrban = areas.length > 0
 				? areas.reduce((a, b) => a + b, 0) / areas.length
 				: 0;
+
+			// Compute per-department and provincial averages for comparison bars
+			const n = map.size;
+			provAvg = {
+				avgUrban: n > 0 ? tUrban / n : 0,
+				avgAreaUrban: avgAreaUrban,
+				avgNew90d: n > 0 ? tNew / n : 0,
+			};
+			const deptRadioCounts = new Map<string, number>();
+			const deptAreaSums = new Map<string, { sum: number; count: number }>();
+			for (const [rc, row] of map) {
+				const dc = rc.substring(0, 5);
+				deptRadioCounts.set(dc, (deptRadioCounts.get(dc) ?? 0) + 1);
+				if (row.area_media_urbano_m2 != null && row.area_media_urbano_m2 > 0) {
+					const a = deptAreaSums.get(dc) ?? { sum: 0, count: 0 };
+					a.sum += row.area_media_urbano_m2;
+					a.count += 1;
+					deptAreaSums.set(dc, a);
+				}
+			}
+			const da = new Map<string, { avgUrban: number; avgAreaUrban: number; avgNew90d: number }>();
+			for (const [code, d] of depts) {
+				const nRadios = deptRadioCounts.get(code) ?? 1;
+				const areaInfo = deptAreaSums.get(code);
+				da.set(code, {
+					avgUrban: d.nUrban / nRadios,
+					avgAreaUrban: areaInfo ? areaInfo.sum / areaInfo.count : 0,
+					avgNew90d: d.newParcels / nRadios,
+				});
+			}
+			deptAvgs = da;
 
 			// Resolve department names from mapStore if available
 			deptSummary = [...depts.entries()]
@@ -204,21 +238,37 @@
 			</div>
 		{/if}
 
-		<!-- vs provincial average -->
-		{#if radioData.n_parcelas_urbano > 0}
-			{@const ratio = radioData.n_parcelas_urbano / (totalUrban / allData.size)}
+		<!-- Comparison bars: radio vs department vs province -->
+		{#if deptAvgs.has(selectedRedcode.substring(0, 5))}
+		{@const dptoCode = selectedRedcode.substring(0, 5)}
+		{@const da = deptAvgs.get(dptoCode)}
+		{@const bars = [
+			{ label: i18n.t('analysis.catastro.totalUrban'), val: radioData.n_parcelas_urbano ?? 0, dept: da.avgUrban, prov: provAvg.avgUrban },
+			{ label: i18n.t('analysis.catastro.avgAreaUrban'), val: radioData.area_media_urbano_m2 ?? 0, dept: da.avgAreaUrban, prov: provAvg.avgAreaUrban },
+			{ label: i18n.t('analysis.catastro.newParcels'), val: radioData.n_new_parcels_90d ?? 0, dept: da.avgNew90d, prov: provAvg.avgNew90d },
+		]}
 			<div class="section">
 				<div class="section-title">{i18n.t('analysis.catastro.vsAvg')}</div>
-				<div class="vs-indicator" class:above={ratio > 1.2} class:below={ratio < 0.8}>
-					{#if ratio > 1.2}
-						<span class="vs-arrow">+{((ratio - 1) * 100).toFixed(0)}%</span>
-						<span class="vs-text">sobre el promedio</span>
-					{:else if ratio < 0.8}
-						<span class="vs-arrow">-{((1 - ratio) * 100).toFixed(0)}%</span>
-						<span class="vs-text">bajo el promedio</span>
-					{:else}
-						<span class="vs-text">en el promedio provincial</span>
-					{/if}
+				{#each bars as bar}
+					{@const maxVal = Math.max(bar.val, bar.dept, bar.prov, 1)}
+					<div class="cmp-row">
+						<div class="cmp-label">{bar.label}</div>
+						<div class="cmp-track">
+							<div class="cmp-fill" style:width="{(bar.val / maxVal) * 100}%"></div>
+							{#if bar.dept > 0}
+								<div class="cmp-marker cmp-marker-dept" style:left="{(bar.dept / maxVal) * 100}%" title="{i18n.t('analysis.catastro.deptAvg')}"></div>
+							{/if}
+							{#if bar.prov > 0}
+								<div class="cmp-marker cmp-marker-prov" style:left="{(bar.prov / maxVal) * 100}%" title="{i18n.t('analysis.catastro.provAvg')}"></div>
+							{/if}
+						</div>
+						<div class="cmp-value">{bar.val >= 100 ? fmt(bar.val) : bar.val.toFixed(0)}</div>
+					</div>
+				{/each}
+				<div class="cmp-legend">
+					<span class="cmp-legend-item"><span class="cmp-dot cmp-dot-fill"></span>{i18n.t('analysis.catastro.thisRadio')}</span>
+					<span class="cmp-legend-item"><span class="cmp-dot cmp-dot-dept"></span>{i18n.t('analysis.catastro.deptAvg')}</span>
+					<span class="cmp-legend-item"><span class="cmp-dot cmp-dot-prov"></span>{i18n.t('analysis.catastro.provAvg')}</span>
 				</div>
 			</div>
 		{/if}
@@ -443,6 +493,75 @@
 		line-height: 1;
 	}
 	.detail-close:hover { color: #e2e8f0; }
+
+	/* Comparison bars */
+	.cmp-row {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		margin-bottom: 6px;
+	}
+	.cmp-label {
+		font-size: 8px;
+		color: #a3a3a3;
+		width: 60px;
+		flex-shrink: 0;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+	}
+	.cmp-track {
+		flex: 1;
+		height: 8px;
+		background: rgba(255,255,255,0.05);
+		border-radius: 4px;
+		position: relative;
+		overflow: visible;
+	}
+	.cmp-fill {
+		height: 100%;
+		background: #06b6d4;
+		border-radius: 4px;
+		transition: width 0.3s ease;
+	}
+	.cmp-marker {
+		position: absolute;
+		top: -2px;
+		width: 2px;
+		height: 12px;
+		border-radius: 1px;
+		transform: translateX(-1px);
+	}
+	.cmp-marker-dept { background: #f59e0b; }
+	.cmp-marker-prov { background: #a78bfa; }
+	.cmp-value {
+		font-size: 9px;
+		font-weight: 600;
+		color: #e2e8f0;
+		min-width: 28px;
+		text-align: right;
+	}
+	.cmp-legend {
+		display: flex;
+		gap: 10px;
+		margin-top: 4px;
+		margin-bottom: 8px;
+	}
+	.cmp-legend-item {
+		font-size: 7px;
+		color: #a3a3a3;
+		display: flex;
+		align-items: center;
+		gap: 3px;
+	}
+	.cmp-dot {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		display: inline-block;
+	}
+	.cmp-dot-fill { background: #06b6d4; }
+	.cmp-dot-dept { background: #f59e0b; }
+	.cmp-dot-prov { background: #a78bfa; }
 
 	/* Department detail */
 	.dept-detail {
