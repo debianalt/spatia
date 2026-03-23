@@ -48,7 +48,7 @@ MIN_ZOOM = 8
 MAX_ZOOM = 14
 LAYER_NAME = "buildings"
 EXTENT = 4096
-BBOX = {"west": -56.1, "south": -28.2, "east": -53.5, "north": -25.9}
+BBOX = {"west": -56.1, "south": -28.2, "east": -53.55, "north": -25.44}
 
 PG_BUILDINGS = "dbname=ndvi_misiones user=postgres"
 PG_CENSUS = "dbname=posadas user=postgres"
