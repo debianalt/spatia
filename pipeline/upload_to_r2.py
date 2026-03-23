@@ -28,27 +28,34 @@ UPLOAD_MAP = {
 }
 
 
+R2_PUBLIC_BASE = "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev"
+
+
 def download_file(r2_key: str, local_path: str) -> bool:
-    """Download a file from R2 using wrangler. Returns True on success."""
-    os.makedirs(os.path.dirname(local_path), exist_ok=True)
-    result = subprocess.run(
-        ["npx", "wrangler", "r2", "object", "get",
-         f"{R2_BUCKET}/{r2_key}", "--file", local_path, "--remote"],
-        capture_output=True,
-        shell=True,
-        encoding="utf-8",
-        errors="replace",
-    )
-    if result.returncode == 0 and os.path.exists(local_path) and os.path.getsize(local_path) > 0:
-        size_kb = os.path.getsize(local_path) / 1024
-        print(f"  [ok] Downloaded {r2_key} ({size_kb:.0f} KB)")
-        return True
-    else:
-        # Clean up empty/failed file
-        if os.path.exists(local_path) and os.path.getsize(local_path) == 0:
-            os.remove(local_path)
-        print(f"  [skip] {r2_key} not found in R2 (first run?)")
-        return False
+    """Download a file from R2 public URL. Returns True on success."""
+    import urllib.request
+    import urllib.error
+
+    os.makedirs(os.path.dirname(local_path) or ".", exist_ok=True)
+    url = f"{R2_PUBLIC_BASE}/{r2_key}"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "spatia-pipeline/1.0"})
+        with urllib.request.urlopen(req) as resp, open(local_path, "wb") as f:
+            f.write(resp.read())
+        if os.path.exists(local_path) and os.path.getsize(local_path) > 0:
+            size_kb = os.path.getsize(local_path) / 1024
+            print(f"  [ok] Downloaded {r2_key} ({size_kb:.0f} KB)")
+            return True
+    except urllib.error.HTTPError:
+        pass
+    except Exception as e:
+        print(f"  [warn] Download error for {r2_key}: {e}")
+
+    # Clean up empty/failed file
+    if os.path.exists(local_path) and os.path.getsize(local_path) == 0:
+        os.remove(local_path)
+    print(f"  [skip] {r2_key} not found in R2 (first run?)")
+    return False
 
 
 def _run_wrangler_upload(local_path: str, r2_key: str) -> bool:
