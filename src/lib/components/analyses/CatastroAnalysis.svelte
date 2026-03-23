@@ -137,7 +137,7 @@
 			deptAvgs = da;
 			deptSummary = [...depts.entries()]
 				.map(([code, d]) => ({ code, dpto: getDptoName(code), nUrban: d.nUrban, nRural: d.nRural, newParcels: d.newParcels }))
-				.sort((a, b) => b.nUrban - a.nUrban).slice(0, 10);
+				.sort((a, b) => b.nUrban - a.nUrban);
 			await loadHousingProvAvg();
 		} catch (e) { console.warn('Failed to load catastro data:', e); }
 		finally { loading = false; }
