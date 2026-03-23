@@ -43,7 +43,9 @@
 		'analysis.catastro.h.pavimento', 'analysis.catastro.h.hacinamiento', 'analysis.catastro.h.nbi'
 	];
 	// true = deficit variable → invert for petal (100-value so higher=better on chart)
-	const HOUSING_DEFICIT = [true, true, false, false, true, true];
+	// agua_red and cloacas are ACCESS (high=good), alumbrado and pavimento are ACCESS (high=good)
+	// hacinamiento and nbi are DEFICIT (high=bad)
+	const HOUSING_DEFICIT = [false, false, false, false, true, true];
 
 	// Derived: ordered list of selected radios with their colors
 	const selectedEntries = $derived(
