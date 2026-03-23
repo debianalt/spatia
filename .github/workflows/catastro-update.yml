@@ -1,5 +1,5 @@
 name: Update Catastro Layer
-
+# Runs biweekly: 1st and 15th of each month
 on:
   schedule:
     - cron: '0 8 1,15 * *'  # 1st and 15th of each month, 08:00 UTC
