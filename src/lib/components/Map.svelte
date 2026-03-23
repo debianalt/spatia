@@ -725,6 +725,8 @@
 					}));
 				}
 			});
+			map.on('mouseenter', 'buildings-flat', () => { map.getCanvas().style.cursor = 'pointer'; });
+			map.on('mouseleave', 'buildings-flat', () => { map.getCanvas().style.cursor = ''; });
 		}
 		for (const layerId of CARTO_BUILDING_LAYERS) {
 			if (map.getLayer(layerId)) {
