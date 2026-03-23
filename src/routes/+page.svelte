@@ -209,13 +209,16 @@
 			return;
 		}
 
-		// Choropleth loading is deferred — the analysis component loads data
-		// and we poll for it via a timeout. This avoids tight coupling.
+		// Radio-based analyses: load choropleth + catastro overlay
 		if (analysis.choropleth && analysis.spatialUnit === 'radio') {
 			analysisDataLoaded = false;
 			mapComponent?.clearHexChoropleth();
 			mapStore.clearHexState();
 			loadAnalysisChoropleth(analysis);
+			// Show catastro parcel overlay when catastro analysis is active
+			if (id === 'catastro') {
+				mapComponent?.showCatastroLayer();
+			}
 		}
 	});
 
