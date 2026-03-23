@@ -469,10 +469,11 @@
 
 	function handleSelectCatastroDpto(centroid: [number, number] | null) {
 		if (centroid) {
-			mapComponent?.showCatastroLayer();
+			// Just fly — keep buildings, radios, and choropleth visible
 			mapComponent?.flyToCoords(centroid[0], centroid[1], 10);
 		} else {
-			mapComponent?.hideCatastroLayer();
+			// Back to province view
+			mapComponent?.flyToProvince();
 		}
 	}
 
