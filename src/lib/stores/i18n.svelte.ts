@@ -186,6 +186,8 @@ const dict: Record<string, Record<Locale, string>> = {
 	'analysis.waterNetwork.desc': { es: '17K segmentos de red, pozos, tanques por radio', en: '17K network segments, wells, tanks by tract', gn: "Y juru, ykuaa radio rupi" },
 
 	// Flood risk analysis
+	'analysis.opportunities.title': { es: 'Oportunidades', en: 'Opportunities', gn: "Teko porã" },
+	'analysis.opportunities.desc': { es: 'Ranking de radios con mayor potencial según el lente activo', en: 'Ranking of tracts with highest potential for the active lens', gn: "Radio oĩva teko porãve" },
 	'analysis.floodRisk.title': { es: 'Riesgo hídrico', en: 'Flood risk', gn: "Y tuicha mba'asy" },
 	'analysis.floodRisk.desc': { es: 'Presencia histórica de agua (JRC 1984–2021) e inundación actual (Sentinel-1 SAR) por hexágono H3', en: 'Historical water presence (JRC 1984–2021) and current flooding (Sentinel-1 SAR) per H3 hexagon', gn: "Y rehegua historia guive (JRC 1984–2021) ha ko'ag̃a ysoguy (Sentinel-1 SAR) H3 rupi" },
 	'analysis.floodRisk.legend': { es: 'Riesgo hídrico (0–100)', en: 'Flood risk (0–100)', gn: "Y tuicha mba'asy (0–100)" },

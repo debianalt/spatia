@@ -153,9 +153,14 @@
 		prevDataVersion = hexStore.dataVersion;
 
 		if (lens) {
-			const cfg = LENS_CONFIG[lens];
-			const redcodes = [...lensStore.opportunityRadios.keys()];
-			mapComponent?.setOpportunityGlow(redcodes, cfg.color);
+			// Only show opportunity glow if opportunities are active (user selected the analysis)
+			if (count > 0) {
+				const cfg = LENS_CONFIG[lens];
+				const redcodes = [...lensStore.opportunityRadios.keys()];
+				mapComponent?.setOpportunityGlow(redcodes, cfg.color);
+			} else {
+				mapComponent?.clearOpportunityGlow();
+			}
 			// Clear any existing radio selections and highlights
 			mapStore.clearRadios();
 			mapComponent?.clearRadioHighlight();
@@ -236,9 +241,13 @@
 		const id = analysis?.id ?? null;
 
 		if (id === prevAnalysisId) return;
-		// Clean up catastro layer when leaving catastro analysis
+		// Clean up previous analysis
 		if (prevAnalysisId === 'catastro') {
 			mapComponent?.hideCatastroLayer();
+		}
+		if (prevAnalysisId === 'opportunities') {
+			lensStore.deactivateOpportunities();
+			mapComponent?.clearOpportunityGlow();
 		}
 		prevAnalysisId = id;
 
@@ -248,6 +257,14 @@
 			mapStore.clearHexState();
 			hexStore.clearAll();
 			analysisDataLoaded = false;
+			return;
+		}
+
+		// Opportunities analysis: activate glow + department list
+		if (id === 'opportunities') {
+			mapComponent?.clearAnalysisChoropleth();
+			mapComponent?.clearHexChoropleth();
+			lensStore.activateOpportunities();
 			return;
 		}
 

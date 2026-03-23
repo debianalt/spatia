@@ -204,6 +204,11 @@ export interface AnalysisConfig {
 }
 
 export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
+	// ── Oportunidades (one per lens) ──
+	{ id: 'opportunities', lensId: 'invertir', titleKey: 'analysis.opportunities.title', descKey: 'analysis.opportunities.desc', icon: '📊', status: 'available' },
+	{ id: 'opportunities', lensId: 'producir', titleKey: 'analysis.opportunities.title', descKey: 'analysis.opportunities.desc', icon: '📊', status: 'available' },
+	{ id: 'opportunities', lensId: 'servir', titleKey: 'analysis.opportunities.title', descKey: 'analysis.opportunities.desc', icon: '📊', status: 'available' },
+	{ id: 'opportunities', lensId: 'vivir', titleKey: 'analysis.opportunities.title', descKey: 'analysis.opportunities.desc', icon: '📊', status: 'available' },
 	// ── Vivir ──
 	{
 		id: 'flood_risk',

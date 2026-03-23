@@ -41,17 +41,9 @@ export class LensStore {
 				this.allData.set(row.redcode, row);
 			}
 			this.dataLoaded = true;
-			// Race condition fix: if a lens was activated before data loaded, re-filter
-			if (this.activeLens) {
-				const config = LENS_CONFIG[this.activeLens];
-				const filtered = new Map<string, OpportunityRow>();
-				for (const [redcode, row] of this.allData) {
-					const score = row[config.scoreCol];
-					if (score != null && score >= config.threshold) {
-						filtered.set(redcode, row);
-					}
-				}
-				this.opportunityRadios = filtered;
+			// If opportunities analysis was already selected before data loaded, activate now
+			if (this.activeLens && this.activeAnalysis?.id === 'opportunities') {
+				this.activateOpportunities();
 			}
 		} catch (e) {
 			console.warn('Failed to load lens data:', e);
@@ -67,12 +59,15 @@ export class LensStore {
 	}
 
 	clearAnalysis(): void {
+		if (this.activeAnalysis?.id === 'opportunities') {
+			this.deactivateOpportunities();
+		}
 		this.activeAnalysis = null;
 	}
 
 	setLens(id: LensId | null): void {
 		if (id === this.activeLens && this.dataLoaded) {
-			// Toggle off (only if data is loaded, otherwise it's a re-filter)
+			// Toggle off
 			this.activeLens = null;
 			this.activeAnalysis = null;
 			this.opportunityRadios = new Map();
@@ -89,13 +84,13 @@ export class LensStore {
 		this.comparisonRadio = null;
 		this.comparisonMode = false;
 		this.selectedDpto = null;
+		// Don't auto-filter opportunities — wait for user to select "Oportunidades" analysis
+		this.opportunityRadios = new Map();
+	}
 
-		if (!id) {
-			this.opportunityRadios = new Map();
-			return;
-		}
-
-		const config = LENS_CONFIG[id];
+	activateOpportunities(): void {
+		if (!this.activeLens) return;
+		const config = LENS_CONFIG[this.activeLens];
 		const filtered = new Map<string, OpportunityRow>();
 		for (const [redcode, row] of this.allData) {
 			const score = row[config.scoreCol];
@@ -104,6 +99,14 @@ export class LensStore {
 			}
 		}
 		this.opportunityRadios = filtered;
+	}
+
+	deactivateOpportunities(): void {
+		this.opportunityRadios = new Map();
+		this.selectedDpto = null;
+		this.selectedOpportunity = null;
+		this.comparisonRadio = null;
+		this.comparisonMode = false;
 	}
 
 	selectOpportunity(redcode: string): void {

@@ -89,15 +89,20 @@
 		<div class="chart-scroll">
 			<HexComparison {hexStore} />
 		</div>
-	{:else if lensStore.activeLens && lensStore.activeAnalysis}
-		<!-- Analysis active: show analysis view (with or without radio) -->
-		<div class="chart-scroll">
-			<AnalysisView {lensStore} {mapStore} {hexStore} onBack={handleBack} {onRemoveRadio} {onSelectFloodDpto} {onSelectCatastroDpto} />
-		</div>
-	{:else if lensStore.activeLens && mapStore.selectedRadios.size > 0}
-		<!-- Lens + radio but no analysis: show OpportunityCard (legacy, keeps petal working) -->
+	{:else if lensStore.activeLens && lensStore.activeAnalysis?.id === 'opportunities' && mapStore.selectedRadios.size > 0}
+		<!-- Opportunities analysis + radio selected: show OpportunityCard -->
 		<div class="chart-scroll">
 			<OpportunityCard {mapStore} {lensStore} {onRemoveRadio} />
+		</div>
+	{:else if lensStore.activeLens && lensStore.activeAnalysis?.id === 'opportunities'}
+		<!-- Opportunities analysis: show department list -->
+		<div class="chart-scroll">
+			<DepartmentList {lensStore} {onSelectDpto} {onSelectRadio} />
+		</div>
+	{:else if lensStore.activeLens && lensStore.activeAnalysis}
+		<!-- Other analysis active: show analysis view -->
+		<div class="chart-scroll">
+			<AnalysisView {lensStore} {mapStore} {hexStore} onBack={handleBack} {onRemoveRadio} {onSelectFloodDpto} {onSelectCatastroDpto} />
 		</div>
 	{:else if mapStore.selectedRadios.size > 0}
 		<!-- No lens, radios selected: comparison chart -->
