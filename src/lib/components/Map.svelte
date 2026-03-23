@@ -655,14 +655,14 @@
 			map.addSource('catastro', { type: 'vector', url: getTilesUrl('catastro') });
 		}
 
-		// Fill layer — visible cyan/green parcels (minzoom 8 for wider view)
+		// Fill layer — visible cyan/green parcels (minzoom 11 for crisp rendering)
 		if (!map.getLayer('catastro-fill')) {
 			map.addLayer({
 				id: 'catastro-fill',
 				type: 'fill',
 				source: 'catastro',
 				'source-layer': 'catastro',
-				minzoom: 8,
+				minzoom: 11,
 				paint: {
 					'fill-color': [
 						'match', ['get', 'tipo'],
@@ -670,7 +670,7 @@
 						'rural', '#4ade80',
 						'#22d3ee'
 					],
-					'fill-opacity': ['interpolate', ['linear'], ['zoom'], 8, 0.08, 10, 0.15, 12, 0.20, 14, 0.25]
+					'fill-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0.10, 12, 0.18, 14, 0.25]
 				}
 			});
 		}
@@ -682,7 +682,7 @@
 				type: 'line',
 				source: 'catastro',
 				'source-layer': 'catastro',
-				minzoom: 8,
+				minzoom: 11,
 				paint: {
 					'line-color': [
 						'match', ['get', 'tipo'],
@@ -690,8 +690,8 @@
 						'rural', '#4ade80',
 						'#22d3ee'
 					],
-					'line-width': ['interpolate', ['linear'], ['zoom'], 8, 0.1, 10, 0.3, 12, 0.6, 14, 0.9],
-					'line-opacity': ['interpolate', ['linear'], ['zoom'], 8, 0.3, 10, 0.5, 12, 0.7, 14, 0.85]
+					'line-width': ['interpolate', ['linear'], ['zoom'], 11, 0.3, 12, 0.6, 14, 0.9],
+					'line-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0.5, 12, 0.7, 14, 0.85]
 				}
 			});
 		}
