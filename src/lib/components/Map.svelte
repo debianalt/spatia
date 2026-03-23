@@ -650,7 +650,7 @@
 			map.addSource('catastro', { type: 'vector', url: getTilesUrl('catastro') });
 		}
 
-		// Catastro parcel borders as overlay — buildings stay visible
+		// Catastro parcel borders as overlay on TOP of all layers
 		if (!map.getLayer('catastro-line')) {
 			map.addLayer({
 				id: 'catastro-line',
@@ -665,10 +665,10 @@
 						'rural', '#4ade80',
 						'#22d3ee'
 					],
-					'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.3, 12, 0.6, 14, 1.2],
-					'line-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.5, 12, 0.6, 14, 0.8]
+					'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.4, 12, 0.8, 14, 1.5],
+					'line-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.7, 12, 0.8, 14, 0.9]
 				}
-			});
+			}); // Added last = renders on top of everything including 3D buildings
 		}
 	}
 
