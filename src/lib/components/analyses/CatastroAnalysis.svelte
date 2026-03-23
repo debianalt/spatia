@@ -34,12 +34,16 @@
 	let housingCache: Map<string, Record<string, number>> = $state(new Map());
 	let housingProvAvg = $state<Record<string, number> | null>(null);
 
+	// Housing quality variables + petal config
+	// DEFICIT vars (high=bad): agua_red, cloacas, hacinamiento, nbi → invert for petal
+	// ACCESS vars (high=good): alumbrado, pavimento → direct for petal
 	const HOUSING_COLS = ['pct_agua_red', 'pct_cloacas', 'pct_alumbrado', 'pct_pavimento', 'pct_hacinamiento', 'pct_nbi'];
 	const HOUSING_LABELS_KEYS = [
 		'analysis.catastro.h.agua', 'analysis.catastro.h.cloacas', 'analysis.catastro.h.alumbrado',
 		'analysis.catastro.h.pavimento', 'analysis.catastro.h.hacinamiento', 'analysis.catastro.h.nbi'
 	];
-	const HOUSING_INVERSE = [false, false, false, false, true, true];
+	// true = deficit variable → invert for petal (100-value so higher=better on chart)
+	const HOUSING_DEFICIT = [true, true, false, false, true, true];
 
 	// Derived: ordered list of selected radios with their colors
 	const selectedEntries = $derived(
@@ -57,7 +61,7 @@
 				const values = HOUSING_COLS.map((col, i) => {
 					let raw = hd[col] ?? 0;
 					let avg = housingProvAvg![col] ?? 1;
-					if (HOUSING_INVERSE[i]) { raw = 100 - raw; avg = 100 - avg; }
+					if (HOUSING_DEFICIT[i]) { raw = 100 - raw; avg = 100 - avg; }
 					if (avg === 0) return 50;
 					return Math.min(100, Math.max(0, (raw / avg) * 50));
 				});
@@ -230,7 +234,7 @@
 {:else if hasRadios}
 	<!-- Radio comparison view (1 or more radios) -->
 	<div class="radio-detail">
-		<!-- Selected radios header -->
+		<!-- Selected radios header + clear button -->
 		<div class="radios-header">
 			{#each selectedEntries as entry}
 				<div class="radio-chip">
@@ -240,6 +244,11 @@
 					<button class="chip-x" onclick={() => onRemoveRadio(entry.redcode)}>x</button>
 				</div>
 			{/each}
+			{#if selectedEntries.length > 1}
+				<button class="clear-btn" onclick={() => { for (const rc of [...mapStore.selectedRadios.keys()]) onRemoveRadio(rc); }}>
+					{i18n.t('analysis.catastro.clearAll')}
+				</button>
+			{/if}
 		</div>
 
 		<!-- Comparison table -->
@@ -366,6 +375,8 @@
 	.chip-dpto { color: #a3a3a3; }
 	.chip-x { background: none; border: none; color: #737373; cursor: pointer; font-size: 10px; padding: 0 2px; line-height: 1; }
 	.chip-x:hover { color: #ef4444; }
+	.clear-btn { background: none; border: 1px solid rgba(239,68,68,0.3); color: #ef4444; font-size: 8px; padding: 2px 8px; border-radius: 10px; cursor: pointer; transition: all 0.15s; }
+	.clear-btn:hover { background: rgba(239,68,68,0.1); }
 
 	/* Comparison table */
 	.cmp-table { margin-bottom: 10px; }
