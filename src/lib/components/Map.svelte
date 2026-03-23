@@ -696,11 +696,10 @@
 			});
 		}
 
-		// Buildings as ghost reference (20%)
+		// Hide all buildings — parcels are the focus
 		if (map.getLayer('buildings-3d')) {
-			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.2);
+			map.setLayoutProperty('buildings-3d', 'visibility', 'none');
 		}
-		// Hide CARTO basemap buildings completely
 		for (const layerId of CARTO_BUILDING_LAYERS) {
 			if (map.getLayer(layerId)) {
 				map.setLayoutProperty(layerId, 'visibility', 'none');
@@ -714,7 +713,7 @@
 		if (map.getLayer('catastro-fill')) map.removeLayer('catastro-fill');
 		if (map.getLayer('catastro-line')) map.removeLayer('catastro-line');
 		if (map.getLayer('buildings-3d')) {
-			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.85);
+			map.setLayoutProperty('buildings-3d', 'visibility', 'visible');
 		}
 		for (const layerId of CARTO_BUILDING_LAYERS) {
 			if (map.getLayer(layerId)) {
