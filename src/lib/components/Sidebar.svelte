@@ -4,6 +4,7 @@
 	import AnalysisMenu from './AnalysisMenu.svelte';
 	import AnalysisView from './AnalysisView.svelte';
 	import ZoneComparison from './ZoneComparison.svelte';
+	import CatastroZoneComparison from './CatastroZoneComparison.svelte';
 	import HexComparison from './HexComparison.svelte';
 	import HexZoneComparison from './HexZoneComparison.svelte';
 	import { MapStore } from '$lib/stores/map.svelte';
@@ -58,6 +59,8 @@
 		if (hasContent) collapsed = false;
 	});
 
+	const isCatastroAnalysis = $derived(lensStore.activeAnalysis?.id === 'catastro');
+
 	function handleBack() {
 		lensStore.clearAnalysis();
 	}
@@ -77,7 +80,11 @@
 		</div>
 	{:else if lassoStore.zones.length > 0}
 		<div class="chart-scroll">
-			<ZoneComparison {lassoStore} {onRemoveZone} {onClearZones} />
+			{#if isCatastroAnalysis}
+				<CatastroZoneComparison {lassoStore} {lensStore} {onRemoveZone} {onClearZones} />
+			{:else}
+				<ZoneComparison {lassoStore} {onRemoveZone} {onClearZones} />
+			{/if}
 		</div>
 	{:else if hexStore.selectedHexes.size > 0}
 		<div class="chart-scroll">
