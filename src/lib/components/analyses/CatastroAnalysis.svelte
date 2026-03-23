@@ -296,8 +296,8 @@
 						<div class="housing-radio-row">
 							<span class="chip-dot" style:background={entry.color}></span>
 							<span class="housing-radio-code">{entry.redcode.slice(-4)}</span>
-							{#each HOUSING_COLS as col}
-								<span class="housing-cell">{fmtPct(hd?.[col])}</span>
+							{#each HOUSING_COLS as col, i}
+								<span class="housing-cell">{fmtPct(HOUSING_DEFICIT[i] ? 100 - (hd?.[col] ?? 0) : hd?.[col])}</span>
 							{/each}
 						</div>
 					{/if}
