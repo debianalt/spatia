@@ -10,7 +10,7 @@
 	import { LassoStore } from '$lib/stores/lasso.svelte';
 	import { HexStore } from '$lib/stores/hex.svelte';
 	import { initDuckDB, query, isReady } from '$lib/stores/duckdb';
-	import { PARQUETS, LENS_CONFIG, MAP_INIT, HEX_LAYER_REGISTRY, type AnalysisConfig } from '$lib/config';
+	import { PARQUETS, MAP_INIT, HEX_LAYER_REGISTRY, type AnalysisConfig } from '$lib/config';
 	import { i18n, type Locale } from '$lib/stores/i18n.svelte';
 
 	const mapStore = new MapStore();
@@ -25,7 +25,6 @@
 	onMount(() => {
 		initDuckDB()
 			.then(() => {
-				lensStore.loadData();
 				warmupRadioStats();
 			})
 			.catch(e => console.warn('DuckDB init failed:', e));
@@ -83,8 +82,6 @@
 					mapComponent?.clearLassoDraw();
 				} else if (lassoStore.active) {
 					handleToggleLasso();
-				} else if (lensStore.selectedDpto) {
-					handleBackToDepts();
 				} else {
 					clearAll();
 				}
@@ -136,16 +133,14 @@
 	});
 
 	// ── Lens reactivity ──────────────────────────────────────────────────────
-	let prevLensKey: string = '';
+	let prevLensId: string | null = null;
 
 	$effect(() => {
 		const lens = lensStore.activeLens;
-		const count = lensStore.opportunityCount;
-		const key = `${lens}:${count}`;
-		if (key === prevLensKey) return;
-		prevLensKey = key;
+		if (lens === prevLensId) return;
+		prevLensId = lens;
 
-		// Always clear hex state on any lens change (covers switch + deactivate)
+		// Clear hex state on any lens change
 		mapComponent?.clearHexChoropleth();
 		mapComponent?.clearHexZoneHighlight();
 		mapStore.clearHexState();
@@ -153,71 +148,14 @@
 		prevDataVersion = hexStore.dataVersion;
 
 		if (lens) {
-			// Only show opportunity glow if opportunities are active (user selected the analysis)
-			if (count > 0) {
-				const cfg = LENS_CONFIG[lens];
-				const redcodes = [...lensStore.opportunityRadios.keys()];
-				mapComponent?.setOpportunityGlow(redcodes, cfg.color);
-			} else {
-				mapComponent?.clearOpportunityGlow();
-			}
-			// Clear any existing radio selections and highlights
 			mapStore.clearRadios();
 			mapComponent?.clearRadioHighlight();
 			mapComponent?.clearChatHighlights();
 			mapComponent?.clearAnalysisChoropleth();
 		} else {
-			mapComponent?.clearOpportunityGlow();
 			mapComponent?.clearAnalysisChoropleth();
 		}
 	});
-
-	// ── Department drill-down reactivity ─────────────────────────────────────
-	let prevDpto: string | null = null;
-
-	$effect(() => {
-		const dpto = lensStore.selectedDpto;
-		if (dpto === prevDpto) return;
-		prevDpto = dpto;
-
-		if (!lensStore.activeLens) return;
-		const cfg = LENS_CONFIG[lensStore.activeLens];
-
-		if (dpto) {
-			// Filter glow to only this department's radios
-			const dptoRedcodes = [...lensStore.dptoOpportunities.keys()];
-			mapComponent?.setOpportunityGlow(dptoRedcodes, cfg.color);
-			// Fly to department centroid
-			const centroid = lensStore.dptoCentroid(dpto);
-			if (centroid) mapComponent?.flyToCoords(centroid[0], centroid[1], 10);
-		} else {
-			// Back to province: restore all opportunity radios
-			const allRedcodes = [...lensStore.opportunityRadios.keys()];
-			mapComponent?.setOpportunityGlow(allRedcodes, cfg.color);
-			mapComponent?.flyToProvince();
-		}
-	});
-
-	function handleSelectDpto(dpto: string) {
-		lensStore.selectDpto(dpto);
-	}
-
-	function handleSelectRadio(redcode: string) {
-		if (mapStore.hasRadio(redcode)) {
-			mapStore.removeRadio(redcode);
-			mapComponent?.setRadioHighlight(getRadioHighlightEntries());
-		} else {
-			mapStore.addRadio(redcode, { census: {}, enriched: null, buildingCount: 0 });
-			mapComponent?.setRadioHighlight(getRadioHighlightEntries());
-			fetchRadioEnrichment(redcode);
-			const c = lensStore.radioCentroid(redcode);
-			if (c) mapComponent?.flyToCoords(c[0], c[1], 14);
-		}
-	}
-
-	function handleBackToDepts() {
-		lensStore.clearDpto();
-	}
 
 	function handleSelectAnalysis(analysis: AnalysisConfig) {
 		if (analysis.status === 'coming_soon') {
@@ -245,10 +183,6 @@
 		if (prevAnalysisId === 'catastro') {
 			mapComponent?.hideCatastroLayer();
 		}
-		if (prevAnalysisId === 'opportunities') {
-			lensStore.deactivateOpportunities();
-			mapComponent?.clearOpportunityGlow();
-		}
 		prevAnalysisId = id;
 
 		if (!id || !analysis) {
@@ -257,14 +191,6 @@
 			mapStore.clearHexState();
 			hexStore.clearAll();
 			analysisDataLoaded = false;
-			return;
-		}
-
-		// Opportunities analysis: activate glow + department list
-		if (id === 'opportunities') {
-			mapComponent?.clearAnalysisChoropleth();
-			mapComponent?.clearHexChoropleth();
-			lensStore.activateOpportunities();
 			return;
 		}
 
@@ -623,8 +549,6 @@
 				{hexStore}
 				onRemoveRadio={handleRemoveRadio}
 				onClearRadios={handleClearRadios}
-				onSelectDpto={handleSelectDpto}
-				onSelectRadio={handleSelectRadio}
 				onSelectAnalysis={handleSelectAnalysis}
 				onRemoveZone={handleRemoveZone}
 				onClearZones={handleClearZones}

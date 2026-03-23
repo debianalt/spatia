@@ -5,7 +5,6 @@
 	import type { HexStore } from '$lib/stores/hex.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import RealEstateAnalysis from './analyses/RealEstateAnalysis.svelte';
-	import TerritorialProfileAnalysis from './analyses/TerritorialProfileAnalysis.svelte';
 	import FloodRiskAnalysis from './analyses/FloodRiskAnalysis.svelte';
 	import CatastroAnalysis from './analyses/CatastroAnalysis.svelte';
 
@@ -31,9 +30,6 @@
 	const lens = $derived(lensStore.activeLens);
 	const cfg = $derived(lens ? LENS_CONFIG[lens] : null);
 
-	const isTerritorialProfile = $derived(
-		analysis?.id.startsWith('territorial_profile_') ?? false
-	);
 </script>
 
 {#if analysis && cfg}
@@ -60,8 +56,6 @@
 			<FloodRiskAnalysis {lensStore} {mapStore} {hexStore} {onRemoveRadio} {onSelectFloodDpto} />
 		{:else if analysis.id === 'catastro'}
 			<CatastroAnalysis {lensStore} {mapStore} {onRemoveRadio} {onSelectCatastroDpto} />
-		{:else if isTerritorialProfile}
-			<TerritorialProfileAnalysis {lensStore} {mapStore} {onRemoveRadio} />
 		{:else}
 			<p class="text-text-dim text-[10px]">{i18n.t(analysis.descKey)}</p>
 		{/if}

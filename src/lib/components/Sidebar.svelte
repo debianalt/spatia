@@ -1,8 +1,6 @@
 <script lang="ts">
 	import ComparisonChart from './ComparisonChart.svelte';
-	import OpportunityCard from './OpportunityCard.svelte';
 	import ResponseChart from './ResponseChart.svelte';
-	import DepartmentList from './DepartmentList.svelte';
 	import AnalysisMenu from './AnalysisMenu.svelte';
 	import AnalysisView from './AnalysisView.svelte';
 	import ZoneComparison from './ZoneComparison.svelte';
@@ -22,8 +20,6 @@
 		hexStore,
 		onRemoveRadio,
 		onClearRadios,
-		onSelectDpto,
-		onSelectRadio,
 		onSelectAnalysis,
 		onRemoveZone,
 		onClearZones,
@@ -38,8 +34,6 @@
 		hexStore: HexStore;
 		onRemoveRadio: (redcode: string) => void;
 		onClearRadios: () => void;
-		onSelectDpto: (dpto: string) => void;
-		onSelectRadio: (redcode: string) => void;
 		onSelectAnalysis: (analysis: AnalysisConfig) => void;
 		onRemoveZone: (id: string) => void;
 		onClearZones: () => void;
@@ -89,18 +83,8 @@
 		<div class="chart-scroll">
 			<HexComparison {hexStore} />
 		</div>
-	{:else if lensStore.activeLens && lensStore.activeAnalysis?.id === 'opportunities' && mapStore.selectedRadios.size > 0}
-		<!-- Opportunities analysis + radio selected: show OpportunityCard -->
-		<div class="chart-scroll">
-			<OpportunityCard {mapStore} {lensStore} {onRemoveRadio} />
-		</div>
-	{:else if lensStore.activeLens && lensStore.activeAnalysis?.id === 'opportunities'}
-		<!-- Opportunities analysis: show department list -->
-		<div class="chart-scroll">
-			<DepartmentList {lensStore} {onSelectDpto} {onSelectRadio} />
-		</div>
 	{:else if lensStore.activeLens && lensStore.activeAnalysis}
-		<!-- Other analysis active: show analysis view -->
+		<!-- Analysis active: show analysis view -->
 		<div class="chart-scroll">
 			<AnalysisView {lensStore} {mapStore} {hexStore} onBack={handleBack} {onRemoveRadio} {onSelectFloodDpto} {onSelectCatastroDpto} />
 		</div>
