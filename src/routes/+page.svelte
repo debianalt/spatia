@@ -38,12 +38,6 @@
 			mapStore.clearChatState();
 			mapComponent?.clearChatHighlights();
 
-			// In analysis mode (catastro, etc.): replace selection instead of accumulating
-			if (lensStore.activeAnalysis) {
-				mapStore.clearRadios();
-				mapComponent?.clearRadioHighlight();
-			}
-
 			mapStore.addRadio(redcode, {
 				census,
 				enriched: null,
