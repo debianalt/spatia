@@ -217,7 +217,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'data.source.catastro': { es: 'Fuente: Dirección General de Catastro, Misiones', en: 'Source: Dirección General de Catastro, Misiones', gn: "Moñe'ẽha: Catastro, Misiones" },
 	'analysis.catastro.title': { es: 'Catastro parcelario', en: 'Cadastral parcels', gn: "Yvy ñemohenda" },
 	'analysis.catastro.desc': { es: 'Densidad de parcelas urbanas y rurales, áreas medias y presión inmobiliaria (parcelas nuevas)', en: 'Urban and rural parcel density, average areas and real estate pressure (new parcels)', gn: "Yvy ñemohenda táva ha ka'aguy rupi" },
-	'analysis.catastro.legend': { es: 'Parcelas urbanas por radio', en: 'Urban parcels per tract', gn: "Yvy táva rupi" },
+	'analysis.catastro.legend': { es: 'Total parcelas por radio', en: 'Total parcels per tract', gn: "Yvy opaite rupi" },
 	'analysis.catastro.totalUrban': { es: 'Parcelas urbanas', en: 'Urban parcels', gn: "Yvy táva" },
 	'analysis.catastro.totalRural': { es: 'Parcelas rurales', en: 'Rural parcels', gn: "Yvy ka'aguy" },
 	'analysis.catastro.avgAreaUrban': { es: 'Área media urbana', en: 'Avg urban area', gn: "Yvy mbytekue táva" },

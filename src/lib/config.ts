@@ -193,7 +193,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		spatialUnit: 'radio',
 		choropleth: {
 			parquet: 'catastro_by_radio',
-			column: 'n_parcelas_urbano',
+			column: '(n_parcelas_urbano + n_parcelas_rural)',
 			colorScale: 'sequential',
 			legendKey: 'analysis.catastro.legend',
 		},
