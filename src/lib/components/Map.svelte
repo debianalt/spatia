@@ -14,6 +14,7 @@
 	let container: HTMLDivElement;
 	let map: maplibregl.Map;
 	let lassoActive = false;
+	let catastroActive = false;
 
 	onMount(() => {
 		const protocol = new Protocol();
@@ -642,6 +643,7 @@
 
 	export function showCatastroLayer() {
 		if (!map || !map.isStyleLoaded()) return;
+		catastroActive = true;
 
 		// Add catastro source if not exists
 		if (!map.getSource('catastro')) {
@@ -669,11 +671,14 @@
 			});
 		}
 
-		// 2. Radio borders very subtle (reference only)
+		// 2. Radio borders very subtle + hide province fill
 		if (map.getLayer('province-line')) {
 			map.setPaintProperty('province-line', 'line-color', '#64748b');
 			map.setPaintProperty('province-line', 'line-width', ['interpolate', ['linear'], ['zoom'], 6, 0.8, 10, 0.5, 14, 0.3]);
 			map.setPaintProperty('province-line', 'line-opacity', ['interpolate', ['linear'], ['zoom'], 6, 0.2, 10, 0.15, 14, 0.1]);
+		}
+		if (map.getLayer('province-fill')) {
+			map.setPaintProperty('province-fill', 'fill-opacity', 0);
 		}
 
 		// 3. Hide our buildings + CARTO basemap buildings
@@ -688,8 +693,11 @@
 	}
 
 	export function hideCatastroLayer() {
-		if (!map || !map.isStyleLoaded()) return;
+		if (!map || !map.isStyleLoaded() || !catastroActive) return;
+		catastroActive = false;
+
 		if (map.getLayer('catastro-line')) map.removeLayer('catastro-line');
+
 		// Restore our buildings
 		if (map.getLayer('buildings-3d')) {
 			map.setLayoutProperty('buildings-3d', 'visibility', 'visible');
@@ -702,7 +710,10 @@
 				map.setLayoutProperty(layerId, 'visibility', 'visible');
 			}
 		}
-		// Restore radio borders
+		// Restore province fill + radio borders
+		if (map.getLayer('province-fill')) {
+			map.setPaintProperty('province-fill', 'fill-opacity', 0.06);
+		}
 		if (map.getLayer('province-line')) {
 			map.setPaintProperty('province-line', 'line-color', '#d4d4d4');
 			map.setPaintProperty('province-line', 'line-width', ['interpolate', ['linear'], ['zoom'], 6, 1.2, 10, 0.6, 14, 0.3]);
@@ -749,8 +760,8 @@
 			const t = (entry.value - minVal) / range;
 			let r: number, g: number, b: number;
 			if (colorScale === 'sequential') {
-				// Dark → cyan ramp for catastro density
-				r = Math.round(13 + t * (6 - 13));
+				// Dark navy → bright cyan ramp for catastro density
+				r = Math.round(13 + t * (20 - 13));
 				g = Math.round(27 + t * (182 - 27));
 				b = Math.round(42 + t * (212 - 42));
 			} else if (colorScale === 'price') {
@@ -775,8 +786,8 @@
 
 	export function clearAnalysisChoropleth() {
 		if (!map || !map.isStyleLoaded()) return;
-		// Remove catastro layers
-		hideCatastroLayer();
+		// Remove catastro layers only if active
+		if (catastroActive) hideCatastroLayer();
 		// Clear radio analysis layers
 		if (map.getLayer('analysis-fill')) {
 			map.setFilter('analysis-fill', ['==', ['get', 'redcode'], '']);

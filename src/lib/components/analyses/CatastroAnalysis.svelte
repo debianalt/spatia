@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { getParquetUrl, DATA_FRESHNESS } from '$lib/config';
+	import { getParquetUrl, PARQUETS, DATA_FRESHNESS } from '$lib/config';
 	import { initDuckDB, query } from '$lib/stores/duckdb';
 	import type { LensStore } from '$lib/stores/lens.svelte';
 	import type { MapStore } from '$lib/stores/map.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
+	import PetalChart from '$lib/components/PetalChart.svelte';
 
 	let {
 		lensStore,
@@ -26,9 +27,20 @@
 	let totalRural = $state(0);
 	let totalNew90d = $state(0);
 	let avgAreaUrban = $state(0);
-	// Per-department averages for comparison bars
 	let deptAvgs: Map<string, { avgUrban: number; avgAreaUrban: number; avgNew90d: number }> = $state(new Map());
 	let provAvg = $state({ avgUrban: 0, avgAreaUrban: 0, avgNew90d: 0 });
+
+	// Housing quality (loaded per-radio from radio_stats_master)
+	let housingData = $state<Record<string, number> | null>(null);
+	let housingProvAvg = $state<Record<string, number> | null>(null);
+
+	const HOUSING_COLS = ['pct_agua_red', 'pct_cloacas', 'pct_alumbrado', 'pct_pavimento', 'pct_hacinamiento', 'pct_nbi'];
+	const HOUSING_LABELS_KEYS = [
+		'analysis.catastro.h.agua', 'analysis.catastro.h.cloacas', 'analysis.catastro.h.alumbrado',
+		'analysis.catastro.h.pavimento', 'analysis.catastro.h.hacinamiento', 'analysis.catastro.h.nbi'
+	];
+	// For petal: hacinamiento and NBI are "inverse" (lower = better), so we use (100 - value)
+	const HOUSING_INVERSE = [false, false, false, false, true, true];
 
 	const selectedRedcode = $derived(
 		mapStore.selectedRadios.size === 1
@@ -39,8 +51,29 @@
 		selectedRedcode ? allData.get(selectedRedcode) ?? null : null
 	);
 
-	onMount(() => {
-		loadData();
+	// Petal values: normalize to 0-100 where 50 = provincial average
+	const petalValues = $derived.by(() => {
+		if (!housingData || !housingProvAvg) return null;
+		return HOUSING_COLS.map((col, i) => {
+			let raw = housingData[col] ?? 0;
+			let avg = housingProvAvg[col] ?? 1;
+			if (HOUSING_INVERSE[i]) { raw = 100 - raw; avg = 100 - avg; }
+			if (avg === 0) return 50;
+			return Math.min(100, Math.max(0, (raw / avg) * 50));
+		});
+	});
+	const petalLabels = $derived(HOUSING_LABELS_KEYS.map(k => i18n.t(k)));
+
+	onMount(() => { loadData(); });
+
+	// Load housing data when radio changes
+	$effect(() => {
+		const rc = selectedRedcode;
+		if (rc) {
+			loadHousingData(rc);
+		} else {
+			housingData = null;
+		}
 	});
 
 	async function loadData() {
@@ -57,7 +90,6 @@
 
 			for (let i = 0; i < result.numRows; i++) {
 				const raw = result.get(i)!.toJSON() as Record<string, any>;
-				// Convert BigInt values to Number (DuckDB-WASM returns int64 as BigInt)
 				const row: Record<string, any> = {};
 				for (const [k, v] of Object.entries(raw)) {
 					row[k] = typeof v === 'bigint' ? Number(v) : v;
@@ -69,8 +101,6 @@
 				if (row.area_media_urbano_m2 != null && row.area_media_urbano_m2 > 0) {
 					areas.push(row.area_media_urbano_m2);
 				}
-
-				// Department aggregation (use first 5 chars of redcode as dept key)
 				const dptoCode = row.redcode.substring(0, 5);
 				const d = depts.get(dptoCode) ?? { nUrban: 0, nRural: 0, newParcels: 0 };
 				d.nUrban += row.n_parcelas_urbano ?? 0;
@@ -83,11 +113,8 @@
 			totalUrban = tUrban;
 			totalRural = tRural;
 			totalNew90d = tNew;
-			avgAreaUrban = areas.length > 0
-				? areas.reduce((a, b) => a + b, 0) / areas.length
-				: 0;
+			avgAreaUrban = areas.length > 0 ? areas.reduce((a, b) => a + b, 0) / areas.length : 0;
 
-			// Compute per-department and provincial averages for comparison bars
 			const n = map.size;
 			provAvg = {
 				avgUrban: n > 0 ? tUrban / n : 0,
@@ -118,21 +145,54 @@
 			}
 			deptAvgs = da;
 
-			// Resolve department names from mapStore if available
 			deptSummary = [...depts.entries()]
-				.map(([code, d]) => ({
-					code,
-					dpto: getDptoName(code),
-					nUrban: d.nUrban,
-					nRural: d.nRural,
-					newParcels: d.newParcels,
-				}))
+				.map(([code, d]) => ({ code, dpto: getDptoName(code), nUrban: d.nUrban, nRural: d.nRural, newParcels: d.newParcels }))
 				.sort((a, b) => b.nUrban - a.nUrban)
 				.slice(0, 10);
+
+			// Load provincial housing averages (one-time)
+			await loadHousingProvAvg();
 		} catch (e) {
 			console.warn('Failed to load catastro data:', e);
 		} finally {
 			loading = false;
+		}
+	}
+
+	async function loadHousingProvAvg() {
+		try {
+			const cols = HOUSING_COLS.map(c => `AVG(${c}) as ${c}`).join(', ');
+			const result = await query(`SELECT ${cols} FROM '${PARQUETS.radio_stats_master}' WHERE pct_agua_red IS NOT NULL`);
+			if (result.numRows > 0) {
+				const row = result.get(0)!.toJSON() as Record<string, any>;
+				housingProvAvg = {};
+				for (const c of HOUSING_COLS) {
+					housingProvAvg[c] = Number(row[c] ?? 0);
+				}
+			}
+		} catch (e) {
+			console.warn('Failed to load housing provincial avg:', e);
+		}
+	}
+
+	async function loadHousingData(redcode: string) {
+		try {
+			await initDuckDB();
+			const cols = HOUSING_COLS.join(', ');
+			const result = await query(
+				`SELECT ${cols} FROM '${PARQUETS.radio_stats_master}' WHERE redcode = '${redcode.replace(/'/g, "''")}' LIMIT 1`
+			);
+			if (result.numRows > 0) {
+				const row = result.get(0)!.toJSON() as Record<string, any>;
+				const data: Record<string, number> = {};
+				for (const c of HOUSING_COLS) data[c] = Number(row[c] ?? 0);
+				housingData = data;
+			} else {
+				housingData = null;
+			}
+		} catch (e) {
+			console.warn('Failed to load housing data:', e);
+			housingData = null;
 		}
 	}
 
@@ -156,9 +216,7 @@
 		'54119': { name: '25 de Mayo', centroid: [-27.37, -54.02] },
 	};
 
-	function getDptoName(code: string): string {
-		return DPTO_INFO[code]?.name ?? code;
-	}
+	function getDptoName(code: string): string { return DPTO_INFO[code]?.name ?? code; }
 
 	function handleDptoClick(dptoCode: string) {
 		const info = DPTO_INFO[dptoCode];
@@ -171,6 +229,10 @@
 	function handleBackToDepts() {
 		selectedDpto = null;
 		onSelectCatastroDpto?.(null);
+		// Clear any selected radio
+		for (const rc of [...mapStore.selectedRadios.keys()]) {
+			onRemoveRadio(rc);
+		}
 	}
 
 	function fmt(n: number | null | undefined): string {
@@ -183,19 +245,9 @@
 		return `${n.toLocaleString('es-AR', { maximumFractionDigits: 0 })} m\u00B2`;
 	}
 
-	export function getChoroplethEntries(): Array<{ redcode: string; value: number }> {
-		const entries: Array<{ redcode: string; value: number }> = [];
-		for (const [redcode, row] of allData) {
-			const val = row.n_parcelas_urbano;
-			if (val != null && val > 0) {
-				entries.push({ redcode, value: val });
-			}
-		}
-		return entries;
-	}
-
-	export function isLoaded(): boolean {
-		return !loading && allData.size > 0;
+	function fmtPct(n: number | null | undefined): string {
+		if (n == null) return '-';
+		return `${n.toFixed(1)}%`;
 	}
 </script>
 
@@ -272,6 +324,25 @@
 				</div>
 			</div>
 		{/if}
+
+		<!-- Housing quality petal -->
+		{#if petalValues && housingData}
+			<div class="section">
+				<div class="section-title">{i18n.t('analysis.catastro.housingTitle')}</div>
+				<div class="petal-wrapper">
+					<PetalChart layers={[{ values: petalValues, color: '#06b6d4' }]} labels={petalLabels} size={200} />
+				</div>
+				<div class="housing-grid">
+					{#each HOUSING_COLS as col, i}
+						<div class="housing-item">
+							<span class="housing-label">{petalLabels[i]}</span>
+							<span class="housing-value">{fmtPct(housingData[col])}</span>
+						</div>
+					{/each}
+				</div>
+				<div class="petal-hint">{i18n.t('analysis.catastro.petalHint')}</div>
+			</div>
+		{/if}
 	</div>
 {:else if selectedDpto}
 	<!-- Department selected: parcels visible on map -->
@@ -334,271 +405,66 @@
 {/if}
 
 <style>
-	.loading {
-		color: #a3a3a3;
-		font-size: 10px;
-		padding: 12px 0;
-	}
-	.stat-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 6px;
-		margin-bottom: 10px;
-	}
-	.stat-item {
-		background: rgba(255,255,255,0.03);
-		border-radius: 6px;
-		padding: 6px 8px;
-	}
-	.stat-item.highlight {
-		background: rgba(6,182,212,0.08);
-		border: 1px solid rgba(6,182,212,0.2);
-	}
-	.stat-label {
-		font-size: 8px;
-		color: #a3a3a3;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-		margin-bottom: 2px;
-	}
-	.stat-value {
-		font-size: 13px;
-		font-weight: 600;
-		color: #e2e8f0;
-	}
-	.stat-value.new-count {
-		color: #06b6d4;
-	}
+	.loading { color: #a3a3a3; font-size: 10px; padding: 12px 0; }
+	.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+	.stat-item { background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 8px; }
+	.stat-item.highlight { background: rgba(6,182,212,0.08); border: 1px solid rgba(6,182,212,0.2); }
+	.stat-label { font-size: 8px; color: #a3a3a3; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px; }
+	.stat-value { font-size: 13px; font-weight: 600; color: #e2e8f0; }
+	.stat-value.new-count { color: #06b6d4; }
 
-	/* Pressure badge */
-	.pressure-badge {
-		display: inline-flex;
-		align-items: center;
-		gap: 4px;
-		background: rgba(6,182,212,0.1);
-		border: 1px solid rgba(6,182,212,0.3);
-		border-radius: 6px;
-		padding: 4px 10px;
-		font-size: 10px;
-		font-weight: 600;
-		color: #06b6d4;
-		margin-bottom: 8px;
-	}
-	.pressure-icon {
-		font-size: 12px;
-		font-weight: 700;
-	}
+	.pressure-badge { display: inline-flex; align-items: center; gap: 4px; background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.3); border-radius: 6px; padding: 4px 10px; font-size: 10px; font-weight: 600; color: #06b6d4; margin-bottom: 8px; }
+	.pressure-icon { font-size: 12px; font-weight: 700; }
 
-	/* Sections */
-	.section {
-		margin-bottom: 8px;
-	}
-	.section-title {
-		font-size: 9px;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: #a3a3a3;
-		border-bottom: 1px solid #1e293b;
-		padding-bottom: 2px;
-		margin-bottom: 4px;
-	}
+	.section { margin-bottom: 8px; }
+	.section-title { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #a3a3a3; border-bottom: 1px solid #1e293b; padding-bottom: 2px; margin-bottom: 4px; }
 
-	/* Department rows */
-	.dept-row {
-		margin-bottom: 4px;
-	}
-	.dept-clickable {
-		background: none;
-		border: none;
-		width: 100%;
-		text-align: left;
-		cursor: pointer;
-		padding: 3px 4px;
-		border-radius: 4px;
-		transition: background 0.15s;
-	}
+	.dept-row { margin-bottom: 4px; }
+	.dept-clickable { background: none; border: none; width: 100%; text-align: left; cursor: pointer; padding: 3px 4px; border-radius: 4px; transition: background 0.15s; }
 	.dept-clickable:hover { background: rgba(6,182,212,0.1); }
-	.dept-top {
-		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-	}
-	.dept-name {
-		font-size: 10px;
-		color: #d4d4d4;
-	}
-	.dept-count {
-		font-size: 9px;
-		color: #a3a3a3;
-	}
-	.dept-bar-bg {
-		height: 3px;
-		background: rgba(255,255,255,0.05);
-		border-radius: 2px;
-		margin-top: 1px;
-	}
-	.dept-bar {
-		height: 100%;
-		background: #06b6d4;
-		border-radius: 2px;
-		transition: width 0.3s ease;
-	}
-	.dept-new {
-		font-size: 8px;
-		color: #06b6d4;
-		font-weight: 600;
-	}
+	.dept-top { display: flex; justify-content: space-between; align-items: baseline; }
+	.dept-name { font-size: 10px; color: #d4d4d4; }
+	.dept-count { font-size: 9px; color: #a3a3a3; }
+	.dept-bar-bg { height: 3px; background: rgba(255,255,255,0.05); border-radius: 2px; margin-top: 1px; }
+	.dept-bar { height: 100%; background: #06b6d4; border-radius: 2px; transition: width 0.3s ease; }
 
-	/* vs indicator */
-	.vs-indicator {
-		font-size: 10px;
-		color: #a3a3a3;
-		display: flex;
-		align-items: center;
-		gap: 4px;
-		padding: 4px 0;
-	}
-	.vs-indicator.above .vs-arrow { color: #f59e0b; font-weight: 600; }
-	.vs-indicator.below .vs-arrow { color: #22c55e; font-weight: 600; }
-	.vs-text { color: #a3a3a3; }
-
-	/* Radio detail */
-	.radio-detail {
-		padding: 2px 0;
-	}
-	.detail-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
-		margin-bottom: 8px;
-	}
-	.detail-redcode {
-		font-size: 11px;
-		font-weight: 600;
-		color: #e2e8f0;
-		font-family: monospace;
-	}
-	.detail-dpto {
-		font-size: 9px;
-		color: #a3a3a3;
-	}
-	.detail-close {
-		background: none;
-		border: none;
-		color: #a3a3a3;
-		cursor: pointer;
-		font-size: 12px;
-		padding: 0 4px;
-		line-height: 1;
-	}
+	.radio-detail { padding: 2px 0; }
+	.detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+	.detail-redcode { font-size: 11px; font-weight: 600; color: #e2e8f0; font-family: monospace; }
+	.detail-dpto { font-size: 9px; color: #a3a3a3; }
+	.detail-close { background: none; border: none; color: #a3a3a3; cursor: pointer; font-size: 12px; padding: 0 4px; line-height: 1; }
 	.detail-close:hover { color: #e2e8f0; }
 
 	/* Comparison bars */
-	.cmp-row {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		margin-bottom: 6px;
-	}
-	.cmp-label {
-		font-size: 8px;
-		color: #a3a3a3;
-		width: 60px;
-		flex-shrink: 0;
-		text-transform: uppercase;
-		letter-spacing: 0.03em;
-	}
-	.cmp-track {
-		flex: 1;
-		height: 8px;
-		background: rgba(255,255,255,0.05);
-		border-radius: 4px;
-		position: relative;
-		overflow: visible;
-	}
-	.cmp-fill {
-		height: 100%;
-		background: #06b6d4;
-		border-radius: 4px;
-		transition: width 0.3s ease;
-	}
-	.cmp-marker {
-		position: absolute;
-		top: -2px;
-		width: 2px;
-		height: 12px;
-		border-radius: 1px;
-		transform: translateX(-1px);
-	}
+	.cmp-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+	.cmp-label { font-size: 8px; color: #a3a3a3; width: 60px; flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.03em; }
+	.cmp-track { flex: 1; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; position: relative; overflow: visible; }
+	.cmp-fill { height: 100%; background: #06b6d4; border-radius: 4px; transition: width 0.3s ease; }
+	.cmp-marker { position: absolute; top: -2px; width: 2px; height: 12px; border-radius: 1px; transform: translateX(-1px); }
 	.cmp-marker-dept { background: #f59e0b; }
 	.cmp-marker-prov { background: #a78bfa; }
-	.cmp-value {
-		font-size: 9px;
-		font-weight: 600;
-		color: #e2e8f0;
-		min-width: 28px;
-		text-align: right;
-	}
-	.cmp-legend {
-		display: flex;
-		gap: 10px;
-		margin-top: 4px;
-		margin-bottom: 8px;
-	}
-	.cmp-legend-item {
-		font-size: 7px;
-		color: #a3a3a3;
-		display: flex;
-		align-items: center;
-		gap: 3px;
-	}
-	.cmp-dot {
-		width: 6px;
-		height: 6px;
-		border-radius: 50%;
-		display: inline-block;
-	}
+	.cmp-value { font-size: 9px; font-weight: 600; color: #e2e8f0; min-width: 28px; text-align: right; }
+	.cmp-legend { display: flex; gap: 10px; margin-top: 4px; margin-bottom: 8px; }
+	.cmp-legend-item { font-size: 7px; color: #a3a3a3; display: flex; align-items: center; gap: 3px; }
+	.cmp-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
 	.cmp-dot-fill { background: #06b6d4; }
 	.cmp-dot-dept { background: #f59e0b; }
 	.cmp-dot-prov { background: #a78bfa; }
 
-	/* Department detail */
-	.dept-detail {
-		font-size: 11px;
-	}
-	.back-btn {
-		background: none;
-		border: none;
-		color: #60a5fa;
-		font-size: 10px;
-		cursor: pointer;
-		padding: 0;
-		margin-bottom: 8px;
-	}
-	.back-btn:hover { text-decoration: underline; }
-	.dept-active-title {
-		font-size: 14px;
-		font-weight: 700;
-		color: #e2e8f0;
-		margin-bottom: 8px;
-	}
-	.hint {
-		font-size: 9px;
-		color: #a3a3a3;
-		text-align: center;
-		margin-top: 8px;
-	}
+	/* Housing quality petal */
+	.petal-wrapper { display: flex; justify-content: center; margin: 4px 0; }
+	.housing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; }
+	.housing-item { display: flex; justify-content: space-between; font-size: 9px; padding: 1px 0; }
+	.housing-label { color: #a3a3a3; }
+	.housing-value { color: #e2e8f0; font-weight: 600; }
+	.petal-hint { font-size: 7px; color: #737373; text-align: center; margin-top: 4px; }
 
-	/* Source */
-	.source-note-box {
-		margin-top: 10px;
-		padding: 6px 8px;
-		background: rgba(255,255,255,0.02);
-		border: 1px solid rgba(255,255,255,0.05);
-		border-radius: 6px;
-		font-size: 8px;
-		color: #737373;
-		line-height: 1.4;
-	}
+	/* Department detail */
+	.dept-detail { font-size: 11px; }
+	.back-btn { background: none; border: none; color: #60a5fa; font-size: 10px; cursor: pointer; padding: 0; margin-bottom: 8px; }
+	.back-btn:hover { text-decoration: underline; }
+	.dept-active-title { font-size: 14px; font-weight: 700; color: #e2e8f0; margin-bottom: 8px; }
+	.hint { font-size: 9px; color: #a3a3a3; text-align: center; margin-top: 8px; }
+
+	.source-note-box { margin-top: 10px; padding: 6px 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; font-size: 8px; color: #737373; line-height: 1.4; }
 </style>

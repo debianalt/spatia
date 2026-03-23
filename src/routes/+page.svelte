@@ -236,6 +236,10 @@
 		const id = analysis?.id ?? null;
 
 		if (id === prevAnalysisId) return;
+		// Clean up catastro layer when leaving catastro analysis
+		if (prevAnalysisId === 'catastro') {
+			mapComponent?.hideCatastroLayer();
+		}
 		prevAnalysisId = id;
 
 		if (!id || !analysis) {
