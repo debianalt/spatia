@@ -655,14 +655,14 @@
 			map.addSource('catastro', { type: 'vector', url: getTilesUrl('catastro') });
 		}
 
-		// Fill layer — visible cyan/green parcels
+		// Fill layer — visible cyan/green parcels (minzoom 8 for wider view)
 		if (!map.getLayer('catastro-fill')) {
 			map.addLayer({
 				id: 'catastro-fill',
 				type: 'fill',
 				source: 'catastro',
 				'source-layer': 'catastro',
-				minzoom: 10,
+				minzoom: 8,
 				paint: {
 					'fill-color': [
 						'match', ['get', 'tipo'],
@@ -670,7 +670,7 @@
 						'rural', '#4ade80',
 						'#22d3ee'
 					],
-					'fill-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.12, 12, 0.18, 14, 0.22]
+					'fill-opacity': ['interpolate', ['linear'], ['zoom'], 8, 0.08, 10, 0.15, 12, 0.20, 14, 0.25]
 				}
 			});
 		}
@@ -682,7 +682,7 @@
 				type: 'line',
 				source: 'catastro',
 				'source-layer': 'catastro',
-				minzoom: 10,
+				minzoom: 8,
 				paint: {
 					'line-color': [
 						'match', ['get', 'tipo'],
@@ -690,33 +690,33 @@
 						'rural', '#4ade80',
 						'#22d3ee'
 					],
-					'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.3, 12, 0.6, 14, 0.9],
-					'line-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.5, 12, 0.7, 14, 0.85]
+					'line-width': ['interpolate', ['linear'], ['zoom'], 8, 0.1, 10, 0.3, 12, 0.6, 14, 0.9],
+					'line-opacity': ['interpolate', ['linear'], ['zoom'], 8, 0.3, 10, 0.5, 12, 0.7, 14, 0.85]
 				}
 			});
 		}
 
-		// Click on catastro parcels → find radio under click point (handler auto-removed when layer removed)
+		// Click on catastro parcels → query radios layer for redcode
 		map.on('click', 'catastro-fill', (e) => {
 			if (lassoActive) return;
-			// Query the radios layer at click point to find redcode
-			const features = map.queryRenderedFeatures(e.point, { layers: ['province-fill'] });
-			const redcode = features[0]?.properties?.redcode;
+			const radioFeatures = map.queryRenderedFeatures(e.point, { layers: ['province-fill'] });
+			const redcode = radioFeatures[0]?.properties?.redcode;
 			if (!redcode) return;
-
 			if (mapStore.hasRadio(redcode)) {
 				container.dispatchEvent(new CustomEvent('radio-deselect', { bubbles: true, detail: { redcode } }));
 			} else {
 				container.dispatchEvent(new CustomEvent('radio-select', {
-					bubbles: true,
-					detail: { redcode, selected: [], census: features[0]?.properties ?? {} }
+					bubbles: true, detail: { redcode, selected: [], census: radioFeatures[0]?.properties ?? {} }
 				}));
 			}
 		});
-
-		// Pointer cursor on catastro parcels
 		map.on('mouseenter', 'catastro-fill', () => { map.getCanvas().style.cursor = 'pointer'; });
 		map.on('mouseleave', 'catastro-fill', () => { map.getCanvas().style.cursor = ''; });
+
+		// Make province-fill queryable for click detection (needs some opacity)
+		if (map.getLayer('province-fill')) {
+			map.setPaintProperty('province-fill', 'fill-opacity', 0.01);
+		}
 
 		// Hide all buildings — parcels are the focus
 		if (map.getLayer('buildings-3d')) {
@@ -736,6 +736,9 @@
 		if (map.getLayer('catastro-line')) map.removeLayer('catastro-line');
 		if (map.getLayer('buildings-3d')) {
 			map.setLayoutProperty('buildings-3d', 'visibility', 'visible');
+		}
+		if (map.getLayer('province-fill')) {
+			map.setPaintProperty('province-fill', 'fill-opacity', 0.06);
 		}
 		for (const layerId of CARTO_BUILDING_LAYERS) {
 			if (map.getLayer(layerId)) {
