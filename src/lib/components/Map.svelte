@@ -642,18 +642,41 @@
 	const CARTO_BUILDING_LAYERS = ['building', 'building-top'];
 
 	export function showCatastroLayer() {
-		if (!map || !map.isStyleLoaded()) return;
+		if (!map) return;
+		// Retry if style not loaded yet
+		if (!map.isStyleLoaded()) {
+			map.once('idle', () => showCatastroLayer());
+			return;
+		}
 		catastroActive = true;
 
-		// Add catastro source if not exists
+		// Add catastro source
 		if (!map.getSource('catastro')) {
 			map.addSource('catastro', { type: 'vector', url: getTilesUrl('catastro') });
 		}
 
-		// Catastro parcel borders — visible beneath dimmed buildings
+		// Fill layer for parcels (renders under fill-extrusion buildings)
+		if (!map.getLayer('catastro-fill')) {
+			map.addLayer({
+				id: 'catastro-fill',
+				type: 'fill',
+				source: 'catastro',
+				'source-layer': 'catastro',
+				minzoom: 10,
+				paint: {
+					'fill-color': [
+						'match', ['get', 'tipo'],
+						'urbano', '#22d3ee',
+						'rural', '#4ade80',
+						'#22d3ee'
+					],
+					'fill-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.08, 12, 0.12, 14, 0.15]
+				}
+			}, map.getLayer('buildings-3d') ? 'buildings-3d' : undefined);
+		}
+
+		// Line layer for parcel borders (also under buildings but visible in gaps)
 		if (!map.getLayer('catastro-line')) {
-			// Insert BEFORE buildings-3d so lines render underneath, visible through transparency
-			const beforeLayer = map.getLayer('buildings-3d') ? 'buildings-3d' : undefined;
 			map.addLayer({
 				id: 'catastro-line',
 				type: 'line',
@@ -668,24 +691,35 @@
 						'#22d3ee'
 					],
 					'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.5, 12, 1.0, 14, 1.8],
-					'line-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.8, 12, 0.9, 14, 1.0]
+					'line-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.6, 12, 0.8, 14, 0.9]
 				}
-			}, beforeLayer);
+			}, map.getLayer('buildings-3d') ? 'buildings-3d' : undefined);
 		}
 
-		// Dim buildings so catastro lines show through
+		// Dim buildings to let parcels show through
 		if (map.getLayer('buildings-3d')) {
-			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.3);
+			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.35);
+		}
+		// Dim CARTO basemap buildings too
+		for (const layerId of CARTO_BUILDING_LAYERS) {
+			if (map.getLayer(layerId)) {
+				map.setPaintProperty(layerId, 'fill-opacity', 0.15);
+			}
 		}
 	}
 
 	export function hideCatastroLayer() {
 		if (!map || !map.isStyleLoaded() || !catastroActive) return;
 		catastroActive = false;
+		if (map.getLayer('catastro-fill')) map.removeLayer('catastro-fill');
 		if (map.getLayer('catastro-line')) map.removeLayer('catastro-line');
-		// Restore building opacity
 		if (map.getLayer('buildings-3d')) {
 			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.85);
+		}
+		for (const layerId of CARTO_BUILDING_LAYERS) {
+			if (map.getLayer(layerId)) {
+				map.setPaintProperty(layerId, 'fill-opacity', 1);
+			}
 		}
 	}
 
