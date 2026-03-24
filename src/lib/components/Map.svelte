@@ -751,6 +751,112 @@
 		}
 	}
 
+	// ── Catastro flood choropleth (parcels colored by H3 flood risk) ────────
+
+	let catastroFloodActive = false;
+	let catastroFloodClickBound = false;
+
+	export function setCatastroFloodChoropleth(h3ScoreMap: Map<string, number>) {
+		if (!map || !map.isStyleLoaded()) return;
+
+		// Ensure catastro layer is visible
+		if (!catastroActive) showCatastroLayer();
+
+		catastroFloodActive = true;
+
+		// Build match expression: ['match', ['get', 'h3index'], hex1, score1, hex2, score2, ..., 0]
+		const matchExpr: any[] = ['match', ['get', 'h3index']];
+		for (const [h3index, score] of h3ScoreMap) {
+			matchExpr.push(h3index, score);
+		}
+		matchExpr.push(0); // default
+
+		// Color expression: interpolate score → color ramp (blue→yellow→red)
+		const colorExpr: any = [
+			'interpolate', ['linear'],
+			matchExpr,
+			0, '#0d1b2a',
+			10, '#1b3a5f',
+			25, '#2a6f97',
+			40, '#eab308',
+			60, '#f97316',
+			80, '#dc2626',
+			100, '#7f1d1d'
+		];
+
+		if (map.getLayer('catastro-fill')) {
+			map.setPaintProperty('catastro-fill', 'fill-color', colorExpr);
+			map.setPaintProperty('catastro-fill', 'fill-opacity',
+				['interpolate', ['linear'], ['zoom'], 11, 0.35, 12, 0.55, 14, 0.7]);
+		}
+		if (map.getLayer('catastro-line')) {
+			map.setPaintProperty('catastro-line', 'line-color', '#ffffff');
+			map.setPaintProperty('catastro-line', 'line-opacity',
+				['interpolate', ['linear'], ['zoom'], 11, 0.15, 12, 0.3, 14, 0.5]);
+		}
+
+		// Add click handler for parcel selection (only once)
+		if (!catastroFloodClickBound) {
+			catastroFloodClickBound = true;
+			map.on('click', 'catastro-fill', catastroFloodClickHandler);
+			map.on('mouseenter', 'catastro-fill', catastroFloodMouseEnter);
+			map.on('mouseleave', 'catastro-fill', catastroFloodMouseLeave);
+		}
+	}
+
+	function catastroFloodClickHandler(e: any) {
+		if (lassoActive || !catastroFloodActive) return;
+		const feat = e.features?.[0];
+		if (!feat) return;
+		const props = feat.properties;
+		if (!props?.h3index) return;
+		container.dispatchEvent(new CustomEvent('catastro-flood-select', {
+			bubbles: true,
+			detail: { h3index: props.h3index, tipo: props.tipo ?? 'urbano', area_m2: Number(props.area_m2) || 0 }
+		}));
+	}
+
+	function catastroFloodMouseEnter() {
+		if (catastroFloodActive && !lassoActive) map.getCanvas().style.cursor = 'pointer';
+	}
+	function catastroFloodMouseLeave() {
+		if (catastroFloodActive && !lassoActive) map.getCanvas().style.cursor = '';
+	}
+
+	export function clearCatastroFloodChoropleth() {
+		if (!map || !map.isStyleLoaded()) return;
+		catastroFloodActive = false;
+
+		// Restore original catastro coloring
+		if (map.getLayer('catastro-fill')) {
+			map.setPaintProperty('catastro-fill', 'fill-color', [
+				'match', ['get', 'tipo'],
+				'urbano', '#22d3ee',
+				'rural', '#4ade80',
+				'#22d3ee'
+			]);
+			map.setPaintProperty('catastro-fill', 'fill-opacity',
+				['interpolate', ['linear'], ['zoom'], 11, 0.10, 12, 0.18, 14, 0.25]);
+		}
+		if (map.getLayer('catastro-line')) {
+			map.setPaintProperty('catastro-line', 'line-color', [
+				'match', ['get', 'tipo'],
+				'urbano', '#22d3ee',
+				'rural', '#4ade80',
+				'#22d3ee'
+			]);
+			map.setPaintProperty('catastro-line', 'line-opacity',
+				['interpolate', ['linear'], ['zoom'], 11, 0.5, 12, 0.7, 14, 0.85]);
+		}
+
+		if (catastroFloodClickBound) {
+			catastroFloodClickBound = false;
+			map.off('click', 'catastro-fill', catastroFloodClickHandler);
+			map.off('mouseenter', 'catastro-fill', catastroFloodMouseEnter);
+			map.off('mouseleave', 'catastro-fill', catastroFloodMouseLeave);
+		}
+	}
+
 	// ── Analysis choropleth layers (radio-based, for non-catastro analyses) ──
 
 	export function setAnalysisChoropleth(entries: { redcode: string; value: number }[], colorScale: 'price' | 'score' | 'diverging' | 'sequential' = 'price') {

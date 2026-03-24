@@ -5,6 +5,7 @@
 	import AnalysisView from './AnalysisView.svelte';
 	import ZoneComparison from './ZoneComparison.svelte';
 	import CatastroZoneComparison from './CatastroZoneComparison.svelte';
+	import FloodZoneComparison from './FloodZoneComparison.svelte';
 	import HexComparison from './HexComparison.svelte';
 	import HexZoneComparison from './HexZoneComparison.svelte';
 	import { MapStore } from '$lib/stores/map.svelte';
@@ -27,6 +28,7 @@
 		onRemoveHexZone,
 		onClearHexZones,
 		onSelectFloodDpto,
+		onSelectFloodCatastroDpto,
 		onSelectCatastroDpto,
 	}: {
 		mapStore: MapStore;
@@ -41,6 +43,7 @@
 		onRemoveHexZone: (id: string) => void;
 		onClearHexZones: () => void;
 		onSelectFloodDpto: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
+		onSelectFloodCatastroDpto?: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
 		onSelectCatastroDpto?: (centroid: [number, number] | null) => void;
 	} = $props();
 
@@ -60,6 +63,7 @@
 	});
 
 	const isCatastroAnalysis = $derived(lensStore.activeAnalysis?.id === 'catastro');
+	const isFloodRiskAnalysis = $derived(lensStore.activeAnalysis?.id === 'flood_risk');
 
 	function handleBack() {
 		lensStore.clearAnalysis();
@@ -80,7 +84,9 @@
 		</div>
 	{:else if lassoStore.zones.length > 0}
 		<div class="chart-scroll">
-			{#if isCatastroAnalysis}
+			{#if isFloodRiskAnalysis}
+				<FloodZoneComparison {lassoStore} {mapStore} {onRemoveZone} {onClearZones} />
+			{:else if isCatastroAnalysis}
 				<CatastroZoneComparison {lassoStore} {lensStore} {onRemoveZone} {onClearZones} />
 			{:else}
 				<ZoneComparison {lassoStore} {onRemoveZone} {onClearZones} />
@@ -93,7 +99,7 @@
 	{:else if lensStore.activeLens && lensStore.activeAnalysis}
 		<!-- Analysis active: show analysis view -->
 		<div class="chart-scroll">
-			<AnalysisView {lensStore} {mapStore} {hexStore} onBack={handleBack} {onRemoveRadio} {onSelectFloodDpto} {onSelectCatastroDpto} />
+			<AnalysisView {lensStore} {mapStore} {hexStore} onBack={handleBack} {onRemoveRadio} {onSelectFloodDpto} {onSelectFloodCatastroDpto} {onSelectCatastroDpto} />
 		</div>
 	{:else if mapStore.selectedRadios.size > 0}
 		<!-- No lens, radios selected: comparison chart -->

@@ -25,6 +25,17 @@ export type HexData = {
 	flood_risk_score?: number;
 };
 
+export type FloodParcelData = {
+	h3index: string;
+	tipo: string;
+	area_m2: number;
+	flood_risk_score: number;
+	jrc_occurrence: number;
+	jrc_recurrence: number;
+	jrc_seasonality: number;
+	flood_extent_pct: number;
+};
+
 export class MapStore {
 	selectedRadios: Map<string, RadioData> = $state(new Map());
 	pitch: number = $state(31);
@@ -33,6 +44,8 @@ export class MapStore {
 	chatCharts: ChartDataSet[] = $state([]);
 	activeHexLayer: string | null = $state(null);
 	selectedHex: HexData | null = $state(null);
+	selectedFloodParcel: FloodParcelData | null = $state(null);
+	floodH3Data: Map<string, Record<string, number>> = $state(new Map());
 	private colorIndex = 0;
 
 	get currentRamp() {
@@ -114,5 +127,18 @@ export class MapStore {
 	clearHexState() {
 		this.activeHexLayer = null;
 		this.selectedHex = null;
+	}
+
+	setSelectedFloodParcel(data: FloodParcelData | null) {
+		this.selectedFloodParcel = data;
+	}
+
+	setFloodH3Data(data: Map<string, Record<string, number>>) {
+		this.floodH3Data = data;
+	}
+
+	clearFloodParcelState() {
+		this.selectedFloodParcel = null;
+		this.floodH3Data = new Map();
 	}
 }

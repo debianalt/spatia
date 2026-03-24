@@ -157,7 +157,7 @@ export interface AnalysisConfig {
 	descKey: string;
 	icon: string;
 	status: 'available' | 'coming_soon';
-	spatialUnit?: 'radio' | 'hexagon';
+	spatialUnit?: 'radio' | 'hexagon' | 'catastro';
 	choropleth?: {
 		parquet: string;
 		column: string;
@@ -175,13 +175,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		descKey: 'analysis.floodRisk.desc',
 		icon: '🌊',
 		status: 'available',
-		spatialUnit: 'hexagon',
-		choropleth: {
-			parquet: 'hex_flood_risk',
-			column: 'flood_risk_score',
-			colorScale: 'flood',
-			legendKey: 'analysis.floodRisk.legend',
-		},
+		spatialUnit: 'catastro',
 	},
 	{
 		id: 'catastro',

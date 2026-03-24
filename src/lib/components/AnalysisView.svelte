@@ -15,6 +15,7 @@
 		onBack,
 		onRemoveRadio,
 		onSelectFloodDpto,
+		onSelectFloodCatastroDpto,
 		onSelectCatastroDpto,
 	}: {
 		lensStore: LensStore;
@@ -23,6 +24,7 @@
 		onBack: () => void;
 		onRemoveRadio: (redcode: string) => void;
 		onSelectFloodDpto: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
+		onSelectFloodCatastroDpto?: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
 		onSelectCatastroDpto?: (centroid: [number, number] | null) => void;
 	} = $props();
 
@@ -53,7 +55,7 @@
 		{:else if analysis.id === 'real_estate'}
 			<RealEstateAnalysis {lensStore} {mapStore} {onRemoveRadio} />
 		{:else if analysis.id === 'flood_risk'}
-			<FloodRiskAnalysis {lensStore} {mapStore} {hexStore} {onRemoveRadio} {onSelectFloodDpto} />
+			<FloodRiskAnalysis {lensStore} {mapStore} {hexStore} {onRemoveRadio} {onSelectFloodDpto} {onSelectFloodCatastroDpto} />
 		{:else if analysis.id === 'catastro'}
 			<CatastroAnalysis {lensStore} {mapStore} {onRemoveRadio} {onSelectCatastroDpto} />
 		{:else}

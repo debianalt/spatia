@@ -31,6 +31,7 @@
 
 		mapContainer?.addEventListener('radio-select', ((e: CustomEvent) => {
 			if (lassoStore.active) return;
+			if (lensStore.activeAnalysis?.spatialUnit === 'catastro') return; // flood mode uses parcel clicks
 			const { redcode, selected, census } = e.detail;
 
 			// Unified behavior: clear chat highlights, add radio
@@ -72,6 +73,23 @@
 				});
 				mapComponent?.highlightHexagon(h3index);
 				fetchHexData(h3index);
+			}
+		}) as EventListener);
+
+		mapContainer?.addEventListener('catastro-flood-select', ((e: CustomEvent) => {
+			const { h3index, tipo, area_m2 } = e.detail;
+			const floodData = mapStore.floodH3Data.get(h3index);
+			if (floodData) {
+				mapStore.setSelectedFloodParcel({
+					h3index,
+					tipo: tipo ?? 'urbano',
+					area_m2: Number(area_m2) || 0,
+					flood_risk_score: floodData.flood_risk_score,
+					jrc_occurrence: floodData.jrc_occurrence,
+					jrc_recurrence: floodData.jrc_recurrence,
+					jrc_seasonality: floodData.jrc_seasonality,
+					flood_extent_pct: floodData.flood_extent_pct,
+				});
 			}
 		}) as EventListener);
 
@@ -183,6 +201,11 @@
 		if (prevAnalysisId === 'catastro') {
 			mapComponent?.hideCatastroLayer();
 		}
+		if (prevAnalysisId === 'flood_risk') {
+			mapComponent?.clearCatastroFloodChoropleth();
+			mapComponent?.hideCatastroLayer();
+			mapStore.clearFloodParcelState();
+		}
 		prevAnalysisId = id;
 
 		if (!id || !analysis) {
@@ -191,6 +214,18 @@
 			mapStore.clearHexState();
 			hexStore.clearAll();
 			analysisDataLoaded = false;
+			return;
+		}
+
+		// Catastro-based analyses (flood risk on parcels)
+		if (analysis.spatialUnit === 'catastro') {
+			analysisDataLoaded = false;
+			mapComponent?.clearAnalysisChoropleth();
+			mapComponent?.clearHexChoropleth();
+			mapStore.clearHexState();
+			hexStore.clearAll();
+			// Show catastro layer — flood coloring happens when user selects a dept
+			mapComponent?.showCatastroLayer();
 			return;
 		}
 
@@ -417,6 +452,38 @@
 		}
 	}
 
+	async function handleSelectFloodCatastroDpto(dpto: string, parquetKey: string, centroid: [number, number]) {
+		// Load per-dept hex flood data and color catastro parcels
+		try {
+			await initDuckDB();
+			const { getFloodDptoUrl } = await import('$lib/config');
+			const url = getFloodDptoUrl(parquetKey);
+			const result = await query(
+				`SELECT h3index, flood_risk_score, jrc_occurrence, jrc_recurrence, jrc_seasonality, flood_extent_pct FROM '${url}' WHERE flood_risk_score IS NOT NULL`
+			);
+
+			const h3ScoreMap = new Map<string, number>();
+			const h3FullData = new Map<string, Record<string, number>>();
+			for (let i = 0; i < result.numRows; i++) {
+				const row = result.get(i)!.toJSON() as Record<string, any>;
+				h3ScoreMap.set(row.h3index, Number(row.flood_risk_score) || 0);
+				h3FullData.set(row.h3index, {
+					flood_risk_score: Number(row.flood_risk_score) || 0,
+					jrc_occurrence: Number(row.jrc_occurrence) || 0,
+					jrc_recurrence: Number(row.jrc_recurrence) || 0,
+					jrc_seasonality: Number(row.jrc_seasonality) || 0,
+					flood_extent_pct: Number(row.flood_extent_pct) || 0,
+				});
+			}
+
+			mapStore.setFloodH3Data(h3FullData);
+			mapComponent?.setCatastroFloodChoropleth(h3ScoreMap);
+			mapComponent?.flyToCoords(centroid[1], centroid[0], 11);
+		} catch (e) {
+			console.warn('Failed to load flood catastro data:', e);
+		}
+	}
+
 	async function handleSelectFloodDpto(dpto: string, parquetKey: string, centroid: [number, number]) {
 		mapComponent?.clearHexChoropleth();
 		mapComponent?.clearHexZoneHighlight();
@@ -439,12 +506,14 @@
 		mapStore.clearRadios();
 		mapStore.clearChatState();
 		mapStore.clearHexState();
+		mapStore.clearFloodParcelState();
 		hexStore.clearAll();
 		mapComponent?.clearRadioHighlight();
 		mapComponent?.clearChatHighlights();
 		mapComponent?.clearAnalysisChoropleth();
 		mapComponent?.clearHexChoropleth();
 		mapComponent?.clearHexZoneHighlight();
+		mapComponent?.clearCatastroFloodChoropleth();
 		lensStore.clearSelection();
 		lensStore.clearDpto();
 		lensStore.clearAnalysis();
@@ -558,6 +627,7 @@
 				onRemoveHexZone={handleRemoveHexZone}
 				onClearHexZones={handleClearHexZones}
 				onSelectFloodDpto={handleSelectFloodDpto}
+				onSelectFloodCatastroDpto={handleSelectFloodCatastroDpto}
 			onSelectCatastroDpto={handleSelectCatastroDpto}
 			/>
 		</div>

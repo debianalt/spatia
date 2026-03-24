@@ -3,7 +3,9 @@
 	import type { MapStore } from '$lib/stores/map.svelte';
 	import type { HexStore } from '$lib/stores/hex.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
-	import { DATA_FRESHNESS } from '$lib/config';
+	import { DATA_FRESHNESS, PARQUETS } from '$lib/config';
+	import { initDuckDB, query } from '$lib/stores/duckdb';
+	import PetalChart from '$lib/components/PetalChart.svelte';
 	import deptSummaryData from '$lib/data/flood_dept_summary.json';
 
 	let {
@@ -12,12 +14,14 @@
 		hexStore,
 		onRemoveRadio,
 		onSelectFloodDpto,
+		onSelectFloodCatastroDpto,
 	}: {
 		lensStore: LensStore;
 		mapStore: MapStore;
 		hexStore: HexStore;
 		onRemoveRadio: (redcode: string) => void;
 		onSelectFloodDpto: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
+		onSelectFloodCatastroDpto?: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
 	} = $props();
 
 	// Static data — no DuckDB queries, instant load
@@ -28,6 +32,71 @@
 
 	const selectedDpto = $derived(hexStore.selectedDpto);
 	const selectedHex = $derived(mapStore.selectedHex);
+	const selectedFloodParcel = $derived(mapStore.selectedFloodParcel);
+
+	let floodCatastroDpto = $state<string | null>(null);
+
+	// Census vulnerability petal for parcel detail
+	const FLOOD_CENSUS_COLS = ['flood_frequency', 'hand_mean', 'pct_nbi', 'pct_cloacas', 'pct_agua_red', 'infra_deficit'];
+	const FLOOD_CENSUS_LABELS = ['Frec. inundación', 'Altura s/ drenaje', 'NBI', 'Sin cloacas', 'Sin agua de red', 'Déficit infra'];
+	const FLOOD_CENSUS_INVERT = [false, true, false, false, false, false];
+	let parcelPetalData: { values: number[]; rawValues: number[] } | null = $state(null);
+	let parcelPetalProvAvg: number[] | null = $state(null);
+
+	// Load petal data when parcel is selected
+	$effect(() => {
+		const parcel = selectedFloodParcel;
+		if (parcel?.h3index) {
+			loadParcelPetal(parcel.h3index);
+		} else {
+			parcelPetalData = null;
+		}
+	});
+
+	async function loadParcelPetal(h3index: string) {
+		try {
+			await initDuckDB();
+			// Load provincial avg once
+			if (!parcelPetalProvAvg) {
+				const cols = FLOOD_CENSUS_COLS.map(c =>
+					`SUM(CAST(${c} AS DOUBLE) * CAST(total_personas AS DOUBLE)) / NULLIF(SUM(CAST(total_personas AS DOUBLE)), 0) as ${c}`
+				).join(', ');
+				const r = await query(`SELECT ${cols} FROM '${PARQUETS.radio_stats_master}' WHERE total_personas > 0`);
+				if (r.numRows > 0) {
+					const row = r.get(0)!.toJSON() as Record<string, any>;
+					parcelPetalProvAvg = FLOOD_CENSUS_COLS.map(c => Number(row[c]) || 1);
+				}
+			}
+			// Find radio for this h3index via crosswalk
+			const xwalk = await query(
+				`SELECT redcode, weight FROM '${PARQUETS.h3_radio_crosswalk}' WHERE h3index = '${h3index.replace(/'/g, "''")}' ORDER BY weight DESC LIMIT 1`
+			);
+			if (xwalk.numRows === 0) { parcelPetalData = null; return; }
+			const redcode = (xwalk.get(0)!.toJSON() as any).redcode;
+
+			// Load census data for that radio
+			const cols = FLOOD_CENSUS_COLS.join(', ');
+			const result = await query(
+				`SELECT ${cols} FROM '${PARQUETS.radio_stats_master}' WHERE redcode = '${redcode}' LIMIT 1`
+			);
+			if (result.numRows === 0) { parcelPetalData = null; return; }
+			const row = result.get(0)!.toJSON() as Record<string, any>;
+			const rawValues = FLOOD_CENSUS_COLS.map(c => Number(row[c]) || 0);
+
+			const normalizedValues = rawValues.map((v, i) => {
+				const avg = parcelPetalProvAvg?.[i] ?? 1;
+				if (avg === 0) return 50;
+				let ratio = v / avg;
+				if (FLOOD_CENSUS_INVERT[i]) ratio = avg / (v || 1);
+				return Math.min(100, Math.max(0, ratio * 50));
+			});
+
+			parcelPetalData = { values: normalizedValues, rawValues };
+		} catch (e) {
+			console.warn('Failed to load parcel petal:', e);
+			parcelPetalData = null;
+		}
+	}
 
 	function getRiskLabel(score: number): string {
 		if (score >= 70) return i18n.t('analysis.flood.riskHigh');
@@ -46,12 +115,121 @@
 	}
 
 	function handleBackToDepts() {
+		if (selectedFloodParcel && floodCatastroDpto) {
+			// Back from parcel → dept view (keep dept selected)
+			mapStore.setSelectedFloodParcel(null);
+			return;
+		}
+		if (floodCatastroDpto) {
+			// Back from dept → province list
+			floodCatastroDpto = null;
+			mapStore.setSelectedFloodParcel(null);
+			return;
+		}
 		hexStore.backToDepartments();
 		mapStore.clearHexState();
 	}
+
+	function handleFloodCatastroDptoClick(dept: any) {
+		floodCatastroDpto = dept.dpto;
+		onSelectFloodCatastroDpto?.(dept.dpto, dept.parquetKey, dept.centroid as [number, number]);
+	}
 </script>
 
-{#if selectedHex && selectedDpto}
+{#if selectedFloodParcel && floodCatastroDpto}
+	<!-- Parcel flood detail view -->
+	<div class="hex-detail">
+		<div class="parcel-nav">
+			<button class="back-btn" onclick={handleBackToDepts}>← {floodCatastroDpto}</button>
+			<button class="clear-parcel-btn" onclick={() => mapStore.setSelectedFloodParcel(null)}>&#10005; Limpiar</button>
+		</div>
+		<div class="hex-header">
+			<div class="hex-id">
+				{selectedFloodParcel.tipo === 'rural' ? 'Rural' : 'Urbana'} · {selectedFloodParcel.area_m2 > 0 ? `${selectedFloodParcel.area_m2.toLocaleString('es-AR', { maximumFractionDigits: 0 })} m²` : ''}
+			</div>
+			<div class="risk-badge" style:background={getRiskColor(selectedFloodParcel.flood_risk_score)}>
+				{getRiskLabel(selectedFloodParcel.flood_risk_score)}
+			</div>
+		</div>
+
+		<div class="score-bar">
+			<div class="score-label">{i18n.t('analysis.flood.riskScore')}</div>
+			<div class="score-track">
+				<div class="score-fill" style:width="{selectedFloodParcel.flood_risk_score}%"
+					style:background={getRiskColor(selectedFloodParcel.flood_risk_score)}></div>
+			</div>
+			<div class="score-value" style:color={getRiskColor(selectedFloodParcel.flood_risk_score)}>
+				{selectedFloodParcel.flood_risk_score.toFixed(1)}
+			</div>
+		</div>
+
+		<div class="detail-grid">
+			<div class="detail-item">
+				<div class="detail-label">{i18n.t('analysis.flood.jrcOccurrence')}</div>
+				<div class="detail-value">{selectedFloodParcel.jrc_occurrence.toFixed(1)}%</div>
+				<div class="detail-desc">{i18n.t('analysis.flood.jrcOccurrenceDesc')}</div>
+			</div>
+			<div class="detail-item">
+				<div class="detail-label">{i18n.t('analysis.flood.jrcRecurrence')}</div>
+				<div class="detail-value">{selectedFloodParcel.jrc_recurrence.toFixed(1)}%</div>
+				<div class="detail-desc">{i18n.t('analysis.flood.jrcRecurrenceDesc')}</div>
+			</div>
+			<div class="detail-item">
+				<div class="detail-label">{i18n.t('analysis.flood.jrcSeasonality')}</div>
+				<div class="detail-value">{selectedFloodParcel.jrc_seasonality.toFixed(1)}</div>
+				<div class="detail-desc">{i18n.t('analysis.flood.jrcSeasonalityDesc')}</div>
+			</div>
+			<div class="detail-item">
+				<div class="detail-label">{i18n.t('analysis.flood.currentExtent')}</div>
+				<div class="detail-value">{formatPct(selectedFloodParcel.flood_extent_pct)}</div>
+				<div class="detail-desc">{i18n.t('analysis.flood.currentExtentDesc')}</div>
+			</div>
+		</div>
+
+		<!-- Vulnerability petal chart -->
+		{#if parcelPetalData}
+			<div class="petal-section">
+				<div class="section-title">Perfil de vulnerabilidad hídrica</div>
+				<p class="petal-note">Relativo al promedio provincial (50 = promedio)</p>
+				<div class="petal-wrapper">
+					<PetalChart layers={[{ values: parcelPetalData.values, color: getRiskColor(selectedFloodParcel.flood_risk_score) }]} labels={FLOOD_CENSUS_LABELS} size={220} />
+				</div>
+				<div class="raw-values">
+					{#each FLOOD_CENSUS_LABELS as label, i}
+						<div class="raw-row">
+							<span class="raw-label">{label}</span>
+							<span class="raw-val">{parcelPetalData.rawValues[i].toFixed(1)}</span>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+
+		<div class="source-note-box">
+			<div><strong>Fuente:</strong> JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus, {DATA_FRESHNESS.hex_flood_risk.dataDate})</div>
+			<div><strong>Última revisión:</strong> {DATA_FRESHNESS.hex_flood_risk.processedDate}</div>
+		</div>
+	</div>
+{:else if floodCatastroDpto}
+	<!-- Department selected, catastro parcels colored by flood risk -->
+	<div class="summary">
+		<button class="back-btn" onclick={handleBackToDepts}>← {i18n.t('analysis.flood.topDepts')}</button>
+		<div class="dept-active-title">{floodCatastroDpto}</div>
+		<div class="hint">{i18n.t('analysis.flood.clickHint')}</div>
+		<div class="flood-legend">
+			<div class="legend-title">{i18n.t('analysis.flood.riskScore')}</div>
+			<div class="legend-bar"></div>
+			<div class="legend-labels">
+				<span>{i18n.t('analysis.flood.riskLow')}</span>
+				<span>{i18n.t('analysis.flood.riskMedium')}</span>
+				<span>{i18n.t('analysis.flood.riskHigh')}</span>
+			</div>
+		</div>
+		<div class="source-note-box">
+			<div><strong>Fuente:</strong> JRC Global Surface Water + Sentinel-1 SAR ({DATA_FRESHNESS.hex_flood_risk.dataDate})</div>
+		</div>
+	</div>
+{:else if selectedHex && selectedDpto}
 	<!-- Hex detail view -->
 	<div class="hex-detail">
 		<button class="back-btn" onclick={handleBackToDepts}>← {i18n.t('analysis.flood.topDepts')}</button>
@@ -140,7 +318,7 @@
 			<div class="section-title">{i18n.t('analysis.flood.topDepts')}</div>
 			{#each deptSummaries as dept}
 				<button class="dept-row dept-clickable"
-					onclick={() => onSelectFloodDpto(dept.dpto, dept.parquetKey, dept.centroid as [number, number])}>
+					onclick={() => handleFloodCatastroDptoClick(dept)}>
 					<div class="dept-name">{dept.dpto}</div>
 					<div class="dept-bar-wrap">
 						<div class="dept-bar" style:width="{Math.min(dept.avg_score * 3, 100)}%"
@@ -419,5 +597,37 @@
 		color: #a3a3a3;
 		margin: 2px 0 0;
 		line-height: 1.4;
+	}
+	.parcel-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+	.clear-parcel-btn { font-size: 9px; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.06); border: 1px solid #334155; color: #d4d4d4; cursor: pointer; transition: all 0.15s; }
+	.clear-parcel-btn:hover { border-color: #ef4444; color: #ef4444; }
+	.petal-section { margin: 10px 0; }
+	.section-title { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #a3a3a3; border-bottom: 1px solid #1e293b; padding-bottom: 2px; margin-bottom: 4px; }
+	.petal-note { font-size: 8px; color: #737373; text-align: center; margin: 0 0 4px; }
+	.petal-wrapper { display: flex; justify-content: center; }
+	.raw-values { margin-top: 4px; }
+	.raw-row { display: flex; justify-content: space-between; padding: 1px 0; font-size: 9px; }
+	.raw-label { color: #a3a3a3; }
+	.raw-val { color: #e2e8f0; font-weight: 600; font-family: monospace; }
+	.flood-legend {
+		margin: 12px 0;
+	}
+	.legend-title {
+		font-size: 9px;
+		font-weight: 600;
+		color: #d4d4d4;
+		margin-bottom: 4px;
+	}
+	.legend-bar {
+		height: 8px;
+		border-radius: 4px;
+		background: linear-gradient(to right, #0d1b2a, #1b3a5f, #2a6f97, #eab308, #f97316, #dc2626, #7f1d1d);
+	}
+	.legend-labels {
+		display: flex;
+		justify-content: space-between;
+		font-size: 8px;
+		color: #a3a3a3;
+		margin-top: 2px;
 	}
 </style>
