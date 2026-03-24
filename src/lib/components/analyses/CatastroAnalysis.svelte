@@ -319,6 +319,12 @@
 		<button class="back-btn" onclick={handleBackToDepts}>← {i18n.t('analysis.catastro.topDepts')}</button>
 		<div class="dept-active-title">{getDptoName(selectedDpto)}</div>
 		<div class="hint">{i18n.t('analysis.catastro.clickDept')}</div>
+		<details class="method-details" style="margin: 8px 0;">
+			<summary class="method-summary">{i18n.t('analysis.catastro.guideDeptTitle')}</summary>
+			<div class="method-body">
+				<p class="explain-text">{i18n.t('analysis.catastro.guideDeptBody')}</p>
+			</div>
+		</details>
 		<div class="map-legend">
 			<span class="legend-swatch" style:background="#22d3ee"></span> {i18n.t('analysis.catastro.legendUrban')}
 			<span class="legend-swatch legend-gap" style:background="#4ade80"></span> {i18n.t('analysis.catastro.legendRural')}
@@ -368,10 +374,31 @@
 			</div>
 		{/if}
 
-		<div class="map-legend">
-			<span class="legend-swatch" style:background="#22d3ee"></span> {i18n.t('analysis.catastro.legendUrban')}
-			<span class="legend-swatch legend-gap" style:background="#4ade80"></span> {i18n.t('analysis.catastro.legendRural')}
-		</div>
+		<details class="method-details">
+			<summary class="method-summary">{i18n.t('analysis.catastro.howToReadTitle')}</summary>
+			<div class="method-body">
+				<p class="explain-text">{i18n.t('analysis.catastro.howToReadBody')}</p>
+				<div class="map-legend" style="margin-top: 6px;">
+					<span class="legend-swatch" style:background="#22d3ee"></span> {i18n.t('analysis.catastro.legendUrban')}
+					<span class="legend-swatch legend-gap" style:background="#4ade80"></span> {i18n.t('analysis.catastro.legendRural')}
+				</div>
+			</div>
+		</details>
+
+		<details class="method-details">
+			<summary class="method-summary">{i18n.t('analysis.catastro.implicationsTitle')}</summary>
+			<div class="method-body">
+				<p class="explain-text">{i18n.t('analysis.catastro.implicationsBody')}</p>
+			</div>
+		</details>
+
+		<details class="method-details">
+			<summary class="method-summary">{i18n.t('analysis.catastro.actionsTitle')}</summary>
+			<div class="method-body">
+				<p class="explain-text">{i18n.t('analysis.catastro.actionsBody')}</p>
+			</div>
+		</details>
+
 		<div class="source-note-box">
 			<div><strong>{i18n.t('data.source.catastro')}</strong></div>
 			<div>{i18n.t('analysis.catastro.updateFreq')} · {DATA_FRESHNESS.catastro_by_radio?.processedDate ?? ''}</div>
@@ -448,4 +475,11 @@
 
 	.radio-detail { padding: 2px 0; }
 	.source-note-box { margin-top: 10px; padding: 6px 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; font-size: 8px; color: #737373; line-height: 1.4; }
+	.method-details { margin-top: 8px; border: 1px solid rgba(100,116,139,0.15); border-radius: 6px; overflow: hidden; }
+	.method-summary { font-size: 9px; font-weight: 600; color: #d4d4d4; padding: 6px 8px; cursor: pointer; user-select: none; list-style: none; display: flex; align-items: center; gap: 4px; }
+	.method-summary::before { content: '\25B8'; font-size: 8px; transition: transform 0.15s; }
+	.method-details[open] > .method-summary::before { transform: rotate(90deg); }
+	.method-summary::-webkit-details-marker { display: none; }
+	.method-body { padding: 4px 8px 8px; }
+	.explain-text { font-size: 9px; color: #a3a3a3; line-height: 1.5; margin: 2px 0 0; }
 </style>

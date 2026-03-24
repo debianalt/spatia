@@ -175,29 +175,43 @@
 			{/each}
 		</div>
 
-		<!-- Detail grid for each selected parcel -->
+		<!-- Detail per parcel: current status + metrics -->
 		{#each selectedParcels as parcel}
 			<div class="parcel-detail-header">
 				<span class="chip-dot" style:background={parcel.color}></span>
 				<span class="chip-tipo">{parcel.tipo === 'rural' ? 'Rural' : 'Urbana'}</span>
 				{#if parcel.area_m2 > 0}<span class="chip-area">· {parcel.area_m2.toLocaleString('es-AR', { maximumFractionDigits: 0 })} m²</span>{/if}
 			</div>
+			<div class="current-flood-status" class:has-water={parcel.flood_extent_pct > 0}>
+				{#if parcel.flood_extent_pct > 0}
+					<span class="status-dot status-wet"></span>
+					<span>{i18n.t('analysis.flood.statusWet')}: {formatPct(parcel.flood_extent_pct)}</span>
+				{:else}
+					<span class="status-dot status-dry"></span>
+					<span>{i18n.t('analysis.flood.statusDry')}</span>
+				{/if}
+				<span class="status-date">{i18n.t('analysis.flood.statusDate')} {DATA_FRESHNESS.hex_flood_risk.dataDate}</span>
+			</div>
 			<div class="detail-grid">
 				<div class="detail-item">
 					<div class="detail-label">{i18n.t('analysis.flood.jrcOccurrence')}</div>
 					<div class="detail-value">{parcel.jrc_occurrence.toFixed(1)}%</div>
+					<div class="detail-desc">{i18n.t('analysis.flood.jrcOccurrenceDesc')}</div>
 				</div>
 				<div class="detail-item">
 					<div class="detail-label">{i18n.t('analysis.flood.jrcRecurrence')}</div>
 					<div class="detail-value">{parcel.jrc_recurrence.toFixed(1)}%</div>
+					<div class="detail-desc">{i18n.t('analysis.flood.jrcRecurrenceDesc')}</div>
 				</div>
 				<div class="detail-item">
 					<div class="detail-label">{i18n.t('analysis.flood.jrcSeasonality')}</div>
 					<div class="detail-value">{parcel.jrc_seasonality.toFixed(1)}</div>
+					<div class="detail-desc">{i18n.t('analysis.flood.jrcSeasonalityDesc')}</div>
 				</div>
 				<div class="detail-item">
 					<div class="detail-label">{i18n.t('analysis.flood.currentExtent')}</div>
 					<div class="detail-value">{formatPct(parcel.flood_extent_pct)}</div>
+					<div class="detail-desc">{i18n.t('analysis.flood.currentExtentDesc')}</div>
 				</div>
 			</div>
 		{/each}
@@ -209,14 +223,6 @@
 				<p class="petal-note">Relativo al promedio provincial (50 = promedio). Mayor extensión = mayor riesgo.</p>
 				<div class="petal-wrapper">
 					<PetalChart layers={parcelPetalLayers} labels={FLOOD_CENSUS_LABELS} size={260} />
-				</div>
-				<div class="petal-defs">
-					<div><strong>Frec. inundación:</strong> frecuencia histórica de anegamiento (satelital)</div>
-					<div><strong>Altura s/ drenaje:</strong> elevación sobre el curso de agua más cercano</div>
-					<div><strong>NBI:</strong> hogares con necesidades básicas insatisfechas (Censo 2022)</div>
-					<div><strong>Sin cloacas:</strong> hogares sin red cloacal (Censo 2022)</div>
-					<div><strong>Sin agua de red:</strong> hogares sin agua de red pública (Censo 2022)</div>
-					<div><strong>Déficit infra:</strong> índice compuesto de carencias en servicios básicos</div>
 				</div>
 			</div>
 		{/if}
@@ -231,6 +237,12 @@
 		<button class="back-btn" onclick={handleBackToDepts}>← {i18n.t('analysis.flood.topDepts')}</button>
 		<div class="dept-active-title">{floodCatastroDpto}</div>
 		<div class="hint">{i18n.t('analysis.flood.clickHint')}</div>
+		<details class="method-details" style="margin: 8px 0;">
+			<summary class="method-summary">{i18n.t('analysis.flood.howToReadDeptTitle')}</summary>
+			<div class="method-body">
+				<p class="explain-text">{i18n.t('analysis.flood.howToReadDeptBody')}</p>
+			</div>
+		</details>
 		<div class="flood-legend">
 			<div class="legend-title">{i18n.t('analysis.flood.riskScore')}</div>
 			<div class="legend-bar"></div>
@@ -316,10 +328,6 @@
 	<div class="summary">
 		<div class="summary-cards">
 			<div class="summary-card">
-				<div class="card-value">{totalHexes.toLocaleString()}</div>
-				<div class="card-label">{i18n.t('analysis.flood.totalHex')}</div>
-			</div>
-			<div class="summary-card">
 				<div class="card-value" style="color: #eab308">{totalHighRisk.toLocaleString()}</div>
 				<div class="card-label">{i18n.t('analysis.flood.highRecurrence')}</div>
 			</div>
@@ -345,6 +353,35 @@
 				</button>
 			{/each}
 		</div>
+
+		<details class="method-details">
+			<summary class="method-summary">{i18n.t('analysis.flood.howToReadTitle')}</summary>
+			<div class="method-body">
+				<p class="explain-text">{i18n.t('analysis.flood.howToReadBody')}</p>
+				<div class="mini-legend">
+					<div class="legend-bar"></div>
+					<div class="legend-labels">
+						<span>{i18n.t('analysis.flood.riskLow')}</span>
+						<span>{i18n.t('analysis.flood.riskMedium')}</span>
+						<span>{i18n.t('analysis.flood.riskHigh')}</span>
+					</div>
+				</div>
+			</div>
+		</details>
+
+		<details class="method-details">
+			<summary class="method-summary">{i18n.t('analysis.flood.implicationsTitle')}</summary>
+			<div class="method-body">
+				<p class="explain-text">{i18n.t('analysis.flood.implicationsBody')}</p>
+			</div>
+		</details>
+
+		<details class="method-details">
+			<summary class="method-summary">{i18n.t('analysis.flood.actionsTitle')}</summary>
+			<div class="method-body">
+				<p class="explain-text">{i18n.t('analysis.flood.actionsBody')}</p>
+			</div>
+		</details>
 
 		<details class="method-details">
 			<summary class="method-summary">{i18n.t('analysis.flood.methodTitle')}</summary>
@@ -456,7 +493,7 @@
 	}
 	.summary-cards {
 		display: grid;
-		grid-template-columns: 1fr 1fr 1fr;
+		grid-template-columns: 1fr 1fr;
 		gap: 6px;
 		margin-bottom: 12px;
 	}
@@ -612,6 +649,39 @@
 		color: #a3a3a3;
 		margin: 2px 0 0;
 		line-height: 1.4;
+	}
+	.explain-text { font-size: 9px; color: #a3a3a3; line-height: 1.5; margin: 2px 0 0; }
+	.mini-legend { margin-top: 6px; }
+	.current-flood-status {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 9px;
+		color: #a3a3a3;
+		padding: 6px 8px;
+		border-radius: 6px;
+		background: rgba(34, 197, 94, 0.08);
+		border: 1px solid rgba(34, 197, 94, 0.2);
+		margin-bottom: 6px;
+		flex-wrap: wrap;
+	}
+	.current-flood-status.has-water {
+		background: rgba(239, 68, 68, 0.08);
+		border-color: rgba(239, 68, 68, 0.3);
+		color: #fca5a5;
+	}
+	.status-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+	.status-wet { background: #ef4444; }
+	.status-dry { background: #22c55e; }
+	.status-date {
+		margin-left: auto;
+		font-size: 8px;
+		color: #737373;
 	}
 	.parcel-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 	.parcel-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }

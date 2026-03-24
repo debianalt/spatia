@@ -189,7 +189,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'analysis.opportunities.title': { es: 'Oportunidades', en: 'Opportunities', gn: "Teko porã" },
 	'analysis.opportunities.desc': { es: 'Ranking de radios con mayor potencial según el lente activo', en: 'Ranking of tracts with highest potential for the active lens', gn: "Radio oĩva teko porãve" },
 	'analysis.floodRisk.title': { es: 'Riesgo hídrico', en: 'Flood risk', gn: "Y tuicha mba'asy" },
-	'analysis.floodRisk.desc': { es: 'Presencia histórica de agua (JRC 1984–2021) e inundación actual (Sentinel-1 SAR) por hexágono H3', en: 'Historical water presence (JRC 1984–2021) and current flooding (Sentinel-1 SAR) per H3 hexagon', gn: "Y rehegua historia guive (JRC 1984–2021) ha ko'ag̃a ysoguy (Sentinel-1 SAR) H3 rupi" },
+	'analysis.floodRisk.desc': { es: 'Presencia histórica de agua (JRC 1984–2021) e inundación actual (Sentinel-1 SAR) por parcela catastral', en: 'Historical water presence (JRC 1984–2021) and current flooding (Sentinel-1 SAR) per cadastral parcel', gn: "Y rehegua historia guive (JRC 1984–2021) ha ko'ag̃a ysoguy (Sentinel-1 SAR) yvy rupi" },
 	'analysis.floodRisk.legend': { es: 'Riesgo hídrico (0–100)', en: 'Flood risk (0–100)', gn: "Y tuicha mba'asy (0–100)" },
 	'analysis.flood.riskScore': { es: 'Score de riesgo', en: 'Risk score', gn: "Mba'asy score" },
 	'analysis.flood.recurrence': { es: 'Recurrencia', en: 'Recurrence', gn: 'Jey' },
@@ -201,15 +201,15 @@ const dict: Record<string, Record<Locale, string>> = {
 	'analysis.flood.jrcSeasonality': { es: 'Estacionalidad (meses)', en: 'Seasonality (months)', gn: "Ára reípe (jasy)" },
 	'analysis.flood.jrcSeasonalityDesc': { es: 'Cantidad de meses con agua por año', en: 'Number of months with water per year', gn: 'Mboy jasy y reheve ary pe' },
 	'analysis.flood.currentExtent': { es: 'Extensión actual', en: 'Current extent', gn: "Ko'ãga tuichakue" },
-	'analysis.flood.currentExtentDesc': { es: '% del hexágono inundado', en: '% of hexagon flooded', gn: '% hexágono y guýpe' },
+	'analysis.flood.currentExtentDesc': { es: '% de la zona inundada', en: '% of the area flooded', gn: '% yvy y guype oĩva' },
 	'analysis.flood.riskHigh': { es: 'Riesgo alto', en: 'High risk', gn: "Mba'asy guasu" },
 	'analysis.flood.riskMedium': { es: 'Riesgo medio', en: 'Medium risk', gn: "Mba'asy mbyte" },
 	'analysis.flood.riskLow': { es: 'Riesgo bajo', en: 'Low risk', gn: "Mba'asy michĩ" },
-	'analysis.flood.totalHex': { es: 'Hexágonos', en: 'Hexagons', gn: 'Hexágono' },
+	'analysis.flood.totalHex': { es: 'Zonas analizadas', en: 'Areas analysed', gn: 'Yvy ojehechauka' },
 	'analysis.flood.highRecurrence': { es: 'Recurrencia >10%', en: 'Recurrence >10%', gn: 'Jey >10%' },
 	'analysis.flood.avgScore': { es: 'Score promedio', en: 'Avg score', gn: 'Score mbytekue' },
-	'analysis.flood.topDepts': { es: 'Departamentos por riesgo', en: 'Departments by risk', gn: "Departamento mba'asy rupi" },
-	'analysis.flood.clickHint': { es: 'Hacé click en un hexágono para ver detalle', en: 'Click a hexagon for details', gn: 'Ehesakutu hexágono ehecha hag̃ua' },
+	'analysis.flood.topDepts': { es: 'Seleccioná un departamento', en: 'Select a department', gn: "Eiporavo departamento" },
+	'analysis.flood.clickHint': { es: 'Hacé click en una parcela para ver detalle', en: 'Click a parcel for details', gn: 'Ehesakutu peteĩ yvy ehecha hag̃ua' },
 	'analysis.flood.source': { es: 'Fuente: JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus)', en: 'Source: JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus)', gn: 'Moñe\'ẽha: JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus)' },
 	'data.source.censo': { es: 'Fuente: INDEC — Censo Nacional de Población 2022', en: 'Source: INDEC — National Population Census 2022', gn: "Moñe'ẽha: INDEC — Censo Nacional 2022" },
 	'data.source.realEstate': { es: 'Fuente: Relevamiento de mercado inmobiliario', en: 'Source: Real estate market survey', gn: "Moñe'ẽha: Relevamiento óga ñemuhague" },
@@ -223,7 +223,31 @@ const dict: Record<string, Record<Locale, string>> = {
 	'analysis.catastro.avgAreaUrban': { es: 'Área media urbana', en: 'Avg urban area', gn: "Yvy mbytekue táva" },
 	'analysis.catastro.avgAreaRural': { es: 'Área media rural', en: 'Avg rural area', gn: "Yvy mbytekue ka'aguy" },
 	'analysis.catastro.newParcels': { es: 'Nuevas (90 días)', en: 'New (90 days)', gn: "Ipyahu (90 ára)" },
-	'analysis.catastro.topDepts': { es: 'Departamentos por parcelas', en: 'Departments by parcels', gn: "Departamento yvy rupi" },
+	'analysis.catastro.topDepts': { es: 'Seleccioná un departamento', en: 'Select a department', gn: "Eiporavo departamento" },
+	'analysis.catastro.howToReadTitle': { es: 'Cómo leer este mapa', en: 'How to read this map', gn: "Mba'eichapa ejapokuaa ko mapa" },
+	'analysis.catastro.howToReadBody': {
+		es: 'Las parcelas catastrales se muestran coloreadas según su tipo: cyan = urbana, verde = rural. Al seleccionar un departamento, el mapa muestra todas las parcelas registradas en la Dirección General de Catastro de Misiones. Hacé click en un radio censal para ver estadísticas detalladas.',
+		en: 'Cadastral parcels are coloured by type: cyan = urban, green = rural. When you select a department, the map shows all parcels registered with the Misiones cadastre office. Click a census tract for detailed statistics.',
+		gn: "Yvy oñembosa'y tipo rupi: cyan = táva, verde = ka'aguy. Eiporavo departamento, mapa ohechauka yvy opaite. Ehesakutu radio ehecha hag̃ua estadística."
+	},
+	'analysis.catastro.implicationsTitle': { es: 'Implicancias', en: 'Implications', gn: "Mba'e he'ise" },
+	'analysis.catastro.implicationsBody': {
+		es: 'La cantidad de parcelas nuevas en los últimos 90 días indica la presión inmobiliaria sobre cada zona. Un crecimiento alto de parcelas urbanas puede señalar expansión urbana, demanda de servicios y necesidad de planificación territorial.',
+		en: 'The number of new parcels in the last 90 days indicates real estate pressure on each area. High growth of urban parcels may signal urban expansion, service demand and the need for territorial planning.',
+		gn: "Yvy pyahu 90 ára pe ohechauka presión inmobiliaria. Yvy táva oikuaaukáva ikatu he'ise táva oñembotuicha, oikotevẽ servicio ha planificación."
+	},
+	'analysis.catastro.actionsTitle': { es: 'Acciones recomendadas', en: 'Recommended actions', gn: "Mba'e ojejapo va'erã" },
+	'analysis.catastro.actionsBody': {
+		es: 'Seleccioná un departamento y hacé click en los radios censales para comparar la estructura parcelaria y la calidad habitacional. Podés seleccionar varios radios para compararlos lado a lado.',
+		en: 'Select a department and click census tracts to compare parcel structure and housing quality. You can select multiple tracts to compare them side by side.',
+		gn: "Eiporavo departamento ha ehesakutu radio ejojaha hag̃ua yvy ha óga rekoporã. Ikatu eiporavo heta radio ejojaha hag̃ua."
+	},
+	'analysis.catastro.guideDeptTitle': { es: 'Guía rápida', en: 'Quick guide', gn: "Ñemoañete pya'e" },
+	'analysis.catastro.guideDeptBody': {
+		es: 'Las parcelas cyan son urbanas, las verdes son rurales. Hacé click en cualquier edificio o zona del mapa para seleccionar un radio censal y ver sus estadísticas: cantidad de parcelas, áreas medias, parcelas nuevas y calidad habitacional.',
+		en: 'Cyan parcels are urban, green are rural. Click any building or map area to select a census tract and see its statistics: parcel counts, average areas, new parcels and housing quality.',
+		gn: "Yvy cyan = táva, verde = ka'aguy. Ehesakutu óga térã mapa-pe eiporavo hag̃ua radio ha ehecha estadística."
+	},
 	'analysis.catastro.vsAvg': { es: 'vs promedio provincial', en: 'vs provincial average', gn: 'vs tetã mbytekue' },
 	'analysis.catastro.pressure': { es: 'Presión inmobiliaria', en: 'Real estate pressure', gn: "Yvy ñemuha reko" },
 	'analysis.catastro.parcels': { es: 'parcelas', en: 'parcels', gn: 'yvy' },
@@ -246,19 +270,48 @@ const dict: Record<string, Record<Locale, string>> = {
 	'data.updatedAt': { es: 'Procesado al', en: 'Processed', gn: 'Oñembopyahu' },
 	'analysis.flood.methodTitle': { es: 'Metodologia', en: 'Methodology', gn: "Mba'eichapa" },
 	'analysis.flood.methodRecurrence': {
-		es: 'Presencia histórica de agua derivada de JRC Global Surface Water (Landsat, 1984–2021). Occurrence indica el % del tiempo con agua detectada; recurrence indica el % de años en que el agua vuelve a aparecer; estacionalidad indica cuántos meses al año hay agua.',
-		en: 'Historical water presence from JRC Global Surface Water (Landsat, 1984–2021). Occurrence indicates % of time with water detected; recurrence indicates % of years water reappears; seasonality indicates months of water per year.',
+		es: 'Presencia histórica de agua derivada de JRC Global Surface Water (Landsat, 1984–2021). Occurrence indica el % del tiempo con agua detectada; recurrence indica el % de años en que el agua vuelve a aparecer; estacionalidad indica cuántos meses al año hay agua sobre la superficie del suelo.',
+		en: 'Historical water presence from JRC Global Surface Water (Landsat, 1984–2021). Occurrence indicates % of time with water detected; recurrence indicates % of years water reappears; seasonality indicates months per year with water on the land surface.',
 		gn: "Y rehegua historia guive JRC Global Surface Water (Landsat, 1984–2021). Occurrence he'ise % ára y reheve; recurrence he'ise % ary y ojekuaa jey; estacionalidad he'ise mboy jasy y reheve ary pe."
 	},
 	'analysis.flood.methodExtent': {
-		es: 'Porcentaje del hexagono cubierto por agua en la observacion mas reciente (ultima imagen SAR procesada). Mide cuanto del hexagono esta inundado actualmente.',
-		en: 'Percentage of the hexagon covered by water in the most recent observation (latest processed SAR image). Measures how much of the hexagon is currently flooded.',
-		gn: "Mboy % hexagono y guype oime ko'ag̃a imagen SAR ipahague rupi."
+		es: 'Porcentaje de la zona cubierto por agua en la observación más reciente (última imagen SAR procesada). Mide cuánto de la zona está inundado actualmente.',
+		en: 'Percentage of the area covered by water in the most recent observation (latest processed SAR image). Measures how much of the area is currently flooded.',
+		gn: "Mboy % yvy y guype oime ko'ag̃a imagen SAR ipahague rupi."
 	},
 	'analysis.flood.methodScore': {
-		es: 'Índice compuesto 0–100: 50% presencia histórica (JRC) + 20% recurrencia interanual (JRC) + 30% extensión actual (Sentinel-1 SAR). Un hexágono permanentemente sobre un río tendrá score alto; un hexágono seco con inundación actual también.',
-		en: 'Composite index 0–100: 50% historical presence (JRC) + 20% year-to-year recurrence (JRC) + 30% current extent (Sentinel-1 SAR). A hexagon permanently on a river scores high; a dry hexagon with current flooding also scores high.',
+		es: 'Índice compuesto 0–100: 50% presencia histórica (JRC) + 20% recurrencia interanual (JRC) + 30% extensión actual (Sentinel-1 SAR). Una zona permanentemente sobre un río tendrá score alto; una zona seca con inundación actual también.',
+		en: 'Composite index 0–100: 50% historical presence (JRC) + 20% year-to-year recurrence (JRC) + 30% current extent (Sentinel-1 SAR). An area permanently on a river scores high; a dry area with current flooding also scores high.',
 		gn: "Índice 0–100: 50% y rehegua (JRC) + 20% jey ary ha ary (JRC) + 30% ko'ag̃a tuichakue (Sentinel-1 SAR)."
+	},
+	// Explanatory panels — flood risk
+	'analysis.flood.howToReadTitle': { es: 'Cómo leer este mapa', en: 'How to read this map', gn: "Mba'eichapa ejapokuaa ko mapa" },
+	'analysis.flood.howToReadBody': {
+		es: 'Los colores representan el riesgo hídrico de cada zona, combinando la presencia histórica de agua (JRC, 1984–2021) y la detección actual de inundación (Sentinel-1 SAR). Azul oscuro = riesgo bajo; amarillo = riesgo medio; rojo = riesgo alto. Seleccioná un departamento para ver el detalle a nivel de parcela catastral.',
+		en: 'Colours represent flood risk per area, combining historical water presence (JRC, 1984–2021) and current flood detection (Sentinel-1 SAR). Dark blue = low risk; yellow = medium risk; red = high risk. Select a department to view parcel-level detail.',
+		gn: "Sa'y ohechauka mba'asy yvy peteĩ-pe. Hovy opáva = mba'asy michĩ; sa'yju = mba'asy mbyte; pytã = mba'asy guasu. Eiporavo departamento ehecha hag̃ua yvy peteĩteĩ."
+	},
+	'analysis.flood.keyFindingsTitle': { es: 'Hallazgos clave', en: 'Key findings', gn: 'Ojejuhúva guasu' },
+	'analysis.flood.implicationsTitle': { es: 'Implicancias', en: 'Implications', gn: "Mba'e he'ise" },
+	'analysis.flood.implicationsBody': {
+		es: 'Las parcelas en zonas de riesgo alto pueden enfrentar anegamientos recurrentes, afectando el valor inmobiliario y la habitabilidad. La infraestructura de servicios básicos (agua, cloacas) en estas zonas requiere diseño resiliente.',
+		en: 'Parcels in high-risk areas may face recurrent flooding, affecting property values and habitability. Basic service infrastructure (water, sewerage) in these areas requires resilient design.',
+		gn: "Yvy mba'asy guasu rehegua ikatu oguereko ysoguy jey, ojapo hag̃ua óga ha tape ivaivéva."
+	},
+	'analysis.flood.actionsTitle': { es: 'Acciones recomendadas', en: 'Recommended actions', gn: "Mba'e ojejapo va'erã" },
+	'analysis.flood.actionsBody': {
+		es: 'Consultá el mapa de tu parcela: seleccioná un departamento y hacé click en la parcela catastral para conocer su score de riesgo. Si tu parcela está en zona de riesgo alto, considerá esta información antes de invertir o construir, y consultá a las autoridades municipales sobre antecedentes de inundación en la zona.',
+		en: 'Check your parcel on the map: select a department and click the cadastral parcel to see its risk score. If your parcel is in a high-risk area, consider this information before investing or building, and consult local authorities about flooding history in the area.',
+		gn: "Ehecha ne yvy mapápe: eiporavo departamento ha ehesakutu yvy ehecha hag̃ua score. Mba'asy guasu oĩramo, eñamindu'u ko marandu eiporavo mboyve, ha eporandu municipio-pe ysoguy rehegua."
+	},
+	'analysis.flood.statusWet': { es: 'Agua detectada en superficie', en: 'Surface water detected', gn: "Y ojehecha yvy ári" },
+	'analysis.flood.statusDry': { es: 'Sin agua detectada en la última imagen', en: 'No water detected in latest image', gn: "Ndaipóri y ojehechaukáva" },
+	'analysis.flood.statusDate': { es: 'Imagen SAR:', en: 'SAR image:', gn: "SAR ra'ãnga:" },
+	'analysis.flood.howToReadDeptTitle': { es: 'Guía rápida', en: 'Quick guide', gn: "Ñemoañete pya'e" },
+	'analysis.flood.howToReadDeptBody': {
+		es: 'Cada parcela catastral está coloreada según su riesgo hídrico. Hacé click en una parcela para ver su score detallado, incluyendo presencia histórica de agua, recurrencia interanual y extensión actual de inundación. Podés seleccionar varias parcelas para compararlas.',
+		en: 'Each cadastral parcel is coloured by its flood risk. Click a parcel for its detailed score, including historical water presence, year-to-year recurrence and current flood extent. You can select multiple parcels to compare them.',
+		gn: "Yvy peteĩteĩ oñembosa'y mba'asy rupi. Ehesakutu peteĩ ehecha hag̃ua score. Ikatu eiporavo heta yvy ejojaha hag̃ua."
 	},
 
 	// Vivir analyses
