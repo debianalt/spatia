@@ -203,6 +203,7 @@
 		}
 		if (prevAnalysisId === 'flood_risk') {
 			mapComponent?.clearCatastroFloodChoropleth();
+			mapComponent?.clearFloodParcelHighlight();
 			mapComponent?.hideCatastroLayer();
 			mapStore.clearFloodParcelState();
 		}
@@ -263,6 +264,14 @@
 			h3index, color: d.color
 		}));
 		mapComponent?.highlightHexagons(hexes);
+	});
+
+	// ── Flood parcel selection highlights on catastro layer ───────────────
+	$effect(() => {
+		const parcels = mapStore.selectedFloodParcels;
+		mapComponent?.setFloodParcelHighlight(
+			parcels.map(p => ({ h3index: p.h3index, color: p.color }))
+		);
 	});
 
 	// ── HexStore reactivity: re-render choropleth when data changes ──────
@@ -514,6 +523,7 @@
 		mapComponent?.clearHexChoropleth();
 		mapComponent?.clearHexZoneHighlight();
 		mapComponent?.clearCatastroFloodChoropleth();
+		mapComponent?.clearFloodParcelHighlight();
 		lensStore.clearSelection();
 		lensStore.clearDpto();
 		lensStore.clearAnalysis();

@@ -857,6 +857,60 @@
 		}
 	}
 
+	export function setFloodParcelHighlight(parcels: Array<{ h3index: string; color: string }>) {
+		if (!map || !map.isStyleLoaded() || !map.getSource('catastro')) return;
+
+		// Build filter: match any selected h3index
+		if (parcels.length === 0) {
+			if (map.getLayer('catastro-sel-fill')) map.removeLayer('catastro-sel-fill');
+			if (map.getLayer('catastro-sel-line')) map.removeLayer('catastro-sel-line');
+			return;
+		}
+
+		const h3Filter: any = ['in', ['get', 'h3index'], ['literal', parcels.map(p => p.h3index)]];
+
+		// Color match: h3index → parcel color
+		const colorMatch: any[] = ['match', ['get', 'h3index']];
+		for (const p of parcels) { colorMatch.push(p.h3index, p.color); }
+		colorMatch.push('#ffffff');
+
+		if (!map.getLayer('catastro-sel-fill')) {
+			map.addLayer({
+				id: 'catastro-sel-fill',
+				type: 'fill',
+				source: 'catastro',
+				'source-layer': 'catastro',
+				minzoom: 11,
+				paint: { 'fill-color': colorMatch, 'fill-opacity': 0.45 },
+				filter: h3Filter
+			});
+		} else {
+			map.setPaintProperty('catastro-sel-fill', 'fill-color', colorMatch);
+			map.setFilter('catastro-sel-fill', h3Filter);
+		}
+
+		if (!map.getLayer('catastro-sel-line')) {
+			map.addLayer({
+				id: 'catastro-sel-line',
+				type: 'line',
+				source: 'catastro',
+				'source-layer': 'catastro',
+				minzoom: 11,
+				paint: { 'line-color': colorMatch, 'line-width': 3, 'line-opacity': 0.9 },
+				filter: h3Filter
+			});
+		} else {
+			map.setPaintProperty('catastro-sel-line', 'line-color', colorMatch);
+			map.setFilter('catastro-sel-line', h3Filter);
+		}
+	}
+
+	export function clearFloodParcelHighlight() {
+		if (!map || !map.isStyleLoaded()) return;
+		if (map.getLayer('catastro-sel-fill')) map.removeLayer('catastro-sel-fill');
+		if (map.getLayer('catastro-sel-line')) map.removeLayer('catastro-sel-line');
+	}
+
 	// ── Analysis choropleth layers (radio-based, for non-catastro analyses) ──
 
 	export function setAnalysisChoropleth(entries: { redcode: string; value: number }[], colorScale: 'price' | 'score' | 'diverging' | 'sequential' = 'price') {

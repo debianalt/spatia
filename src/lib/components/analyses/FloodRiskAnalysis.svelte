@@ -206,15 +206,23 @@
 		{#if parcelPetalLayers.length > 0}
 			<div class="petal-section">
 				<div class="section-title">Perfil de vulnerabilidad hídrica</div>
-				<p class="petal-note">Relativo al promedio provincial (50 = promedio)</p>
+				<p class="petal-note">Relativo al promedio provincial (50 = promedio). Mayor extensión = mayor riesgo.</p>
 				<div class="petal-wrapper">
 					<PetalChart layers={parcelPetalLayers} labels={FLOOD_CENSUS_LABELS} size={260} />
+				</div>
+				<div class="petal-defs">
+					<div><strong>Frec. inundación:</strong> frecuencia histórica de anegamiento (satelital)</div>
+					<div><strong>Altura s/ drenaje:</strong> elevación sobre el curso de agua más cercano</div>
+					<div><strong>NBI:</strong> hogares con necesidades básicas insatisfechas (Censo 2022)</div>
+					<div><strong>Sin cloacas:</strong> hogares sin red cloacal (Censo 2022)</div>
+					<div><strong>Sin agua de red:</strong> hogares sin agua de red pública (Censo 2022)</div>
+					<div><strong>Déficit infra:</strong> índice compuesto de carencias en servicios básicos</div>
 				</div>
 			</div>
 		{/if}
 
 		<div class="source-note-box">
-			<div><strong>Fuente:</strong> JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus, {DATA_FRESHNESS.hex_flood_risk.dataDate})</div>
+			<div><strong>Fuente:</strong> JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus, {DATA_FRESHNESS.hex_flood_risk.dataDate}) + Censo Nacional 2022</div>
 		</div>
 	</div>
 {:else if floodCatastroDpto}
@@ -284,7 +292,7 @@
 		</div>
 
 		<div class="source-note-box">
-			<div><strong>Fuente:</strong> JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus, {DATA_FRESHNESS.hex_flood_risk.dataDate})</div>
+			<div><strong>Fuente:</strong> JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus, {DATA_FRESHNESS.hex_flood_risk.dataDate}) + Censo Nacional 2022</div>
 			<div><strong>Última revisión:</strong> {DATA_FRESHNESS.hex_flood_risk.processedDate} · Imágenes SAR disponibles cada ~12 días</div>
 		</div>
 	</div>
@@ -299,7 +307,7 @@
 			<div class="hint">{i18n.t('analysis.flood.clickHint')}</div>
 		{/if}
 		<div class="source-note-box">
-			<div><strong>Fuente:</strong> JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus, {DATA_FRESHNESS.hex_flood_risk.dataDate})</div>
+			<div><strong>Fuente:</strong> JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus, {DATA_FRESHNESS.hex_flood_risk.dataDate}) + Censo Nacional 2022</div>
 			<div><strong>Última revisión:</strong> {DATA_FRESHNESS.hex_flood_risk.processedDate} · Imágenes SAR disponibles cada ~12 días</div>
 		</div>
 	</div>
@@ -357,7 +365,7 @@
 		</details>
 
 		<div class="source-note-box">
-			<div><strong>Fuente:</strong> JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus, {DATA_FRESHNESS.hex_flood_risk.dataDate})</div>
+			<div><strong>Fuente:</strong> JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus, {DATA_FRESHNESS.hex_flood_risk.dataDate}) + Censo Nacional 2022</div>
 			<div><strong>Última revisión:</strong> {DATA_FRESHNESS.hex_flood_risk.processedDate} · Imágenes SAR disponibles cada ~12 días</div>
 		</div>
 	</div>
@@ -626,6 +634,9 @@
 	.section-title { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #a3a3a3; border-bottom: 1px solid #1e293b; padding-bottom: 2px; margin-bottom: 4px; }
 	.petal-note { font-size: 8px; color: #737373; text-align: center; margin: 0 0 4px; }
 	.petal-wrapper { display: flex; justify-content: center; }
+	.petal-defs { margin-top: 6px; font-size: 8px; color: #a3a3a3; line-height: 1.5; }
+	.petal-defs div { margin-bottom: 1px; }
+	.petal-defs strong { color: #cbd5e1; }
 	.raw-values { margin-top: 4px; }
 	.raw-row { display: flex; justify-content: space-between; padding: 1px 0; font-size: 9px; }
 	.raw-label { color: #a3a3a3; }

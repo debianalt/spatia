@@ -189,8 +189,16 @@
 		<div class="loading">Cargando perfil de vulnerabilidad...</div>
 	{:else if petalLayers.length > 0}
 		<div class="section-title">Perfil de vulnerabilidad hídrica</div>
-		<p class="petal-note">Relativo al promedio provincial (50 = promedio)</p>
+		<p class="petal-note">Relativo al promedio provincial (50 = promedio). Mayor extensión = mayor riesgo.</p>
 		<PetalChart layers={petalLayers} labels={petalLabels} size={320} />
+		<div class="petal-defs">
+			<div><strong>Frec. inundación:</strong> frecuencia histórica de anegamiento (satelital)</div>
+			<div><strong>Altura s/ drenaje:</strong> elevación sobre el curso de agua más cercano</div>
+			<div><strong>NBI:</strong> hogares con necesidades básicas insatisfechas (Censo 2022)</div>
+			<div><strong>Sin cloacas:</strong> hogares sin red cloacal (Censo 2022)</div>
+			<div><strong>Sin agua de red:</strong> hogares sin agua de red pública (Censo 2022)</div>
+			<div><strong>Déficit infra:</strong> índice compuesto de carencias en servicios básicos</div>
+		</div>
 
 		<!-- Raw values per zone -->
 		<div class="dim-section">
@@ -268,4 +276,7 @@
 	.flood-legend { margin: 8px 0; }
 	.legend-bar { height: 6px; border-radius: 3px; background: linear-gradient(to right, #0d1b2a, #1b3a5f, #2a6f97, #eab308, #f97316, #dc2626, #7f1d1d); }
 	.legend-labels { display: flex; justify-content: space-between; font-size: 8px; color: #a3a3a3; margin-top: 2px; }
+	.petal-defs { margin-top: 6px; font-size: 8px; color: #a3a3a3; line-height: 1.5; }
+	.petal-defs div { margin-bottom: 1px; }
+	.petal-defs strong { color: #cbd5e1; }
 </style>
