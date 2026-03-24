@@ -32,31 +32,31 @@
 
 	const selectedDpto = $derived(hexStore.selectedDpto);
 	const selectedHex = $derived(mapStore.selectedHex);
-	const selectedFloodParcel = $derived(mapStore.selectedFloodParcel);
+	const selectedParcels = $derived(mapStore.selectedFloodParcels);
+	const hasParcels = $derived(selectedParcels.length > 0);
 
 	let floodCatastroDpto = $state<string | null>(null);
 
-	// Census vulnerability petal for parcel detail
+	// Census vulnerability petal for parcel detail (multi-parcel)
 	const FLOOD_CENSUS_COLS = ['flood_frequency', 'hand_mean', 'pct_nbi', 'pct_cloacas', 'pct_agua_red', 'infra_deficit'];
 	const FLOOD_CENSUS_LABELS = ['Frec. inundación', 'Altura s/ drenaje', 'NBI', 'Sin cloacas', 'Sin agua de red', 'Déficit infra'];
 	const FLOOD_CENSUS_INVERT = [false, true, false, false, false, false];
-	let parcelPetalData: { values: number[]; rawValues: number[] } | null = $state(null);
+	let parcelPetalLayers: Array<{ values: number[]; color: string; rawValues: number[] }> = $state([]);
 	let parcelPetalProvAvg: number[] | null = $state(null);
 
-	// Load petal data when parcel is selected
+	// Reload petal when parcels change
 	$effect(() => {
-		const parcel = selectedFloodParcel;
-		if (parcel?.h3index) {
-			loadParcelPetal(parcel.h3index);
+		const parcels = selectedParcels;
+		if (parcels.length > 0) {
+			loadAllParcelPetals(parcels);
 		} else {
-			parcelPetalData = null;
+			parcelPetalLayers = [];
 		}
 	});
 
-	async function loadParcelPetal(h3index: string) {
+	async function loadAllParcelPetals(parcels: typeof selectedParcels) {
 		try {
 			await initDuckDB();
-			// Load provincial avg once
 			if (!parcelPetalProvAvg) {
 				const cols = FLOOD_CENSUS_COLS.map(c =>
 					`SUM(CAST(${c} AS DOUBLE) * CAST(total_personas AS DOUBLE)) / NULLIF(SUM(CAST(total_personas AS DOUBLE)), 0) as ${c}`
@@ -67,35 +67,42 @@
 					parcelPetalProvAvg = FLOOD_CENSUS_COLS.map(c => Number(row[c]) || 1);
 				}
 			}
-			// Find radio for this h3index via crosswalk
-			const xwalk = await query(
-				`SELECT redcode, weight FROM '${PARQUETS.h3_radio_crosswalk}' WHERE h3index = '${h3index.replace(/'/g, "''")}' ORDER BY weight DESC LIMIT 1`
-			);
-			if (xwalk.numRows === 0) { parcelPetalData = null; return; }
-			const redcode = (xwalk.get(0)!.toJSON() as any).redcode;
 
-			// Load census data for that radio
-			const cols = FLOOD_CENSUS_COLS.join(', ');
-			const result = await query(
-				`SELECT ${cols} FROM '${PARQUETS.radio_stats_master}' WHERE redcode = '${redcode}' LIMIT 1`
-			);
-			if (result.numRows === 0) { parcelPetalData = null; return; }
-			const row = result.get(0)!.toJSON() as Record<string, any>;
-			const rawValues = FLOOD_CENSUS_COLS.map(c => Number(row[c]) || 0);
-
-			const normalizedValues = rawValues.map((v, i) => {
-				const avg = parcelPetalProvAvg?.[i] ?? 1;
-				if (avg === 0) return 50;
-				let ratio = v / avg;
-				if (FLOOD_CENSUS_INVERT[i]) ratio = avg / (v || 1);
-				return Math.min(100, Math.max(0, ratio * 50));
-			});
-
-			parcelPetalData = { values: normalizedValues, rawValues };
+			const layers: typeof parcelPetalLayers = [];
+			for (const parcel of parcels) {
+				const data = await loadSingleParcelPetal(parcel.h3index, parcel.color);
+				if (data) layers.push(data);
+			}
+			parcelPetalLayers = layers;
 		} catch (e) {
-			console.warn('Failed to load parcel petal:', e);
-			parcelPetalData = null;
+			console.warn('Failed to load parcel petals:', e);
 		}
+	}
+
+	async function loadSingleParcelPetal(h3index: string, color: string) {
+		const xwalk = await query(
+			`SELECT redcode FROM '${PARQUETS.h3_radio_crosswalk}' WHERE h3index = '${h3index.replace(/'/g, "''")}' ORDER BY weight DESC LIMIT 1`
+		);
+		if (xwalk.numRows === 0) return null;
+		const redcode = (xwalk.get(0)!.toJSON() as any).redcode;
+
+		const cols = FLOOD_CENSUS_COLS.join(', ');
+		const result = await query(
+			`SELECT ${cols} FROM '${PARQUETS.radio_stats_master}' WHERE redcode = '${redcode}' LIMIT 1`
+		);
+		if (result.numRows === 0) return null;
+		const row = result.get(0)!.toJSON() as Record<string, any>;
+		const rawValues = FLOOD_CENSUS_COLS.map(c => Number(row[c]) || 0);
+
+		const values = rawValues.map((v, i) => {
+			const avg = parcelPetalProvAvg?.[i] ?? 1;
+			if (avg === 0) return 50;
+			let ratio = v / avg;
+			if (FLOOD_CENSUS_INVERT[i]) ratio = avg / (v || 1);
+			return Math.min(100, Math.max(0, ratio * 50));
+		});
+
+		return { values, color, rawValues };
 	}
 
 	function getRiskLabel(score: number): string {
@@ -115,15 +122,13 @@
 	}
 
 	function handleBackToDepts() {
-		if (selectedFloodParcel && floodCatastroDpto) {
-			// Back from parcel → dept view (keep dept selected)
-			mapStore.setSelectedFloodParcel(null);
+		if (hasParcels && floodCatastroDpto) {
+			mapStore.clearFloodParcels();
 			return;
 		}
 		if (floodCatastroDpto) {
-			// Back from dept → province list
 			floodCatastroDpto = null;
-			mapStore.setSelectedFloodParcel(null);
+			mapStore.clearFloodParcels();
 			return;
 		}
 		hexStore.backToDepartments();
@@ -136,78 +141,80 @@
 	}
 </script>
 
-{#if selectedFloodParcel && floodCatastroDpto}
-	<!-- Parcel flood detail view -->
+{#if hasParcels && floodCatastroDpto}
+	<!-- Multi-parcel flood detail view -->
 	<div class="hex-detail">
 		<div class="parcel-nav">
 			<button class="back-btn" onclick={handleBackToDepts}>← {floodCatastroDpto}</button>
-			<button class="clear-parcel-btn" onclick={() => mapStore.setSelectedFloodParcel(null)}>&#10005; Limpiar</button>
-		</div>
-		<div class="hex-header">
-			<div class="hex-id">
-				{selectedFloodParcel.tipo === 'rural' ? 'Rural' : 'Urbana'} · {selectedFloodParcel.area_m2 > 0 ? `${selectedFloodParcel.area_m2.toLocaleString('es-AR', { maximumFractionDigits: 0 })} m²` : ''}
-			</div>
-			<div class="risk-badge" style:background={getRiskColor(selectedFloodParcel.flood_risk_score)}>
-				{getRiskLabel(selectedFloodParcel.flood_risk_score)}
-			</div>
+			<button class="clear-parcel-btn" onclick={() => mapStore.clearFloodParcels()}>&#10005; Limpiar</button>
 		</div>
 
-		<div class="score-bar">
-			<div class="score-label">{i18n.t('analysis.flood.riskScore')}</div>
-			<div class="score-track">
-				<div class="score-fill" style:width="{selectedFloodParcel.flood_risk_score}%"
-					style:background={getRiskColor(selectedFloodParcel.flood_risk_score)}></div>
-			</div>
-			<div class="score-value" style:color={getRiskColor(selectedFloodParcel.flood_risk_score)}>
-				{selectedFloodParcel.flood_risk_score.toFixed(1)}
-			</div>
+		<!-- Parcel chips -->
+		<div class="parcel-chips">
+			{#each selectedParcels as parcel}
+				<span class="parcel-chip">
+					<span class="chip-dot" style:background={parcel.color}></span>
+					<span class="chip-tipo">{parcel.tipo === 'rural' ? 'R' : 'U'}</span>
+					<span class="chip-score" style:color={getRiskColor(parcel.flood_risk_score)}>{parcel.flood_risk_score.toFixed(0)}</span>
+					<button class="chip-x" onclick={() => mapStore.removeFloodParcel(parcel.h3index)}>x</button>
+				</span>
+			{/each}
 		</div>
 
-		<div class="detail-grid">
-			<div class="detail-item">
-				<div class="detail-label">{i18n.t('analysis.flood.jrcOccurrence')}</div>
-				<div class="detail-value">{selectedFloodParcel.jrc_occurrence.toFixed(1)}%</div>
-				<div class="detail-desc">{i18n.t('analysis.flood.jrcOccurrenceDesc')}</div>
-			</div>
-			<div class="detail-item">
-				<div class="detail-label">{i18n.t('analysis.flood.jrcRecurrence')}</div>
-				<div class="detail-value">{selectedFloodParcel.jrc_recurrence.toFixed(1)}%</div>
-				<div class="detail-desc">{i18n.t('analysis.flood.jrcRecurrenceDesc')}</div>
-			</div>
-			<div class="detail-item">
-				<div class="detail-label">{i18n.t('analysis.flood.jrcSeasonality')}</div>
-				<div class="detail-value">{selectedFloodParcel.jrc_seasonality.toFixed(1)}</div>
-				<div class="detail-desc">{i18n.t('analysis.flood.jrcSeasonalityDesc')}</div>
-			</div>
-			<div class="detail-item">
-				<div class="detail-label">{i18n.t('analysis.flood.currentExtent')}</div>
-				<div class="detail-value">{formatPct(selectedFloodParcel.flood_extent_pct)}</div>
-				<div class="detail-desc">{i18n.t('analysis.flood.currentExtentDesc')}</div>
-			</div>
+		<!-- Score bars per parcel -->
+		<div class="flood-scores">
+			{#each selectedParcels as parcel}
+				<div class="flood-zone-row">
+					<span class="zone-dot-sm" style:background={parcel.color}></span>
+					<span class="flood-zone-label">{parcel.tipo === 'rural' ? 'R' : 'U'}</span>
+					<div class="score-track">
+						<div class="score-fill" style:width="{parcel.flood_risk_score}%" style:background={parcel.color}></div>
+					</div>
+					<span class="flood-zone-val" style:color={parcel.color}>{parcel.flood_risk_score.toFixed(1)}</span>
+				</div>
+			{/each}
 		</div>
 
-		<!-- Vulnerability petal chart -->
-		{#if parcelPetalData}
+		<!-- Detail grid for each selected parcel -->
+		{#each selectedParcels as parcel}
+			<div class="parcel-detail-header">
+				<span class="chip-dot" style:background={parcel.color}></span>
+				<span class="chip-tipo">{parcel.tipo === 'rural' ? 'Rural' : 'Urbana'}</span>
+				{#if parcel.area_m2 > 0}<span class="chip-area">· {parcel.area_m2.toLocaleString('es-AR', { maximumFractionDigits: 0 })} m²</span>{/if}
+			</div>
+			<div class="detail-grid">
+				<div class="detail-item">
+					<div class="detail-label">{i18n.t('analysis.flood.jrcOccurrence')}</div>
+					<div class="detail-value">{parcel.jrc_occurrence.toFixed(1)}%</div>
+				</div>
+				<div class="detail-item">
+					<div class="detail-label">{i18n.t('analysis.flood.jrcRecurrence')}</div>
+					<div class="detail-value">{parcel.jrc_recurrence.toFixed(1)}%</div>
+				</div>
+				<div class="detail-item">
+					<div class="detail-label">{i18n.t('analysis.flood.jrcSeasonality')}</div>
+					<div class="detail-value">{parcel.jrc_seasonality.toFixed(1)}</div>
+				</div>
+				<div class="detail-item">
+					<div class="detail-label">{i18n.t('analysis.flood.currentExtent')}</div>
+					<div class="detail-value">{formatPct(parcel.flood_extent_pct)}</div>
+				</div>
+			</div>
+		{/each}
+
+		<!-- Vulnerability petal chart (all parcels overlaid) -->
+		{#if parcelPetalLayers.length > 0}
 			<div class="petal-section">
 				<div class="section-title">Perfil de vulnerabilidad hídrica</div>
 				<p class="petal-note">Relativo al promedio provincial (50 = promedio)</p>
 				<div class="petal-wrapper">
-					<PetalChart layers={[{ values: parcelPetalData.values, color: getRiskColor(selectedFloodParcel.flood_risk_score) }]} labels={FLOOD_CENSUS_LABELS} size={220} />
-				</div>
-				<div class="raw-values">
-					{#each FLOOD_CENSUS_LABELS as label, i}
-						<div class="raw-row">
-							<span class="raw-label">{label}</span>
-							<span class="raw-val">{parcelPetalData.rawValues[i].toFixed(1)}</span>
-						</div>
-					{/each}
+					<PetalChart layers={parcelPetalLayers} labels={FLOOD_CENSUS_LABELS} size={260} />
 				</div>
 			</div>
 		{/if}
 
 		<div class="source-note-box">
 			<div><strong>Fuente:</strong> JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus, {DATA_FRESHNESS.hex_flood_risk.dataDate})</div>
-			<div><strong>Última revisión:</strong> {DATA_FRESHNESS.hex_flood_risk.processedDate}</div>
 		</div>
 	</div>
 {:else if floodCatastroDpto}
@@ -599,6 +606,20 @@
 		line-height: 1.4;
 	}
 	.parcel-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+	.parcel-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+	.parcel-chip { display: inline-flex; align-items: center; gap: 3px; background: rgba(255,255,255,0.05); border-radius: 12px; padding: 2px 6px 2px 4px; font-size: 9px; }
+	.chip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+	.chip-tipo { font-weight: 600; color: #e2e8f0; }
+	.chip-score { font-weight: 700; font-family: monospace; }
+	.chip-x { background: none; border: none; color: #737373; cursor: pointer; font-size: 10px; padding: 0 2px; line-height: 1; }
+	.chip-x:hover { color: #ef4444; }
+	.parcel-detail-header { display: flex; align-items: center; gap: 4px; font-size: 10px; margin: 6px 0 3px; padding-top: 4px; border-top: 1px solid #1e293b; }
+	.chip-area { color: #a3a3a3; font-size: 9px; }
+	.flood-scores { margin: 4px 0 8px; }
+	.flood-zone-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+	.zone-dot-sm { display: inline-block; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+	.flood-zone-label { font-size: 10px; font-weight: 600; color: #e2e8f0; width: 16px; }
+	.flood-zone-val { font-size: 11px; font-weight: 700; min-width: 28px; text-align: right; }
 	.clear-parcel-btn { font-size: 9px; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.06); border: 1px solid #334155; color: #d4d4d4; cursor: pointer; transition: all 0.15s; }
 	.clear-parcel-btn:hover { border-color: #ef4444; color: #ef4444; }
 	.petal-section { margin: 10px 0; }

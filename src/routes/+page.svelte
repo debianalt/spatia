@@ -80,7 +80,7 @@
 			const { h3index, tipo, area_m2 } = e.detail;
 			const floodData = mapStore.floodH3Data.get(h3index);
 			if (floodData) {
-				mapStore.setSelectedFloodParcel({
+				mapStore.addFloodParcel({
 					h3index,
 					tipo: tipo ?? 'urbano',
 					area_m2: Number(area_m2) || 0,

@@ -29,12 +29,15 @@ export type FloodParcelData = {
 	h3index: string;
 	tipo: string;
 	area_m2: number;
+	color: string;
 	flood_risk_score: number;
 	jrc_occurrence: number;
 	jrc_recurrence: number;
 	jrc_seasonality: number;
 	flood_extent_pct: number;
 };
+
+const FLOOD_PARCEL_COLORS = ['#60a5fa', '#f97316', '#22c55e', '#a855f7', '#ef4444', '#eab308'];
 
 export class MapStore {
 	selectedRadios: Map<string, RadioData> = $state(new Map());
@@ -44,8 +47,9 @@ export class MapStore {
 	chatCharts: ChartDataSet[] = $state([]);
 	activeHexLayer: string | null = $state(null);
 	selectedHex: HexData | null = $state(null);
-	selectedFloodParcel: FloodParcelData | null = $state(null);
+	selectedFloodParcels: FloodParcelData[] = $state([]);
 	floodH3Data: Map<string, Record<string, number>> = $state(new Map());
+	private floodParcelColorIndex = 0;
 	private colorIndex = 0;
 
 	get currentRamp() {
@@ -129,8 +133,27 @@ export class MapStore {
 		this.selectedHex = null;
 	}
 
-	setSelectedFloodParcel(data: FloodParcelData | null) {
-		this.selectedFloodParcel = data;
+	addFloodParcel(data: Omit<FloodParcelData, 'color'>) {
+		// Toggle: if already selected, remove it
+		const existing = this.selectedFloodParcels.findIndex(p => p.h3index === data.h3index);
+		if (existing >= 0) {
+			this.selectedFloodParcels = this.selectedFloodParcels.filter((_, i) => i !== existing);
+			if (this.selectedFloodParcels.length === 0) this.floodParcelColorIndex = 0;
+			return;
+		}
+		const color = FLOOD_PARCEL_COLORS[this.floodParcelColorIndex % FLOOD_PARCEL_COLORS.length];
+		this.floodParcelColorIndex++;
+		this.selectedFloodParcels = [...this.selectedFloodParcels, { ...data, color }];
+	}
+
+	removeFloodParcel(h3index: string) {
+		this.selectedFloodParcels = this.selectedFloodParcels.filter(p => p.h3index !== h3index);
+		if (this.selectedFloodParcels.length === 0) this.floodParcelColorIndex = 0;
+	}
+
+	clearFloodParcels() {
+		this.selectedFloodParcels = [];
+		this.floodParcelColorIndex = 0;
 	}
 
 	setFloodH3Data(data: Map<string, Record<string, number>>) {
@@ -138,7 +161,8 @@ export class MapStore {
 	}
 
 	clearFloodParcelState() {
-		this.selectedFloodParcel = null;
+		this.selectedFloodParcels = [];
+		this.floodParcelColorIndex = 0;
 		this.floodH3Data = new Map();
 	}
 }
