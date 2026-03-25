@@ -93,6 +93,26 @@
 			}
 		}) as EventListener);
 
+		mapContainer?.addEventListener('catastro-scores-select', ((e: CustomEvent) => {
+			const { h3index, tipo, area_m2 } = e.detail;
+			const allData = mapStore.scoresH3Data.get(h3index);
+			const scores: Record<string, number> = {};
+			const components: Record<string, number> = {};
+			if (allData) {
+				for (const [key, val] of Object.entries(allData)) {
+					scores[key] = Number(val) || 0;
+				}
+			}
+			// Always add parcel (even without data — shows "sin datos" in UI)
+			mapStore.addScoresParcel({
+				h3index,
+				tipo: tipo ?? 'urbano',
+				area_m2: Number(area_m2) || 0,
+				scores,
+				components,
+			});
+		}) as EventListener);
+
 		document.addEventListener('keydown', (e) => {
 			if (e.key === 'Escape') {
 				if (lassoStore.drawing) {
@@ -207,6 +227,14 @@
 			mapComponent?.hideCatastroLayer();
 			mapStore.clearFloodParcelState();
 		}
+		if (['territorial_scores', 'investment_value', 'natural_risks',
+			'productive_aptitude', 'accessibility', 'change_dynamics',
+			'sociodemographic', 'forest_potential', 'economic_activity'].includes(prevAnalysisId ?? '')) {
+			mapComponent?.clearCatastroScoresChoropleth();
+			mapComponent?.clearFloodParcelHighlight();
+			mapComponent?.hideCatastroLayer();
+			mapStore.clearScoresParcelState();
+		}
 		prevAnalysisId = id;
 
 		if (!id || !analysis) {
@@ -270,6 +298,14 @@
 	$effect(() => {
 		const parcels = mapStore.selectedFloodParcels;
 		mapComponent?.setFloodParcelHighlight(
+			parcels.map(p => ({ h3index: p.h3index, color: p.color }))
+		);
+	});
+
+	// ── Scores parcel selection highlights on catastro layer ─────────────
+	$effect(() => {
+		const parcels = mapStore.selectedScoresParcels;
+		mapComponent?.setScoresParcelHighlight(
 			parcels.map(p => ({ h3index: p.h3index, color: p.color }))
 		);
 	});
@@ -493,6 +529,116 @@
 		}
 	}
 
+	async function handleSelectScoresCatastroDpto(dpto: string, parquetKey: string, centroid: [number, number]) {
+		try {
+			await initDuckDB();
+			const { getScoresDptoUrl } = await import('$lib/config');
+			const url = getScoresDptoUrl(parquetKey);
+			const result = await query(`SELECT * FROM '${url}'`);
+
+			const h3ScoreMap = new Map<string, number>();
+			const h3FullData = new Map<string, Record<string, number>>();
+			for (let i = 0; i < result.numRows; i++) {
+				const row = result.get(i)!.toJSON() as Record<string, any>;
+				const h3 = row.h3index as string;
+				// Use urban_consolidation as default choropleth indicator
+				h3ScoreMap.set(h3, Number(row.urban_consolidation) || 0);
+				const data: Record<string, number> = {};
+				for (const key of Object.keys(row)) {
+					if (key !== 'h3index') data[key] = Number(row[key]) || 0;
+				}
+				h3FullData.set(h3, data);
+			}
+
+			mapStore.setScoresH3Data(h3FullData);
+			mapComponent?.setCatastroScoresChoropleth(h3ScoreMap);
+			mapComponent?.flyToCoords(centroid[1], centroid[0], 11);
+		} catch (e) {
+			console.warn('Failed to load scores catastro data:', e);
+		}
+	}
+
+	async function handleSelectRadioAnalysisDpto(dpto: string, analysisId: string, centroid: [number, number]) {
+		// Fly immediately (centroid from static JSON, no query needed)
+		mapComponent?.flyToCoords(centroid[1], centroid[0], 9);
+
+		try {
+			await initDuckDB();
+			const { RADIO_ANALYSIS_REGISTRY, PARQUETS } = await import('$lib/config');
+			const config = RADIO_ANALYSIS_REGISTRY[analysisId];
+			if (!config) return;
+
+			// Get all columns we need from radio_stats_master
+			const allCols = [...new Set([...config.petalCols.filter(c => !c.source).map(c => c.col), config.choroplethCol])];
+			const colList = allCols.map(c => `rs.${c}`).join(', ');
+
+			const result = await query(`
+				SELECT xw.h3index, ${colList}
+				FROM '${PARQUETS.h3_radio_crosswalk}' xw
+				JOIN '${PARQUETS.radio_stats_master}' rs ON xw.redcode = rs.redcode
+				WHERE rs.dpto = '${dpto.replace(/'/g, "''")}'
+			`);
+
+			const h3ScoreMap = new Map<string, number>();
+			const h3FullData = new Map<string, Record<string, number>>();
+
+			// First pass: collect raw choropleth values for min/max normalization
+			const rawValues: number[] = [];
+			const rows: Array<Record<string, any>> = [];
+			for (let i = 0; i < result.numRows; i++) {
+				const row = result.get(i)!.toJSON() as Record<string, any>;
+				rows.push(row);
+				rawValues.push(Number(row[config.choroplethCol]) || 0);
+			}
+			let cMin = Infinity, cMax = -Infinity;
+			for (const v of rawValues) { if (v < cMin) cMin = v; if (v > cMax) cMax = v; }
+			const cRange = cMax - cMin || 1;
+
+			// Second pass: normalize choropleth to 0-100, store all data
+			for (const row of rows) {
+				const h3 = row.h3index as string;
+				const val = Number(row[config.choroplethCol]) || 0;
+				let normalized = ((val - cMin) / cRange) * 100;
+				if (config.invertChoropleth) normalized = 100 - normalized;
+				h3ScoreMap.set(h3, Math.round(normalized));
+				const data: Record<string, number> = {};
+				for (const col of allCols) {
+					data[col] = Number(row[col]) || 0;
+				}
+				h3FullData.set(h3, data);
+			}
+
+			// Load catastro_by_radio cols if needed (e.g., n_new_parcels_90d)
+			const catCols = config.petalCols.filter(c => c.source === 'catastro_by_radio');
+			if (catCols.length > 0) {
+				const catColList = catCols.map(c => `cb.${c.col}`).join(', ');
+				const catResult = await query(`
+					SELECT xw.h3index, ${catColList}
+					FROM '${PARQUETS.h3_radio_crosswalk}' xw
+					JOIN '${PARQUETS.catastro_by_radio}' cb ON xw.redcode = cb.redcode
+					WHERE cb.redcode IN (
+						SELECT redcode FROM '${PARQUETS.radio_stats_master}' WHERE dpto = '${dpto.replace(/'/g, "''")}'
+					)
+				`);
+				for (let i = 0; i < catResult.numRows; i++) {
+					const row = catResult.get(i)!.toJSON() as Record<string, any>;
+					const h3 = row.h3index as string;
+					const existing = h3FullData.get(h3) || {};
+					for (const c of catCols) {
+						existing[c.col] = Number(row[c.col]) || 0;
+					}
+					h3FullData.set(h3, existing);
+				}
+			}
+
+			// Data loaded successfully
+			mapStore.setScoresH3Data(h3FullData);
+			mapComponent?.setCatastroScoresChoropleth(h3ScoreMap);
+		} catch (e) {
+			console.error('[RadioAnalysis] Failed:', e);
+		}
+	}
+
 	async function handleSelectFloodDpto(dpto: string, parquetKey: string, centroid: [number, number]) {
 		mapComponent?.clearHexChoropleth();
 		mapComponent?.clearHexZoneHighlight();
@@ -516,6 +662,7 @@
 		mapStore.clearChatState();
 		mapStore.clearHexState();
 		mapStore.clearFloodParcelState();
+		mapStore.clearScoresParcelState();
 		hexStore.clearAll();
 		mapComponent?.clearRadioHighlight();
 		mapComponent?.clearChatHighlights();
@@ -523,6 +670,7 @@
 		mapComponent?.clearHexChoropleth();
 		mapComponent?.clearHexZoneHighlight();
 		mapComponent?.clearCatastroFloodChoropleth();
+		mapComponent?.clearCatastroScoresChoropleth();
 		mapComponent?.clearFloodParcelHighlight();
 		lensStore.clearSelection();
 		lensStore.clearDpto();
@@ -639,6 +787,8 @@
 				onSelectFloodDpto={handleSelectFloodDpto}
 				onSelectFloodCatastroDpto={handleSelectFloodCatastroDpto}
 			onSelectCatastroDpto={handleSelectCatastroDpto}
+			onSelectScoresCatastroDpto={handleSelectScoresCatastroDpto}
+			onSelectRadioAnalysisDpto={handleSelectRadioAnalysisDpto}
 			/>
 		</div>
 	</div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { LENS_CONFIG, HEX_LAYER_REGISTRY, type AnalysisConfig } from '$lib/config';
+	import { LENS_CONFIG, HEX_LAYER_REGISTRY, RADIO_ANALYSIS_REGISTRY, type AnalysisConfig } from '$lib/config';
 	import type { LensStore } from '$lib/stores/lens.svelte';
 	import type { MapStore } from '$lib/stores/map.svelte';
 	import type { HexStore } from '$lib/stores/hex.svelte';
@@ -8,6 +8,8 @@
 	import FloodRiskAnalysis from './analyses/FloodRiskAnalysis.svelte';
 	import CatastroAnalysis from './analyses/CatastroAnalysis.svelte';
 	import OvertureAnalysis from './analyses/OvertureAnalysis.svelte';
+	import TerritorialScoresAnalysis from './analyses/TerritorialScoresAnalysis.svelte';
+	import RadioAnalysis from './analyses/RadioAnalysis.svelte';
 
 	let {
 		lensStore,
@@ -18,7 +20,10 @@
 		onSelectFloodDpto,
 		onSelectFloodCatastroDpto,
 		onSelectCatastroDpto,
+		onSelectScoresCatastroDpto,
+		onSelectRadioAnalysisDpto,
 	}: {
+
 		lensStore: LensStore;
 		mapStore: MapStore;
 		hexStore: HexStore;
@@ -27,6 +32,8 @@
 		onSelectFloodDpto: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
 		onSelectFloodCatastroDpto?: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
 		onSelectCatastroDpto?: (centroid: [number, number] | null) => void;
+		onSelectScoresCatastroDpto?: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
+		onSelectRadioAnalysisDpto?: (dpto: string, analysisId: string, centroid: [number, number]) => void;
 	} = $props();
 
 	const analysis = $derived(lensStore.activeAnalysis);
@@ -59,6 +66,10 @@
 			<FloodRiskAnalysis {lensStore} {mapStore} {hexStore} {onRemoveRadio} {onSelectFloodDpto} {onSelectFloodCatastroDpto} />
 		{:else if analysis.id === 'catastro'}
 			<CatastroAnalysis {lensStore} {mapStore} {onRemoveRadio} {onSelectCatastroDpto} />
+		{:else if analysis.id === 'territorial_scores'}
+			<TerritorialScoresAnalysis {lensStore} {mapStore} {hexStore} {onSelectScoresCatastroDpto} />
+		{:else if RADIO_ANALYSIS_REGISTRY[analysis.id]}
+			<RadioAnalysis config={RADIO_ANALYSIS_REGISTRY[analysis.id]} {mapStore} {hexStore} onSelectRadioAnalysisDpto={onSelectRadioAnalysisDpto} />
 		{:else if HEX_LAYER_REGISTRY[analysis.id]}
 			<OvertureAnalysis {analysis} {hexStore} />
 		{:else}

@@ -102,6 +102,32 @@ def run(args):
 
         validated.append((theme, path))
 
+    # ── Step 2b: Compute territorial scores ──────────────────────
+    step("2b", "Compute territorial scores (8 indicators)")
+    from compute_overture_scores import main as compute_scores_main
+    old_argv = sys.argv
+    sys.argv = ["compute_overture_scores.py"]
+    scores_result = compute_scores_main()
+    sys.argv = old_argv
+
+    if scores_result != 0:
+        print("  ERROR: Score computation failed.")
+        return 1
+
+    scores_path = os.path.join(OUTPUT_DIR, "overture_scores.parquet")
+
+    # ── Step 2c: Split scores by department ──────────────────────
+    step("2c", "Split scores by department")
+    from split_scores_by_dpto import main as split_scores_main
+    old_argv = sys.argv
+    sys.argv = ["split_scores_by_dpto.py"]
+    split_result = split_scores_main()
+    sys.argv = old_argv
+
+    if split_result != 0:
+        print("  ERROR: Score splitting failed.")
+        return 1
+
     # ── Step 3: Upload to R2 ──────────────────────────────────────
     if args.skip_upload:
         step(3, "SKIPPED (--skip-upload)")
@@ -116,6 +142,24 @@ def run(args):
                 print(f"  ERROR: Upload failed for {theme}.")
                 return 1
 
+        # Upload unified scores parquet
+        if os.path.exists(scores_path):
+            success = upload_file(scores_path, "data/overture_scores.parquet")
+            if not success:
+                print("  ERROR: Upload failed for overture_scores.")
+                return 1
+
+        # Upload per-department score parquets
+        scores_dpto_dir = os.path.join(OUTPUT_DIR, "scores_dpto")
+        if os.path.isdir(scores_dpto_dir):
+            import glob
+            for f in sorted(glob.glob(os.path.join(scores_dpto_dir, "*.parquet"))):
+                r2_key = f"data/scores_dpto/{os.path.basename(f)}"
+                success = upload_file(f, r2_key)
+                if not success:
+                    print(f"  ERROR: Upload failed for {os.path.basename(f)}.")
+                    return 1
+
     # ── Summary ───────────────────────────────────────────────────
     elapsed = time.time() - start_time
     step("Done", "Summary")
@@ -125,6 +169,9 @@ def run(args):
     for theme, path in validated:
         size_mb = os.path.getsize(path) / (1024 * 1024)
         print(f"  -> {theme}: {size_mb:.1f} MB")
+    if os.path.exists(scores_path):
+        size_mb = os.path.getsize(scores_path) / (1024 * 1024)
+        print(f"  -> overture_scores: {size_mb:.1f} MB")
     if not args.skip_upload:
         print("  R2 upload: OK")
 

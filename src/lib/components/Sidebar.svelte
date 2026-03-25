@@ -30,6 +30,8 @@
 		onSelectFloodDpto,
 		onSelectFloodCatastroDpto,
 		onSelectCatastroDpto,
+		onSelectScoresCatastroDpto,
+		onSelectRadioAnalysisDpto,
 	}: {
 		mapStore: MapStore;
 		lensStore: LensStore;
@@ -45,6 +47,8 @@
 		onSelectFloodDpto: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
 		onSelectFloodCatastroDpto?: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
 		onSelectCatastroDpto?: (centroid: [number, number] | null) => void;
+		onSelectScoresCatastroDpto?: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
+		onSelectRadioAnalysisDpto?: (dpto: string, analysisId: string, centroid: [number, number]) => void;
 	} = $props();
 
 	let collapsed = $state(true);
@@ -99,7 +103,7 @@
 	{:else if lensStore.activeLens && lensStore.activeAnalysis}
 		<!-- Analysis active: show analysis view -->
 		<div class="chart-scroll">
-			<AnalysisView {lensStore} {mapStore} {hexStore} onBack={handleBack} {onRemoveRadio} {onSelectFloodDpto} {onSelectFloodCatastroDpto} {onSelectCatastroDpto} />
+			<AnalysisView {lensStore} {mapStore} {hexStore} onBack={handleBack} {onRemoveRadio} {onSelectFloodDpto} {onSelectFloodCatastroDpto} {onSelectCatastroDpto} {onSelectScoresCatastroDpto} {onSelectRadioAnalysisDpto} />
 		</div>
 	{:else if mapStore.selectedRadios.size > 0}
 		<!-- No lens, radios selected: comparison chart -->

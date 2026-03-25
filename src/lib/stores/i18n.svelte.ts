@@ -188,7 +188,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	// Flood risk analysis
 	'analysis.opportunities.title': { es: 'Oportunidades', en: 'Opportunities', gn: "Teko porã" },
 	'analysis.opportunities.desc': { es: 'Ranking de radios con mayor potencial según el lente activo', en: 'Ranking of tracts with highest potential for the active lens', gn: "Radio oĩva teko porãve" },
-	'analysis.floodRisk.title': { es: 'Riesgo hídrico', en: 'Flood risk', gn: "Y tuicha mba'asy" },
+	'analysis.floodRisk.title': { es: '¿Tu parcela tiene riesgo de inundación?', en: 'Is your parcel at flood risk?', gn: "Nde yvy oguerekópa ysoguy mba'asy?" },
 	'analysis.floodRisk.desc': { es: 'Presencia histórica de agua (JRC 1984–2021) e inundación actual (Sentinel-1 SAR) por parcela catastral', en: 'Historical water presence (JRC 1984–2021) and current flooding (Sentinel-1 SAR) per cadastral parcel', gn: "Y rehegua historia guive (JRC 1984–2021) ha ko'ag̃a ysoguy (Sentinel-1 SAR) yvy rupi" },
 	'analysis.floodRisk.legend': { es: 'Riesgo hídrico (0–100)', en: 'Flood risk (0–100)', gn: "Y tuicha mba'asy (0–100)" },
 	'analysis.flood.riskScore': { es: 'Score de riesgo', en: 'Risk score', gn: "Mba'asy score" },
@@ -216,6 +216,33 @@ const dict: Record<string, Record<Locale, string>> = {
 	'data.source.buildings': { es: 'Fuente: Detección por IA sobre imágenes satelitales', en: 'Source: AI detection on satellite imagery', gn: "Moñe'ẽha: IA ohechaukáva satélite ra'ãnga rupi" },
 	'data.source.catastro': { es: 'Fuente: Dirección General de Catastro, Misiones', en: 'Source: Dirección General de Catastro, Misiones', gn: "Moñe'ẽha: Catastro, Misiones" },
 	'data.source.overture': { es: 'Fuente: Overture Maps Foundation via walkthru.earth (CC BY 4.0)', en: 'Source: Overture Maps Foundation via walkthru.earth (CC BY 4.0)', gn: "Moñe'ẽha: Overture Maps Foundation (CC BY 4.0)" },
+
+	// ── Radio-based analyses ──
+	'analysis.investment.title': { es: '¿Cuánto vale invertir acá?', en: 'How much is it worth investing here?', gn: "Mboy valépa oñeinverti ko'ápe?" },
+	'analysis.investment.desc': { es: 'Precios, oferta, oportunidad y atractivo del mercado inmobiliario por parcela', en: 'Prices, supply, opportunity and real estate market attractiveness per parcel', gn: "Hepy, teko porã ha ñemuhague yvy rupi" },
+	'analysis.risks.title': { es: '¿Qué riesgos naturales tiene tu terreno?', en: 'What natural risks does your land have?', gn: "Mba'épa ivaíva oguereko nde yvy?" },
+	'analysis.risks.desc': { es: 'Inundación, deslizamiento, erosión, pendiente y deforestación — riesgo integral por parcela', en: 'Flooding, landslide, erosion, slope and deforestation — integrated risk per parcel', gn: "Ysoguy, yvy ho'a, yvy ñembyai — mba'asy yvy rupi" },
+	'analysis.aptitude.title': { es: '¿Es apta esta tierra para producir?', en: 'Is this land suitable for production?', gn: "Ko yvy oikoporãpa temitỹ reheve?" },
+	'analysis.aptitude.desc': { es: 'Suelo, lluvia, pendiente y aptitud agrícola — potencial productivo por parcela', en: 'Soil, rainfall, slope and agricultural aptitude — productive potential per parcel', gn: "Yvy, ama, yvy ho'a ha temitỹ teko porã" },
+	'analysis.accessibility.title': { es: '¿Qué tan accesible es esta zona?', en: 'How accessible is this area?', gn: "Mba'éichapa ojehupyty ko yvy?" },
+	'analysis.accessibility.desc': { es: 'Tiempo a Posadas, hospital, escuela y ruta — accesibilidad a servicios por parcela', en: 'Time to Posadas, hospital, school and road — service accessibility per parcel', gn: "Aravo Posadas peve, hospital, mbo'ehao ha tape" },
+	'analysis.change.title': { es: '¿Cómo está cambiando esta zona?', en: 'How is this area changing?', gn: "Mba'éichapa oñemoambue ko yvy?" },
+	'analysis.change.desc': { es: 'Parcelas nuevas, deforestación, densidad edilicia — dinámica territorial', en: 'New parcels, deforestation, building density — territorial dynamics', gn: "Yvy pyahu, ka'aguy jepe'a, óga papapy" },
+	'analysis.socio.title': { es: '¿Cómo vive la gente en esta zona?', en: 'How do people live in this area?', gn: "Mba'éichapa oiko yvypóra ko'ápe?" },
+	'analysis.socio.desc': { es: 'Densidad, pobreza, hacinamiento, propiedad y conectividad — perfil censal por parcela', en: 'Density, poverty, overcrowding, homeownership and connectivity — census profile per parcel', gn: "Yvypóra papapy, mba'e'ỹ, oiko hatã ha ñanduti" },
+	'analysis.forest.title': { es: '¿Cuál es el potencial forestal de esta zona?', en: 'What is the forest potential of this area?', gn: "Mba'éichapa ka'aguy oĩ ko yvy-pe?" },
+	'analysis.forest.desc': { es: 'Cobertura arbórea, altura de dosel, NDVI, bosque nativo — perfil vegetal por parcela', en: 'Tree cover, canopy height, NDVI, native forest — vegetation profile per parcel', gn: "Ka'aguy, yvyra yvatekue, NDVI" },
+	'analysis.economic.title': { es: '¿Cuánta actividad económica hay en esta zona?', en: 'How much economic activity is there?', gn: "Mboy mba'apo oĩ ko'ápe?" },
+	'analysis.economic.desc': { es: 'Empleo, actividad, formación universitaria, luces nocturnas — dinamismo económico por parcela', en: 'Employment, activity, university education, night lights — economic dynamism per parcel', gn: "Mba'apo, teko, mbo'ehao guasu, pytũ rendy" },
+
+	// ── Territorial Scores ──
+	'analysis.scores.title': { es: '¿Qué tan bien equipada está esta zona?', en: 'How well-equipped is this area?', gn: "Mba'éichapa oĩ ko yvy?" },
+	'analysis.scores.desc': { es: 'Pavimentación, consolidación, servicios, comercio, conectividad, urbanización y más — 8 indicadores por parcela catastral', en: 'Paving, consolidation, services, commerce, connectivity, urbanisation and more — 8 indicators per cadastral parcel', gn: "8 rechaukaha yvy rupi: tape, óga, servicio, tape joapy, mba'apo" },
+	'analysis.scores.selectDept': { es: 'Seleccioná un departamento', en: 'Select a department', gn: 'Eiporavo departamento' },
+	'analysis.scores.clickHint': { es: 'Hacé click en el mapa para ver el perfil de la parcela', en: 'Click on the map to see the parcel profile', gn: 'Ehesakutu mapa-pe ehecha hag̃ua yvy rechaukaha' },
+	'analysis.scores.selectIndicator': { es: 'Indicador del mapa', en: 'Map indicator', gn: "Mapa rechaukaha" },
+	'analysis.scores.overall': { es: 'Promedio general', en: 'Overall average', gn: 'Mbytekue' },
+	'analysis.scores.hexCount': { es: 'Zonas analizadas', en: 'Areas analysed', gn: 'Yvy ojehechauka' },
 
 	// ── Overture analyses: Invertir ──
 	'analysis.buildingDensity.title': { es: 'Densidad de edificaciones', en: 'Building density', gn: "Óga peteĩteĩ" },
@@ -299,7 +326,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'ov.roadCycleway': { es: 'Ciclovías', en: 'Cycleways', gn: "Bicicleta tape" },
 	'ov.roadLivingStreet': { es: 'Calles de convivencia', en: 'Living streets', gn: "Tape oiko porã" },
 	'ov.roadSteps': { es: 'Escaleras', en: 'Steps', gn: "Escalera" },
-	'analysis.catastro.title': { es: 'Catastro parcelario', en: 'Cadastral parcels', gn: "Yvy ñemohenda" },
+	'analysis.catastro.title': { es: '¿A qué condiciones básicas accede tu parcela?', en: 'What basic conditions does your parcel have?', gn: "Mba'épa oguereko nde yvy?" },
 	'analysis.catastro.desc': { es: 'Densidad de parcelas urbanas y rurales, áreas medias y presión inmobiliaria (parcelas nuevas)', en: 'Urban and rural parcel density, average areas and real estate pressure (new parcels)', gn: "Yvy ñemohenda táva ha ka'aguy rupi" },
 	'analysis.catastro.legend': { es: 'Total parcelas por radio', en: 'Total parcels per tract', gn: "Yvy opaite rupi" },
 	'analysis.catastro.totalUrban': { es: 'Parcelas urbanas', en: 'Urban parcels', gn: "Yvy táva" },

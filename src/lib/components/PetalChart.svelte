@@ -34,34 +34,37 @@
 		}
 	});
 
+	const axisCount = $derived(labels.length || 6);
+
 	$effect(() => {
 		const flat: number[] = [];
 		for (const layer of layers) {
-			for (let i = 0; i < 6; i++) flat.push(layer.values[i] ?? 0);
+			for (let i = 0; i < axisCount; i++) flat.push(layer.values[i] ?? 0);
 		}
 		animAll.set(flat);
 	});
 
 	function layerValues(layerIdx: number): number[] {
-		const start = layerIdx * 6;
-		return $animAll.slice(start, start + 6);
+		const start = layerIdx * axisCount;
+		return $animAll.slice(start, start + axisCount);
 	}
 
-	const angles = [0, 1, 2, 3, 4, 5].map(i => (Math.PI * 2 * i) / 6 - Math.PI / 2);
+	const angles = $derived(Array.from({length: axisCount}, (_, i) => (Math.PI * 2 * i) / axisCount - Math.PI / 2));
 
 	function buildPolygonPath(vals: number[]): string {
+		const n = axisCount;
 		const points: [number, number][] = [];
-		for (let i = 0; i < 6; i++) {
+		for (let i = 0; i < n; i++) {
 			const v = Math.max(vals[i] ?? 0, 0) / 100;
 			const dist = v * maxR;
 			const angle = angles[i];
 			points.push([cx + Math.cos(angle) * dist, cy + Math.sin(angle) * dist]);
 		}
 		let d = `M ${points[0][0]},${points[0][1]}`;
-		for (let i = 0; i < 6; i++) {
-			const next = points[(i + 1) % 6];
+		for (let i = 0; i < n; i++) {
+			const next = points[(i + 1) % n];
 			const cpDist = maxR * 0.12;
-			const midAngle = (angles[i] + angles[(i + 1) % 6]) / 2;
+			const midAngle = (angles[i] + angles[(i + 1) % n]) / 2;
 			const cpx = cx + Math.cos(midAngle) * cpDist;
 			const cpy = cy + Math.sin(midAngle) * cpDist;
 			d += ` Q ${cpx},${cpy} ${next[0]},${next[1]}`;
@@ -125,7 +128,7 @@
 	</text>
 
 	<!-- Axes -->
-	{#each [0, 1, 2, 3, 4, 5] as i}
+	{#each Array.from({length: axisCount}, (_, i) => i) as i}
 		{@const end = axisEndpoint(i)}
 		<line x1={cx} y1={cy} x2={end.x} y2={end.y}
 			stroke="rgba(255,255,255,0.25)" stroke-width="0.7" />
@@ -142,7 +145,7 @@
 	<!-- Dots for all layers -->
 	{#each layers as layer, li}
 		{@const vals = layerValues(li)}
-		{#each [0, 1, 2, 3, 4, 5] as i}
+		{#each Array.from({length: axisCount}, (_, i) => i) as i}
 			{@const v = Math.max(vals[i] ?? 0, 0) / 100}
 			<circle
 				cx={cx + Math.cos(angles[i]) * v * maxR}
@@ -152,7 +155,7 @@
 	{/each}
 
 	<!-- Labels -->
-	{#each [0, 1, 2, 3, 4, 5] as i}
+	{#each Array.from({length: axisCount}, (_, i) => i) as i}
 		{@const pos = labelPos(i)}
 		{@const lines = splitLabel(labels[i] ?? '')}
 		{@const offsetY = -(lines.length - 1) * 7}
