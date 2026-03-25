@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { LENS_CONFIG, type AnalysisConfig } from '$lib/config';
+	import { LENS_CONFIG, HEX_LAYER_REGISTRY, type AnalysisConfig } from '$lib/config';
 	import type { LensStore } from '$lib/stores/lens.svelte';
 	import type { MapStore } from '$lib/stores/map.svelte';
 	import type { HexStore } from '$lib/stores/hex.svelte';
@@ -7,6 +7,7 @@
 	import RealEstateAnalysis from './analyses/RealEstateAnalysis.svelte';
 	import FloodRiskAnalysis from './analyses/FloodRiskAnalysis.svelte';
 	import CatastroAnalysis from './analyses/CatastroAnalysis.svelte';
+	import OvertureAnalysis from './analyses/OvertureAnalysis.svelte';
 
 	let {
 		lensStore,
@@ -58,6 +59,8 @@
 			<FloodRiskAnalysis {lensStore} {mapStore} {hexStore} {onRemoveRadio} {onSelectFloodDpto} {onSelectFloodCatastroDpto} />
 		{:else if analysis.id === 'catastro'}
 			<CatastroAnalysis {lensStore} {mapStore} {onRemoveRadio} {onSelectCatastroDpto} />
+		{:else if HEX_LAYER_REGISTRY[analysis.id]}
+			<OvertureAnalysis {analysis} {hexStore} />
 		{:else}
 			<p class="text-text-dim text-[10px]">{i18n.t(analysis.descKey)}</p>
 		{/if}

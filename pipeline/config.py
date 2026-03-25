@@ -38,3 +38,12 @@ GRID_PATH = os.path.join(OUTPUT_DIR, "hexagons.geojson")
 PARQUET_PATH = os.path.join(OUTPUT_DIR, "hex_flood_risk.parquet")
 CATASTRO_PARQUET_PATH = os.path.join(OUTPUT_DIR, "catastro_by_radio.parquet")
 CATASTRO_CHANGES_PATH = os.path.join(OUTPUT_DIR, "catastro_changes_summary.parquet")
+
+# ── Overture Maps (walkthru.earth H3-indexed indices) ───────────────────
+OVERTURE_RELEASE = "2026-03-18.0"
+OVERTURE_THEMES = ["buildings", "transportation", "places", "base"]
+OVERTURE_BASE_URL = (
+    "https://data.source.coop/walkthru-earth/indices/"
+    "{theme}-index/v1/release={release}/h3/h3_res=9/data.parquet"
+)
+MIN_OVERTURE_HEXAGONS = 10_000  # Sparse layers (transport, places) have <50K populated cells

@@ -231,7 +231,7 @@
 		}
 
 		// Hex-based analyses use HexStore multi-resolution system
-		if (analysis.spatialUnit === 'hexagon' && analysis.choropleth) {
+		if (analysis.spatialUnit === 'hexagon' && (analysis.choropleth || HEX_LAYER_REGISTRY[analysis.id])) {
 			analysisDataLoaded = false;
 			mapComponent?.clearAnalysisChoropleth();
 			const layerCfg = HEX_LAYER_REGISTRY[analysis.id];

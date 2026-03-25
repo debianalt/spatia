@@ -25,6 +25,10 @@ UPLOAD_MAP = {
     "hexagons-v2.pmtiles": "tiles/hexagons-v2.pmtiles",
     "catastro_by_radio.parquet": "data/catastro_by_radio.parquet",
     "catastro_changes_summary.parquet": "data/catastro_changes_summary.parquet",
+    "overture_buildings.parquet": "data/overture_buildings.parquet",
+    "overture_transportation.parquet": "data/overture_transportation.parquet",
+    "overture_places.parquet": "data/overture_places.parquet",
+    "overture_base.parquet": "data/overture_base.parquet",
 }
 
 
