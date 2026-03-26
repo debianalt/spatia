@@ -101,6 +101,14 @@
 		hexStore.setLayer(analysis.id);
 	}
 
+	// Data download URL for selected department
+	const dataUrl = $derived.by(() => {
+		if (!selectedDpto || !layerCfg || !deptList.length) return null;
+		const dept = deptList.find((d: any) => d.dpto === selectedDpto);
+		if (!dept) return null;
+		return `https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_dpto/sat_${layerCfg.id}_${dept.parquetKey}.parquet`;
+	});
+
 	// Component variables (skip 'score' itself)
 	const componentVars = $derived(
 		layerCfg?.variables.filter(v => v.col !== 'score') ?? []
@@ -259,9 +267,16 @@
 		{/if}
 
 		{#if reportUrl}
-			<a class="download-btn" href={reportUrl} target="_blank" rel="noopener">
-				Descargar informe PDF
-			</a>
+			<div class="download-row">
+				<a class="download-btn" href={reportUrl} target="_blank" rel="noopener">
+					Informe PDF
+				</a>
+				{#if dataUrl}
+					<a class="download-btn download-secondary" href={dataUrl} target="_blank" rel="noopener">
+						Datos (Parquet)
+					</a>
+				{/if}
+			</div>
 		{/if}
 
 		{#if freshness}
@@ -484,6 +499,10 @@
 	/* ── Download button ── */
 	.download-btn { display: block; text-align: center; padding: 8px 12px; margin: 10px 0; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); border-radius: 6px; color: #60a5fa; font-size: 10px; font-weight: 600; text-decoration: none; transition: all 0.15s; cursor: pointer; }
 	.download-btn:hover { background: rgba(59,130,246,0.25); border-color: rgba(59,130,246,0.5); }
+	.download-row { display: flex; gap: 6px; margin: 10px 0; }
+	.download-row .download-btn { flex: 1; }
+	.download-secondary { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); color: #a3a3a3; }
+	.download-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); color: #d4d4d4; }
 
 	/* ── Source box ── */
 	.source-note-box { margin-top: 10px; padding: 8px 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; font-size: 9px; color: #e2e8f0; line-height: 1.5; }

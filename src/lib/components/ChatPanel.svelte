@@ -149,9 +149,10 @@
 		<button
 			class="collapse-btn"
 			onclick={() => { collapsed = false; setTimeout(() => inputEl?.focus(), 100); }}
-			title="Spatia Chat"
+			title="Spatia Chat — Asistente territorial con IA"
 		>
-			<span class="text-accent text-base">✦</span>
+			<span class="chat-icon">IA</span>
+			<span class="chat-label">Chat</span>
 		</button>
 	</div>
 {:else}
@@ -345,19 +346,33 @@
 	}
 	.collapse-btn {
 		width: 36px;
-		height: 36px;
 		border-radius: 8px;
 		border: 1px solid var(--color-border);
 		background: rgba(255, 255, 255, 0.04);
 		cursor: pointer;
 		display: flex;
+		flex-direction: column;
 		align-items: center;
 		justify-content: center;
+		gap: 4px;
+		padding: 8px 0;
 		transition: all 0.15s;
 	}
 	.collapse-btn:hover {
 		border-color: var(--color-accent);
 		background: rgba(96, 165, 250, 0.1);
+	}
+	.chat-icon {
+		font-size: 10px;
+		font-weight: 800;
+		color: #60a5fa;
+		letter-spacing: -0.5px;
+	}
+	.chat-label {
+		font-size: 7px;
+		color: #737373;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
 	}
 
 	.chat-column {

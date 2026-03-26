@@ -5,66 +5,49 @@
 
 	let { lensStore }: { lensStore: LensStore } = $props();
 
-	const lensIds: LensId[] = ['invertir', 'producir', 'servir', 'vivir'];
-
-
+	const lensIds: LensId[] = ['vivir', 'invertir', 'producir', 'servir'];
 </script>
 
 <div class="lens-bar">
-	<div class="lens-pills">
-		{#each lensIds as id}
-			{@const cfg = LENS_CONFIG[id]}
-			{@const active = lensStore.activeLens === id}
-			<button
-				class="lens-pill"
-				class:active
-				style:--lc={cfg.color}
-				onclick={() => lensStore.setLens(id)}
-			>
-				<span class="lens-label">{cfg.label[i18n.locale as 'es' | 'en' | 'gn']}</span>
-			</button>
-		{/each}
-	</div>
+	{#each lensIds as id}
+		{@const cfg = LENS_CONFIG[id]}
+		{@const active = lensStore.activeLens === id}
+		<button
+			class="lens-btn"
+			class:active
+			style:--lc={cfg.color}
+			onclick={() => lensStore.setLens(id)}
+		>
+			{cfg.label[i18n.locale as 'es' | 'en' | 'gn']}
+		</button>
+	{/each}
 </div>
 
 <style>
 	.lens-bar {
 		display: flex;
-		flex-direction: column;
-		align-items: center;
 		gap: 2px;
 	}
-	.lens-pills {
-		display: flex;
-		gap: 4px;
-	}
-	.lens-pill {
-		display: flex;
-		align-items: center;
-		gap: 4px;
-		padding: 3px 10px;
-		border-radius: 9999px;
-		border: 1px solid #334155;
+	.lens-btn {
+		padding: 4px 14px;
+		border: none;
+		border-bottom: 2px solid transparent;
 		background: transparent;
-		color: #d4d4d4;
+		color: rgba(255,255,255,0.5);
 		font-size: 11px;
 		font-weight: 500;
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: all 0.15s;
 		white-space: nowrap;
+		letter-spacing: 0.02em;
 	}
-	.lens-pill:hover {
-		border-color: var(--lc);
+	.lens-btn:hover {
+		color: rgba(255,255,255,0.8);
+		border-bottom-color: rgba(255,255,255,0.2);
+	}
+	.lens-btn.active {
 		color: #ffffff;
-		background: color-mix(in srgb, var(--lc) 10%, transparent);
-	}
-	.lens-pill.active {
-		border-color: var(--lc);
-		color: #ffffff;
-		background: color-mix(in srgb, var(--lc) 20%, transparent);
-		font-weight: 600;
-	}
-	.lens-label {
-		line-height: 1;
+		font-weight: 700;
+		border-bottom-color: var(--lc);
 	}
 </style>

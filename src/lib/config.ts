@@ -43,7 +43,22 @@ export const TERRAIN_CONFIG = {
 } as const;
 
 export function getParquetUrl(name: string): string {
-	const bust = name === 'hex_flood_risk' ? '?v=3' : '';
+	const busts: Record<string, string> = {
+		hex_flood_risk: '?v=3',
+		sat_environmental_risk: '?v=2',
+		sat_climate_comfort: '?v=2',
+		sat_green_capital: '?v=2',
+		sat_change_pressure: '?v=2',
+		sat_location_value: '?v=2',
+		sat_agri_potential: '?v=2',
+		sat_forest_health: '?v=2',
+		sat_forestry_aptitude: '?v=2',
+		sat_isolation_index: '?v=2',
+		sat_territorial_gap: '?v=2',
+		sat_health_access: '?v=1',
+		sat_education_gap: '?v=1',
+	};
+	const bust = busts[name] || '';
 	return `${getBase()}/data/${name}.parquet${bust}`;
 }
 
