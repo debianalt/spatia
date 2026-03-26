@@ -60,7 +60,7 @@ ALL_ANALYSES = [
     "environmental_risk", "climate_comfort", "green_capital",
     "change_pressure", "location_value", "agri_potential",
     "forest_health", "forestry_aptitude", "isolation_index",
-    "territorial_gap",
+    "territorial_gap", "health_access", "education_gap",
 ]
 
 ANALYSIS_META = {
@@ -205,6 +205,34 @@ ANALYSIS_META = {
         "weights": "VIIRS inv. 15% + NBI 25% + Sin agua 25% + Sin cloacas 20% + Aislamiento 15%",
         "interpretation_high": "presenta alta brecha territorial: la actividad económica no se traduce en acceso a servicios básicos",
         "interpretation_low": "tiene bajo nivel de brecha: los servicios básicos están alineados con el nivel de actividad económica",
+    },
+    "health_access": {
+        "title": "¿Dónde faltan servicios de salud?",
+        "subtitle": "Brecha de acceso a servicios sanitarios",
+        "components": {
+            "c_healthcare_time": {"name": "Tiempo motorizado a salud", "source": "Oxford MAP 2019 (1km)", "desc": "Minutos de viaje motorizado al centro de salud más cercano.", "unit": "percentil"},
+            "c_healthcare_walk": {"name": "Tiempo a pie a salud", "source": "Oxford MAP 2019 (1km)", "desc": "Minutos de caminata al centro de salud más cercano.", "unit": "percentil"},
+            "c_pop_density": {"name": "Densidad poblacional", "source": "INDEC Censo 2022 (radio censal)", "desc": "Habitantes por km². Mayor densidad = mayor demanda de servicios.", "unit": "percentil"},
+            "c_health_coverage": {"name": "Cobertura de salud", "source": "INDEC Censo 2022 (radio censal)", "desc": "Porcentaje de población con cobertura de salud (invertido). Menor cobertura = mayor brecha.", "unit": "percentil (inv.)"},
+            "c_nbi": {"name": "NBI", "source": "INDEC Censo 2022 (radio censal)", "desc": "Porcentaje de hogares con necesidades básicas insatisfechas. Vulnerabilidad social amplifica déficit sanitario.", "unit": "percentil"},
+        },
+        "weights": "Tiempo motor 30% + Tiempo a pie 20% + Densidad 15% + Cobertura inv. 15% + NBI 20%",
+        "interpretation_high": "presenta alto déficit de acceso a salud: lejanía a centros, alta demanda y baja cobertura",
+        "interpretation_low": "tiene buen acceso a servicios de salud con cobertura adecuada y cercanía a centros sanitarios",
+    },
+    "education_gap": {
+        "title": "¿Dónde hay mayor brecha educativa?",
+        "subtitle": "Déficit educativo territorial",
+        "components": {
+            "c_no_instruction": {"name": "Sin instrucción", "source": "INDEC Censo 2022 (radio censal)", "desc": "Porcentaje de población sin ningún nivel educativo completado.", "unit": "percentil"},
+            "c_dropout_13_18": {"name": "Deserción 13-18 años", "source": "INDEC Censo 2022 (radio censal)", "desc": "Tasa de inasistencia escolar en el rango 13-18 años.", "unit": "percentil"},
+            "c_only_primary": {"name": "Solo primaria completa", "source": "INDEC Censo 2022 (radio censal)", "desc": "Porcentaje de población cuyo máximo nivel es primario completo.", "unit": "percentil"},
+            "c_university": {"name": "Universitarios", "source": "INDEC Censo 2022 (radio censal)", "desc": "Porcentaje con título universitario (invertido). Más universitarios = menor brecha.", "unit": "percentil (inv.)"},
+            "c_isolation": {"name": "Aislamiento", "source": "Nelson et al. 2019 (1km)", "desc": "Tiempo de viaje a ciudad de ≥20k habitantes. Aislamiento dificulta acceso a educación superior.", "unit": "percentil"},
+        },
+        "weights": "Sin instrucción 25% + Deserción 25% + Solo primaria 20% + Universitarios inv. 15% + Aislamiento 15%",
+        "interpretation_high": "presenta alta brecha educativa con deserción, bajo nivel máximo y aislamiento que limita el acceso",
+        "interpretation_low": "tiene indicadores educativos favorables con baja deserción y acceso a formación superior",
     },
 }
 
