@@ -45,7 +45,7 @@
 		try {
 			await initDuckDB();
 			const col = config.choroplethCol;
-			const sortDir = config.invertChoropleth ? 'ASC' : 'DESC';
+			const sortDir = 'DESC';
 			const result = await query(`
 				SELECT dpto,
 					ROUND(AVG(CAST(${col} AS DOUBLE)), 1) as avg_val,
@@ -229,7 +229,7 @@
 					<button class="dept-row" onclick={() => handleDptoClick(dept)}>
 						<div class="dept-name">{dept.dpto}</div>
 						<div class="dept-bar-wrap">
-							<div class="dept-bar" style:width="{Math.min((dept.avg_val / maxDeptVal) * 100, 100)}%"
+							<div class="dept-bar" style:width="{Math.max(Math.min((dept.avg_val / maxDeptVal) * 100, 100), 3)}%"
 								style:background={getColor(dept.avg_val, maxDeptVal)}></div>
 						</div>
 						<div class="dept-score" style:color={getColor(dept.avg_val, maxDeptVal)}>

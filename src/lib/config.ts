@@ -373,21 +373,6 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		status: 'available',
 		spatialUnit: 'catastro',
 	},
-	{
-		id: 'catastro',
-		lensId: 'vivir',
-		titleKey: 'analysis.catastro.title',
-		descKey: 'analysis.catastro.desc',
-		icon: '📐',
-		status: 'available',
-		spatialUnit: 'radio',
-		choropleth: {
-			parquet: 'catastro_by_radio',
-			column: '(n_parcelas_urbano + n_parcelas_rural)',
-			colorScale: 'sequential',
-			legendKey: 'analysis.catastro.legend',
-		},
-	},
 	// ── Perfil Territorial (cross-lens, catastro-integrated) ──
 	{
 		id: 'territorial_scores',
