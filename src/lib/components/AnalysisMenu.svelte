@@ -20,30 +20,21 @@
 	<div class="analysis-menu">
 		<div class="menu-header">
 			<span class="header-label">{cfg.label[i18n.locale as 'es' | 'en' | 'gn']}</span>
-			<span class="header-sub">{i18n.t('analysis.menu.title')}</span>
 		</div>
 
-		<div class="analysis-grid">
+		<div class="analysis-list">
 			{#each analyses as analysis}
 				<button
-					class="analysis-card"
+					class="analysis-item"
 					class:available={analysis.status === 'available'}
 					class:coming-soon={analysis.status === 'coming_soon'}
 					onclick={() => onSelectAnalysis(analysis)}
 				>
-					<div class="card-icon">{analysis.icon}</div>
-					<div class="card-body">
-						<div class="card-title">{i18n.t(analysis.titleKey)}</div>
-						<div class="card-desc">{i18n.t(analysis.descKey)}</div>
-					</div>
-					<span
-						class="card-badge"
-						style:background={analysis.status === 'available' ? `${cfg.color}25` : 'rgba(100,116,139,0.2)'}
-						style:color={analysis.status === 'available' ? cfg.color : '#a3a3a3'}
-						style:border-color={analysis.status === 'available' ? `${cfg.color}40` : 'rgba(100,116,139,0.3)'}
-					>
-						{i18n.t(analysis.status === 'available' ? 'analysis.status.available' : 'analysis.status.comingSoon')}
-					</span>
+					<div class="item-title">{i18n.t(analysis.titleKey)}</div>
+					<div class="item-desc">{i18n.t(analysis.descKey)}</div>
+					{#if analysis.status === 'coming_soon'}
+						<span class="item-badge">{i18n.t('analysis.status.comingSoon')}</span>
+					{/if}
 				</button>
 			{/each}
 		</div>
@@ -55,89 +46,68 @@
 		font-size: 11px;
 	}
 	.menu-header {
-		display: flex;
-		align-items: center;
-		gap: 8px;
 		margin-bottom: 10px;
+		padding-bottom: 6px;
+		border-bottom: 1px solid rgba(255,255,255,0.08);
 	}
 	.header-label {
-		font-size: 12px;
-		font-weight: 600;
+		font-size: 13px;
+		font-weight: 700;
 		color: #e2e8f0;
+		letter-spacing: 0.02em;
 	}
-	.header-sub {
-		font-size: 10px;
-		color: #a3a3a3;
-		margin-left: auto;
-	}
-	.analysis-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 6px;
+	.analysis-list {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
 		max-height: calc(100vh - 200px);
 		overflow-y: auto;
 		scrollbar-width: thin;
 		scrollbar-color: #334155 transparent;
 	}
-	.analysis-grid::-webkit-scrollbar { width: 4px; }
-	.analysis-grid::-webkit-scrollbar-track { background: transparent; }
-	.analysis-grid::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
-	.analysis-card {
+	.analysis-list::-webkit-scrollbar { width: 4px; }
+	.analysis-list::-webkit-scrollbar-track { background: transparent; }
+	.analysis-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+	.analysis-item {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
-		padding: 8px;
-		border-radius: 8px;
-		border: 1px solid rgba(255,255,255,0.06);
-		background: rgba(255,255,255,0.03);
+		gap: 3px;
+		padding: 10px 10px;
+		border-radius: 4px;
+		border: none;
+		background: transparent;
 		cursor: pointer;
-		transition: all 0.15s;
+		transition: background 0.12s;
 		text-align: left;
 		width: 100%;
+		border-left: 2px solid transparent;
 	}
-	.analysis-card.available:hover {
-		background: rgba(255,255,255,0.08);
-		border-color: rgba(255,255,255,0.12);
+	.analysis-item.available:hover {
+		background: rgba(255,255,255,0.05);
+		border-left-color: rgba(255,255,255,0.3);
 	}
-	.analysis-card.coming-soon {
+	.analysis-item.coming-soon {
+		opacity: 0.45;
+	}
+	.analysis-item.coming-soon:hover {
 		opacity: 0.6;
 	}
-	.analysis-card.coming-soon:hover {
-		opacity: 0.75;
-		background: rgba(255,255,255,0.05);
-	}
-	.card-icon {
-		font-size: 18px;
-		line-height: 1;
-	}
-	.card-body {
-		flex: 1;
-		min-width: 0;
-	}
-	.card-title {
-		font-size: 10px;
+	.item-title {
+		font-size: 11px;
 		font-weight: 600;
-		color: #e2e8f0;
+		color: #ffffff;
 		line-height: 1.3;
 	}
-	.card-desc {
+	.item-desc {
 		font-size: 9px;
-		color: #a3a3a3;
-		line-height: 1.3;
-		margin-top: 2px;
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
+		color: rgba(255,255,255,0.5);
+		line-height: 1.45;
 	}
-	.card-badge {
+	.item-badge {
 		display: inline-block;
 		font-size: 8px;
-		font-weight: 600;
-		padding: 1px 6px;
-		border-radius: 9999px;
-		border: 1px solid;
-		align-self: flex-start;
-		white-space: nowrap;
+		color: #737373;
+		font-style: italic;
+		margin-top: 1px;
 	}
 </style>

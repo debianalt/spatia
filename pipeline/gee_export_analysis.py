@@ -1,0 +1,317 @@
+"""
+Export multi-band GEE composites for satellite analyses at pixel level.
+
+Each analysis is a multi-band ee.Image exported as GeoTIFF to Google Drive.
+This replaces the radio-level approach — each pixel contributes independently
+to H3 zonal statistics, capturing sub-radio spatial variation.
+
+Usage:
+  python pipeline/gee_export_analysis.py --analysis green_capital
+  python pipeline/gee_export_analysis.py --analysis all
+  python pipeline/gee_export_analysis.py --analysis environmental_risk,agri_potential
+"""
+
+import argparse
+import ee
+import os
+import sys
+import time
+
+from config import MISIONES_BBOX, OUTPUT_DIR
+
+EXPORT_SCALE = 100  # metres — sweet spot for H3 res-9 (~174m hex side)
+DRIVE_FOLDER = 'spatia-satellite'
+DATE_START = '2019-01-01'
+DATE_END = '2024-12-31'
+
+
+def build_environmental_risk(bbox):
+    """Fire frequency + deforestation + thermal amplitude + slope + HAND."""
+    fire = (ee.ImageCollection('MODIS/061/MCD64A1')
+            .filterDate(DATE_START, DATE_END)
+            .filterBounds(bbox)
+            .select('BurnDate')
+            .map(lambda img: img.gt(0).unmask(0))
+            .mean())
+
+    hansen = ee.Image('UMD/hansen/global_forest_change_2024_v1_12')
+    deforest = hansen.select('loss').unmask(0)
+
+    lst_col = (ee.ImageCollection('MODIS/061/MOD11A2')
+               .filterDate(DATE_START, DATE_END)
+               .filterBounds(bbox))
+    lst_day = lst_col.select('LST_Day_1km').mean().multiply(0.02).subtract(273.15)
+    lst_night = lst_col.select('LST_Night_1km').mean().multiply(0.02).subtract(273.15)
+    thermal_amp = lst_day.subtract(lst_night).max(0)
+
+    dem = ee.Image('USGS/SRTMGL1_003').select('elevation')
+    slope = ee.Terrain.slope(dem)
+
+    hand = ee.Image('MERIT/Hydro/v1_0_1').select('hnd')
+
+    return (fire.rename('c_fire')
+            .addBands(deforest.rename('c_deforest'))
+            .addBands(thermal_amp.rename('c_thermal_amp'))
+            .addBands(slope.rename('c_slope'))
+            .addBands(hand.rename('c_hand'))
+            .clip(bbox).toFloat())
+
+
+def build_climate_comfort(bbox):
+    """LST day/night + precipitation + frost + ET/PET."""
+    lst_col = (ee.ImageCollection('MODIS/061/MOD11A2')
+               .filterDate(DATE_START, DATE_END).filterBounds(bbox))
+    heat_day = lst_col.select('LST_Day_1km').mean().multiply(0.02).subtract(273.15)
+    heat_night = lst_col.select('LST_Night_1km').mean().multiply(0.02).subtract(273.15)
+
+    precip = (ee.ImageCollection('UCSB-CHG/CHIRPS/DAILY')
+              .filterDate(DATE_START, DATE_END).filterBounds(bbox)
+              .select('precipitation').sum()
+              .divide(6))  # 6 years → annual avg
+
+    # ERA5 frost: t2m < 273.15K
+    era5 = (ee.ImageCollection('ECMWF/ERA5_LAND/MONTHLY_AGGR')
+            .filterDate(DATE_START, DATE_END).filterBounds(bbox))
+    frost = era5.select('temperature_2m').map(
+        lambda img: img.lt(273.15).unmask(0)
+    ).sum().divide(6)
+
+    et_col = (ee.ImageCollection('MODIS/061/MOD16A2GF')
+              .filterDate(DATE_START, DATE_END).filterBounds(bbox))
+    et = et_col.select('ET').mean().multiply(0.1)
+    pet = et_col.select('PET').mean().multiply(0.1)
+    et_pet = et.divide(pet.max(1))
+
+    return (heat_day.rename('c_heat_day')
+            .addBands(heat_night.rename('c_heat_night'))
+            .addBands(precip.rename('c_precipitation'))
+            .addBands(frost.rename('c_frost'))
+            .addBands(et_pet.rename('c_water_stress'))
+            .clip(bbox).toFloat())
+
+
+def build_green_capital(bbox):
+    """NDVI + treecover + NPP + LAI + VCF."""
+    ndvi = (ee.ImageCollection('MODIS/061/MOD13Q1')
+            .filterDate(DATE_START, DATE_END).filterBounds(bbox)
+            .select('NDVI').mean().multiply(0.0001))
+
+    treecover = (ee.Image('UMD/hansen/global_forest_change_2024_v1_12')
+                 .select('treecover2000').unmask(0).divide(100))
+
+    npp = (ee.ImageCollection('MODIS/061/MOD17A3HGF')
+           .filterDate(DATE_START, DATE_END).filterBounds(bbox)
+           .select('Npp').mean().multiply(0.0001))
+
+    lai = (ee.ImageCollection('MODIS/061/MOD15A2H')
+           .filterDate(DATE_START, DATE_END).filterBounds(bbox)
+           .select('Lai_500m').mean().multiply(0.1))
+
+    vcf = (ee.ImageCollection('MODIS/061/MOD44B')
+           .filterDate(DATE_START, DATE_END).filterBounds(bbox)
+           .select('Percent_Tree_Cover').mean())
+
+    return (ndvi.rename('c_ndvi')
+            .addBands(treecover.rename('c_treecover'))
+            .addBands(npp.rename('c_npp'))
+            .addBands(lai.rename('c_lai'))
+            .addBands(vcf.rename('c_vcf'))
+            .clip(bbox).toFloat())
+
+
+def build_change_pressure(bbox):
+    """VIIRS trend proxy + GHSL change + Hansen loss + NDVI trend proxy + fire."""
+    # VIIRS recent vs older as change proxy
+    viirs_old = (ee.ImageCollection('NOAA/VIIRS/DNB/MONTHLY_V1/VCMSLCFG')
+                 .filterDate('2016-01-01', '2018-12-31').filterBounds(bbox)
+                 .select('avg_rad').mean())
+    viirs_new = (ee.ImageCollection('NOAA/VIIRS/DNB/MONTHLY_V1/VCMSLCFG')
+                 .filterDate('2022-01-01', '2024-12-31').filterBounds(bbox)
+                 .select('avg_rad').mean())
+    viirs_change = viirs_new.subtract(viirs_old)
+
+    # GHSL built-up change
+    ghsl_2000 = ee.Image('JRC/GHSL/P2023A/GHS_BUILT_S/2000').select('built_surface').unmask(0)
+    ghsl_2020 = ee.Image('JRC/GHSL/P2023A/GHS_BUILT_S/2020').select('built_surface').unmask(0)
+    ghsl_change = ghsl_2020.subtract(ghsl_2000)
+
+    hansen = ee.Image('UMD/hansen/global_forest_change_2024_v1_12')
+    hansen_loss = hansen.select('loss').unmask(0)
+
+    # NDVI change (recent vs older)
+    ndvi_old = (ee.ImageCollection('MODIS/061/MOD13Q1')
+                .filterDate('2019-01-01', '2020-12-31').filterBounds(bbox)
+                .select('NDVI').mean().multiply(0.0001))
+    ndvi_new = (ee.ImageCollection('MODIS/061/MOD13Q1')
+                .filterDate('2023-01-01', '2024-12-31').filterBounds(bbox)
+                .select('NDVI').mean().multiply(0.0001))
+    ndvi_change = ndvi_new.subtract(ndvi_old)
+
+    fire = (ee.ImageCollection('MODIS/061/MCD64A1')
+            .filterDate(DATE_START, DATE_END).filterBounds(bbox)
+            .select('BurnDate').map(lambda img: img.gt(0).unmask(0))
+            .sum())
+
+    return (viirs_change.rename('c_viirs_trend')
+            .addBands(ghsl_change.rename('c_ghsl_change'))
+            .addBands(hansen_loss.rename('c_hansen_loss'))
+            .addBands(ndvi_change.rename('c_ndvi_trend'))
+            .addBands(fire.rename('c_fire_count'))
+            .clip(bbox).toFloat())
+
+
+def build_agri_potential(bbox):
+    """SOC + pH + clay + precipitation + GDD + slope."""
+    soil = ee.Image('projects/soilgrids-isric/ocd_mean').select('ocd_0-5cm_mean')
+    soc = soil.unmask(0)
+
+    ph = ee.Image('projects/soilgrids-isric/phh2o_mean').select('phh2o_0-5cm_mean').unmask(50)
+    ph_optimal = ee.Image(1).subtract(ph.divide(10).subtract(6.25).abs().divide(4)).max(0)
+
+    clay = ee.Image('projects/soilgrids-isric/clay_mean').select('clay_0-5cm_mean').unmask(0)
+
+    precip = (ee.ImageCollection('UCSB-CHG/CHIRPS/DAILY')
+              .filterDate(DATE_START, DATE_END).filterBounds(bbox)
+              .select('precipitation').sum().divide(6))
+
+    # GDD base 10: sum of (T - 10) where T > 10, over year
+    era5 = (ee.ImageCollection('ECMWF/ERA5_LAND/MONTHLY_AGGR')
+            .filterDate(DATE_START, DATE_END).filterBounds(bbox))
+    gdd = era5.select('temperature_2m').map(
+        lambda img: img.subtract(283.15).max(0).multiply(30)  # ~days per month
+    ).sum().divide(6)
+
+    dem = ee.Image('USGS/SRTMGL1_003').select('elevation')
+    slope = ee.Terrain.slope(dem)
+
+    return (soc.rename('c_soc')
+            .addBands(ph_optimal.rename('c_ph_optimal'))
+            .addBands(clay.rename('c_clay'))
+            .addBands(precip.rename('c_precipitation'))
+            .addBands(gdd.rename('c_gdd'))
+            .addBands(slope.rename('c_slope'))
+            .clip(bbox).toFloat())
+
+
+def build_forest_health(bbox):
+    """NDVI trend + loss ratio + fire + GPP + ET."""
+    ndvi_old = (ee.ImageCollection('MODIS/061/MOD13Q1')
+                .filterDate('2019-01-01', '2020-12-31').filterBounds(bbox)
+                .select('NDVI').mean().multiply(0.0001))
+    ndvi_new = (ee.ImageCollection('MODIS/061/MOD13Q1')
+                .filterDate('2023-01-01', '2024-12-31').filterBounds(bbox)
+                .select('NDVI').mean().multiply(0.0001))
+    ndvi_trend = ndvi_new.subtract(ndvi_old)
+
+    hansen = ee.Image('UMD/hansen/global_forest_change_2024_v1_12')
+    treecover = hansen.select('treecover2000').max(1)
+    loss = hansen.select('loss').unmask(0)
+    loss_ratio = loss.divide(treecover.divide(100))
+
+    fire = (ee.ImageCollection('MODIS/061/MCD64A1')
+            .filterDate(DATE_START, DATE_END).filterBounds(bbox)
+            .select('BurnDate').map(lambda img: img.gt(0).unmask(0))
+            .mean())
+
+    gpp = (ee.ImageCollection('MODIS/061/MOD17A2HGF')
+           .filterDate(DATE_START, DATE_END).filterBounds(bbox)
+           .select('Gpp').mean().multiply(0.0001))
+
+    et = (ee.ImageCollection('MODIS/061/MOD16A2GF')
+          .filterDate(DATE_START, DATE_END).filterBounds(bbox)
+          .select('ET').mean().multiply(0.1))
+
+    return (ndvi_trend.rename('c_ndvi_trend')
+            .addBands(loss_ratio.rename('c_loss_ratio'))
+            .addBands(fire.rename('c_fire'))
+            .addBands(gpp.rename('c_gpp'))
+            .addBands(et.rename('c_et'))
+            .clip(bbox).toFloat())
+
+
+ANALYSIS_BUILDERS = {
+    'environmental_risk': build_environmental_risk,
+    'climate_comfort': build_climate_comfort,
+    'green_capital': build_green_capital,
+    'change_pressure': build_change_pressure,
+    'agri_potential': build_agri_potential,
+    'forest_health': build_forest_health,
+}
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Export GEE analysis composites to Drive")
+    parser.add_argument("--analysis", required=True, help="Analysis ID or 'all'")
+    parser.add_argument("--scale", type=int, default=EXPORT_SCALE, help=f"Export scale in metres (default: {EXPORT_SCALE})")
+    args = parser.parse_args()
+
+    ee.Initialize()
+    bbox = ee.Geometry.Rectangle(MISIONES_BBOX)
+
+    if args.analysis == 'all':
+        analyses = list(ANALYSIS_BUILDERS.keys())
+    else:
+        analyses = [a.strip() for a in args.analysis.split(',')]
+
+    print(f"Exporting {len(analyses)} analyses at {args.scale}m scale")
+    tasks = []
+
+    for aid in analyses:
+        if aid not in ANALYSIS_BUILDERS:
+            print(f"  SKIP {aid}: no builder defined")
+            continue
+
+        print(f"\n  Building {aid}...")
+        composite = ANALYSIS_BUILDERS[aid](bbox)
+        n_bands = {'environmental_risk': 5, 'climate_comfort': 5, 'green_capital': 5, 'change_pressure': 5, 'agri_potential': 6, 'forest_health': 5}.get(aid, '?')
+        print(f"    Bands: {n_bands} components")
+
+        task = ee.batch.Export.image.toDrive(
+            image=composite,
+            description=f'sat_{aid}_raster',
+            folder=DRIVE_FOLDER,
+            fileNamePrefix=f'sat_{aid}_raster',
+            region=bbox,
+            scale=args.scale,
+            crs='EPSG:4326',
+            maxPixels=1e9,
+        )
+        task.start()
+        tasks.append((aid, task))
+        print(f"    Export started: sat_{aid}_raster")
+
+    if not tasks:
+        print("No tasks to run")
+        return 1
+
+    # Poll for completion
+    print(f"\nWaiting for {len(tasks)} exports...")
+    while True:
+        statuses = [(aid, t.status()['state']) for aid, t in tasks]
+        running = sum(1 for _, s in statuses if s in ('READY', 'RUNNING'))
+        if running == 0:
+            break
+        status_str = ', '.join(f"{a}={s}" for a, s in statuses)
+        print(f"  [{running} running] {status_str}")
+        time.sleep(30)
+
+    # Report results
+    print(f"\n{'=' * 60}")
+    all_ok = True
+    for aid, task in tasks:
+        status = task.status()
+        if status['state'] == 'COMPLETED':
+            print(f"  DONE: {aid}")
+        else:
+            print(f"  FAILED: {aid} — {status.get('error_message', 'unknown')}")
+            all_ok = False
+
+    print(f"\nFiles in Google Drive folder '{DRIVE_FOLDER}'")
+    print(f"Download and run: python pipeline/process_raster_to_h3.py --analysis <id>")
+    print(f"{'=' * 60}")
+
+    return 0 if all_ok else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
