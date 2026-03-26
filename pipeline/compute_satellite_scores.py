@@ -367,6 +367,49 @@ ANALYSIS_DEFS = [
             ("c_isolation", "c_isolation", 0.15, False),         # more isolated = more gap
         ],
     },
+    # ── SERVIR (nuevos) ───────────────────────────────────────────────
+    {
+        "id": "health_access",
+        "sql": """
+            SELECT r.redcode,
+                COALESCE(o.accessibility_healthcare_min, 300) AS c_healthcare_time,
+                COALESCE(o.accessibility_healthcare_walk, 600) AS c_healthcare_walk,
+                COALESCE(ce.densidad_hab_km2, 0) AS c_pop_density,
+                COALESCE(ce.pct_cobertura_salud, 0) AS c_health_coverage,
+                COALESCE(ce.pct_nbi, 0) AS c_nbi
+            FROM radios_misiones r
+            LEFT JOIN oxford_accessibility o ON r.redcode = o.redcode
+            LEFT JOIN censo2022_variables ce ON r.redcode = ce.redcode
+        """,
+        "components": [
+            ("c_healthcare_time", "c_healthcare_time", 0.30, False),   # more time = worse access
+            ("c_healthcare_walk", "c_healthcare_walk", 0.20, False),   # more walk time = worse
+            ("c_pop_density", "c_pop_density", 0.15, False),           # more density = more demand
+            ("c_health_coverage", "c_health_coverage", 0.15, True),    # more coverage = less gap
+            ("c_nbi", "c_nbi", 0.20, False),                           # more NBI = more vulnerability
+        ],
+    },
+    {
+        "id": "education_gap",
+        "sql": """
+            SELECT r.redcode,
+                COALESCE(ce.pct_sin_instruccion, 0) AS c_no_instruction,
+                COALESCE(ce.tasa_inasistencia_13a18, 0) AS c_dropout_13_18,
+                COALESCE(ce.pct_solo_primaria, 0) AS c_only_primary,
+                COALESCE(ce.pct_universitario, 0) AS c_university,
+                COALESCE(n.tt_cities_20k_min, 300) AS c_isolation
+            FROM radios_misiones r
+            LEFT JOIN censo2022_variables ce ON r.redcode = ce.redcode
+            LEFT JOIN nelson_accessibility n ON r.redcode = n.redcode
+        """,
+        "components": [
+            ("c_no_instruction", "c_no_instruction", 0.25, False),    # more = worse gap
+            ("c_dropout_13_18", "c_dropout_13_18", 0.25, False),      # more = worse gap
+            ("c_only_primary", "c_only_primary", 0.20, False),        # more = worse gap
+            ("c_university", "c_university", 0.15, True),              # more university = less gap
+            ("c_isolation", "c_isolation", 0.15, False),               # more isolated = worse
+        ],
+    },
 ]
 
 

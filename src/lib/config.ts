@@ -88,6 +88,8 @@ export const PARQUETS = {
 	get sat_isolation_index() { return getParquetUrl('sat_isolation_index'); },
 	get sat_territorial_gap() { return getParquetUrl('sat_territorial_gap'); },
 	get sat_land_use() { return getParquetUrl('sat_land_use'); },
+	get sat_health_access() { return getParquetUrl('sat_health_access'); },
+	get sat_education_gap() { return getParquetUrl('sat_education_gap'); },
 };
 
 export const BASEMAP = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
@@ -549,6 +551,40 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		titleKey: 'sat.landUse.title',
 		perDepartment: true,
 	},
+	health_access: {
+		id: 'health_access',
+		parquet: 'sat_health_access',
+		variables: [
+			{ col: 'score', labelKey: 'sat.health.score', aggregation: 'mean' },
+			{ col: 'c_healthcare_time', labelKey: 'sat.health.time', aggregation: 'mean' },
+			{ col: 'c_healthcare_walk', labelKey: 'sat.health.walk', aggregation: 'mean' },
+			{ col: 'c_pop_density', labelKey: 'sat.health.popDensity', aggregation: 'mean' },
+			{ col: 'c_health_coverage', labelKey: 'sat.health.coverage', aggregation: 'mean' },
+			{ col: 'c_nbi', labelKey: 'sat.health.nbi', aggregation: 'mean' },
+		],
+		primaryVariable: 'score',
+		colorScale: 'flood',
+		aggregation: 'mean',
+		titleKey: 'sat.health.title',
+		perDepartment: true,
+	},
+	education_gap: {
+		id: 'education_gap',
+		parquet: 'sat_education_gap',
+		variables: [
+			{ col: 'score', labelKey: 'sat.edu.score', aggregation: 'mean' },
+			{ col: 'c_no_instruction', labelKey: 'sat.edu.noInstruction', aggregation: 'mean' },
+			{ col: 'c_dropout_13_18', labelKey: 'sat.edu.dropout', aggregation: 'mean' },
+			{ col: 'c_only_primary', labelKey: 'sat.edu.onlyPrimary', aggregation: 'mean' },
+			{ col: 'c_university', labelKey: 'sat.edu.university', aggregation: 'mean' },
+			{ col: 'c_isolation', labelKey: 'sat.edu.isolation', aggregation: 'mean' },
+		],
+		primaryVariable: 'score',
+		colorScale: 'flood',
+		aggregation: 'mean',
+		titleKey: 'sat.edu.title',
+		perDepartment: true,
+	},
 };
 
 // ── Analysis system ─────────────────────────────────────────────────────────
@@ -711,6 +747,24 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		titleKey: 'sat.gap.title',
 		descKey: 'sat.gap.desc',
 		icon: '⚖️',
+		status: 'available',
+		spatialUnit: 'hexagon',
+	},
+	{
+		id: 'health_access',
+		lensId: 'servir',
+		titleKey: 'sat.health.title',
+		descKey: 'sat.health.desc',
+		icon: '🏥',
+		status: 'available',
+		spatialUnit: 'hexagon',
+	},
+	{
+		id: 'education_gap',
+		lensId: 'servir',
+		titleKey: 'sat.edu.title',
+		descKey: 'sat.edu.desc',
+		icon: '🎓',
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -983,5 +1037,7 @@ export const DATA_FRESHNESS: Record<string, { dataDate: string; processedDate: s
 	sat_forestry_aptitude: { dataDate: 'SoilGrids/CHIRPS/Nelson', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
 	sat_isolation_index: { dataDate: 'Nelson/Oxford/VIIRS', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
 	sat_territorial_gap: { dataDate: 'VIIRS/Censo 2022/Nelson', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
+	sat_health_access: { dataDate: 'Oxford MAP 2019 + Censo 2022', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
+	sat_education_gap: { dataDate: 'Censo 2022 + Nelson 2019', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
 	sat_land_use: { dataDate: 'Dynamic World 2024 (Sentinel-2, 10m)', processedDate: 'pendiente', sourceKey: 'data.source.satellite' },
 };

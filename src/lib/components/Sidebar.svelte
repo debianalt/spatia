@@ -135,6 +135,23 @@
 				{i18n.t('side.welcome.desc')}
 			</p>
 
+			<!-- Onboarding steps -->
+			<div class="onboarding">
+				<div class="onboarding-title">{i18n.t('side.onboarding.title')}</div>
+				<div class="onboarding-step">
+					<span class="step-number">1</span>
+					<span class="step-text">{i18n.t('side.onboarding.step1')}</span>
+				</div>
+				<div class="onboarding-step">
+					<span class="step-number">2</span>
+					<span class="step-text">{i18n.t('side.onboarding.step2')}</span>
+				</div>
+				<div class="onboarding-step">
+					<span class="step-number">3</span>
+					<span class="step-text">{i18n.t('side.onboarding.step3')}</span>
+				</div>
+			</div>
+
 		</div>
 	{/if}
 
@@ -207,6 +224,11 @@
 		z-index: 11;
 	}
 	.collapse-btn:hover { color: #e2e8f0; border-color: #60a5fa; }
+	.onboarding { display: flex; flex-direction: column; gap: 6px; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; }
+	.onboarding-title { font-size: 10px; font-weight: 600; color: #d4d4d4; margin-bottom: 2px; }
+	.onboarding-step { display: flex; align-items: flex-start; gap: 8px; }
+	.step-number { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: rgba(59,130,246,0.15); color: #60a5fa; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+	.step-text { font-size: 10px; color: #a3a3a3; line-height: 1.4; }
 	.expand-btn {
 		position: absolute;
 		top: 12px;

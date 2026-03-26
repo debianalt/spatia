@@ -39,6 +39,8 @@
 		forestry_aptitude: () => import('$lib/data/sat_forestry_aptitude_dept_summary.json'),
 		isolation_index: () => import('$lib/data/sat_isolation_index_dept_summary.json'),
 		territorial_gap: () => import('$lib/data/sat_territorial_gap_dept_summary.json'),
+		health_access: () => import('$lib/data/sat_health_access_dept_summary.json'),
+		education_gap: () => import('$lib/data/sat_education_gap_dept_summary.json'),
 	};
 
 	$effect(() => {
@@ -167,6 +169,18 @@
 			implications: 'El aislamiento limita el acceso a salud, educación y mercados. Zonas con score alto tienen mayor costo logístico, menor cobertura de servicios y menor conectividad digital. Poblaciones aisladas son más vulnerables ante emergencias.',
 			actions: 'Priorizar inversión en conectividad vial para zonas con score >70. Evaluar factibilidad de servicios móviles de salud y educación. Cruzar con NBI para identificar aislamiento + pobreza como doble vulnerabilidad.',
 			method: 'Score = promedio ponderado de: tiempo a ciudad 100k Nelson (25%), tiempo a Posadas custom (25%), densidad vial invertida OSM (20%), radiancia nocturna invertida VIIRS (15%), fricción motorizada Oxford (15%).',
+		},
+		health_access: {
+			howToRead: 'El score indica el déficit de acceso a servicios de salud. Valores altos señalan zonas donde la combinación de lejanía al centro de salud, alta demanda poblacional y vulnerabilidad social genera una brecha sanitaria significativa.',
+			implications: 'Zonas con score alto tienen poblaciones que enfrentan barreras concretas para acceder a atención médica: largo tiempo de viaje, falta de cobertura formal, y condiciones socioeconómicas que agravan los problemas de salud.',
+			actions: 'Priorizar servicios móviles de salud en zonas con score >60. Evaluar factibilidad de centros de atención primaria en radios con alta densidad y largo travel time. Cruzar con NBI para identificar la doble vulnerabilidad salud + pobreza.',
+			method: 'Score = promedio ponderado de: tiempo motorizado a salud Oxford MAP (30%), tiempo a pie a salud (20%), densidad poblacional censo 2022 (15%), cobertura de salud invertida (15%), NBI (20%). Resolución: 1km (Oxford) + radio censal (censo).',
+		},
+		education_gap: {
+			howToRead: 'El score mide la brecha educativa territorial. Valores altos indican zonas con alto porcentaje de población sin instrucción, alta deserción adolescente, bajo nivel educativo máximo, y aislamiento que dificulta el acceso a instituciones educativas.',
+			implications: 'La brecha educativa tiene efectos intergeneracionales: zonas con alta deserción y bajo nivel educativo reproducen la pobreza. El aislamiento amplifica el problema al limitar el acceso a escuelas secundarias y terciarias.',
+			actions: 'Focalizar programas de retención escolar en zonas con deserción 13-18 >20%. Evaluar transporte escolar en zonas aisladas. Priorizar becas universitarias para radios con pct_universitario <5% y alta deserción.',
+			method: 'Score = promedio ponderado de: sin instrucción censo 2022 (25%), deserción 13-18 años (25%), solo primaria (20%), universitarios invertido (15%), aislamiento Nelson (15%). Datos del Censo Nacional 2022 a nivel radio censal.',
 		},
 		land_use: {
 			howToRead: 'El mapa muestra la diversidad de uso del suelo (índice de Shannon, 0-100). Valores altos indican zonas con múltiples usos del suelo coexistiendo (mosaico agro-forestal). Valores bajos indican uso homogéneo (bosque puro o monocultivo). Los componentes muestran la fracción de cada clase.',
