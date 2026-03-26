@@ -1,5 +1,5 @@
 import { query, isReady } from '$lib/stores/duckdb';
-import { PARQUETS, HEX_LAYER_REGISTRY, getFloodDptoUrl, type HexLayerConfig, type HexVariable } from '$lib/config';
+import { PARQUETS, HEX_LAYER_REGISTRY, getFloodDptoUrl, getScoresDptoUrl, getSatDptoUrl, type HexLayerConfig, type HexVariable } from '$lib/config';
 import { pointInPolygon } from '$lib/utils/geometry';
 import { i18n } from '$lib/stores/i18n.svelte';
 import { cellToLatLng, cellToBoundary } from 'h3-js';
@@ -105,7 +105,15 @@ export class HexStore {
 		this.dataVersion++;
 
 		try {
-			const url = getFloodDptoUrl(parquetKey);
+			// Dispatch URL based on layer type
+			let url: string;
+			if (layer.id === 'flood_risk') {
+				url = getFloodDptoUrl(parquetKey);
+			} else if (layer.parquet?.startsWith('sat_')) {
+				url = getSatDptoUrl(layer.id, parquetKey);
+			} else {
+				url = getScoresDptoUrl(parquetKey);
+			}
 			const cols = layer.variables.map(v => v.col).join(', ');
 			const result = await query(
 				`SELECT h3index, ${cols} FROM '${url}' WHERE ${layer.primaryVariable} IS NOT NULL`

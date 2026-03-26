@@ -71,7 +71,7 @@
 		{:else if RADIO_ANALYSIS_REGISTRY[analysis.id]}
 			<RadioAnalysis config={RADIO_ANALYSIS_REGISTRY[analysis.id]} {mapStore} {hexStore} onSelectRadioAnalysisDpto={onSelectRadioAnalysisDpto} />
 		{:else if HEX_LAYER_REGISTRY[analysis.id]}
-			<OvertureAnalysis {analysis} {hexStore} />
+			<OvertureAnalysis {analysis} {hexStore} onSelectDpto={onSelectFloodDpto} />
 		{:else}
 			<p class="text-text-dim text-[10px]">{i18n.t(analysis.descKey)}</p>
 		{/if}

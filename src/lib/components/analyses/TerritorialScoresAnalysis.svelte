@@ -262,9 +262,16 @@
 			</div>
 		</details>
 
+		<details class="method-details">
+			<summary class="method-summary">Acciones recomendadas</summary>
+			<div class="method-body">
+				<p class="explain-text">Zonas con alta consolidación urbana y buenos servicios son aptas para inversión inmobiliaria y comercial. Zonas con alta conectividad pero baja consolidación son candidatas para desarrollo planificado. Scores bajos generalizados requieren inversión pública en infraestructura básica antes de promover desarrollo privado.</p>
+			</div>
+		</details>
+
 		<!-- Methodology -->
 		<details class="method-details">
-			<summary class="method-summary">Fuentes y metodología</summary>
+			<summary class="method-summary">Metodologia</summary>
 			<div class="method-body">
 				<div class="method-item">
 					<span class="method-term">Fuente</span>

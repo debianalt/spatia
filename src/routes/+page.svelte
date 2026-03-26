@@ -738,7 +738,7 @@
 		<!-- Header -->
 		<div class="flex items-center justify-between px-4 py-2.5 border-b border-border z-10 shrink-0"
 			style="background: rgba(10,12,18,0.88); backdrop-filter: blur(8px);">
-			<h1 class="text-[15px] font-bold text-white tracking-wide">
+			<h1 class="text-[15px] font-bold text-white tracking-wide cursor-pointer hover:opacity-80 transition-opacity" onclick={clearAll}>
 				{i18n.t('header.title')} <span class="text-white/70 font-normal">&mdash; {i18n.t('header.subtitle')}</span>
 			</h1>
 

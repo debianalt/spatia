@@ -266,6 +266,20 @@
 			</div>
 		</details>
 
+		<details class="method-details">
+			<summary class="method-summary">Acciones recomendadas</summary>
+			<div class="method-body">
+				<p class="explain-text">{config.actions[locale]}</p>
+			</div>
+		</details>
+
+		<details class="method-details">
+			<summary class="method-summary">Metodologia</summary>
+			<div class="method-body">
+				<p class="explain-text">{config.methodology[locale]}</p>
+			</div>
+		</details>
+
 		<div class="source-note-box">
 			<div><strong>Fuente:</strong> INDEC Censo 2022 · SoilGrids · CHIRPS · Overture Maps · Catastro Misiones</div>
 		</div>
