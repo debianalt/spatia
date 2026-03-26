@@ -246,19 +246,16 @@
 			{#if loading}
 				<div class="message assistant">
 					<div class="msg-bubble assistant-bubble loading-bubble">
-						<div class="loading-dots">
-							<span></span><span></span><span></span>
-						</div>
-						{#if activeTools.length > 0}
-							<div class="active-tools">
-								{#each activeTools as tool}
-									<span class="tool-pill active"
-										>{tool === 'thinking'
-											? i18n.t('chat.thinking')
-											: TOOL_LABELS[tool] || tool}...</span>
-								{/each}
-							</div>
-						{/if}
+						<span class="loading-text">
+							{#if activeTools.length > 0}
+								{@const lastTool = activeTools[activeTools.length - 1]}
+								{lastTool === 'thinking'
+									? i18n.t('chat.thinking')
+									: TOOL_LABELS[lastTool] || lastTool}...
+							{:else}
+								{i18n.t('chat.thinking')}...
+							{/if}
+						</span>
 					</div>
 				</div>
 			{/if}
@@ -496,32 +493,17 @@
 	.loading-bubble {
 		display: flex;
 		align-items: center;
-		gap: 8px;
 	}
-
-	.loading-dots {
-		display: flex;
-		gap: 3px;
-	}
-	.loading-dots span {
-		width: 4px;
-		height: 4px;
-		border-radius: 50%;
-		background: #60a5fa;
-		animation: dot-pulse 1.2s ease-in-out infinite;
-	}
-	.loading-dots span:nth-child(2) {
-		animation-delay: 0.2s;
-	}
-	.loading-dots span:nth-child(3) {
-		animation-delay: 0.4s;
+	.loading-text {
+		font-size: 9px;
+		color: #737373;
+		font-style: italic;
 	}
 	@keyframes dot-pulse {
 		0%,
 		80%,
 		100% {
 			opacity: 0.3;
-			transform: scale(0.8);
 		}
 		40% {
 			opacity: 1;
