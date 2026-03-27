@@ -184,7 +184,7 @@ def main():
 
         # Province averages
         score_col = "score"
-        component_cols = [c for c in df.columns if c.startswith("c_")]
+        component_cols = [c for c in df.columns if c.startswith("c_") or c.startswith("frac_")]
         prov_avg = round(float(df[score_col].mean()), 1)
 
         dptos = sorted(df_assigned["dpto"].unique())
