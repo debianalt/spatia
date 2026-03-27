@@ -60,7 +60,7 @@ ALL_ANALYSES = [
     "environmental_risk", "climate_comfort", "green_capital",
     "change_pressure", "location_value", "agri_potential",
     "forest_health", "forestry_aptitude", "isolation_index",
-    "territorial_gap", "health_access", "education_gap",
+    "territorial_gap", "health_access", "education_gap", "land_use",
 ]
 
 ANALYSIS_META = {
@@ -233,6 +233,21 @@ ANALYSIS_META = {
         "weights": "Sin instrucción 25% + Deserción 25% + Solo primaria 20% + Universitarios inv. 15% + Aislamiento 15%",
         "interpretation_high": "presenta alta brecha educativa con deserción, bajo nivel máximo y aislamiento que limita el acceso",
         "interpretation_low": "tiene indicadores educativos favorables con baja deserción y acceso a formación superior",
+    },
+    "land_use": {
+        "title": "¿Qué uso de suelo tiene esta zona?",
+        "subtitle": "Cobertura y diversidad de uso del suelo",
+        "components": {
+            "frac_trees": {"name": "Bosque", "source": "Google Dynamic World v1 (Sentinel-2, 10m, 2024)", "desc": "Fracción del hexágono cubierta por árboles. Incluye bosque nativo y plantaciones.", "unit": "fracción (0-1)"},
+            "frac_crops": {"name": "Cultivos", "source": "Google Dynamic World v1 (Sentinel-2, 10m, 2024)", "desc": "Fracción cubierta por cultivos agrícolas activos.", "unit": "fracción (0-1)"},
+            "frac_built": {"name": "Construido", "source": "Google Dynamic World v1 (Sentinel-2, 10m, 2024)", "desc": "Fracción cubierta por superficies construidas (urbano, industrial, infraestructura).", "unit": "fracción (0-1)"},
+            "frac_grass": {"name": "Pasturas/pasto", "source": "Google Dynamic World v1 (Sentinel-2, 10m, 2024)", "desc": "Fracción cubierta por pastizales y pasturas.", "unit": "fracción (0-1)"},
+            "frac_water": {"name": "Agua", "source": "Google Dynamic World v1 (Sentinel-2, 10m, 2024)", "desc": "Fracción cubierta por cuerpos de agua permanentes.", "unit": "fracción (0-1)"},
+            "frac_shrub": {"name": "Arbustos", "source": "Google Dynamic World v1 (Sentinel-2, 10m, 2024)", "desc": "Fracción cubierta por vegetación arbustiva baja.", "unit": "fracción (0-1)"},
+        },
+        "weights": "Score = índice de diversidad de Shannon normalizado sobre 9 clases LULC × 100",
+        "interpretation_high": "presenta alta diversidad de uso del suelo — mosaico agro-forestal con múltiples actividades coexistiendo",
+        "interpretation_low": "presenta uso homogéneo — dominado por una sola cobertura (bosque denso o monocultivo)",
     },
 }
 

@@ -2,6 +2,7 @@
 	import type { HexStore } from '$lib/stores/hex.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import { HEX_LAYER_REGISTRY, DATA_FRESHNESS, type AnalysisConfig } from '$lib/config';
+	import { initDuckDB, query } from '$lib/stores/duckdb';
 
 	let {
 		analysis,
@@ -100,6 +101,30 @@
 
 	function handleBackToDepts() {
 		hexStore.setLayer(analysis.id);
+	}
+
+	async function downloadCsv() {
+		if (!dataUrl) return;
+		try {
+			await initDuckDB();
+			const result = await query(`SELECT * FROM '${dataUrl}'`);
+			const cols = result.schema.fields.map((f: any) => f.name);
+			let csv = cols.join(',') + '\n';
+			for (let i = 0; i < result.numRows; i++) {
+				const row = result.get(i)!.toJSON() as Record<string, any>;
+				csv += cols.map(c => row[c] ?? '').join(',') + '\n';
+			}
+			const blob = new Blob([csv], { type: 'text/csv' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			const dept = deptList.find((d: any) => d.dpto === selectedDpto);
+			a.href = url;
+			a.download = `spatia_${layerCfg?.id}_${dept?.parquetKey || 'data'}.csv`;
+			a.click();
+			URL.revokeObjectURL(url);
+		} catch (e) {
+			console.warn('CSV download failed:', e);
+		}
 	}
 
 	// Data download URL for selected department
@@ -270,12 +295,12 @@
 		{#if reportUrl}
 			<div class="download-row">
 				<a class="download-btn" href={reportUrl} target="_blank" rel="noopener">
-					Informe PDF
+					Informe PDF <span class="download-date">({freshness?.processedDate})</span>
 				</a>
 				{#if dataUrl}
-					<a class="download-btn download-secondary" href={dataUrl} target="_blank" rel="noopener">
-						Datos (Parquet)
-					</a>
+					<button class="download-btn download-secondary" onclick={downloadCsv}>
+						Datos (CSV)
+					</button>
 				{/if}
 			</div>
 		{/if}
@@ -504,6 +529,7 @@
 	.download-row .download-btn { flex: 1; }
 	.download-secondary { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); color: #a3a3a3; }
 	.download-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); color: #d4d4d4; }
+	.download-date { font-weight: 400; font-size: 8px; opacity: 0.7; }
 
 	/* ── Source box ── */
 	.source-note-box { margin-top: 10px; padding: 8px 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; font-size: 9px; color: #e2e8f0; line-height: 1.5; }
