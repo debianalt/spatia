@@ -3,7 +3,7 @@
 	import maplibregl from 'maplibre-gl';
 	import 'maplibre-gl/dist/maplibre-gl.css';
 	import { Protocol } from 'pmtiles';
-	import { getTilesUrl, BASEMAP, MAP_INIT, TERRAIN_CONFIG } from '$lib/config';
+	import { getTilesUrl, BASEMAP, MAP_INIT, MAP_PROVINCE, MAP_OBERA, TERRAIN_CONFIG } from '$lib/config';
 	import { MapStore } from '$lib/stores/map.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import misionesBoundary from '$lib/data/misiones_boundary.json';
@@ -430,11 +430,33 @@
 	}
 
 	export function flyToInit() {
-		map?.flyTo({ ...MAP_INIT, duration: 1200 });
+		map?.flyTo({ ...MAP_PROVINCE, duration: 1200 });
 	}
 
 	export function setPitch(p: number) {
 		map?.easeTo({ pitch: p, duration: 200 });
+	}
+
+	export function cinematicEntry(): Promise<void> {
+		return new Promise((resolve) => {
+			if (!map) { resolve(); return; }
+			// Phase 1: South America → Misiones province (3s)
+			map.flyTo({ ...MAP_PROVINCE, duration: 3000, essential: true });
+			map.once('moveend', () => {
+				// Phase 2: Province → Oberá close-up with 3D buildings (3s)
+				map!.flyTo({ ...MAP_OBERA, duration: 3000, essential: true });
+				map!.once('moveend', () => {
+					// Phase 3: Stabilize at working view (2s)
+					map!.easeTo({
+						zoom: 13,
+						pitch: 45,
+						bearing: -15,
+						duration: 2000,
+					});
+					map!.once('moveend', () => resolve());
+				});
+			});
+		});
 	}
 
 
@@ -634,7 +656,7 @@
 	}
 
 	export function flyToProvince() {
-		map?.flyTo({ ...MAP_INIT, duration: 1200 });
+		map?.flyTo({ ...MAP_PROVINCE, duration: 1200 });
 	}
 
 	// ── Catastro parcel layer (PMTiles) ─────────────────────────────────────

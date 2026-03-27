@@ -123,35 +123,56 @@
 		</div>
 	{:else}
 		<!-- Welcome panel -->
-		<div class="chart-scroll flex flex-col gap-4 pt-1">
-			<!-- Branding -->
-			<div class="flex flex-col gap-1">
-				<span class="text-lg font-bold text-white">spatia.ar</span>
-				<span class="text-white/70 italic text-[11px]">{i18n.t('header.subtitle')}</span>
-			</div>
+		<div class="chart-scroll welcome-panel">
+			<div class="welcome-brand">spatia.ar</div>
+			<div class="welcome-subtitle">{i18n.t('header.subtitle')}</div>
 
-			<!-- Pitch -->
-			<p class="text-white text-[11px] leading-relaxed">
-				{i18n.t('side.welcome.desc')}
-			</p>
+			<p class="welcome-desc">{i18n.t('side.welcome.desc')}</p>
 
-			<!-- Onboarding steps -->
-			<div class="onboarding">
-				<div class="onboarding-title">{i18n.t('side.onboarding.title')}</div>
-				<div class="onboarding-step">
-					<span class="step-number">1</span>
-					<span class="step-text">{i18n.t('side.onboarding.step1')}</span>
+			<div class="welcome-divider">18 {i18n.t('side.welcome.analyses')}</div>
+
+			<div class="welcome-lenses">
+				<div class="welcome-lens">
+					<span class="lens-name">VIVIR</span>
+					<span class="lens-items">Riesgo hídrico · Riesgo ambiental · Confort climático · Capital verde · Perfil sociodemográfico</span>
 				</div>
-				<div class="onboarding-step">
-					<span class="step-number">2</span>
-					<span class="step-text">{i18n.t('side.onboarding.step2')}</span>
+				<div class="welcome-lens">
+					<span class="lens-name">INVERTIR</span>
+					<span class="lens-items">Perfil territorial · Actividad económica · Presión de cambio · Valor de localización</span>
 				</div>
-				<div class="onboarding-step">
-					<span class="step-number">3</span>
-					<span class="step-text">{i18n.t('side.onboarding.step3')}</span>
+				<div class="welcome-lens">
+					<span class="lens-name">PRODUCIR</span>
+					<span class="lens-items">Potencial agrícola · Salud de la selva · Aptitud silvícola · Uso del suelo</span>
+				</div>
+				<div class="welcome-lens">
+					<span class="lens-name">SERVIR</span>
+					<span class="lens-items">Accesibilidad · Aislamiento · Brecha territorial · Déficit de salud · Brecha educativa</span>
 				</div>
 			</div>
 
+			<div class="welcome-divider">{i18n.t('side.welcome.dataTitle')}</div>
+
+			<div class="welcome-stats">
+				<div>319.871 hexágonos H3 a 100m de resolución</div>
+				<div>2.012 radios censales · Censo Nacional 2022</div>
+				<div>445.000 parcelas catastrales</div>
+				<div>1.250.000 edificaciones detectadas por IA</div>
+				<div>Series históricas desde 1984 · Actualización quincenal</div>
+				<div>Informes PDF por departamento · Diagnósticos por microzona bajo demanda</div>
+			</div>
+
+			<div class="welcome-divider">{i18n.t('side.onboarding.title')}</div>
+
+			<div class="welcome-steps">
+				<div class="welcome-step"><span class="step-n">1</span> {i18n.t('side.onboarding.step1')}</div>
+				<div class="welcome-step"><span class="step-n">2</span> {i18n.t('side.onboarding.step2')}</div>
+				<div class="welcome-step"><span class="step-n">3</span> {i18n.t('side.onboarding.step3')}</div>
+			</div>
+
+			<div class="welcome-footer">
+				<div>Raimundo Elías Gómez · CONICET</div>
+				<div>Google Earth Engine Partner</div>
+			</div>
 		</div>
 	{/if}
 
@@ -224,11 +245,20 @@
 		z-index: 11;
 	}
 	.collapse-btn:hover { color: #e2e8f0; border-color: #60a5fa; }
-	.onboarding { display: flex; flex-direction: column; gap: 6px; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; }
-	.onboarding-title { font-size: 10px; font-weight: 600; color: #d4d4d4; margin-bottom: 2px; }
-	.onboarding-step { display: flex; align-items: flex-start; gap: 8px; }
-	.step-number { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: rgba(59,130,246,0.15); color: #60a5fa; font-size: 10px; font-weight: 700; flex-shrink: 0; }
-	.step-text { font-size: 10px; color: #a3a3a3; line-height: 1.4; }
+	.welcome-panel { font-family: 'Roboto Condensed', sans-serif; padding-top: 4px; display: flex; flex-direction: column; gap: 12px; }
+	.welcome-brand { font-size: 22px; font-weight: 700; color: #ffffff; letter-spacing: 0.03em; }
+	.welcome-subtitle { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: -8px; }
+	.welcome-desc { font-size: 11px; color: rgba(255,255,255,0.7); line-height: 1.6; }
+	.welcome-divider { font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.35); letter-spacing: 0.08em; text-transform: uppercase; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px; }
+	.welcome-lenses { display: flex; flex-direction: column; gap: 6px; }
+	.welcome-lens { display: flex; flex-direction: column; gap: 1px; }
+	.lens-name { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.9); letter-spacing: 0.05em; }
+	.lens-items { font-size: 9px; color: rgba(255,255,255,0.45); line-height: 1.5; }
+	.welcome-stats { display: flex; flex-direction: column; gap: 3px; font-size: 9px; color: rgba(255,255,255,0.5); line-height: 1.5; }
+	.welcome-steps { display: flex; flex-direction: column; gap: 5px; }
+	.welcome-step { font-size: 10px; color: rgba(255,255,255,0.6); line-height: 1.4; }
+	.step-n { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 700; margin-right: 4px; }
+	.welcome-footer { font-size: 9px; color: rgba(255,255,255,0.3); line-height: 1.5; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px; }
 	.expand-btn {
 		position: absolute;
 		top: 12px;

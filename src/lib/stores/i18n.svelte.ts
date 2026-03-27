@@ -588,15 +588,17 @@ const dict: Record<string, Record<Locale, string>> = {
 	'hex.provAvg': { es: 'prom. provincial', en: 'prov. avg', gn: 'tetã guasu mbytekue' },
 
 	// ── Welcome panel ─────────────────────────────────────────────────────
+	'side.welcome.analyses': { es: 'análisis disponibles', en: 'analyses available', gn: "mba'ekuaa oĩva" },
+	'side.welcome.dataTitle': { es: 'Datos', en: 'Data', gn: "Mba'ekuaa" },
 	'side.onboarding.title': { es: 'Empezar a explorar', en: 'Start exploring', gn: "Eñepyrũ eheka" },
 	'side.onboarding.step1': { es: 'Elegí un lente arriba: Vivir, Invertir, Producir o Servir', en: 'Choose a lens above: Live, Invest, Produce or Serve', gn: "Eiporavo lente yvate gotyo" },
 	'side.onboarding.step2': { es: 'Seleccioná un análisis del menú y explorá el mapa por departamento', en: 'Select an analysis from the menu and explore the map by department', gn: "Eiporavo peteĩ mba'ekuaa ha ehecha mapa" },
 	'side.onboarding.step3': { es: 'Hacé click en un hexágono para ver el detalle territorial completo', en: 'Click a hexagon to see the full territorial profile', gn: "Ehesakutu hexágono ehecha hag̃ua" },
 	'side.welcome.status': { es: 'En desarrollo', en: 'Under development', gn: 'Oñemoĩhína' },
 	'side.welcome.desc': {
-		es: 'Datos ambientales, sociales y económicos actualizados para cada zona de Misiones. Seleccioná un área, compará indicadores y descargá diagnósticos listos para decisiones.',
-		en: 'Up-to-date environmental, social and economic data for every zone in Misiones. Select an area, compare indicators and download decision-ready diagnostics.',
-		gn: "Tekoha, teko porã ha teko economía mba'ekuaa pyahu Misiones pegua. Eiporavo peteĩ área, ñembojoja indicador ha emboguejy diagnóstico."
+		es: 'Plataforma de análisis geoespacial que integra centenares de fuentes satelitales, censales y catastrales para los 30.000 km² de la provincia de Misiones, Argentina.',
+		en: 'Geospatial analysis platform integrating hundreds of satellite, census and cadastral sources for the 30,000 km² of Misiones province, Argentina.',
+		gn: "Yvy rekokatu plataforma Misiones-pe, 30.000 km² pegua, centenares moñe'ẽha satélite, censo ha catastro ndive."
 	},
 	'side.welcome.pro': { es: 'Spatia Pro', en: 'Spatia Pro', gn: 'Spatia Pro' },
 	'side.welcome.pro.ia': { es: 'Asistente IA con contexto territorial completo', en: 'AI assistant with full territorial context', gn: "IA pytyvõhára yvy rekokatu reheve" },

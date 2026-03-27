@@ -109,13 +109,28 @@ export const PARQUETS = {
 
 export const BASEMAP = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
 
+// Start zoomed out for cinematic entry; flyTo animates to province view
 export const MAP_INIT = {
+	center: [-58.0, -25.0] as [number, number],
+	zoom: 3,
+	pitch: 0,
+	bearing: 0,
+	minZoom: 2,
+	maxZoom: 18
+} as const;
+
+export const MAP_PROVINCE = {
 	center: [-54.4, -27.0] as [number, number],
 	zoom: 7.5,
 	pitch: 30,
 	bearing: -15,
-	minZoom: 6,
-	maxZoom: 18
+} as const;
+
+export const MAP_OBERA = {
+	center: [-54.405, -27.487] as [number, number],
+	zoom: 14,
+	pitch: 55,
+	bearing: -30,
 } as const;
 
 export const COLOR_RAMPS = {

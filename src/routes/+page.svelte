@@ -29,6 +29,18 @@
 			})
 			.catch(e => console.warn('DuckDB init failed:', e));
 
+		// Cinematic fly-in (once per session)
+		if (!sessionStorage.getItem('spatia-entered')) {
+			setTimeout(() => {
+				mapComponent?.cinematicEntry().then(() => {
+					sessionStorage.setItem('spatia-entered', '1');
+				});
+			}, 500); // Wait for map style to load
+		} else {
+			// Returning user — jump to province view
+			setTimeout(() => mapComponent?.flyToInit(), 200);
+		}
+
 		mapContainer?.addEventListener('radio-select', ((e: CustomEvent) => {
 			if (lassoStore.active) return;
 			if (lensStore.activeAnalysis?.spatialUnit === 'catastro') return; // flood mode uses parcel clicks
