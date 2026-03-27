@@ -109,13 +109,12 @@ export const PARQUETS = {
 
 export const BASEMAP = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
 
-// Start zoomed out for cinematic entry; flyTo animates to province view
 export const MAP_INIT = {
-	center: [-57.0, -28.0] as [number, number],
-	zoom: 5,
-	pitch: 0,
-	bearing: 0,
-	minZoom: 4,
+	center: [-55.895, -27.365] as [number, number],  // Posadas centro
+	zoom: 15,
+	pitch: 55,
+	bearing: -20,
+	minZoom: 6,
 	maxZoom: 18
 } as const;
 
@@ -124,13 +123,6 @@ export const MAP_PROVINCE = {
 	zoom: 7.5,
 	pitch: 30,
 	bearing: -15,
-} as const;
-
-export const MAP_CLOSEUP = {
-	center: [-55.895, -27.365] as [number, number],  // Posadas centro
-	zoom: 15,
-	pitch: 60,
-	bearing: -30,
 } as const;
 
 export const COLOR_RAMPS = {

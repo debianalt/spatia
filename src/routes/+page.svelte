@@ -29,21 +29,7 @@
 			})
 			.catch(e => console.warn('DuckDB init failed:', e));
 
-		// Cinematic fly-in — wait for map to be ready
-		const waitForMap = setInterval(() => {
-			if (!mapComponent) return;
-			clearInterval(waitForMap);
-			// Give map time to load style + terrain
-			setTimeout(() => {
-				if (!sessionStorage.getItem('spatia-entered')) {
-					mapComponent?.cinematicEntry().then(() => {
-						sessionStorage.setItem('spatia-entered', '1');
-					});
-				} else {
-					mapComponent?.flyToInit();
-				}
-			}, 1500);
-		}, 100);
+		// No animation — map starts directly at Posadas with 3D buildings
 
 		mapContainer?.addEventListener('radio-select', ((e: CustomEvent) => {
 			if (lassoStore.active) return;
