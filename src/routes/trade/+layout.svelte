@@ -11,10 +11,10 @@
 	<header class="sticky top-0 z-50 border-b border-border" style="background: rgba(10,12,18,0.88); backdrop-filter: blur(8px);">
 		<div class="flex items-center justify-between px-4 py-2.5">
 			<div class="flex items-center gap-4">
-				<span class="text-[15px] font-bold text-white tracking-wide">
+				<span class="text-[17px] font-bold text-white tracking-wide">
 					spatia.ar
 				</span>
-				<nav class="flex items-center gap-1 text-[12px]">
+				<nav class="flex items-center gap-1 text-[13px]">
 					<a href="/" class="text-white/40 hover:text-white transition-colors">{i18n.t('header.nav.map')}</a>
 					<span class="text-white/20">&middot;</span>
 					<span class="text-white font-semibold">{i18n.t('header.nav.dashboards')}</span>
