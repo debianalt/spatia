@@ -12,6 +12,8 @@ Usage:
 
 import argparse
 import ee
+import json
+import os
 import sys
 import time
 
@@ -20,18 +22,37 @@ from config import MISIONES_BBOX
 ASSET = 'GOOGLE/DYNAMICWORLD/V1'
 CLASSES = ['water', 'trees', 'grass', 'flooded_vegetation', 'crops',
            'shrub_and_scrub', 'built', 'bare', 'snow_and_ice']
-SCALE = 100  # Export at 100m (aggregate from 10m — sufficient for H3 res-9)
+SCALE = 100
+GCS_BUCKET = 'spatia-satellite'
+DRIVE_FOLDER = 'spatia-satellite'
+
+
+def authenticate():
+    """Service account in CI, user credentials locally."""
+    key_env = os.environ.get("GEE_SERVICE_ACCOUNT_KEY", "")
+    if not key_env:
+        ee.Initialize()
+        return False
+    if os.path.isfile(key_env):
+        with open(key_env) as f:
+            key_data = json.load(f)
+    else:
+        key_data = json.loads(key_env)
+    credentials = ee.ServiceAccountCredentials(
+        key_data["client_email"], key_data=json.dumps(key_data))
+    ee.Initialize(credentials, opt_url="https://earthengine-highvolume.googleapis.com")
+    return True
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Export Dynamic World composite to Drive")
+    parser = argparse.ArgumentParser(description="Export Dynamic World composite")
     parser.add_argument("--year", type=int, default=2024, help="Year for composite")
     args = parser.parse_args()
 
     year = args.year
-    print(f"Exporting Dynamic World {year} for Misiones...")
-
-    ee.Initialize()
+    is_ci = authenticate()
+    use_gcs = is_ci
+    print(f"Exporting Dynamic World {year} for Misiones -> {'GCS' if use_gcs else 'Drive'}...")
 
     bbox = ee.Geometry.Rectangle(MISIONES_BBOX)
 
@@ -57,30 +78,42 @@ def main():
     class_probs = dw.select(CLASSES).mean().clip(bbox)
 
     # Export class probabilities (mean fraction per class)
-    task_probs = ee.batch.Export.image.toDrive(
+    export_kwargs = dict(
         image=class_probs,
         description=f'dw_probs_{year}',
-        folder='spatia-satellite',
-        fileNamePrefix=f'dw_probs_{year}',
         region=bbox,
         scale=SCALE,
         crs='EPSG:4326',
         maxPixels=1e9,
     )
+    if use_gcs:
+        export_kwargs['bucket'] = GCS_BUCKET
+        export_kwargs['fileNamePrefix'] = f'dw_probs_{year}'
+        task_probs = ee.batch.Export.image.toCloudStorage(**export_kwargs)
+    else:
+        export_kwargs['folder'] = DRIVE_FOLDER
+        export_kwargs['fileNamePrefix'] = f'dw_probs_{year}'
+        task_probs = ee.batch.Export.image.toDrive(**export_kwargs)
     task_probs.start()
     print(f"  Started export: dw_probs_{year} (scale={SCALE}m)")
 
     # Export label mode
-    task_label = ee.batch.Export.image.toDrive(
+    label_kwargs = dict(
         image=label_mode.toInt8(),
         description=f'dw_label_{year}',
-        folder='spatia-satellite',
-        fileNamePrefix=f'dw_label_{year}',
         region=bbox,
         scale=SCALE,
         crs='EPSG:4326',
         maxPixels=1e9,
     )
+    if use_gcs:
+        label_kwargs['bucket'] = GCS_BUCKET
+        label_kwargs['fileNamePrefix'] = f'dw_label_{year}'
+        task_label = ee.batch.Export.image.toCloudStorage(**label_kwargs)
+    else:
+        label_kwargs['folder'] = DRIVE_FOLDER
+        label_kwargs['fileNamePrefix'] = f'dw_label_{year}'
+        task_label = ee.batch.Export.image.toDrive(**label_kwargs)
     task_label.start()
     print(f"  Started export: dw_label_{year} (scale={SCALE}m)")
 
