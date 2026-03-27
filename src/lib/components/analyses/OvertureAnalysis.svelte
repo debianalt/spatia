@@ -41,6 +41,7 @@
 		territorial_gap: () => import('$lib/data/sat_territorial_gap_dept_summary.json'),
 		health_access: () => import('$lib/data/sat_health_access_dept_summary.json'),
 		education_gap: () => import('$lib/data/sat_education_gap_dept_summary.json'),
+		land_use: () => import('$lib/data/sat_land_use_dept_summary.json'),
 	};
 
 	$effect(() => {
