@@ -153,12 +153,12 @@
 			<div class="welcome-divider">{i18n.t('side.welcome.dataTitle')}</div>
 
 			<div class="welcome-stats">
-				<div>319.871 hexágonos H3 a 100m de resolución</div>
-				<div>2.012 radios censales · Censo Nacional 2022</div>
-				<div>445.000 parcelas catastrales</div>
-				<div>1.250.000 edificaciones detectadas por IA</div>
-				<div>Series históricas desde 1984 · Actualización quincenal</div>
-				<div>Informes PDF por departamento · Diagnósticos por microzona bajo demanda</div>
+				<div>— 319.871 hexágonos H3 a 100m de resolución</div>
+				<div>— 2.012 radios censales · Censo Nacional 2022</div>
+				<div>— 445.000 parcelas catastrales</div>
+				<div>— 1.250.000 edificaciones detectadas por IA</div>
+				<div>— Series históricas desde 1984 · Actualización quincenal</div>
+				<div>— Informes PDF por departamento · Diagnósticos por microzona bajo demanda</div>
 			</div>
 
 			<div class="welcome-divider">{i18n.t('side.onboarding.title')}</div>
