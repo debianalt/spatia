@@ -126,10 +126,10 @@ export const MAP_PROVINCE = {
 	bearing: -15,
 } as const;
 
-export const MAP_OBERA = {
-	center: [-54.405, -27.487] as [number, number],
-	zoom: 14,
-	pitch: 55,
+export const MAP_CLOSEUP = {
+	center: [-55.895, -27.365] as [number, number],  // Posadas centro
+	zoom: 15,
+	pitch: 60,
 	bearing: -30,
 } as const;
 

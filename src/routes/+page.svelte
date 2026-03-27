@@ -29,17 +29,21 @@
 			})
 			.catch(e => console.warn('DuckDB init failed:', e));
 
-		// Cinematic fly-in (once per session)
-		if (!sessionStorage.getItem('spatia-entered')) {
+		// Cinematic fly-in — wait for map to be ready
+		const waitForMap = setInterval(() => {
+			if (!mapComponent) return;
+			clearInterval(waitForMap);
+			// Give map time to load style + terrain
 			setTimeout(() => {
-				mapComponent?.cinematicEntry().then(() => {
-					sessionStorage.setItem('spatia-entered', '1');
-				});
-			}, 500); // Wait for map style to load
-		} else {
-			// Returning user — jump to province view
-			setTimeout(() => mapComponent?.flyToInit(), 200);
-		}
+				if (!sessionStorage.getItem('spatia-entered')) {
+					mapComponent?.cinematicEntry().then(() => {
+						sessionStorage.setItem('spatia-entered', '1');
+					});
+				} else {
+					mapComponent?.flyToInit();
+				}
+			}, 1500);
+		}, 100);
 
 		mapContainer?.addEventListener('radio-select', ((e: CustomEvent) => {
 			if (lassoStore.active) return;
