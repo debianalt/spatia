@@ -1,0 +1,102 @@
+name: Update Dynamic World Land Use
+
+on:
+  schedule:
+    - cron: '0 7 8,23 * *'  # 8th and 23rd of each month, 07:00 UTC
+  workflow_dispatch:
+    inputs:
+      year:
+        description: 'Year for Dynamic World composite'
+        default: '2024'
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: pipeline/requirements.txt
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: |
+          pip install -r pipeline/requirements.txt
+          npm install -g wrangler
+
+      - name: Generate H3 grid (if needed)
+        run: |
+          if [ ! -f pipeline/output/hexagons-lite.geojson ]; then
+            python pipeline/generate_h3_grid.py
+          fi
+
+      - name: Export Dynamic World from GEE
+        run: python pipeline/gee_dynamic_world.py --year ${{ github.event.inputs.year || '2024' }}
+        env:
+          GEE_SERVICE_ACCOUNT_KEY: ${{ secrets.GEE_SERVICE_ACCOUNT_KEY }}
+
+      - name: Download from GCS
+        run: |
+          python -c "
+          import json, os
+          from google.cloud import storage
+          from google.oauth2 import service_account
+
+          key = json.loads(os.environ['GEE_SERVICE_ACCOUNT_KEY'])
+          creds = service_account.Credentials.from_service_account_info(key)
+          client = storage.Client(credentials=creds, project=key.get('project_id'))
+          bucket = client.bucket('spatia-satellite')
+
+          year = '${{ github.event.inputs.year || '2024' }}'
+          for prefix in [f'dw_probs_{year}', f'dw_label_{year}']:
+              for blob in bucket.list_blobs(prefix=prefix):
+                  local = f'pipeline/output/{blob.name}'
+                  os.makedirs(os.path.dirname(local), exist_ok=True)
+                  blob.download_to_filename(local)
+                  print(f'Downloaded: {local} ({blob.size/1024/1024:.1f} MB)')
+          "
+        env:
+          GEE_SERVICE_ACCOUNT_KEY: ${{ secrets.GEE_SERVICE_ACCOUNT_KEY }}
+
+      - name: Process to H3
+        run: python pipeline/process_dw_to_h3.py
+
+      - name: Split by department
+        run: python pipeline/split_satellite_by_dpto.py --only land_use
+
+      - name: Generate PDF reports
+        run: python pipeline/generate_dept_report.py --only land_use
+
+      - name: Upload to R2
+        run: |
+          npx wrangler r2 object put neahub/data/sat_land_use.parquet --file pipeline/output/sat_land_use.parquet --remote
+          for f in pipeline/output/sat_dpto/sat_land_use_*.parquet; do
+            name=$(basename "$f")
+            npx wrangler r2 object put "neahub/data/sat_dpto/$name" --file "$f" --remote
+          done
+          for f in pipeline/output/reports/sat_land_use_*.pdf; do
+            name=$(basename "$f")
+            npx wrangler r2 object put "neahub/data/reports/$name" --file "$f" --remote
+          done
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: land-use-parquet
+          path: pipeline/output/sat_land_use.parquet
+          retention-days: 30
+
+      - name: Notify on failure
+        if: failure()
+        run: echo "::error::Dynamic World pipeline failed."

@@ -13,6 +13,7 @@ Usage:
 
 import argparse
 import ee
+import json
 import os
 import sys
 import time
@@ -21,8 +22,30 @@ from config import MISIONES_BBOX, OUTPUT_DIR
 
 EXPORT_SCALE = 100  # metres — sweet spot for H3 res-9 (~174m hex side)
 DRIVE_FOLDER = 'spatia-satellite'
+GCS_BUCKET = 'spatia-satellite'
 DATE_START = '2019-01-01'
 DATE_END = '2024-12-31'
+
+
+def authenticate():
+    """Authenticate to GEE — service account in CI, user credentials locally."""
+    key_env = os.environ.get("GEE_SERVICE_ACCOUNT_KEY", "")
+    if not key_env:
+        ee.Initialize()
+        return False  # local dev, use Drive
+
+    if os.path.isfile(key_env):
+        with open(key_env) as f:
+            key_data = json.load(f)
+    else:
+        key_data = json.loads(key_env)
+
+    credentials = ee.ServiceAccountCredentials(
+        key_data["client_email"],
+        key_data=json.dumps(key_data),
+    )
+    ee.Initialize(credentials, opt_url="https://earthengine-highvolume.googleapis.com")
+    return True  # CI mode, use GCS
 
 
 def build_environmental_risk(bbox):
@@ -243,9 +266,11 @@ def main():
     parser = argparse.ArgumentParser(description="Export GEE analysis composites to Drive")
     parser.add_argument("--analysis", required=True, help="Analysis ID or 'all'")
     parser.add_argument("--scale", type=int, default=EXPORT_SCALE, help=f"Export scale in metres (default: {EXPORT_SCALE})")
+    parser.add_argument("--gcs", action="store_true", help="Force export to GCS (default: auto-detect CI)")
     args = parser.parse_args()
 
-    ee.Initialize()
+    is_ci = authenticate()
+    use_gcs = args.gcs or is_ci
     bbox = ee.Geometry.Rectangle(MISIONES_BBOX)
 
     if args.analysis == 'all':
@@ -253,7 +278,8 @@ def main():
     else:
         analyses = [a.strip() for a in args.analysis.split(',')]
 
-    print(f"Exporting {len(analyses)} analyses at {args.scale}m scale")
+    dest = f"GCS ({GCS_BUCKET})" if use_gcs else f"Drive ({DRIVE_FOLDER})"
+    print(f"Exporting {len(analyses)} analyses at {args.scale}m scale -> {dest}")
     tasks = []
 
     for aid in analyses:
@@ -263,19 +289,29 @@ def main():
 
         print(f"\n  Building {aid}...")
         composite = ANALYSIS_BUILDERS[aid](bbox)
-        n_bands = {'environmental_risk': 5, 'climate_comfort': 5, 'green_capital': 5, 'change_pressure': 5, 'agri_potential': 6, 'forest_health': 5}.get(aid, '?')
-        print(f"    Bands: {n_bands} components")
 
-        task = ee.batch.Export.image.toDrive(
-            image=composite,
-            description=f'sat_{aid}_raster',
-            folder=DRIVE_FOLDER,
-            fileNamePrefix=f'sat_{aid}_raster',
-            region=bbox,
-            scale=args.scale,
-            crs='EPSG:4326',
-            maxPixels=1e9,
-        )
+        if use_gcs:
+            task = ee.batch.Export.image.toCloudStorage(
+                image=composite,
+                description=f'sat_{aid}_raster',
+                bucket=GCS_BUCKET,
+                fileNamePrefix=f'satellite/sat_{aid}_raster',
+                region=bbox,
+                scale=args.scale,
+                crs='EPSG:4326',
+                maxPixels=1e9,
+            )
+        else:
+            task = ee.batch.Export.image.toDrive(
+                image=composite,
+                description=f'sat_{aid}_raster',
+                folder=DRIVE_FOLDER,
+                fileNamePrefix=f'sat_{aid}_raster',
+                region=bbox,
+                scale=args.scale,
+                crs='EPSG:4326',
+                maxPixels=1e9,
+            )
         task.start()
         tasks.append((aid, task))
         print(f"    Export started: sat_{aid}_raster")
