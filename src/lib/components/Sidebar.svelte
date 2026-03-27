@@ -245,20 +245,20 @@
 		z-index: 11;
 	}
 	.collapse-btn:hover { color: #e2e8f0; border-color: #60a5fa; }
-	.welcome-panel { font-family: 'Roboto Condensed', sans-serif; padding-top: 4px; display: flex; flex-direction: column; gap: 12px; }
-	.welcome-brand { font-size: 22px; font-weight: 700; color: #ffffff; letter-spacing: 0.03em; }
-	.welcome-subtitle { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: -8px; }
-	.welcome-desc { font-size: 11px; color: rgba(255,255,255,0.7); line-height: 1.6; }
-	.welcome-divider { font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.35); letter-spacing: 0.08em; text-transform: uppercase; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px; }
-	.welcome-lenses { display: flex; flex-direction: column; gap: 6px; }
-	.welcome-lens { display: flex; flex-direction: column; gap: 1px; }
-	.lens-name { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.9); letter-spacing: 0.05em; }
-	.lens-items { font-size: 9px; color: rgba(255,255,255,0.45); line-height: 1.5; }
-	.welcome-stats { display: flex; flex-direction: column; gap: 3px; font-size: 9px; color: rgba(255,255,255,0.5); line-height: 1.5; }
-	.welcome-steps { display: flex; flex-direction: column; gap: 5px; }
-	.welcome-step { font-size: 10px; color: rgba(255,255,255,0.6); line-height: 1.4; }
-	.step-n { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 700; margin-right: 4px; }
-	.welcome-footer { font-size: 9px; color: rgba(255,255,255,0.3); line-height: 1.5; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px; }
+	.welcome-panel { font-family: 'Roboto Condensed', sans-serif; padding-top: 4px; display: flex; flex-direction: column; gap: 16px; }
+	.welcome-brand { font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: 0.02em; }
+	.welcome-subtitle { font-size: 14px; color: rgba(255,255,255,0.7); margin-top: -10px; font-weight: 300; }
+	.welcome-desc { font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.7; font-weight: 300; }
+	.welcome-divider { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.5); letter-spacing: 0.06em; text-transform: uppercase; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 10px; }
+	.welcome-lenses { display: flex; flex-direction: column; gap: 8px; }
+	.welcome-lens { display: flex; flex-direction: column; gap: 2px; }
+	.lens-name { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.95); letter-spacing: 0.04em; }
+	.lens-items { font-size: 12px; color: rgba(255,255,255,0.55); line-height: 1.6; font-weight: 300; }
+	.welcome-stats { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: rgba(255,255,255,0.65); line-height: 1.6; font-weight: 300; }
+	.welcome-steps { display: flex; flex-direction: column; gap: 8px; }
+	.welcome-step { font-size: 13px; color: rgba(255,255,255,0.75); line-height: 1.5; font-weight: 300; }
+	.step-n { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); font-size: 11px; font-weight: 700; margin-right: 6px; }
+	.welcome-footer { font-size: 12px; color: rgba(255,255,255,0.45); line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; font-weight: 400; }
 	.expand-btn {
 		position: absolute;
 		top: 12px;
