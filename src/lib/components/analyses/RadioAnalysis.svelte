@@ -2,6 +2,7 @@
 	import type { MapStore } from '$lib/stores/map.svelte';
 	import type { HexStore } from '$lib/stores/hex.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
+	import CTADiagnostic from '$lib/components/CTADiagnostic.svelte';
 	import { PARQUETS, type RadioAnalysisConfig } from '$lib/config';
 	import { initDuckDB, query, isReady } from '$lib/stores/duckdb';
 	import PetalChart from '$lib/components/PetalChart.svelte';
@@ -267,13 +268,6 @@
 		</details>
 
 		<details class="method-details">
-			<summary class="method-summary">Acciones recomendadas</summary>
-			<div class="method-body">
-				<p class="explain-text">{config.actions[locale]}</p>
-			</div>
-		</details>
-
-		<details class="method-details">
 			<summary class="method-summary">Metodologia</summary>
 			<div class="method-body">
 				<p class="explain-text">{config.methodology[locale]}</p>
@@ -283,6 +277,8 @@
 		<div class="source-note-box">
 			<div><strong>Fuente:</strong> INDEC Censo 2022 · SoilGrids · CHIRPS · Overture Maps · Catastro Misiones</div>
 		</div>
+
+		<CTADiagnostic analysisName={config.id} />
 	</div>
 {/if}
 

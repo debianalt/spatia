@@ -251,6 +251,13 @@ ANALYSIS_META = {
     },
 }
 
+# Analyses where each hexagon has its own pixel-derived value (zonal stats),
+# as opposed to radio-level analyses where hexagons inherit radio censal values.
+PIXEL_LEVEL_ANALYSES = {
+    "environmental_risk", "climate_comfort", "green_capital",
+    "change_pressure", "agri_potential", "forest_health", "land_use",
+}
+
 
 def safe_filename(dpto: str) -> str:
     return (dpto.lower().replace(" ", "_")
@@ -465,11 +472,62 @@ def generate_report(analysis_id, dept_name, dept_df, prov_df, summary, output_pa
         # ══════ PAGE 6: METHODOLOGY ══════
         fig = new_page(pdf, "Metodología")
 
+        is_pixel = analysis_id in PIXEL_LEVEL_ANALYSES
+
+        if is_pixel:
+            norm_text = (
+                f"de {len(component_cols)} componentes, cada uno normalizado mediante percentil\n"
+                f"rank (0-100) sobre los {summary['province']['total_hexes']:,} hexágonos de la provincia."
+            )
+            grid_text = (
+                f"Grilla espacial:\n"
+                f"  Se utiliza el sistema H3 de Uber a resolución 9, que genera\n"
+                f"  hexágonos regulares de ~0.105 km² (~174 m de lado). Misiones\n"
+                f"  contiene {summary['province']['total_hexes']:,} hexágonos en esta resolución.\n"
+                f"  Cada hexágono recibe el promedio de los píxeles satelitales\n"
+                f"  contenidos en su superficie mediante estadísticas zonales\n"
+                f"  (zonal stats). Cada hexágono tiene un valor único."
+            )
+            limit_text = (
+                f"Limitaciones:\n"
+                f"  • Las fuentes satelitales tienen resoluciones de 30m a 9km\n"
+                f"    según el sensor. Varios píxeles se promedian dentro de cada\n"
+                f"    hexágono; la resolución efectiva es sub-hexagonal.\n"
+                f"  • Baseline satelital construido con datos 2019-2024. Representa\n"
+                f"    condiciones medias del período, no el estado actual. Se\n"
+                f"    recalcula cuando hay nuevas versiones de los datasets fuente.\n"
+                f"  • Para decisiones a escala parcela, verificar con datos\n"
+                f"    de campo y relevamiento in situ."
+            )
+        else:
+            norm_text = (
+                f"de {len(component_cols)} componentes, cada uno normalizado mediante percentil\n"
+                f"rank (0-100) sobre los 2.012 radios censales de la provincia."
+            )
+            grid_text = (
+                f"Grilla espacial:\n"
+                f"  Se utiliza el sistema H3 de Uber a resolución 9, que genera\n"
+                f"  hexágonos regulares de ~0.105 km² (~174 m de lado). Misiones\n"
+                f"  contiene {summary['province']['total_hexes']:,} hexágonos en esta resolución.\n"
+                f"  Cada hexágono hereda los valores de su radio censal contenedor\n"
+                f"  mediante un crosswalk areal ponderado por superficie."
+            )
+            limit_text = (
+                f"Limitaciones:\n"
+                f"  • Los datos de origen son a nivel radio censal (2.012 unidades).\n"
+                f"    Hexágonos dentro del mismo radio comparten valores idénticos.\n"
+                f"    La resolución efectiva es la del radio censal.\n"
+                f"  • Baseline censal construido con datos del Censo 2022 y fuentes\n"
+                f"    de accesibilidad (Nelson 2019, Oxford MAP 2019). Representa\n"
+                f"    un corte temporal fijo. Se actualizará con el próximo censo.\n"
+                f"  • Para decisiones a escala parcela, verificar con datos\n"
+                f"    de campo y relevamiento in situ."
+            )
+
         method_text = (
             f"Cálculo del score compuesto\n\n"
             f"El score de \"{meta['title']}\" se construye como un promedio ponderado\n"
-            f"de {len(component_cols)} componentes, cada uno normalizado mediante percentil\n"
-            f"rank (0-100) sobre los 2.012 radios censales de la provincia.\n\n"
+            f"{norm_text}\n\n"
             f"Fórmula:\n"
             f"  Score = {meta['weights']}\n\n"
             f"Normalización:\n"
@@ -477,20 +535,8 @@ def generate_report(analysis_id, dept_name, dept_df, prov_df, summary, output_pa
             f"  Para componentes invertidos (ej. pendiente, distancia), el valor\n"
             f"  se niega antes del ranking, de modo que menor valor original\n"
             f"  produce mayor score.\n\n"
-            f"Grilla espacial:\n"
-            f"  Se utiliza el sistema H3 de Uber a resolución 9, que genera\n"
-            f"  hexágonos regulares de ~0.105 km² (~174 m de lado). Misiones\n"
-            f"  contiene {summary['province']['total_hexes']:,} hexágonos en esta resolución.\n"
-            f"  Cada hexágono hereda los valores de su radio censal contenedor\n"
-            f"  mediante un crosswalk areal ponderado por superficie.\n\n"
-            f"Limitaciones:\n"
-            f"  • Los datos de origen son a nivel radio censal (2.012 unidades),\n"
-            f"    no a nivel pixel. Hexágonos dentro del mismo radio comparten\n"
-            f"    valores idénticos. La resolución efectiva es la del radio.\n"
-            f"  • Los datos temporales se promedian sobre la ventana 2019-2024.\n"
-            f"    No capturan variabilidad interanual ni estacional.\n"
-            f"  • Las fuentes satelitales tienen resoluciones entre 250m y 9km.\n"
-            f"    Para análisis a escala parcela, verificar con datos de campo."
+            f"{grid_text}\n\n"
+            f"{limit_text}"
         )
         fig.text(0.08, 0.88, method_text, fontsize=8, va='top', fontfamily='monospace',
                  color='#333333', linespacing=1.5)

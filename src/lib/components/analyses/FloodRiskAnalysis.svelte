@@ -3,6 +3,7 @@
 	import type { MapStore } from '$lib/stores/map.svelte';
 	import type { HexStore } from '$lib/stores/hex.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
+	import CTADiagnostic from '$lib/components/CTADiagnostic.svelte';
 	import { DATA_FRESHNESS, PARQUETS } from '$lib/config';
 	import { initDuckDB, query } from '$lib/stores/duckdb';
 	import PetalChart from '$lib/components/PetalChart.svelte';
@@ -377,13 +378,6 @@
 		</details>
 
 		<details class="method-details">
-			<summary class="method-summary">{i18n.t('analysis.flood.actionsTitle')}</summary>
-			<div class="method-body">
-				<p class="explain-text">{i18n.t('analysis.flood.actionsBody')}</p>
-			</div>
-		</details>
-
-		<details class="method-details">
 			<summary class="method-summary">{i18n.t('analysis.flood.methodTitle')}</summary>
 			<div class="method-body">
 				<div class="method-item">
@@ -405,6 +399,8 @@
 			<div><strong>Fuente:</strong> JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus, {DATA_FRESHNESS.hex_flood_risk.dataDate}) + Censo Nacional 2022</div>
 			<div><strong>Última revisión:</strong> {DATA_FRESHNESS.hex_flood_risk.processedDate} · Imágenes SAR disponibles cada ~12 días</div>
 		</div>
+
+		<CTADiagnostic analysisName={i18n.t('analysis.flood.title')} />
 	</div>
 {/if}
 

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { HexStore } from '$lib/stores/hex.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
+	import CTADiagnostic from '$lib/components/CTADiagnostic.svelte';
 	import { HEX_LAYER_REGISTRY, DATA_FRESHNESS, type AnalysisConfig } from '$lib/config';
 	import { initDuckDB, query } from '$lib/stores/duckdb';
 
@@ -149,83 +150,70 @@
 	});
 
 	// ── Explanatory content per analysis ──
-	const ANALYSIS_CONTENT: Record<string, { howToRead: string; implications: string; actions: string; method: string }> = {
+	const ANALYSIS_CONTENT: Record<string, { howToRead: string; implications: string; method: string }> = {
 		environmental_risk: {
 			howToRead: 'El mapa muestra un score de 0 a 100 donde mayor valor indica mayor riesgo ambiental acumulado. Se combinan cinco factores: frecuencia de incendios, pérdida forestal histórica, amplitud térmica diurna-nocturna, pendiente del terreno y altura sobre el drenaje más cercano. Colores cálidos (rojo) indican zonas con múltiples riesgos superpuestos.',
 			implications: 'Zonas con score alto presentan vulnerabilidad ambiental múltiple: mayor probabilidad de incendios, suelos inestables por pendiente, y exposición a inundaciones por baja elevación sobre cauces. Estas áreas requieren evaluación detallada antes de cualquier intervención territorial.',
-			actions: 'Verificar zonificación OTBN antes de proyectos productivos. Evaluar necesidad de cortafuegos en zonas con alto componente de incendio. En áreas con bajo HAND (altura sobre drenaje), considerar restricciones constructivas o infraestructura de mitigación hídrica.',
-			method: 'Score = promedio ponderado de 5 componentes normalizados por percentil (0-100): frecuencia de incendios MODIS (25%), pérdida forestal Hansen GFC (25%), amplitud térmica LST MODIS (20%), pendiente FABDEM 30m (15%), HAND invertido MERIT Hydro (15%). Datos promediados 2019-2024.',
+			method: 'Score = promedio ponderado de 5 componentes normalizados por percentil (0-100): frecuencia de incendios MODIS (25%), pérdida forestal Hansen GFC (25%), amplitud térmica LST MODIS (20%), pendiente FABDEM 30m (15%), HAND invertido MERIT Hydro (15%). Baseline satelital 2019-2024.',
 		},
 		climate_comfort: {
 			howToRead: 'El score indica qué tan confortable es el clima de la zona en una escala de 0 a 100. Valores altos implican menor estrés térmico, menos heladas y mejor balance hídrico. Se combinan temperatura diurna y nocturna, precipitación, días de helada y relación evapotranspiración/potencial.',
 			implications: 'Zonas con bajo confort climático presentan extremos térmicos (calor diurno intenso o heladas frecuentes), precipitación insuficiente o excesiva, y estrés hídrico. Esto impacta tanto la habitabilidad como la productividad agrícola y forestal.',
-			actions: 'En zonas con alto calor diurno, priorizar arbolado urbano y superficies permeables. En zonas con heladas frecuentes, seleccionar cultivos resistentes al frío. El estrés hídrico alto señala necesidad de infraestructura de riego o captación.',
-			method: 'Score = promedio ponderado de: LST diurno invertido (25%), LST nocturno invertido (20%), precipitación CHIRPS (20%), días de helada invertido ERA5 (15%), ratio ET/PET MODIS (20%). Datos promediados 2019-2024. Temperaturas en °C (MODIS 1km), precipitación en mm/año (CHIRPS 5km).',
+			method: 'Score = promedio ponderado de: LST diurno invertido (25%), LST nocturno invertido (20%), precipitación CHIRPS (20%), días de helada invertido ERA5 (15%), ratio ET/PET MODIS (20%). Baseline satelital 2019-2024. Temperaturas en °C (MODIS 1km), precipitación en mm/año (CHIRPS 5km).',
 		},
 		green_capital: {
 			howToRead: 'El score mide la cantidad y calidad de vegetación en cada zona. Valores altos indican mayor cobertura vegetal, bosque más denso y ecosistemas más productivos. Se combinan cinco indicadores satelitales complementarios de verdor, cobertura arbórea y productividad primaria.',
 			implications: 'Zonas con alto capital verde son reservorios de biodiversidad, regulan el clima local, protegen el suelo de la erosión y proveen servicios ecosistémicos. Su pérdida genera efectos cascada: mayor temperatura, menor retención hídrica, pérdida de hábitat.',
-			actions: 'Zonas con score alto son prioritarias para conservación. Zonas con score bajo pero alto treecover2000 indican degradación reciente — candidatas para restauración. Comparar con OTBN para verificar cumplimiento de zonificación forestal.',
-			method: 'Score = promedio ponderado de: NDVI medio MODIS 250m (25%), cobertura arbórea Hansen 2000 (20%), NPP MODIS (20%), LAI MODIS (15%), fracción arbórea VCF MODIS (20%). Datos promediados 2019-2024 excepto Hansen (baseline 2000).',
+			method: 'Score = promedio ponderado de: NDVI medio MODIS 250m (25%), cobertura arbórea Hansen 2000 (20%), NPP MODIS (20%), LAI MODIS (15%), fracción arbórea VCF MODIS (20%). Baseline satelital 2019-2024 excepto Hansen (baseline 2000).',
 		},
 		change_pressure: {
 			howToRead: 'El score indica cuánto se está transformando cada zona. Valores altos señalan cambios intensos: urbanización creciente, pérdida de cobertura vegetal o expansión de la frontera agropecuaria. Se combinan tendencias temporales (luces, NDVI) con cambios acumulados (GHSL, Hansen).',
 			implications: 'Zonas con alta presión de cambio están en transición activa: pueden representar oportunidades de inversión (urbanización) o alertas ambientales (deforestación). La combinación de tendencia VIIRS creciente con NDVI decreciente señala conversión de uso del suelo.',
-			actions: 'Monitorear trimestralmente las zonas con score >70. Cruzar con OTBN para detectar deforestación ilegal. Zonas con alta presión de cambio y baja consolidación urbana pueden necesitar planificación territorial urgente.',
 			method: 'Score = promedio ponderado de: tendencia VIIRS 2016-2025 regr_slope (25%), cambio GHSL built fraction 2000-2020 (25%), pérdida forestal total Hansen (20%), tendencia NDVI invertida 2019-2024 (15%), actividad de fuego MODIS (15%).',
 		},
 		location_value: {
 			howToRead: 'El score estima el valor posicional de cada zona según su accesibilidad, conectividad y actividad económica. Valores altos indican zonas bien conectadas, cercanas a servicios de salud, con actividad económica visible y topografía favorable.',
 			implications: 'El valor posicional es un predictor de precio del suelo y potencial de desarrollo. Zonas con alto score pero baja densidad edilicia pueden representar oportunidades de inversión. Zonas con bajo score están funcionalmente aisladas.',
-			actions: 'Usar como insumo para valuación inmobiliaria territorial. Zonas con score medio-alto y buena accesibilidad vial son candidatas para desarrollo productivo. Zonas con score bajo requieren inversión en infraestructura de conectividad.',
 			method: 'Score = promedio ponderado de: tiempo a ciudad 20k invertido Nelson (25%), acceso a salud invertido Oxford (20%), radiancia nocturna VIIRS (25%), pendiente invertida FABDEM (15%), distancia a ruta invertida OSM (15%).',
 		},
 		agri_potential: {
 			howToRead: 'El score indica la aptitud agroclimática del suelo. Valores altos señalan suelos fértiles con buena lluvia, calor suficiente y pendiente manejable para cultivos. Se combinan propiedades del suelo (SoilGrids), clima (CHIRPS, ERA5) y topografía (FABDEM).',
 			implications: 'Zonas con score alto son óptimas para cultivos extensivos e intensivos. El pH cercano a 6.0-6.5 y alto carbono orgánico favorecen yerba mate, té y tabaco. Pendientes >15° limitan la mecanización. Precipitación <1200mm/año requiere riego.',
-			actions: 'Cruzar con OTBN para verificar disponibilidad legal del suelo. En zonas con alta aptitud pero baja producción actual, evaluar factibilidad de proyectos agropecuarios. Considerar suelo + lluvia + acceso a ruta como triada de viabilidad.',
 			method: 'Score = promedio ponderado de: carbono orgánico SoilGrids (20%), distancia pH a óptimo 6.25 invertida (15%), contenido de arcilla (15%), precipitación CHIRPS (20%), GDD base 10 ERA5 (15%), pendiente invertida FABDEM (15%). Suelos a 0-5cm, 250m resolución.',
 		},
 		forest_health: {
 			howToRead: 'El score indica la integridad y salud del bosque. Valores altos señalan bosques con tendencia de verdor estable o creciente, baja pérdida arbórea, poca actividad de fuego y alta productividad fotosintética.',
 			implications: 'Bosques con score bajo están en proceso de degradación: pérdida de cobertura, incendios recurrentes o reducción de productividad. La combinación de tendencia NDVI negativa con alta pérdida Hansen señala deforestación activa.',
-			actions: 'Priorizar monitoreo en zonas con score <30. Cruzar con Corredor Verde y ANP para evaluar estado de áreas protegidas. Zonas con alto GPP pero tendencia NDVI negativa pueden estar en fase temprana de degradación.',
-			method: 'Score = promedio ponderado de: tendencia NDVI 5 años (25%), ratio pérdida/cobertura Hansen invertido (25%), fracción quemada MODIS invertida (20%), GPP MODIS (15%), ET MODIS (15%). Datos 2019-2024.',
+			method: 'Score = promedio ponderado de: tendencia NDVI 5 años (25%), ratio pérdida/cobertura Hansen invertido (25%), fracción quemada MODIS invertida (20%), GPP MODIS (15%), ET MODIS (15%). Baseline satelital 2019-2024.',
 		},
 		forestry_aptitude: {
 			howToRead: 'El score indica dónde es más rentable establecer plantaciones forestales comerciales. Valores altos señalan zonas con suelo ácido (favorable para pinos), lluvia suficiente, pendiente mecanizable y buena logística de transporte.',
 			implications: 'Misiones concentra el 80% de las plantaciones forestales de Argentina. Las zonas con alto score combinan condiciones edafoclimáticas óptimas con accesibilidad logística. El pH bajo (ácido) es preferido por Pinus y Eucalyptus.',
-			actions: 'Cruzar con OTBN categoría III (apta para cambio de uso). Evaluar distancia a aserraderos y puertos. Zonas con score alto cerca de rutas nacionales son prioritarias para inversión forestal.',
 			method: 'Score = promedio ponderado de: pH invertido SoilGrids (15%), arcilla invertida (10%), precipitación CHIRPS (25%), pendiente invertida FABDEM (20%), distancia a ruta invertida OSM (15%), tiempo a ciudad 50k invertido Nelson (15%).',
 		},
 		isolation_index: {
 			howToRead: 'El score indica cuán aislado está cada lugar. Valores altos señalan zonas con largo tiempo de viaje a centros urbanos, baja densidad vial, poca actividad económica nocturna y alta fricción de desplazamiento.',
 			implications: 'El aislamiento limita el acceso a salud, educación y mercados. Zonas con score alto tienen mayor costo logístico, menor cobertura de servicios y menor conectividad digital. Poblaciones aisladas son más vulnerables ante emergencias.',
-			actions: 'Priorizar inversión en conectividad vial para zonas con score >70. Evaluar factibilidad de servicios móviles de salud y educación. Cruzar con NBI para identificar aislamiento + pobreza como doble vulnerabilidad.',
 			method: 'Score = promedio ponderado de: tiempo a ciudad 100k Nelson (25%), tiempo a Posadas custom (25%), densidad vial invertida OSM (20%), radiancia nocturna invertida VIIRS (15%), fricción motorizada Oxford (15%).',
 		},
 		health_access: {
 			howToRead: 'El score indica el déficit de acceso a servicios de salud. Valores altos señalan zonas donde la combinación de lejanía al centro de salud, alta demanda poblacional y vulnerabilidad social genera una brecha sanitaria significativa.',
 			implications: 'Zonas con score alto tienen poblaciones que enfrentan barreras concretas para acceder a atención médica: largo tiempo de viaje, falta de cobertura formal, y condiciones socioeconómicas que agravan los problemas de salud.',
-			actions: 'Priorizar servicios móviles de salud en zonas con score >60. Evaluar factibilidad de centros de atención primaria en radios con alta densidad y largo travel time. Cruzar con NBI para identificar la doble vulnerabilidad salud + pobreza.',
 			method: 'Score = promedio ponderado de: tiempo motorizado a salud Oxford MAP (30%), tiempo a pie a salud (20%), densidad poblacional censo 2022 (15%), cobertura de salud invertida (15%), NBI (20%). Resolución: 1km (Oxford) + radio censal (censo).',
 		},
 		education_gap: {
 			howToRead: 'El score mide la brecha educativa territorial. Valores altos indican zonas con alto porcentaje de población sin instrucción, alta deserción adolescente, bajo nivel educativo máximo, y aislamiento que dificulta el acceso a instituciones educativas.',
 			implications: 'La brecha educativa tiene efectos intergeneracionales: zonas con alta deserción y bajo nivel educativo reproducen la pobreza. El aislamiento amplifica el problema al limitar el acceso a escuelas secundarias y terciarias.',
-			actions: 'Focalizar programas de retención escolar en zonas con deserción 13-18 >20%. Evaluar transporte escolar en zonas aisladas. Priorizar becas universitarias para radios con pct_universitario <5% y alta deserción.',
 			method: 'Score = promedio ponderado de: sin instrucción censo 2022 (25%), deserción 13-18 años (25%), solo primaria (20%), universitarios invertido (15%), aislamiento Nelson (15%). Datos del Censo Nacional 2022 a nivel radio censal.',
 		},
 		land_use: {
 			howToRead: 'El mapa muestra la diversidad de uso del suelo (índice de Shannon, 0-100). Valores altos indican zonas con múltiples usos del suelo coexistiendo (mosaico agro-forestal). Valores bajos indican uso homogéneo (bosque puro o monocultivo). Los componentes muestran la fracción de cada clase.',
 			implications: 'Alta diversidad de uso puede indicar resiliencia territorial (múltiples actividades económicas) o fragmentación del paisaje. Zonas de bosque puro (diversidad baja, frac_trees alto) son prioritarias para conservación. Zonas con alto frac_built y bajo frac_trees indican islas de calor urbano.',
-			actions: 'Cruzar con OTBN para verificar coherencia entre uso actual y zonificación legal. Zonas con alto frac_crops + bajo frac_trees son candidatas para cortinas forestales. Zonas con alto frac_built + bajo frac_grass requieren infraestructura verde.',
 			method: 'Fuente: Google Dynamic World v1 (Sentinel-2, 10m, 2024). Composite anual (moda por píxel). 9 clases: agua, bosque, pasto, vegetación inundable, cultivos, arbustos, construido, desnudo, nieve. Score = Shannon entropy normalizada sobre 9 clases × 100.',
 		},
 		territorial_gap: {
 			howToRead: 'El score mide la desigualdad territorial: la brecha entre actividad económica visible y acceso a servicios básicos. Valores altos indican zonas donde hay actividad económica (luces nocturnas) pero falta infraestructura básica (agua, cloacas) o hay alta pobreza.',
 			implications: 'La brecha territorial señala zonas donde el crecimiento económico no se traduce en bienestar. Alta radiancia nocturna con alto NBI indica urbanización sin servicios. Zonas aisladas con bajo NBI no son "brecha" sino pobreza estructural — un problema diferente.',
-			actions: 'Zonas con score >60 son prioritarias para inversión en infraestructura básica (agua de red, cloacas). Cruzar con censo de vivienda para identificar tipo de déficit. Las municipalidades pueden usar este indicador para priorizar obra pública.',
 			method: 'Score = promedio ponderado de: radiancia nocturna invertida VIIRS (15%), NBI censo 2022 (25%), sin red de agua censo 2022 (25%), sin cloacas censo 2022 (20%), tiempo a ciudad 20k Nelson (15%). La inversión de VIIRS penaliza zonas con luces pero sin servicios.',
 		},
 	};
@@ -371,13 +359,6 @@
 			</details>
 
 			<details class="method-details">
-				<summary class="method-summary">Acciones recomendadas</summary>
-				<div class="method-body">
-					<p class="explain-text">{content.actions}</p>
-				</div>
-			</details>
-
-			<details class="method-details">
 				<summary class="method-summary">Metodologia</summary>
 				<div class="method-body">
 					<p class="explain-text">{content.method}</p>
@@ -408,6 +389,8 @@
 				<div><strong>Procesado:</strong> {freshness.processedDate}</div>
 			</div>
 		{/if}
+
+		<CTADiagnostic analysisName={i18n.t(analysis.titleKey)} />
 	</div>
 
 {:else}

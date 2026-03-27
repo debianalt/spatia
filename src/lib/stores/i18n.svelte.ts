@@ -457,12 +457,6 @@ const dict: Record<string, Record<Locale, string>> = {
 		en: 'The number of new parcels in the last 90 days indicates real estate pressure on each area. High growth of urban parcels may signal urban expansion, service demand and the need for territorial planning.',
 		gn: "Yvy pyahu 90 ára pe ohechauka presión inmobiliaria. Yvy táva oikuaaukáva ikatu he'ise táva oñembotuicha, oikotevẽ servicio ha planificación."
 	},
-	'analysis.catastro.actionsTitle': { es: 'Acciones recomendadas', en: 'Recommended actions', gn: "Mba'e ojejapo va'erã" },
-	'analysis.catastro.actionsBody': {
-		es: 'Seleccioná un departamento y hacé click en los radios censales para comparar la estructura parcelaria y la calidad habitacional. Podés seleccionar varios radios para compararlos lado a lado.',
-		en: 'Select a department and click census tracts to compare parcel structure and housing quality. You can select multiple tracts to compare them side by side.',
-		gn: "Eiporavo departamento ha ehesakutu radio ejojaha hag̃ua yvy ha óga rekoporã. Ikatu eiporavo heta radio ejojaha hag̃ua."
-	},
 	'analysis.catastro.guideDeptTitle': { es: 'Guía rápida', en: 'Quick guide', gn: "Ñemoañete pya'e" },
 	'analysis.catastro.guideDeptBody': {
 		es: 'Las parcelas cyan son urbanas, las verdes son rurales. Hacé click en cualquier edificio o zona del mapa para seleccionar un radio censal y ver sus estadísticas: cantidad de parcelas, áreas medias, parcelas nuevas y calidad habitacional.',
@@ -472,7 +466,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'analysis.catastro.vsAvg': { es: 'vs promedio provincial', en: 'vs provincial average', gn: 'vs tetã mbytekue' },
 	'analysis.catastro.pressure': { es: 'Presión inmobiliaria', en: 'Real estate pressure', gn: "Yvy ñemuha reko" },
 	'analysis.catastro.parcels': { es: 'parcelas', en: 'parcels', gn: 'yvy' },
-	'analysis.catastro.updateFreq': { es: 'Actualización quincenal', en: 'Biweekly update', gn: "Oñembopyahu 15 ára" },
+	'analysis.catastro.updateFreq': { es: 'Datos catastrales actualizados periódicamente', en: 'Cadastral data updated periodically', gn: "Mba'ekuaa catastro oñembopyahu" },
 	'analysis.catastro.clickDept': { es: 'Parcelas visibles en el mapa — hacé click en un radio para detalle', en: 'Parcels visible on map — click a tract for detail', gn: "Yvy ojehecha mapápe — eñemí peteĩ radio-pe" },
 	'analysis.catastro.thisRadio': { es: 'Este radio', en: 'This tract', gn: 'Ko radio' },
 	'analysis.catastro.deptAvg': { es: 'Prom. depto', en: 'Dept avg', gn: 'Depto mbytekue' },
@@ -518,12 +512,6 @@ const dict: Record<string, Record<Locale, string>> = {
 		es: 'Las parcelas en zonas de riesgo alto pueden enfrentar anegamientos recurrentes, afectando el valor inmobiliario y la habitabilidad. La infraestructura de servicios básicos (agua, cloacas) en estas zonas requiere diseño resiliente.',
 		en: 'Parcels in high-risk areas may face recurrent flooding, affecting property values and habitability. Basic service infrastructure (water, sewerage) in these areas requires resilient design.',
 		gn: "Yvy mba'asy guasu rehegua ikatu oguereko ysoguy jey, ojapo hag̃ua óga ha tape ivaivéva."
-	},
-	'analysis.flood.actionsTitle': { es: 'Acciones recomendadas', en: 'Recommended actions', gn: "Mba'e ojejapo va'erã" },
-	'analysis.flood.actionsBody': {
-		es: 'Consultá el mapa de tu parcela: seleccioná un departamento y hacé click en la parcela catastral para conocer su score de riesgo. Si tu parcela está en zona de riesgo alto, considerá esta información antes de invertir o construir, y consultá a las autoridades municipales sobre antecedentes de inundación en la zona.',
-		en: 'Check your parcel on the map: select a department and click the cadastral parcel to see its risk score. If your parcel is in a high-risk area, consider this information before investing or building, and consult local authorities about flooding history in the area.',
-		gn: "Ehecha ne yvy mapápe: eiporavo departamento ha ehesakutu yvy ehecha hag̃ua score. Mba'asy guasu oĩramo, eñamindu'u ko marandu eiporavo mboyve, ha eporandu municipio-pe ysoguy rehegua."
 	},
 	'analysis.flood.statusWet': { es: 'Agua detectada en superficie', en: 'Surface water detected', gn: "Y ojehecha yvy ári" },
 	'analysis.flood.statusDry': { es: 'Sin agua detectada en la última imagen', en: 'No water detected in latest image', gn: "Ndaipóri y ojehechaukáva" },
@@ -589,6 +577,7 @@ const dict: Record<string, Record<Locale, string>> = {
 
 	// ── Welcome panel ─────────────────────────────────────────────────────
 	'side.welcome.analyses': { es: 'análisis disponibles', en: 'analyses available', gn: "mba'ekuaa oĩva" },
+	'side.welcome.analysesIntro': { es: 'Algunos análisis disponibles', en: 'Some available analyses', gn: "Mba'ekuaa oĩva" },
 	'side.welcome.dataTitle': { es: 'Datos', en: 'Data', gn: "Mba'ekuaa" },
 	'side.onboarding.title': { es: 'Empezar a explorar', en: 'Start exploring', gn: "Eñepyrũ eheka" },
 	'side.onboarding.step1': { es: 'Elegí un lente arriba: Vivir, Invertir, Producir o Servir', en: 'Choose a lens above: Live, Invest, Produce or Serve', gn: "Eiporavo lente yvate gotyo" },
@@ -608,6 +597,84 @@ const dict: Record<string, Record<Locale, string>> = {
 	'side.welcome.pro.support': { es: 'Soporte técnico prioritario', en: 'Priority technical support', gn: "Pytyvõ técnico tenondegua" },
 	'side.welcome.pro.cta': { es: 'Solicitar acceso', en: 'Request access', gn: 'Ejerure jeike' },
 	'side.welcome.backed': { es: 'Con el apoyo de', en: 'Supported by', gn: 'Pytyvõ reheve' },
+
+	// ── CTA diagnóstico territorial ───────────────────────────────────────
+	'cta.diagnostic.label': { es: '¿Necesitás un diagnóstico personalizado?', en: 'Need a custom territorial diagnosis?', gn: "Reikotevẽ diagnóstico?" },
+	'cta.diagnostic.button': { es: 'Solicitar diagnóstico territorial', en: 'Request territorial diagnosis', gn: 'Ejerure diagnóstico' },
+
+	// ── Trade section ─────────────────────────────────────────────────────
+	'trade.nav.map': { es: 'Mapa', en: 'Map', gn: 'Mapa' },
+	'trade.nav.trade': { es: 'Trade', en: 'Trade', gn: 'Trade' },
+	'trade.meta.title': { es: 'Datos territoriales para decisiones estratégicas', en: 'Territorial data for strategic decisions', gn: 'Trade' },
+	'trade.hero.subtitle': { es: 'Pipelines de datos satelitales y territoriales para compliance, inteligencia comercial y análisis de riesgo', en: 'Satellite and territorial data pipelines for compliance, business intelligence, and risk assessment', gn: 'Trade' },
+	'trade.status.available': { es: 'Disponible', en: 'Available', gn: 'Available' },
+	'trade.status.coming_soon': { es: 'Próximamente', en: 'Coming soon', gn: 'Coming soon' },
+	'trade.eudr.card_title': { es: 'EUDR Compliance', en: 'EUDR Compliance', gn: 'EUDR Compliance' },
+	'trade.eudr.card_desc': { es: 'Verificación de deforestación para exportaciones de commodities argentinos a la UE. Regulación (UE) 2023/1115.', en: 'Deforestation verification for Argentine commodity exports to the EU. Regulation (EU) 2023/1115.', gn: 'EUDR' },
+	'trade.eudr.card_cta': { es: 'Verificar parcela', en: 'Check parcel', gn: 'Check' },
+	'trade.radar.card_title': { es: 'Radar Empresarial', en: 'Business Radar', gn: 'Radar' },
+	'trade.radar.card_desc': { es: 'Inteligencia competitiva: nuevas empresas, actividad económica y dinámica territorial por sector y localidad.', en: 'Competitive intelligence: new businesses, economic activity, and territorial dynamics by sector and locality.', gn: 'Radar' },
+	'trade.risk.card_title': { es: 'Riesgo Ambiental', en: 'Environmental Risk', gn: 'Risk' },
+	'trade.risk.card_desc': { es: 'Evaluación de riesgo climático, hídrico y de incendios para inversiones y seguros en regiones específicas.', en: 'Climate, water, and fire risk assessment for investments and insurance in specific regions.', gn: 'Risk' },
+	'trade.trust.title': { es: 'Fuentes de datos', en: 'Data sources', gn: 'Data' },
+	'trade.footer.tagline': { es: 'Inteligencia territorial desde el borde', en: 'Territorial intelligence from the edge', gn: 'Spatia' },
+	'trade.footer.data': { es: 'Datos satelitales procesados en Google Earth Engine, servidos desde Cloudflare', en: 'Satellite data processed in Google Earth Engine, served from Cloudflare', gn: 'Data' },
+
+	// ── EUDR product page ─────────────────────────────────────────────────
+	'eudr.hero.title': { es: 'EUDR Compliance Check', en: 'EUDR Compliance Check', gn: 'EUDR' },
+	'eudr.hero.subtitle': { es: 'Verificación satelital de deforestación para due diligence bajo el Reglamento (UE) 2023/1115. Cobertura: Chaco, Salta, Santiago del Estero, Formosa.', en: 'Satellite-based deforestation verification for due diligence under EU Regulation 2023/1115. Coverage: Chaco, Salta, Santiago del Estero, Formosa.', gn: 'EUDR' },
+	'eudr.cta.try_demo': { es: 'Probar demo', en: 'Try demo', gn: 'Demo' },
+	'eudr.cta.contact': { es: 'Contactar', en: 'Contact us', gn: 'Contact' },
+	'eudr.what.title': { es: '¿Qué es la EUDR?', en: 'What is the EUDR?', gn: 'EUDR' },
+	'eudr.what.regulation': { es: 'Regulación UE 2023/1115', en: 'EU Regulation 2023/1115', gn: 'EUDR' },
+	'eudr.what.regulation_desc': { es: 'Los importadores europeos deben demostrar que soja, carne y madera no provienen de tierras deforestadas. Aplica desde diciembre 2025.', en: 'EU importers must prove that soy, cattle, and wood products are not sourced from deforested land. Applies from December 2025.', gn: 'EUDR' },
+	'eudr.what.cutoff': { es: 'Fecha de corte: 31/12/2020', en: 'Cutoff date: 31/12/2020', gn: 'EUDR' },
+	'eudr.what.cutoff_desc': { es: 'Cualquier deforestación posterior al 31 de diciembre de 2020 hace que el producto no cumpla con la regulación.', en: 'Any deforestation after 31 December 2020 renders the product non-compliant with the regulation.', gn: 'EUDR' },
+	'eudr.what.penalty': { es: 'Multas de hasta 4%', en: 'Fines up to 4%', gn: 'EUDR' },
+	'eudr.what.penalty_desc': { es: 'Las multas pueden alcanzar el 4% de la facturación anual del importador en la UE, más confiscación de mercadería y exclusión de licitaciones.', en: 'Fines can reach 4% of the importer\'s annual EU-wide turnover, plus confiscation of goods and exclusion from public procurement.', gn: 'EUDR' },
+	'eudr.how.title': { es: '¿Cómo funciona?', en: 'How it works', gn: 'EUDR' },
+	'eudr.how.step1_title': { es: 'Ingresá coordenadas', en: 'Input coordinates', gn: 'EUDR' },
+	'eudr.how.step1_desc': { es: 'Latitud/longitud de la parcela de producción, o hacé click en el mapa.', en: 'Latitude/longitude of the production plot, or click on the map.', gn: 'EUDR' },
+	'eudr.how.step2_title': { es: 'Análisis satelital', en: 'Satellite analysis', gn: 'EUDR' },
+	'eudr.how.step2_desc': { es: 'Cruzamos Hansen GFC (30m) y MODIS fire data contra la línea base 2020.', en: 'We cross-reference Hansen GFC (30m) and MODIS fire data against the 2020 baseline.', gn: 'EUDR' },
+	'eudr.how.step3_title': { es: 'Evaluación de riesgo', en: 'Risk assessment', gn: 'EUDR' },
+	'eudr.how.step3_desc': { es: 'Score de riesgo 0-100 con evidencia satelital y estado de compliance EUDR.', en: 'Risk score 0-100 with satellite evidence and EUDR compliance status.', gn: 'EUDR' },
+	'eudr.data.title': { es: 'Datos y cobertura', en: 'Data and coverage', gn: 'EUDR' },
+	'eudr.data.deforestation': { es: 'Deforestación', en: 'Deforestation', gn: 'EUDR' },
+	'eudr.data.coverage': { es: 'Cobertura', en: 'Coverage', gn: 'EUDR' },
+	'eudr.data.update_freq': { es: 'Actualización mensual', en: 'Monthly updates', gn: 'EUDR' },
+	'eudr.pricing.title': { es: 'Planes', en: 'Pricing', gn: 'EUDR' },
+	'eudr.pricing.free': { es: 'Gratis', en: 'Free', gn: 'Free' },
+	'eudr.pricing.contact': { es: 'Contactar', en: 'Contact', gn: 'Contact' },
+	'eudr.pricing.custom': { es: 'A medida', en: 'Custom', gn: 'Custom' },
+	'eudr.pricing.demo_1': { es: 'Hasta 10 consultas/día', en: 'Up to 10 checks/day', gn: 'EUDR' },
+	'eudr.pricing.demo_2': { es: 'Cobertura: 4 provincias', en: 'Coverage: 4 provinces', gn: 'EUDR' },
+	'eudr.pricing.demo_3': { es: 'Resolución H3 res-7 (~5 km²)', en: 'H3 res-7 resolution (~5 km²)', gn: 'EUDR' },
+	'eudr.pricing.pro_1': { es: 'API REST ilimitada', en: 'Unlimited REST API', gn: 'EUDR' },
+	'eudr.pricing.pro_2': { es: 'Monitoreo mensual de parcelas', en: 'Monthly parcel monitoring', gn: 'EUDR' },
+	'eudr.pricing.pro_3': { es: 'Informes PDF para due diligence', en: 'PDF reports for due diligence', gn: 'EUDR' },
+	'eudr.pricing.ent_1': { es: 'Resolución premium (H3 res-9)', en: 'Premium resolution (H3 res-9)', gn: 'EUDR' },
+	'eudr.pricing.ent_2': { es: 'Integración con su ERP/TMS', en: 'Integration with your ERP/TMS', gn: 'EUDR' },
+	'eudr.pricing.ent_3': { es: 'SLA y soporte dedicado', en: 'SLA and dedicated support', gn: 'EUDR' },
+	'eudr.disclaimer': { es: 'Esta herramienta proporciona evaluaciones indicativas basadas en datos satelitales. No constituye certificación legal de cumplimiento bajo el Reglamento (UE) 2023/1115. Los operadores deben realizar su propia diligencia debida según los Artículos 8-11 del Reglamento. Datos: Hansen/UMD Global Forest Change v1.12 (U. Maryland/NASA, 30m Landsat), MODIS MCD64A1 Burned Area (NASA, 500m). Fecha de corte EUDR: 31 de diciembre de 2020.', en: 'This tool provides indicative assessments based on satellite-derived data. It does not constitute legal compliance certification under EU Regulation 2023/1115. Operators must perform their own due diligence as required by Articles 8-11 of the Regulation. Data: Hansen/UMD Global Forest Change v1.12 (U. Maryland/NASA, 30m Landsat), MODIS MCD64A1 Burned Area (NASA, 500m). EUDR cutoff date: 31 December 2020.', gn: 'EUDR' },
+	'eudr.disclaimer_short': { es: 'Evaluación indicativa. No constituye certificación legal bajo Reg. (UE) 2023/1115.', en: 'Indicative assessment. Not legal certification under Reg. (EU) 2023/1115.', gn: 'EUDR' },
+
+	// ── EUDR check page ──────────────────────────────────────────────────
+	'eudr.check.title': { es: 'Verificar parcela', en: 'Check parcel', gn: 'Check' },
+	'eudr.check.input_title': { es: 'Coordenadas', en: 'Coordinates', gn: 'Coordinates' },
+	'eudr.check.check_btn': { es: 'Verificar', en: 'Check', gn: 'Check' },
+	'eudr.check.checking': { es: 'Verificando...', en: 'Checking...', gn: 'Checking...' },
+	'eudr.check.click_map': { es: 'Click en el mapa para seleccionar ubicación', en: 'Click on the map to select location', gn: 'Click' },
+	'eudr.check.error_invalid': { es: 'Coordenadas inválidas', en: 'Invalid coordinates', gn: 'Error' },
+	'eudr.check.error_bounds': { es: 'Coordenadas fuera del área de cobertura', en: 'Coordinates outside coverage area', gn: 'Error' },
+	'eudr.check.result_title': { es: 'Resultado', en: 'Result', gn: 'Result' },
+	'eudr.check.risk_score': { es: 'Score de riesgo', en: 'Risk score', gn: 'Risk' },
+	'eudr.check.forest_2020': { es: 'Cobertura forestal 2020', en: 'Forest cover 2020', gn: 'Forest' },
+	'eudr.check.forest_current': { es: 'Cobertura actual', en: 'Current cover', gn: 'Forest' },
+	'eudr.check.loss_post_2020': { es: 'Pérdida post-2020', en: 'Loss post-2020', gn: 'Loss' },
+	'eudr.check.fire_post_2020': { es: 'Fuego post-2020', en: 'Fire post-2020', gn: 'Fire' },
+	'eudr.check.province': { es: 'Provincia', en: 'Province', gn: 'Province' },
+	'eudr.check.coordinates': { es: 'Coordenadas', en: 'Coordinates', gn: 'Coordinates' },
 } as any;
 
 class I18nStore {

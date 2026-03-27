@@ -852,7 +852,6 @@ export type RadioAnalysisConfig = {
 	petalCols: RadioPetalCol[];
 	howToRead: { es: string; en: string };
 	implications: { es: string; en: string };
-	actions: { es: string; en: string };
 	methodology: { es: string; en: string };
 };
 
@@ -870,7 +869,6 @@ export const RADIO_ANALYSIS_REGISTRY: Record<string, RadioAnalysisConfig> = {
 		],
 		howToRead: { es: 'Las parcelas se colorean según el precio mediano USD/m² de la zona. Colores cálidos = mayor precio. El pétalo compara precio, oferta, oportunidad, atractivo y densidad de la zona.', en: 'Parcels are coloured by median USD/m² price. Warmer colours = higher price. The petal compares price, supply, opportunity, attractiveness and density.' },
 		implications: { es: 'Zonas con alto precio y pocas publicaciones indican mercado cerrado. Zonas con score de oportunidad alto y precio bajo pueden representar oportunidades de inversión.', en: 'High price with few listings indicates a closed market. High opportunity score with low price may represent investment opportunities.' },
-		actions: { es: 'Identificar parcelas con alto score de oportunidad y precio bajo como candidatas de inversión. Comparar precio/m² entre departamentos para detectar zonas subvaluadas. Verificar accesibilidad y servicios antes de invertir.', en: 'Identify parcels with high opportunity score and low price as investment candidates. Compare price/m² across departments to detect undervalued areas.' },
 		methodology: { es: 'Precio mediano USD/m² de publicaciones activas (MeLi/Argenprop). Score de oportunidad = precio bajo + accesibilidad alta + consolidación urbana. Cobertura: 26% de radios con datos de mercado.', en: 'Median USD/m² from active listings (MeLi/Argenprop). Opportunity score = low price + high accessibility + urban consolidation. Coverage: 26% of radios with market data.' },
 	},
 	natural_risks: {
@@ -886,7 +884,6 @@ export const RADIO_ANALYSIS_REGISTRY: Record<string, RadioAnalysisConfig> = {
 		],
 		howToRead: { es: 'Las parcelas se colorean según el score de riesgo de deslizamiento. Colores cálidos = mayor riesgo. El pétalo muestra 5 riesgos simultáneos: mayor extensión = mayor exposición.', en: 'Parcels are coloured by landslide risk score. Warmer colours = higher risk. The petal shows 5 simultaneous risks.' },
 		implications: { es: 'Parcelas con múltiples riesgos altos requieren estudios de suelo antes de invertir. Pendiente alta + erosión alta señalan terrenos inestables. La deforestación reciente agrava todos los riesgos.', en: 'Parcels with multiple high risks require soil studies before investing. High slope + high erosion indicate unstable terrain.' },
-		actions: { es: 'Solicitar estudio geotécnico en parcelas con score >60. Evitar construcción en pendientes >25° sin obras de contención. Verificar historial de incendios y estado OTBN antes de proyectos productivos.', en: 'Request geotechnical study for parcels with score >60. Avoid construction on slopes >25° without containment works.' },
 		methodology: { es: 'Score compuesto de 5 indicadores normalizados (0-100): frecuencia de inundación JRC, susceptibilidad deslizamiento (litología + pendiente), erosión RUSLE, pendiente media FABDEM, presión de deforestación Hansen.', en: 'Composite score of 5 normalised indicators (0-100): JRC flood frequency, landslide susceptibility, RUSLE erosion, mean slope, deforestation pressure.' },
 	},
 	productive_aptitude: {
@@ -902,7 +899,6 @@ export const RADIO_ANALYSIS_REGISTRY: Record<string, RadioAnalysisConfig> = {
 		],
 		howToRead: { es: 'Las parcelas se colorean según el score de aptitud agrícola. Verde más intenso = mayor potencial. El pétalo muestra suelo, lluvia, pendiente y aptitud general.', en: 'Parcels are coloured by agricultural aptitude score. Greener = higher potential.' },
 		implications: { es: 'Suelos con pH 5.5-6.5 y alto carbono orgánico son óptimos para yerba mate y té. Pendientes >15% requieren terrazas. Precipitación >1600mm/año permite cultivos sin riego.', en: 'Soils with pH 5.5-6.5 and high organic carbon are optimal for yerba mate and tea.' },
-		actions: { es: 'Cruzar con OTBN para verificar disponibilidad legal. Evaluar acceso a ruta para logística. En zonas con alta aptitud y baja producción actual, considerar proyectos de extensión agropecuaria.', en: 'Cross-reference with OTBN for legal availability. Evaluate road access for logistics.' },
 		methodology: { es: 'Score compuesto: pH del suelo SoilGrids (óptimo 5.5-6.5), carbono orgánico, precipitación CHIRPS, pendiente FABDEM. Fuente censal: radio_stats_master con datos SoilGrids 250m + CHIRPS 5km.', en: 'Composite score: soil pH SoilGrids, organic carbon, CHIRPS precipitation, FABDEM slope.' },
 	},
 	accessibility: {
@@ -919,7 +915,6 @@ export const RADIO_ANALYSIS_REGISTRY: Record<string, RadioAnalysisConfig> = {
 		],
 		howToRead: { es: 'Las parcelas se colorean según el tiempo de viaje a Posadas. Verde = más cercano. El pétalo muestra accesibilidad a servicios clave — en este caso mayor extensión = mejor acceso (menor distancia/tiempo).', en: 'Parcels are coloured by travel time to Posadas. Green = closer. The petal shows accessibility to key services.' },
 		implications: { es: 'Zonas a más de 2 horas de Posadas y sin hospital cercano representan alto riesgo para familias. La distancia a ruta principal determina el costo logístico para producción.', en: 'Areas over 2 hours from Posadas without a nearby hospital represent high risk for families.' },
-		actions: { es: 'Priorizar inversión vial en zonas con travel time >120 min. Evaluar servicios móviles de salud para zonas sin hospital a <30 km. Considerar distancia a ruta como factor de costo en proyectos productivos.', en: 'Prioritise road investment where travel time >120 min. Evaluate mobile health services for areas without hospital within 30 km.' },
 		methodology: { es: 'Tiempo de viaje motorizado a Posadas y cabecera departamental (superficie de fricción Oxford MAP). Distancia euclidiana a hospitales, escuelas secundarias y rutas primarias (OSM). Fuente: Nelson et al. 2019 + Oxford MAP 2019 + OSM.', en: 'Motorised travel time to Posadas and dept seat (Oxford MAP friction surface). Euclidean distance to hospitals, schools and primary roads.' },
 	},
 	change_dynamics: {
@@ -934,7 +929,6 @@ export const RADIO_ANALYSIS_REGISTRY: Record<string, RadioAnalysisConfig> = {
 		],
 		howToRead: { es: 'Las parcelas se colorean según la presión de deforestación. Mayor intensidad de color = mayor cambio. El pétalo muestra 4 indicadores de dinámica territorial.', en: 'Parcels are coloured by deforestation pressure. Higher intensity = more change.' },
 		implications: { es: 'Zonas con muchas parcelas nuevas y alta presión de deforestación están en transición activa — posible valorización pero también riesgo ambiental. Alta densidad edilicia + baja fracción urbana indica expansión informal.', en: 'Areas with many new parcels and high deforestation pressure are in active transition.' },
-		actions: { es: 'Monitorear zonas con alta creación de parcelas para detectar loteos informales. Cruzar con OTBN para verificar deforestación ilegal. Zonas en transición requieren planificación de servicios anticipada.', en: 'Monitor areas with high parcel creation to detect informal subdivisions. Cross-reference with OTBN for illegal deforestation.' },
 		methodology: { es: 'Parcelas nuevas: Catastro Misiones (ventana 90 días). Deforestación: Hansen GFC pérdida acumulada. Densidad edilicia: Global Building Atlas. Fracción urbana: MapBiomas Argentina.', en: 'New parcels: Misiones Cadastre (90-day window). Deforestation: Hansen GFC cumulative loss. Building density: GBA. Urban fraction: MapBiomas.' },
 	},
 	sociodemographic: {
@@ -951,7 +945,6 @@ export const RADIO_ANALYSIS_REGISTRY: Record<string, RadioAnalysisConfig> = {
 		],
 		howToRead: { es: 'Las parcelas se colorean según el % de NBI (necesidades básicas insatisfechas). Colores cálidos = mayor pobreza. El pétalo muestra el perfil sociodemográfico de la zona: densidad, NBI, hacinamiento, propiedad, tamaño de hogar y acceso digital.', en: 'Parcels are coloured by UBN %. Warmer = higher poverty. The petal shows the sociodemographic profile.' },
 		implications: { es: 'Zonas con alto NBI y hacinamiento requieren políticas de vivienda social. Alto % de propietarios indica estabilidad residencial. Baja conectividad digital limita servicios y educación remota.', en: 'High UBN and overcrowding require social housing policies. High homeownership indicates residential stability.' },
-		actions: { es: 'Priorizar zonas con NBI >20% para programas de vivienda social. Evaluar hacinamiento como proxy de demanda habitacional insatisfecha. Cruzar con accesibilidad para identificar pobreza + aislamiento.', en: 'Prioritise areas with UBN >20% for social housing programmes. Use overcrowding as proxy for unmet housing demand.' },
 		methodology: { es: 'Fuente: INDEC Censo Nacional de Población, Hogares y Viviendas 2022. Variables a nivel radio censal (2,012 radios). NBI según metodología INDEC. Densidad calculada como personas/km².', en: 'Source: INDEC National Population Census 2022. Variables at radio censal level (2,012 radios). UBN per INDEC methodology.' },
 	},
 	forest_potential: {
@@ -967,7 +960,6 @@ export const RADIO_ANALYSIS_REGISTRY: Record<string, RadioAnalysisConfig> = {
 		],
 		howToRead: { es: 'Las parcelas se colorean según la cobertura de dosel arbóreo. Verde más intenso = mayor cobertura. El pétalo muestra 5 métricas de vegetación: cobertura, altura, verdor, bosque nativo y cobertura histórica.', en: 'Parcels are coloured by canopy cover. Greener = more cover. The petal shows 5 vegetation metrics.' },
 		implications: { es: 'Alta cobertura de dosel + bosque nativo alto indica zonas de conservación prioritaria. Baja cobertura con alto treecover2000 sugiere deforestación reciente. NDVI alto con baja altura de dosel puede indicar plantaciones vs bosque nativo.', en: 'High canopy cover + native forest indicates priority conservation areas.' },
-		actions: { es: 'Verificar zonificación OTBN (Cat. I/II = protección). Zonas con cobertura en descenso son candidatas para intervención de restauración. Comparar con plantaciones forestales para distinguir bosque nativo de comercial.', en: 'Verify OTBN zoning (Cat. I/II = protection). Areas with declining cover are restoration candidates.' },
 		methodology: { es: 'Cobertura de dosel: Meta/WRI Canopy Height v2 (1m agregado a 10m). NDVI: MODIS 250m promedio 2019-2024. Bosque nativo: MapBiomas Argentina. Cobertura histórica: Hansen GFC baseline 2000.', en: 'Canopy cover: Meta/WRI CHM v2. NDVI: MODIS 250m mean 2019-2024. Native forest: MapBiomas. Historical cover: Hansen GFC 2000.' },
 	},
 	economic_activity: {
@@ -983,7 +975,6 @@ export const RADIO_ANALYSIS_REGISTRY: Record<string, RadioAnalysisConfig> = {
 		],
 		howToRead: { es: 'Las parcelas se colorean según la tasa de empleo. Verde más intenso = mayor empleo. El pétalo combina empleo, actividad económica, formación universitaria, luces nocturnas y densidad edilicia como indicadores de dinamismo.', en: 'Parcels are coloured by employment rate. Greener = higher employment.' },
 		implications: { es: 'Zonas con alta tasa de empleo + universitarios + luces nocturnas son centros económicos consolidados. Zonas con alta actividad pero bajo empleo pueden tener alta informalidad. Baja radiancia nocturna indica zonas rurales o de baja actividad.', en: 'High employment + university + night lights indicate consolidated economic centres.' },
-		actions: { es: 'Zonas con alto empleo formal son candidatas para inversión comercial/servicios. Zonas con alta actividad pero bajo empleo requieren políticas de formalización laboral. Baja densidad edilicia + empleo medio puede indicar potencial de desarrollo.', en: 'High formal employment areas are candidates for commercial/service investment. High activity + low employment needs labour formalisation policies.' },
 		methodology: { es: 'Empleo y actividad: Censo 2022 INDEC (población 14+ años). Universitarios: Censo 2022. Luces nocturnas: VIIRS 500m promedio 2022-2024. Densidad edilicia: Global Building Atlas 2025.', en: 'Employment and activity: INDEC Census 2022 (14+ population). Night lights: VIIRS 500m mean 2022-2024. Building density: GBA 2025.' },
 	},
 };
@@ -1049,17 +1040,43 @@ export const DATA_FRESHNESS: Record<string, { dataDate: string; processedDate: s
 		processedDate: '25/03/2026',
 		sourceKey: 'data.source.overture',
 	},
-	sat_environmental_risk: { dataDate: 'MODIS/Hansen/ERA5 2019-2024', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
-	sat_climate_comfort: { dataDate: 'MODIS/CHIRPS/ERA5 2019-2024', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
-	sat_green_capital: { dataDate: 'MODIS/Hansen/VCF 2019-2024', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
-	sat_change_pressure: { dataDate: 'VIIRS/GHSL/Hansen 2000-2025', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
-	sat_location_value: { dataDate: 'Nelson/Oxford/VIIRS', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
-	sat_agri_potential: { dataDate: 'SoilGrids/CHIRPS/ERA5', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
-	sat_forest_health: { dataDate: 'MODIS/Hansen 2019-2024', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
-	sat_forestry_aptitude: { dataDate: 'SoilGrids/CHIRPS/Nelson', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
-	sat_isolation_index: { dataDate: 'Nelson/Oxford/VIIRS', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
-	sat_territorial_gap: { dataDate: 'VIIRS/Censo 2022/Nelson', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
-	sat_health_access: { dataDate: 'Oxford MAP 2019 + Censo 2022', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
-	sat_education_gap: { dataDate: 'Censo 2022 + Nelson 2019', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
-	sat_land_use: { dataDate: 'Dynamic World 2024 (Sentinel-2, 10m)', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
+	sat_environmental_risk: { dataDate: 'Baseline MODIS/Hansen/ERA5 2019-2024', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
+	sat_climate_comfort: { dataDate: 'Baseline MODIS/CHIRPS/ERA5 2019-2024', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
+	sat_green_capital: { dataDate: 'Baseline MODIS/Hansen/VCF 2019-2024', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
+	sat_change_pressure: { dataDate: 'Baseline VIIRS/GHSL/Hansen 2000-2025', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
+	sat_location_value: { dataDate: 'Baseline Nelson 2019 / Oxford 2019 / VIIRS 2022-2024', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
+	sat_agri_potential: { dataDate: 'Baseline SoilGrids / CHIRPS / ERA5 2019-2024', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
+	sat_forest_health: { dataDate: 'Baseline MODIS/Hansen 2019-2024', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
+	sat_forestry_aptitude: { dataDate: 'Baseline SoilGrids / CHIRPS / Nelson 2019', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
+	sat_isolation_index: { dataDate: 'Baseline Nelson 2019 / Oxford 2019 / VIIRS 2022-2024', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
+	sat_territorial_gap: { dataDate: 'Baseline VIIRS 2022-2024 / Censo 2022 / Nelson 2019', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
+	sat_health_access: { dataDate: 'Baseline Oxford MAP 2019 + Censo 2022', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
+	sat_education_gap: { dataDate: 'Baseline Censo 2022 + Nelson 2019', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
+	sat_land_use: { dataDate: 'Baseline Dynamic World 2024 (Sentinel-2, 10m)', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
+};
+
+// ── EUDR Configuration ──────────────────────────────────────────────────
+export const MAP_EUDR = {
+	center: [-62.5, -26.5] as [number, number],
+	zoom: 5.5,
+	minZoom: 4,
+	maxZoom: 14,
+};
+
+const R2_EUDR_BASE = `${R2_PROD}/data/eudr`;
+
+export function getEudrParquetUrl(name: string): string {
+	return `${R2_EUDR_BASE}/${name}.parquet?v=1`;
+}
+
+export function getEudrProvinceParquetUrl(province: string): string {
+	return `${R2_EUDR_BASE}/by_province/eudr_${province}.parquet?v=1`;
+}
+
+export const EUDR_RISK_COLORS = {
+	low: '#22c55e',
+	medium: '#f59e0b',
+	high: '#ef4444',
+	critical: '#991b1b',
+	unknown: '#6b7280',
 };

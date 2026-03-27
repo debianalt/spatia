@@ -6,6 +6,7 @@ Import from this module instead of defining local constants.
 """
 
 import os
+from datetime import date, timedelta
 
 # ── Spatial ───────────────────────────────────────────────────────────────
 MISIONES_BBOX = [-56.10, -28.20, -53.55, -25.44]  # [W, S, E, N] — padded to cover edge hexagons
@@ -22,6 +23,13 @@ VV_THRESHOLD_DB = -15   # dB threshold for Sentinel-1 water detection
 EXPORT_SCALE = 30       # metres per pixel (S1 GRD native ~10m, 30m for efficiency)
 EXPORT_PREFIX = "flood"
 FLOOD_GCS_PREFIX = "flood/"
+
+# ── Temporal windows for baseline vs current ─────────────────────────────
+BASELINE_START = '2019-01-01'
+BASELINE_END   = '2021-12-31'   # 3 stable years, pre-recent-change
+_today = date.today()
+CURRENT_END    = _today.isoformat()
+CURRENT_START  = (_today - timedelta(days=180)).replace(day=1).isoformat()  # ~6 months back, 1st of month
 
 # ── Validation thresholds ────────────────────────────────────────────────
 MIN_HEXAGONS = 50_000       # Misiones has ~280K; <50K indicates corrupt data

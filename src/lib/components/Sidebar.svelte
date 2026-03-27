@@ -14,6 +14,7 @@
 	import type { HexStore } from '$lib/stores/hex.svelte';
 	import type { AnalysisConfig } from '$lib/config';
 	import { i18n } from '$lib/stores/i18n.svelte';
+	import CTADiagnostic from './CTADiagnostic.svelte';
 
 	let {
 		mapStore,
@@ -129,24 +130,24 @@
 
 			<p class="welcome-desc">{i18n.t('side.welcome.desc')}</p>
 
-			<div class="welcome-divider">18 {i18n.t('side.welcome.analyses')}</div>
+			<div class="welcome-divider">{i18n.t('side.welcome.analysesIntro')}</div>
 
 			<div class="welcome-lenses">
 				<div class="welcome-lens">
 					<span class="lens-name">VIVIR</span>
-					<span class="lens-items">Riesgo hídrico · Riesgo ambiental · Confort climático · Capital verde · Perfil sociodemográfico</span>
+					<span class="lens-items">Riesgo hídrico · Riesgo ambiental · Confort climático ·...</span>
 				</div>
 				<div class="welcome-lens">
 					<span class="lens-name">INVERTIR</span>
-					<span class="lens-items">Perfil territorial · Actividad económica · Presión de cambio · Valor de localización</span>
+					<span class="lens-items">Perfil territorial · Actividad económica · Presión de cambio ·...</span>
 				</div>
 				<div class="welcome-lens">
 					<span class="lens-name">PRODUCIR</span>
-					<span class="lens-items">Potencial agrícola · Salud de la selva · Aptitud silvícola · Uso del suelo</span>
+					<span class="lens-items">Potencial agrícola · Salud de la selva · Aptitud silvícola ·...</span>
 				</div>
 				<div class="welcome-lens">
 					<span class="lens-name">SERVIR</span>
-					<span class="lens-items">Accesibilidad · Aislamiento · Brecha territorial · Déficit de salud · Brecha educativa</span>
+					<span class="lens-items">Accesibilidad · Aislamiento · Brecha territorial ·...</span>
 				</div>
 			</div>
 
@@ -157,7 +158,7 @@
 				<div>— 2.012 radios censales · Censo Nacional 2022</div>
 				<div>— 445.000 parcelas catastrales</div>
 				<div>— 1.250.000 edificaciones detectadas por IA</div>
-				<div>— Series históricas desde 1984 · Actualización quincenal</div>
+				<div>— Series históricas desde 1984 · Monitoreo SAR cada ~12 días</div>
 				<div>— Informes PDF por departamento · Diagnósticos por microzona bajo demanda</div>
 			</div>
 
@@ -170,9 +171,12 @@
 			</div>
 
 			<div class="welcome-footer">
+				<div>Investigación aplicada en inteligencia territorial</div>
 				<div>Raimundo Elías Gómez · CONICET</div>
 				<div>Google Earth Engine Partner</div>
 			</div>
+
+			<CTADiagnostic />
 		</div>
 	{/if}
 

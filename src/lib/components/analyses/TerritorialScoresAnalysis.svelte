@@ -3,6 +3,7 @@
 	import type { MapStore } from '$lib/stores/map.svelte';
 	import type { HexStore } from '$lib/stores/hex.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
+	import CTADiagnostic from '$lib/components/CTADiagnostic.svelte';
 	import { DATA_FRESHNESS, TERRITORIAL_SCORE_COLS, TERRITORIAL_SCORE_LABELS, TERRITORIAL_SCORE_DESCS } from '$lib/config';
 	import PetalChart from '$lib/components/PetalChart.svelte';
 	import deptSummaryData from '$lib/data/scores_dept_summary.json';
@@ -262,13 +263,6 @@
 			</div>
 		</details>
 
-		<details class="method-details">
-			<summary class="method-summary">Acciones recomendadas</summary>
-			<div class="method-body">
-				<p class="explain-text">Zonas con alta consolidación urbana y buenos servicios son aptas para inversión inmobiliaria y comercial. Zonas con alta conectividad pero baja consolidación son candidatas para desarrollo planificado. Scores bajos generalizados requieren inversión pública en infraestructura básica antes de promover desarrollo privado.</p>
-			</div>
-		</details>
-
 		<!-- Methodology -->
 		<details class="method-details">
 			<summary class="method-summary">Metodologia</summary>
@@ -299,6 +293,8 @@
 		<div class="source-note-box">
 			<div><strong>Fuente:</strong> Overture Maps Foundation via walkthru.earth (CC BY 4.0)</div>
 		</div>
+
+		<CTADiagnostic analysisName="Perfil territorial" />
 	</div>
 {/if}
 
