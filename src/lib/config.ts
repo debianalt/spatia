@@ -111,11 +111,11 @@ export const BASEMAP = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/st
 
 // Start zoomed out for cinematic entry; flyTo animates to province view
 export const MAP_INIT = {
-	center: [-58.0, -25.0] as [number, number],
-	zoom: 3,
+	center: [-57.0, -28.0] as [number, number],
+	zoom: 5,
 	pitch: 0,
 	bearing: 0,
-	minZoom: 2,
+	minZoom: 4,
 	maxZoom: 18
 } as const;
 
