@@ -245,7 +245,7 @@
 		z-index: 11;
 	}
 	.collapse-btn:hover { color: #e2e8f0; border-color: #60a5fa; }
-	.welcome-panel { font-family: 'Roboto Condensed', sans-serif; padding-top: 4px; display: flex; flex-direction: column; gap: 16px; }
+	.welcome-panel { padding-top: 4px; display: flex; flex-direction: column; gap: 16px; }
 	.welcome-brand { font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: 0.02em; }
 	.welcome-subtitle { font-size: 14px; color: rgba(255,255,255,0.7); margin-top: -10px; font-weight: 300; }
 	.welcome-desc { font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.7; font-weight: 300; }
