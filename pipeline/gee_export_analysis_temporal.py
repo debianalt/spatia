@@ -25,6 +25,23 @@ EXPORT_SCALE = 100
 DRIVE_FOLDER = 'spatia-satellite'
 GCS_BUCKET = 'spatia-satellite'
 
+# Fallback year for annual-only datasets (NPP, VCF) when current window has no data
+ANNUAL_FALLBACK_YEAR = '2024'
+
+
+def _safe_annual_mean(collection_id, band, bbox, date_start, date_end):
+    """Get mean from collection, falling back to latest full year if window is empty."""
+    col = (ee.ImageCollection(collection_id)
+           .filterDate(date_start, date_end).filterBounds(bbox)
+           .select(band))
+    # Try the requested window first; if empty, fall back to latest full year
+    fallback = (ee.ImageCollection(collection_id)
+                .filterDate(f'{ANNUAL_FALLBACK_YEAR}-01-01', f'{ANNUAL_FALLBACK_YEAR}-12-31')
+                .filterBounds(bbox).select(band))
+    # Use ee.Algorithms.If to pick non-empty collection
+    size = col.size()
+    return ee.Image(ee.Algorithms.If(size.gt(0), col.mean(), fallback.mean()))
+
 
 def authenticate():
     """Authenticate to GEE — service account in CI, user credentials locally."""
@@ -104,22 +121,21 @@ def dynamic_climate_comfort(bbox, date_start, date_end):
 
 
 def dynamic_green_capital(bbox, date_start, date_end):
-    """Dynamic: NDVI, NPP, LAI, VCF (treecover2000 is fixed)."""
+    """Dynamic: NDVI, NPP, LAI, VCF (treecover2000 is fixed).
+    NPP (MOD17A3HGF) and VCF (MOD44B) are annual products — use safe fallback."""
     ndvi = (ee.ImageCollection('MODIS/061/MOD13Q1')
             .filterDate(date_start, date_end).filterBounds(bbox)
             .select('NDVI').mean().multiply(0.0001))
 
-    npp = (ee.ImageCollection('MODIS/061/MOD17A3HGF')
-           .filterDate(date_start, date_end).filterBounds(bbox)
-           .select('Npp').mean().multiply(0.0001))
+    npp = _safe_annual_mean('MODIS/061/MOD17A3HGF', 'Npp',
+                            bbox, date_start, date_end).multiply(0.0001)
 
     lai = (ee.ImageCollection('MODIS/061/MOD15A2H')
            .filterDate(date_start, date_end).filterBounds(bbox)
            .select('Lai_500m').mean().multiply(0.1))
 
-    vcf = (ee.ImageCollection('MODIS/061/MOD44B')
-           .filterDate(date_start, date_end).filterBounds(bbox)
-           .select('Percent_Tree_Cover').mean())
+    vcf = _safe_annual_mean('MODIS/061/MOD44B', 'Percent_Tree_Cover',
+                            bbox, date_start, date_end)
 
     return (ndvi.rename('c_ndvi')
             .addBands(npp.rename('c_npp'))
