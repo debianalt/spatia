@@ -789,7 +789,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		titleKey: 'sat.landUse.title',
 		descKey: 'sat.landUse.desc',
 		icon: '🗺️',
-		status: 'coming_soon',
+		status: 'available',
 		spatialUnit: 'hexagon',
 	},
 ];
@@ -1054,5 +1054,5 @@ export const DATA_FRESHNESS: Record<string, { dataDate: string; processedDate: s
 	sat_territorial_gap: { dataDate: 'VIIRS/Censo 2022/Nelson', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
 	sat_health_access: { dataDate: 'Oxford MAP 2019 + Censo 2022', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
 	sat_education_gap: { dataDate: 'Censo 2022 + Nelson 2019', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
-	sat_land_use: { dataDate: 'Dynamic World 2024 (Sentinel-2, 10m)', processedDate: 'pendiente', sourceKey: 'data.source.satellite' },
+	sat_land_use: { dataDate: 'Dynamic World 2024 (Sentinel-2, 10m)', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
 };

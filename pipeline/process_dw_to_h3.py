@@ -61,7 +61,7 @@ def main():
         print("Run gee_dynamic_world.py first, then download from Drive.")
         return 1
 
-    print(f"Processing {args.input} → H3 res-{H3_RESOLUTION}")
+    print(f"Processing {args.input} -> H3 res-{H3_RESOLUTION}")
 
     # Load hexagon grid
     import json

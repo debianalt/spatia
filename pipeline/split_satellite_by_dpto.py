@@ -38,7 +38,7 @@ ALL_ANALYSES = [
     "environmental_risk", "climate_comfort", "green_capital",
     "change_pressure", "location_value", "agri_potential",
     "forest_health", "forestry_aptitude", "isolation_index",
-    "territorial_gap", "health_access", "education_gap",
+    "territorial_gap", "health_access", "education_gap", "land_use",
 ]
 
 
