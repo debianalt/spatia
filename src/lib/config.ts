@@ -57,6 +57,7 @@ export function getParquetUrl(name: string): string {
 		sat_territorial_gap: '?v=2',
 		sat_health_access: '?v=1',
 		sat_education_gap: '?v=1',
+		emsa_powerlines: '?v=1',
 	};
 	const bust = busts[name] || '';
 	return `${getBase()}/data/${name}.parquet${bust}`;
@@ -105,6 +106,8 @@ export const PARQUETS = {
 	get sat_land_use() { return getParquetUrl('sat_land_use'); },
 	get sat_health_access() { return getParquetUrl('sat_health_access'); },
 	get sat_education_gap() { return getParquetUrl('sat_education_gap'); },
+	// Public infrastructure (datos.gob.ar)
+	get emsa_powerlines() { return getParquetUrl('emsa_powerlines'); },
 };
 
 export const BASEMAP = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
@@ -242,6 +245,21 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		colorScale: 'sequential',
 		aggregation: 'sum',
 		titleKey: 'analysis.infraCoverage.title',
+		perDepartment: false,
+	},
+	// ── EMSA: Infraestructura eléctrica ──
+	powerline_density: {
+		id: 'powerline_density',
+		parquet: 'emsa_powerlines',
+		variables: [
+			{ col: 'score', labelKey: 'emsa.score', aggregation: 'mean' },
+			{ col: 'line_length_m', labelKey: 'emsa.lineLength', aggregation: 'sum' },
+			{ col: 'line_count', labelKey: 'emsa.lineCount', aggregation: 'sum' },
+		],
+		primaryVariable: 'score',
+		colorScale: 'sequential',
+		aggregation: 'mean',
+		titleKey: 'emsa.title',
 		perDepartment: false,
 	},
 	// ── Overture: Producir ──
@@ -737,6 +755,15 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		spatialUnit: 'hexagon',
 	},
 	{
+		id: 'powerline_density',
+		lensId: 'producir',
+		titleKey: 'emsa.title',
+		descKey: 'emsa.desc',
+		icon: '\u26A1',
+		status: 'available',
+		spatialUnit: 'hexagon',
+	},
+	{
 		id: 'forest_health',
 		lensId: 'producir',
 		titleKey: 'sat.forestH.title',
@@ -1053,6 +1080,7 @@ export const DATA_FRESHNESS: Record<string, { dataDate: string; processedDate: s
 	sat_health_access: { dataDate: 'Baseline Oxford MAP 2019 + Censo 2022', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
 	sat_education_gap: { dataDate: 'Baseline Censo 2022 + Nelson 2019', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
 	sat_land_use: { dataDate: 'Baseline Dynamic World 2024 (Sentinel-2, 10m)', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
+	emsa_powerlines: { dataDate: 'EMSA abril 2024', processedDate: '27/03/2026', sourceKey: 'data.source.emsa' },
 };
 
 // ── EUDR Configuration ──────────────────────────────────────────────────

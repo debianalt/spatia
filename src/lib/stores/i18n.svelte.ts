@@ -3,7 +3,9 @@ export type Locale = 'es' | 'en' | 'gn';
 const dict: Record<string, Record<Locale, string>> = {
 	// Header
 	'header.title': { es: 'spatia.ar', en: 'spatia.ar', gn: 'spatia.ar' },
-	'header.subtitle': { es: 'Inteligencia Territorial para Misiones', en: 'Territorial Intelligence for Misiones', gn: "Yvy Rekokatu Misiones-pe" },
+	'header.subtitle': { es: 'Inteligencia Territorial', en: 'Territorial Intelligence', gn: "Yvy Rekokatu" },
+	'header.nav.map': { es: 'Mapa', en: 'Map', gn: 'Mapa' },
+	'header.nav.dashboards': { es: 'Dashboards', en: 'Dashboards', gn: 'Dashboards' },
 
 	// Controls
 	'ctrl.tilt': { es: 'Inclinación', en: 'Tilt', gn: "Je'apy" },
@@ -217,6 +219,14 @@ const dict: Record<string, Record<Locale, string>> = {
 	'data.source.catastro': { es: 'Fuente: Dirección General de Catastro, Misiones', en: 'Source: Dirección General de Catastro, Misiones', gn: "Moñe'ẽha: Catastro, Misiones" },
 	'data.source.overture': { es: 'Fuente: Overture Maps Foundation via walkthru.earth (CC BY 4.0)', en: 'Source: Overture Maps Foundation via walkthru.earth (CC BY 4.0)', gn: "Moñe'ẽha: Overture Maps Foundation (CC BY 4.0)" },
 	'data.source.satellite': { es: 'Fuente: Google Earth Engine — MODIS, Landsat, ERA5, SoilGrids, VIIRS, Hansen GFC', en: 'Source: Google Earth Engine — MODIS, Landsat, ERA5, SoilGrids, VIIRS, Hansen GFC', gn: "Moñe'ẽha: Google Earth Engine" },
+	'data.source.emsa': { es: 'Fuente: EMSA — Secretaría de Energía, datos.energia.gob.ar', en: 'Source: EMSA — Secretaría de Energía, datos.energia.gob.ar', gn: "Moñe'ẽha: EMSA — Secretaría de Energía" },
+
+	// ── EMSA powerlines ──
+	'emsa.title': { es: 'Red eléctrica (media tensión)', en: 'Power grid (medium voltage)', gn: "Corriente tape" },
+	'emsa.desc': { es: 'Densidad de líneas de media y alta tensión por hexágono (EMSA, datos.energia.gob.ar)', en: 'Medium and high voltage powerline density per hexagon (EMSA, datos.energia.gob.ar)', gn: "Corriente tape hexágono rupi" },
+	'emsa.score': { es: 'Score electrificación', en: 'Electrification score', gn: "Score corriente" },
+	'emsa.lineLength': { es: 'Longitud de líneas (m)', en: 'Line length (m)', gn: "Tape puku (m)" },
+	'emsa.lineCount': { es: 'Cantidad de líneas', en: 'Line count', gn: "Tape papapy" },
 
 	// ── Satellite composite analyses ──
 	'sat.envRisk.title': { es: '¿Es seguro vivir acá?', en: 'Is it safe to live here?', gn: "Iporãpa oñeiko ko'ápe?" },
@@ -622,7 +632,7 @@ const dict: Record<string, Record<Locale, string>> = {
 
 	// ── EUDR product page ─────────────────────────────────────────────────
 	'eudr.hero.title': { es: 'EUDR Compliance Check', en: 'EUDR Compliance Check', gn: 'EUDR' },
-	'eudr.hero.subtitle': { es: 'Verificación satelital de deforestación para due diligence bajo el Reglamento (UE) 2023/1115. Cobertura: Chaco, Salta, Santiago del Estero, Formosa.', en: 'Satellite-based deforestation verification for due diligence under EU Regulation 2023/1115. Coverage: Chaco, Salta, Santiago del Estero, Formosa.', gn: 'EUDR' },
+	'eudr.hero.subtitle': { es: 'Verificación satelital de deforestación para due diligence bajo el Reglamento (UE) 2023/1115. Cobertura: NOA y NEA (10 provincias).', en: 'Satellite-based deforestation verification for due diligence under EU Regulation 2023/1115. Coverage: NOA and NEA regions (10 provinces).', gn: 'EUDR' },
 	'eudr.cta.try_demo': { es: 'Probar demo', en: 'Try demo', gn: 'Demo' },
 	'eudr.cta.contact': { es: 'Contactar', en: 'Contact us', gn: 'Contact' },
 	'eudr.what.title': { es: '¿Qué es la EUDR?', en: 'What is the EUDR?', gn: 'EUDR' },
@@ -675,6 +685,12 @@ const dict: Record<string, Record<Locale, string>> = {
 	'eudr.check.fire_post_2020': { es: 'Fuego post-2020', en: 'Fire post-2020', gn: 'Fire' },
 	'eudr.check.province': { es: 'Provincia', en: 'Province', gn: 'Province' },
 	'eudr.check.coordinates': { es: 'Coordenadas', en: 'Coordinates', gn: 'Coordinates' },
+	'eudr.check.empty_title': { es: 'Seleccioná una ubicación', en: 'Select a location', gn: 'Select' },
+	'eudr.check.empty_desc': { es: 'Hacé click en el mapa o ingresá coordenadas para verificar el estado de deforestación.', en: 'Click on the map or enter coordinates to check deforestation status.', gn: 'Click' },
+	'eudr.check.try_example': { es: 'Probar ejemplo', en: 'Try example', gn: 'Try' },
+	'eudr.check.remaining': { es: 'checks restantes hoy', en: 'checks remaining today', gn: 'checks' },
+	'eudr.check.limit_reached': { es: 'Límite diario alcanzado', en: 'Daily limit reached', gn: 'Limit' },
+	'eudr.check.limit_cta': { es: 'Contactanos para acceso profesional', en: 'Contact us for professional access', gn: 'Contact' },
 } as any;
 
 class I18nStore {

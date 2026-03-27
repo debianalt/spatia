@@ -55,3 +55,13 @@ OVERTURE_BASE_URL = (
     "{theme}-index/v1/release={release}/h3/h3_res=9/data.parquet"
 )
 MIN_OVERTURE_HEXAGONS = 10_000  # Sparse layers (transport, places) have <50K populated cells
+
+# ── EMSA (red eléctrica — media y alta tensión) ─────────────────────
+EMSA_URL = (
+    "http://datos.energia.gob.ar/dataset/"
+    "ff99e7be-7bab-4617-9588-9a74ae046a40/resource/"
+    "c8c0c8ff-5597-46d0-8b49-bbacd1560f29/download/"
+    "-misiones-media-tensin-lneas.zip"
+)
+EMSA_PARQUET = os.path.join(OUTPUT_DIR, "emsa_powerlines.parquet")
+MIN_EMSA_HEXAGONS = 1_000  # Sparse: only hexagons crossed by powerlines
