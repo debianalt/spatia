@@ -197,13 +197,17 @@ def main():
                 "--analysis", ",".join(analyses)]):
         return 1
 
-    # Step 4: Split by department
-    if not run("Step 4: Split by department",
-               [sys.executable, os.path.join(SCRIPT_DIR, "split_satellite_by_dpto.py"),
-                "--only", ",".join(analyses)]):
-        return 1
+    # Step 4: Split by department (non-fatal — requires radios_misiones.parquet)
+    radios_path = os.path.join(OUTPUT_DIR, "radios_misiones.parquet")
+    if os.path.exists(radios_path):
+        if not run("Step 4: Split by department",
+                   [sys.executable, os.path.join(SCRIPT_DIR, "split_satellite_by_dpto.py"),
+                    "--only", ",".join(analyses)]):
+            print("  WARN: split failed, continuing with main parquets only")
+    else:
+        print(f"\n{'─' * 50}\n  Step 4: SKIP split (radios_misiones.parquet not available)\n{'─' * 50}")
 
-    # Step 5: Generate PDFs
+    # Step 5: Generate PDFs (non-fatal)
     run("Step 5: Generate PDF reports",
         [sys.executable, os.path.join(SCRIPT_DIR, "generate_dept_report.py"),
          "--only", ",".join(analyses)])
