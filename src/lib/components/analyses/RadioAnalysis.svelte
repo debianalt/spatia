@@ -80,6 +80,15 @@
 		deptLoading = false;
 	}
 
+	// Auto-select top department on first load
+	let hasAutoSelected = false;
+	$effect(() => {
+		if (deptSummaries.length > 0 && !hasAutoSelected && !activeDpto) {
+			hasAutoSelected = true;
+			setTimeout(() => handleDptoClick(deptSummaries[0]), 400);
+		}
+	});
+
 	function handleDptoClick(dept: any) {
 		activeDpto = dept.dpto;
 		const centroid = deptCentroids[dept.dpto] || [-54.4, -27.0];

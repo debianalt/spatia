@@ -94,6 +94,15 @@
 			: ['Bajo', 'Medio', 'Alto']
 	);
 
+	// Auto-select top department on first load
+	let hasAutoSelected = false;
+	$effect(() => {
+		if (deptList.length > 0 && !hasAutoSelected && !selectedDpto) {
+			hasAutoSelected = true;
+			setTimeout(() => handleDptoClick(deptList[0]), 400);
+		}
+	});
+
 	function handleDptoClick(dept: any) {
 		if (onSelectDpto) {
 			onSelectDpto(dept.dpto, dept.parquetKey, dept.centroid as [number, number]);

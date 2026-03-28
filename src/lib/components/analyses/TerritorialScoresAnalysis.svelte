@@ -63,6 +63,15 @@
 		return 'Muy bajo';
 	}
 
+	// Auto-select top department on first load
+	let hasAutoSelected = false;
+	$effect(() => {
+		if (deptSummaries.length > 0 && !hasAutoSelected && !activeDpto) {
+			hasAutoSelected = true;
+			setTimeout(() => handleDptoClick(deptSummaries[0]), 400);
+		}
+	});
+
 	function handleDptoClick(dept: any) {
 		activeDpto = dept.dpto;
 		onSelectScoresCatastroDpto?.(dept.dpto, dept.parquetKey, dept.centroid as [number, number]);

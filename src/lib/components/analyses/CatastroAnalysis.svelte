@@ -74,6 +74,15 @@
 	});
 	const petalLabels = $derived(HOUSING_LABELS_KEYS.map(k => i18n.t(k)));
 
+	// Auto-select top department on first load
+	let hasAutoSelected = false;
+	$effect(() => {
+		if (deptSummary.length > 0 && !hasAutoSelected && !selectedDpto) {
+			hasAutoSelected = true;
+			setTimeout(() => handleDptoClick(deptSummary[0].code), 400);
+		}
+	});
+
 	onMount(() => { loadData(); });
 
 	// Load housing data for each new radio

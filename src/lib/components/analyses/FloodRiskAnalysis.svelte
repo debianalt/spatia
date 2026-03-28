@@ -38,6 +38,15 @@
 
 	let floodCatastroDpto = $state<string | null>(null);
 
+	// Auto-select top department on first load
+	let hasAutoSelected = false;
+	$effect(() => {
+		if (deptSummaries.length > 0 && !hasAutoSelected && !floodCatastroDpto && !selectedDpto) {
+			hasAutoSelected = true;
+			setTimeout(() => handleFloodCatastroDptoClick(deptSummaries[0]), 400);
+		}
+	});
+
 	// Census vulnerability petal for parcel detail (multi-parcel)
 	const FLOOD_CENSUS_COLS = ['flood_frequency', 'hand_mean', 'pct_nbi', 'pct_cloacas', 'pct_agua_red', 'infra_deficit'];
 	const FLOOD_CENSUS_LABELS = ['Frec. inundación', 'Altura s/ drenaje', 'NBI', 'Sin cloacas', 'Sin agua de red', 'Déficit infra'];
