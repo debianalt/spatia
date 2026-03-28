@@ -302,6 +302,27 @@
 			</div>
 		{/if}
 
+		{#if content}
+			<details class="method-details">
+				<summary class="method-summary">Como leer este mapa</summary>
+				<div class="method-body">
+					<p class="explain-text">{content.howToRead}</p>
+				</div>
+			</details>
+			<details class="method-details">
+				<summary class="method-summary">Implicancias</summary>
+				<div class="method-body">
+					<p class="explain-text">{content.implications}</p>
+				</div>
+			</details>
+			<details class="method-details">
+				<summary class="method-summary">Metodologia</summary>
+				<div class="method-body">
+					<p class="explain-text">{content.method}</p>
+				</div>
+			</details>
+		{/if}
+
 		{#if freshness}
 			<div class="source-note-box">
 				<div><strong>Fuente:</strong> {i18n.t(freshness.sourceKey)}</div>

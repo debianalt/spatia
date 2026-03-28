@@ -248,6 +248,25 @@
 				{/each}
 			</div>
 		{/if}
+		<details class="method-details">
+			<summary class="method-summary">Cómo leer este mapa</summary>
+			<div class="method-body">
+				<p class="explain-text">El mapa muestra el valor mediano del m² en USD por radio censal. Colores cálidos indican precios más altos. Cada radio se colorea según la mediana de las publicaciones inmobiliarias relevadas en esa zona.</p>
+			</div>
+		</details>
+		<details class="method-details">
+			<summary class="method-summary">Implicancias</summary>
+			<div class="method-body">
+				<p class="explain-text">La distribución espacial de precios refleja la percepción del mercado sobre accesibilidad, servicios y demanda. Diferencias entre radios contiguos pueden indicar oportunidades de inversión o barreras urbanas no evidentes.</p>
+			</div>
+		</details>
+		<details class="method-details">
+			<summary class="method-summary">Metodología</summary>
+			<div class="method-body">
+				<p class="explain-text">Relevamiento de publicaciones inmobiliarias (venta y alquiler) georreferenciadas. Se calcula la mediana de USD/m² por radio censal con un mínimo de 3 publicaciones. Datos actualizados mensualmente.</p>
+			</div>
+		</details>
+
 		<div class="source-note-box">
 			<div><strong>Fuente:</strong> Relevamiento de mercado inmobiliario</div>
 			<div><strong>Última revisión:</strong> {DATA_FRESHNESS.real_estate.processedDate} · Se actualiza mensualmente</div>
@@ -452,4 +471,11 @@
 	.source-note-box strong {
 		color: #f8fafc;
 	}
+	.method-details { margin-top: 10px; border: 1px solid rgba(100,116,139,0.15); border-radius: 6px; overflow: hidden; }
+	.method-summary { font-size: 9px; font-weight: 600; color: #d4d4d4; padding: 6px 8px; cursor: pointer; user-select: none; list-style: none; display: flex; align-items: center; gap: 4px; }
+	.method-summary::before { content: '\25B8'; font-size: 8px; transition: transform 0.15s; }
+	.method-details[open] > .method-summary::before { transform: rotate(90deg); }
+	.method-summary::-webkit-details-marker { display: none; }
+	.method-body { padding: 4px 8px 8px; }
+	.explain-text { font-size: 9px; color: #a3a3a3; line-height: 1.6; margin: 0; }
 </style>

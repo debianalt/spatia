@@ -402,6 +402,13 @@
 			</div>
 		</details>
 
+		<details class="method-details">
+			<summary class="method-summary">{i18n.t('analysis.catastro.methodTitle')}</summary>
+			<div class="method-body">
+				<p class="explain-text">{i18n.t('analysis.catastro.methodBody')}</p>
+			</div>
+		</details>
+
 		<div class="source-note-box">
 			<div><strong>{i18n.t('data.source.catastro')}</strong></div>
 			<div>{i18n.t('analysis.catastro.updateFreq')} · {DATA_FRESHNESS.catastro_by_radio?.processedDate ?? ''}</div>

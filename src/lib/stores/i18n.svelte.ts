@@ -467,6 +467,12 @@ const dict: Record<string, Record<Locale, string>> = {
 		en: 'The number of new parcels in the last 90 days indicates real estate pressure on each area. High growth of urban parcels may signal urban expansion, service demand and the need for territorial planning.',
 		gn: "Yvy pyahu 90 ára pe ohechauka presión inmobiliaria. Yvy táva oikuaaukáva ikatu he'ise táva oñembotuicha, oikotevẽ servicio ha planificación."
 	},
+	'analysis.catastro.methodTitle': { es: 'Metodología', en: 'Methodology', gn: 'Metodología' },
+	'analysis.catastro.methodBody': {
+		es: 'Datos catastrales de la Dirección General de Catastro de Misiones procesados a nivel de radio censal INDEC 2022. Cada parcela se clasifica como urbana o rural según su código catastral. Superficie media y conteo de parcelas nuevas (últimos 90 días) se calculan por radio censal. Actualización mensual.',
+		en: 'Cadastral data from the Misiones General Cadastre Office processed at INDEC 2022 census tract level. Each parcel is classified as urban or rural by its cadastral code. Average area and new parcel counts (last 90 days) are computed per census tract. Monthly update.',
+		gn: 'Catastro Misiones datos radio censal INDEC 2022 rupi. Yvy oñemboja urbano térã rural. Actualización jasy peteĩ.'
+	},
 	'analysis.catastro.guideDeptTitle': { es: 'Guía rápida', en: 'Quick guide', gn: "Ñemoañete pya'e" },
 	'analysis.catastro.guideDeptBody': {
 		es: 'Las parcelas cyan son urbanas, las verdes son rurales. Hacé click en cualquier edificio o zona del mapa para seleccionar un radio censal y ver sus estadísticas: cantidad de parcelas, áreas medias, parcelas nuevas y calidad habitacional.',
