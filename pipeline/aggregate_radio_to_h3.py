@@ -1,0 +1,170 @@
+"""
+Aggregate radio-level data to H3 hexagons via crosswalk, then PCA + k-means.
+
+Creates H3 parquets for radio-based analyses (sociodemographic, economic_activity,
+accessibility) so they can be displayed as hex layers instead of catastro parcels.
+
+Usage:
+  python pipeline/aggregate_radio_to_h3.py
+"""
+
+import json
+import os
+import sys
+import time
+
+import numpy as np
+import pandas as pd
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+from sklearn.preprocessing import StandardScaler
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, SCRIPT_DIR)
+from config import OUTPUT_DIR
+
+CROSSWALK_PATH = os.path.join(OUTPUT_DIR, "h3_radio_crosswalk.parquet")
+RADIO_STATS_PATH = os.path.join(OUTPUT_DIR, "radio_stats_master.parquet")
+
+ANALYSES = {
+    'sociodemographic': {
+        'cols': ['densidad_hab_km2', 'pct_nbi', 'pct_hacinamiento', 'pct_propietario', 'tamano_medio_hogar', 'pct_computadora'],
+    },
+    'economic_activity': {
+        'cols': ['tasa_empleo', 'tasa_actividad', 'pct_universitario', 'viirs_mean_radiance', 'building_density_per_km2'],
+    },
+    'accessibility': {
+        'cols': ['travel_min_posadas', 'travel_min_cabecera', 'dist_nearest_hospital_km', 'dist_nearest_secundaria_km', 'dist_primary_m'],
+    },
+}
+
+
+def auto_label(cluster_means, global_means, var_names):
+    deviation = cluster_means - global_means
+    top_idx = np.argmax(np.abs(deviation))
+    direction = "alto" if deviation[top_idx] > 0 else "bajo"
+    clean = var_names[top_idx].replace('pct_', '').replace('dist_nearest_', '').replace('travel_min_', '')
+    return f"{clean} {direction}"
+
+
+def main():
+    t0 = time.time()
+
+    print("=" * 60)
+    print("  Aggregate Radio -> H3 + PCA + k-means")
+    print("=" * 60)
+
+    # Load crosswalk and radio stats
+    print("Loading crosswalk and radio stats...")
+    xwalk = pd.read_parquet(CROSSWALK_PATH)
+    radio = pd.read_parquet(RADIO_STATS_PATH)
+
+    print(f"  Crosswalk: {len(xwalk):,} rows")
+    print(f"  Radio stats: {len(radio):,} rows, {len(radio.columns)} cols")
+
+    # Merge crosswalk with radio stats
+    merged = xwalk.merge(radio, on='redcode', how='inner')
+    print(f"  Merged: {len(merged):,} rows")
+
+    for aid, cfg in ANALYSES.items():
+        print(f"\n{'=' * 60}")
+        print(f"  {aid}")
+        print(f"{'=' * 60}")
+
+        cols = [c for c in cfg['cols'] if c in merged.columns]
+        if not cols:
+            print(f"  SKIP: no columns found")
+            continue
+
+        print(f"  Variables: {cols}")
+
+        # Weighted aggregation to H3
+        agg_data = []
+        for col in cols:
+            valid = merged[['h3index', 'weight', col]].dropna(subset=[col])
+            weighted = valid.groupby('h3index').apply(
+                lambda g: np.average(g[col], weights=g['weight']),
+                include_groups=False
+            )
+            agg_data.append(weighted.rename(col))
+
+        df = pd.concat(agg_data, axis=1).reset_index()
+        df = df.rename(columns={'index': 'h3index'}) if 'index' in df.columns else df
+        print(f"  Aggregated: {len(df):,} hexagons")
+
+        # Drop NaN
+        n_before = len(df)
+        df = df.dropna()
+        print(f"  After dropna: {len(df):,} ({n_before - len(df)} dropped)")
+
+        if len(df) < 100:
+            print(f"  SKIP: too few hexagons")
+            continue
+
+        # Standardize + PCA
+        X = df[cols].values
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+
+        pca = PCA()
+        X_pca = pca.fit_transform(X_scaled)
+        cumvar = np.cumsum(pca.explained_variance_ratio_)
+        n_comp = max(2, int(np.argmax(cumvar >= 0.80)) + 1)
+        n_comp = min(n_comp, len(cols))
+        print(f"  PCA: {n_comp} components, {cumvar[n_comp-1]*100:.0f}% variance")
+
+        # K-means
+        best_sil = -1
+        best_k = 3
+        best_labels = None
+        for k in [3, 4, 5]:
+            km = KMeans(n_clusters=k, random_state=42, n_init=20)
+            labels = km.fit_predict(X_pca[:, :n_comp])
+            sil = silhouette_score(X_pca[:, :n_comp], labels)
+            print(f"    k={k}: sil={sil:.4f}")
+            if sil > best_sil:
+                best_sil = sil
+                best_k = k
+                best_labels = labels
+
+        print(f"  Selected k={best_k} (sil={best_sil:.4f})")
+
+        # Auto-label
+        global_means = df[cols].mean().values
+        type_labels = {}
+        for c in range(best_k):
+            mask = best_labels == c
+            cluster_means = df.loc[mask, cols].mean().values
+            label = auto_label(cluster_means, global_means, cols)
+            type_labels[c + 1] = label
+            count = mask.sum()
+            print(f"    Type {c+1}: {label} ({count:,})")
+
+        # Build output
+        result = df[['h3index']].copy()
+        result['type'] = best_labels + 1
+        result['type_label'] = result['type'].map(type_labels)
+        result['score'] = result['type'].astype(float)
+        result['pca_1'] = X_pca[:, 0]
+        result['pca_2'] = X_pca[:, 1] if X_pca.shape[1] > 1 else 0.0
+        for col in cols:
+            result[col] = df[col].values
+
+        # Normalize component cols to 0-100 percentile for petal compatibility
+        for col in cols:
+            valid = result[col].notna()
+            if valid.sum() > 1:
+                result.loc[valid, col] = result.loc[valid, col].rank(pct=True) * 100.0
+
+        out_path = os.path.join(OUTPUT_DIR, f"sat_{aid}.parquet")
+        result.to_parquet(out_path, index=False)
+        size_kb = os.path.getsize(out_path) / 1024
+        print(f"  Output: {out_path} ({size_kb:.0f} KB, {len(result):,} rows)")
+
+    elapsed = time.time() - t0
+    print(f"\nDone in {elapsed:.0f}s")
+
+
+if __name__ == "__main__":
+    main()

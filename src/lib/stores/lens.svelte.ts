@@ -6,7 +6,6 @@ export class LensStore {
 
 	setLens(id: LensId | null): void {
 		if (id === this.activeLens) {
-			// Toggle off
 			this.activeLens = null;
 			this.activeAnalysis = null;
 			return;

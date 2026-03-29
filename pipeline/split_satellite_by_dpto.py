@@ -39,6 +39,7 @@ ALL_ANALYSES = [
     "change_pressure", "location_value", "agri_potential",
     "forest_health", "forestry_aptitude", "isolation_index",
     "territorial_gap", "health_access", "education_gap", "land_use",
+    "territorial_types", "sociodemographic", "economic_activity", "accessibility",
 ]
 
 
@@ -184,7 +185,7 @@ def main():
 
         # Province averages
         score_col = "score"
-        component_cols = [c for c in df.columns if c.startswith("c_") or c.startswith("frac_")]
+        component_cols = [c for c in df.columns if c not in ("h3index", "score", "dpto")]
         prov_avg = round(float(df[score_col].mean()), 1)
 
         dptos = sorted(df_assigned["dpto"].unique())

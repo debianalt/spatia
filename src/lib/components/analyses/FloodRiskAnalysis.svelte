@@ -3,6 +3,9 @@
 	import type { MapStore } from '$lib/stores/map.svelte';
 	import type { HexStore } from '$lib/stores/hex.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
+
+	const DEPT_COLORS = ['#1565c0', '#7e57c2', '#4db6ac', '#66bb6a', '#c0ca33', '#ffb74d', '#e65100', '#78909c'];
+	function getDeptColor(idx: number): string { return DEPT_COLORS[idx % DEPT_COLORS.length]; }
 	import CTADiagnostic from '$lib/components/CTADiagnostic.svelte';
 	import { DATA_FRESHNESS, PARQUETS } from '$lib/config';
 	import { initDuckDB, query } from '$lib/stores/duckdb';
@@ -38,14 +41,7 @@
 
 	let floodCatastroDpto = $state<string | null>(null);
 
-	// Auto-select top department on first load
-	let hasAutoSelected = false;
-	$effect(() => {
-		if (deptSummaries.length > 0 && !hasAutoSelected && !floodCatastroDpto && !selectedDpto) {
-			hasAutoSelected = true;
-			setTimeout(() => handleFloodCatastroDptoClick(deptSummaries[0]), 400);
-		}
-	});
+	// Department list loads, user picks manually
 
 	// Census vulnerability petal for parcel detail (multi-parcel)
 	const FLOOD_CENSUS_COLS = ['flood_frequency', 'hand_mean', 'pct_nbi', 'pct_cloacas', 'pct_agua_red', 'infra_deficit'];
@@ -115,6 +111,17 @@
 		return { values, color, rawValues };
 	}
 
+	// Petal chart for hex detail view
+	const floodPetalLabels = ['Ocurrencia', 'Recurrencia', 'Estacionalidad', 'Extensión actual'];
+	const hexPetalLayers = $derived.by(() => {
+		if (!selectedHex) return [];
+		const occ = selectedHex.jrc_occurrence ?? 0;
+		const rec = selectedHex.jrc_recurrence ?? 0;
+		const seas = ((selectedHex.jrc_seasonality ?? 0) / 12) * 100; // normalize 0-12 to 0-100
+		const ext = selectedHex.flood_extent_pct ?? 0;
+		return [{ values: [occ, rec, seas, ext], color: getRiskColor(selectedHex.flood_risk_score ?? 0), rawValues: [occ, rec, seas, ext] }];
+	});
+
 	function getRiskLabel(score: number): string {
 		if (score >= 70) return i18n.t('analysis.flood.riskHigh');
 		if (score >= 40) return i18n.t('analysis.flood.riskMedium');
@@ -171,21 +178,7 @@
 			{/each}
 		</div>
 
-		<!-- Score bars per parcel -->
-		<div class="flood-scores">
-			{#each selectedParcels as parcel}
-				<div class="flood-zone-row">
-					<span class="zone-dot-sm" style:background={parcel.color}></span>
-					<span class="flood-zone-label">{parcel.tipo === 'rural' ? 'R' : 'U'}</span>
-					<div class="score-track">
-						<div class="score-fill" style:width="{parcel.flood_risk_score}%" style:background={parcel.color}></div>
-					</div>
-					<span class="flood-zone-val" style:color={parcel.color}>{parcel.flood_risk_score.toFixed(1)}</span>
-				</div>
-			{/each}
-		</div>
-
-		<!-- Detail per parcel: current status + metrics -->
+		<!-- Detail per parcel: current status -->
 		{#each selectedParcels as parcel}
 			<div class="parcel-detail-header">
 				<span class="chip-dot" style:background={parcel.color}></span>
@@ -201,28 +194,6 @@
 					<span>{i18n.t('analysis.flood.statusDry')}</span>
 				{/if}
 				<span class="status-date">{i18n.t('analysis.flood.statusDate')} {DATA_FRESHNESS.hex_flood_risk.dataDate}</span>
-			</div>
-			<div class="detail-grid">
-				<div class="detail-item">
-					<div class="detail-label">{i18n.t('analysis.flood.jrcOccurrence')}</div>
-					<div class="detail-value">{parcel.jrc_occurrence.toFixed(1)}%</div>
-					<div class="detail-desc">{i18n.t('analysis.flood.jrcOccurrenceDesc')}</div>
-				</div>
-				<div class="detail-item">
-					<div class="detail-label">{i18n.t('analysis.flood.jrcRecurrence')}</div>
-					<div class="detail-value">{parcel.jrc_recurrence.toFixed(1)}%</div>
-					<div class="detail-desc">{i18n.t('analysis.flood.jrcRecurrenceDesc')}</div>
-				</div>
-				<div class="detail-item">
-					<div class="detail-label">{i18n.t('analysis.flood.jrcSeasonality')}</div>
-					<div class="detail-value">{parcel.jrc_seasonality.toFixed(1)}</div>
-					<div class="detail-desc">{i18n.t('analysis.flood.jrcSeasonalityDesc')}</div>
-				</div>
-				<div class="detail-item">
-					<div class="detail-label">{i18n.t('analysis.flood.currentExtent')}</div>
-					<div class="detail-value">{formatPct(parcel.flood_extent_pct)}</div>
-					<div class="detail-desc">{i18n.t('analysis.flood.currentExtentDesc')}</div>
-				</div>
 			</div>
 		{/each}
 
@@ -253,15 +224,6 @@
 				<p class="explain-text">{i18n.t('analysis.flood.howToReadDeptBody')}</p>
 			</div>
 		</details>
-		<div class="flood-legend">
-			<div class="legend-title">{i18n.t('analysis.flood.riskScore')}</div>
-			<div class="legend-bar"></div>
-			<div class="legend-labels">
-				<span>{i18n.t('analysis.flood.riskLow')}</span>
-				<span>{i18n.t('analysis.flood.riskMedium')}</span>
-				<span>{i18n.t('analysis.flood.riskHigh')}</span>
-			</div>
-		</div>
 		<div class="source-note-box">
 			<div><strong>Fuente:</strong> JRC Global Surface Water + Sentinel-1 SAR ({DATA_FRESHNESS.hex_flood_risk.dataDate})</div>
 		</div>
@@ -279,39 +241,15 @@
 			</div>
 		</div>
 
-		<div class="score-bar">
-			<div class="score-label">{i18n.t('analysis.flood.riskScore')}</div>
-			<div class="score-track">
-				<div class="score-fill" style:width="{selectedHex.flood_risk_score ?? 0}%"
-					style:background={getRiskColor(selectedHex.flood_risk_score ?? 0)}></div>
+		{#if hexPetalLayers.length > 0}
+			<div class="petal-section">
+				<div class="section-title">Perfil de riesgo hídrico</div>
+				<p class="petal-note">Cada eje muestra un componente del riesgo (0–100). Mayor extensión = mayor riesgo.</p>
+				<div class="petal-wrapper">
+					<PetalChart layers={hexPetalLayers} labels={floodPetalLabels} size={240} />
+				</div>
 			</div>
-			<div class="score-value" style:color={getRiskColor(selectedHex.flood_risk_score ?? 0)}>
-				{(selectedHex.flood_risk_score ?? 0).toFixed(1)}
-			</div>
-		</div>
-
-		<div class="detail-grid">
-			<div class="detail-item">
-				<div class="detail-label">{i18n.t('analysis.flood.jrcOccurrence')}</div>
-				<div class="detail-value">{(selectedHex.jrc_occurrence ?? 0).toFixed(1)}%</div>
-				<div class="detail-desc">{i18n.t('analysis.flood.jrcOccurrenceDesc')}</div>
-			</div>
-			<div class="detail-item">
-				<div class="detail-label">{i18n.t('analysis.flood.jrcRecurrence')}</div>
-				<div class="detail-value">{(selectedHex.jrc_recurrence ?? 0).toFixed(1)}%</div>
-				<div class="detail-desc">{i18n.t('analysis.flood.jrcRecurrenceDesc')}</div>
-			</div>
-			<div class="detail-item">
-				<div class="detail-label">{i18n.t('analysis.flood.jrcSeasonality')}</div>
-				<div class="detail-value">{(selectedHex.jrc_seasonality ?? 0).toFixed(1)}</div>
-				<div class="detail-desc">{i18n.t('analysis.flood.jrcSeasonalityDesc')}</div>
-			</div>
-			<div class="detail-item">
-				<div class="detail-label">{i18n.t('analysis.flood.currentExtent')}</div>
-				<div class="detail-value">{formatPct(selectedHex.flood_extent_pct ?? 0)}</div>
-				<div class="detail-desc">{i18n.t('analysis.flood.currentExtentDesc')}</div>
-			</div>
-		</div>
+		{/if}
 
 		<div class="source-note-box">
 			<div><strong>Fuente:</strong> JRC Global Surface Water (Landsat, 1984–2021) + Sentinel-1 SAR (Copernicus, {DATA_FRESHNESS.hex_flood_risk.dataDate}) + Censo Nacional 2022</div>
@@ -349,17 +287,11 @@
 
 		<div class="dept-section">
 			<div class="section-title">{i18n.t('analysis.flood.topDepts')}</div>
-			{#each deptSummaries as dept}
+			{#each deptSummaries as dept, di}
 				<button class="dept-row dept-clickable"
 					onclick={() => handleFloodCatastroDptoClick(dept)}>
-					<div class="dept-name">{dept.dpto}</div>
-					<div class="dept-bar-wrap">
-						<div class="dept-bar" style:width="{Math.min(dept.avg_score * 3, 100)}%"
-							style:background={getRiskColor(dept.avg_score)}></div>
-					</div>
-					<div class="dept-score" style:color={getRiskColor(dept.avg_score)}>
-						{dept.avg_score.toFixed(1)}
-					</div>
+					<span class="dept-name">{dept.dpto}</span>
+					<span class="dept-count">{dept.hex_count} hex</span>
 				</button>
 			{/each}
 		</div>
@@ -368,14 +300,6 @@
 			<summary class="method-summary">{i18n.t('analysis.flood.howToReadTitle')}</summary>
 			<div class="method-body">
 				<p class="explain-text">{i18n.t('analysis.flood.howToReadBody')}</p>
-				<div class="mini-legend">
-					<div class="legend-bar"></div>
-					<div class="legend-labels">
-						<span>{i18n.t('analysis.flood.riskLow')}</span>
-						<span>{i18n.t('analysis.flood.riskMedium')}</span>
-						<span>{i18n.t('analysis.flood.riskHigh')}</span>
-					</div>
-				</div>
 			</div>
 		</details>
 
@@ -441,61 +365,6 @@
 		padding: 2px 8px;
 		border-radius: 9999px;
 	}
-	.score-bar {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		margin-bottom: 12px;
-	}
-	.score-label {
-		font-size: 9px;
-		color: #d4d4d4;
-		white-space: nowrap;
-	}
-	.score-track {
-		flex: 1;
-		height: 6px;
-		background: rgba(100,116,139,0.2);
-		border-radius: 3px;
-		overflow: hidden;
-	}
-	.score-fill {
-		height: 100%;
-		border-radius: 3px;
-		transition: width 0.3s;
-	}
-	.score-value {
-		font-size: 13px;
-		font-weight: 700;
-		min-width: 32px;
-		text-align: right;
-	}
-	.detail-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 8px;
-		margin-bottom: 10px;
-	}
-	.detail-item {
-		background: rgba(100,116,139,0.08);
-		border-radius: 6px;
-		padding: 8px;
-	}
-	.detail-label {
-		font-size: 9px;
-		color: #d4d4d4;
-		margin-bottom: 2px;
-	}
-	.detail-value {
-		font-size: 14px;
-		font-weight: 700;
-		color: #e2e8f0;
-	}
-	.detail-desc {
-		font-size: 8px;
-		color: #a3a3a3;
-		margin-top: 2px;
-	}
 	.summary-cards {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
@@ -559,33 +428,19 @@
 		transition: background 0.15s;
 	}
 	.dept-clickable:hover { background: rgba(96,165,250,0.1); }
+	.dept-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 	.dept-name {
-		font-size: 9px;
+		font-size: 10px;
 		color: #d4d4d4;
-		width: 72px;
-		text-align: left;
 		flex-shrink: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.dept-bar-wrap {
-		flex: 1;
-		height: 4px;
-		background: rgba(100,116,139,0.15);
-		border-radius: 2px;
-		overflow: hidden;
-	}
-	.dept-bar {
-		height: 100%;
-		border-radius: 2px;
-		transition: width 0.3s;
-	}
-	.dept-score {
+	.dept-count {
 		font-size: 9px;
-		font-weight: 600;
-		min-width: 24px;
-		text-align: right;
+		color: #a3a3a3;
+		margin-left: auto;
 	}
 	.hint {
 		font-size: 9px;
@@ -698,11 +553,6 @@
 	.chip-x:hover { color: #ef4444; }
 	.parcel-detail-header { display: flex; align-items: center; gap: 4px; font-size: 10px; margin: 6px 0 3px; padding-top: 4px; border-top: 1px solid #1e293b; }
 	.chip-area { color: #a3a3a3; font-size: 9px; }
-	.flood-scores { margin: 4px 0 8px; }
-	.flood-zone-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-	.zone-dot-sm { display: inline-block; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-	.flood-zone-label { font-size: 10px; font-weight: 600; color: #e2e8f0; width: 16px; }
-	.flood-zone-val { font-size: 11px; font-weight: 700; min-width: 28px; text-align: right; }
 	.clear-parcel-btn { font-size: 9px; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.06); border: 1px solid #334155; color: #d4d4d4; cursor: pointer; transition: all 0.15s; }
 	.clear-parcel-btn:hover { border-color: #ef4444; color: #ef4444; }
 	.petal-section { margin: 10px 0; }

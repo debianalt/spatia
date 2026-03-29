@@ -80,14 +80,7 @@
 		deptLoading = false;
 	}
 
-	// Auto-select top department on first load
-	let hasAutoSelected = false;
-	$effect(() => {
-		if (deptSummaries.length > 0 && !hasAutoSelected && !activeDpto) {
-			hasAutoSelected = true;
-			setTimeout(() => handleDptoClick(deptSummaries[0]), 400);
-		}
-	});
+	// Department list loads, user picks manually
 
 	function handleDptoClick(dept: any) {
 		activeDpto = dept.dpto;
@@ -179,28 +172,6 @@
 			</div>
 		{/if}
 
-		{#each selectedParcels as parcel}
-			<div class="parcel-block">
-				<div class="parcel-header">
-					<span class="chip-dot" style:background={parcel.color}></span>
-					<span>{parcel.tipo === 'rural' ? 'Rural' : 'Urbana'}</span>
-					{#if parcel.area_m2 > 0}
-						<span class="chip-area">{parcel.area_m2.toLocaleString('es-AR', { maximumFractionDigits: 0 })} m²</span>
-					{/if}
-				</div>
-				<div class="detail-grid">
-					{#each config.petalCols as col}
-						{@const val = parcel.scores[col.col] ?? 0}
-						<div class="detail-item">
-							<div class="detail-label">{col.label[locale]}</div>
-							<div class="detail-value">{typeof val === 'number' ? (Number.isInteger(val) ? val.toLocaleString() : val.toFixed(1)) : val}</div>
-							<div class="detail-desc">{col.desc[locale]}</div>
-						</div>
-					{/each}
-				</div>
-			</div>
-		{/each}
-
 		<div class="source-note-box">
 			<div><strong>Fuente:</strong> INDEC Censo 2022 · SoilGrids · CHIRPS · Overture Maps · Catastro Misiones</div>
 		</div>
@@ -235,16 +206,10 @@
 		{:else}
 			<div class="dept-section">
 				<div class="section-title">Seleccioná un departamento</div>
-				{#each deptSummaries as dept}
+				{#each deptSummaries as dept, di}
 					<button class="dept-row" onclick={() => handleDptoClick(dept)}>
-						<div class="dept-name">{dept.dpto}</div>
-						<div class="dept-bar-wrap">
-							<div class="dept-bar" style:width="{Math.max(Math.min((dept.avg_val / maxDeptVal) * 100, 100), 3)}%"
-								style:background={getColor(dept.avg_val, maxDeptVal)}></div>
-						</div>
-						<div class="dept-score" style:color={getColor(dept.avg_val, maxDeptVal)}>
-							{dept.avg_val?.toFixed?.(1) ?? '—'}
-						</div>
+						<span class="dept-name">{dept.dpto}</span>
+						<span class="dept-count">{dept.n_radios} radios</span>
 					</button>
 				{/each}
 			</div>
@@ -309,13 +274,6 @@
 	.petal-section { margin: 6px 0; }
 	.petal-note { font-size: 9px; color: #a3a3a3; margin: 2px 0 6px 0; line-height: 1.4; }
 	.petal-wrapper { margin: 0 auto; max-width: 300px; }
-	.parcel-block { margin: 8px 0; padding: 6px; background: rgba(255,255,255,0.03); border-radius: 6px; }
-	.parcel-header { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #d4d4d4; margin-bottom: 6px; }
-	.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-	.detail-item { background: rgba(100,116,139,0.08); border-radius: 4px; padding: 5px 6px; }
-	.detail-label { font-size: 9px; color: #d4d4d4; margin-bottom: 1px; }
-	.detail-value { font-size: 14px; font-weight: 700; color: #e2e8f0; }
-	.detail-desc { font-size: 8px; color: #a3a3a3; line-height: 1.3; margin-top: 2px; }
 	.dept-title { font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 8px; }
 	.hint { font-size: 9px; color: #a3a3a3; margin-bottom: 8px; }
 	.loading { font-size: 10px; color: #a3a3a3; padding: 12px 0; }
@@ -323,10 +281,9 @@
 	.section-title { font-size: 10px; font-weight: 600; color: #a3a3a3; margin-bottom: 6px; }
 	.dept-row { display: flex; align-items: center; gap: 6px; width: 100%; padding: 4px 0; background: none; border: none; cursor: pointer; color: inherit; text-align: left; }
 	.dept-row:hover { background: rgba(255,255,255,0.04); }
-	.dept-name { width: 100px; font-size: 10px; color: #d4d4d4; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.dept-bar-wrap { flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
-	.dept-bar { height: 100%; border-radius: 3px; transition: width 0.3s; }
-	.dept-score { width: 36px; text-align: right; font-size: 10px; font-weight: 600; flex-shrink: 0; }
+	.dept-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+	.dept-name { font-size: 10px; color: #d4d4d4; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.dept-count { font-size: 9px; color: #a3a3a3; margin-left: auto; }
 	.method-details { border: 1px solid rgba(100,116,139,0.15); border-radius: 6px; margin: 6px 0; overflow: hidden; }
 	.method-summary { font-size: 9px; font-weight: 500; color: #d4d4d4; padding: 6px 8px; cursor: pointer; list-style: none; display: flex; align-items: center; gap: 4px; }
 	.method-summary::before { content: '▸'; font-size: 8px; transition: transform 0.2s; }

@@ -64,28 +64,6 @@
 		{/each}
 	</div>
 
-	<!-- Dimension bars (raw values, with provincial avg marker) -->
-	<div class="dim-section">
-		{#each labels as label, i}
-			<div class="dim-row">
-				<div class="dim-label">{label}</div>
-				<div class="dim-bars-container">
-					{#each zones as zone}
-						{@const raw = zone.stats.rawValues[i] ?? 0}
-						<div class="dim-bar-track">
-							<div class="dim-bar-fill" style:width="{raw}%" style:background={zone.color}></div>
-						</div>
-					{/each}
-				</div>
-				<div class="dim-values">
-					{#each zones as zone}
-						{@const raw = zone.stats.rawValues[i] ?? 0}
-						<span class="dim-val">{raw.toFixed(1)}</span>
-					{/each}
-				</div>
-			</div>
-		{/each}
-	</div>
 </div>
 
 <style>

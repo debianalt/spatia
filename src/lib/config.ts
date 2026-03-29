@@ -44,35 +44,40 @@ export const TERRAIN_CONFIG = {
 
 export function getParquetUrl(name: string): string {
 	const busts: Record<string, string> = {
-		hex_flood_risk: '?v=3',
-		sat_environmental_risk: '?v=3',
-		sat_climate_comfort: '?v=3',
-		sat_green_capital: '?v=3',
-		sat_change_pressure: '?v=3',
-		sat_location_value: '?v=2',
-		sat_agri_potential: '?v=3',
-		sat_forest_health: '?v=3',
-		sat_forestry_aptitude: '?v=2',
-		sat_isolation_index: '?v=2',
-		sat_territorial_gap: '?v=2',
-		sat_health_access: '?v=1',
-		sat_education_gap: '?v=1',
-		emsa_powerlines: '?v=1',
+		hex_flood_risk: '?v=20',
+		sat_environmental_risk: '?v=20',
+		sat_climate_comfort: '?v=20',
+		sat_green_capital: '?v=20',
+		sat_change_pressure: '?v=20',
+		sat_location_value: '?v=20',
+		sat_agri_potential: '?v=20',
+		sat_forest_health: '?v=20',
+		sat_forestry_aptitude: '?v=20',
+		sat_isolation_index: '?v=20',
+		sat_territorial_gap: '?v=20',
+		sat_health_access: '?v=20',
+		sat_education_gap: '?v=20',
+		sat_territorial_types: '?v=20',
+		sat_sociodemographic: '?v=20',
+		sat_economic_activity: '?v=20',
+		sat_accessibility: '?v=20',
+		overture_scores: '?v=20',
+		emsa_powerlines: '?v=20',
 	};
 	const bust = busts[name] || '';
 	return `${getBase()}/data/${name}.parquet${bust}`;
 }
 
 export function getFloodDptoUrl(parquetKey: string): string {
-	return `${getBase()}/data/flood_dpto/hex_flood_${parquetKey}.parquet`;
+	return `${getBase()}/data/flood_dpto/hex_flood_${parquetKey}.parquet?v=20`;
 }
 
 export function getScoresDptoUrl(parquetKey: string): string {
-	return `${getBase()}/data/scores_dpto/overture_scores_${parquetKey}.parquet`;
+	return `${getBase()}/data/scores_dpto/overture_scores_${parquetKey}.parquet?v=20`;
 }
 
 export function getSatDptoUrl(analysisId: string, parquetKey: string): string {
-	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet`;
+	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet?v=20`;
 }
 
 export const PARQUETS = {
@@ -106,6 +111,11 @@ export const PARQUETS = {
 	get sat_land_use() { return getParquetUrl('sat_land_use'); },
 	get sat_health_access() { return getParquetUrl('sat_health_access'); },
 	get sat_education_gap() { return getParquetUrl('sat_education_gap'); },
+	get sat_territorial_types() { return getParquetUrl('sat_territorial_types'); },
+	get sat_sociodemographic() { return getParquetUrl('sat_sociodemographic'); },
+	get sat_economic_activity() { return getParquetUrl('sat_economic_activity'); },
+	get sat_accessibility() { return getParquetUrl('sat_accessibility'); },
+	get overture_scores() { return getParquetUrl('overture_scores'); },
 	// Public infrastructure (datos.gob.ar)
 	get emsa_powerlines() { return getParquetUrl('emsa_powerlines'); },
 };
@@ -113,10 +123,10 @@ export const PARQUETS = {
 export const BASEMAP = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
 
 export const MAP_INIT = {
-	center: [-55.895, -27.365] as [number, number],  // Posadas centro
-	zoom: 15,
-	pitch: 55,
-	bearing: -20,
+	center: [-54.4, -27.0] as [number, number],  // Misiones provincia
+	zoom: 7.5,
+	pitch: 30,
+	bearing: -15,
 	minZoom: 6,
 	maxZoom: 18
 } as const;
@@ -163,16 +173,25 @@ export interface HexVariable {
 	aggregation: 'mean' | 'sum' | 'max';
 }
 
+export type TemporalMode = 'current' | 'baseline' | 'delta';
+
 export interface HexLayerConfig {
 	id: string;
 	parquet: string;
 	variables: HexVariable[];
 	primaryVariable: string;
-	colorScale: 'flood' | 'sequential' | 'diverging';
+	colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical';
 	aggregation: 'mean' | 'sum' | 'max';
 	petalVars?: HexVariable[];
 	titleKey: string;
 	perDepartment?: boolean;
+	temporal?: boolean;
+}
+
+export function getTemporalCol(col: string, mode: TemporalMode): string {
+	if (mode === 'current') return col;
+	if (mode === 'baseline') return col === 'score' ? 'score_baseline' : `${col}_baseline`;
+	return col === 'score' ? 'delta_score' : `${col}_delta`;
 }
 
 export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
@@ -180,14 +199,15 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'flood_risk',
 		parquet: 'hex_flood_risk',
 		variables: [
-			{ col: 'flood_risk_score', labelKey: 'analysis.flood.riskScore', aggregation: 'mean' },
+			{ col: 'type', labelKey: 'analysis.flood.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'analysis.flood.typeLabel', aggregation: 'mean' },
 			{ col: 'jrc_occurrence', labelKey: 'analysis.flood.jrcOccurrence', aggregation: 'mean' },
 			{ col: 'jrc_recurrence', labelKey: 'analysis.flood.jrcRecurrence', aggregation: 'mean' },
 			{ col: 'jrc_seasonality', labelKey: 'analysis.flood.jrcSeasonality', aggregation: 'mean' },
 			{ col: 'flood_extent_pct', labelKey: 'analysis.flood.currentExtent', aggregation: 'mean' },
 		],
-		primaryVariable: 'flood_risk_score',
-		colorScale: 'flood',
+		primaryVariable: 'type',
+		colorScale: 'categorical',
 		aggregation: 'mean',
 		petalVars: [
 			{ col: 'flood_risk_score', labelKey: 'analysis.flood.riskScore', aggregation: 'mean' },
@@ -197,55 +217,6 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		],
 		titleKey: 'analysis.floodRisk.title',
 		perDepartment: true,
-	},
-	// ── Overture: Invertir ──
-	building_density: {
-		id: 'building_density',
-		parquet: 'overture_buildings',
-		variables: [
-			{ col: 'building_count', labelKey: 'ov.buildingCount', aggregation: 'sum' },
-			{ col: 'n_residential', labelKey: 'ov.nResidential', aggregation: 'sum' },
-			{ col: 'n_commercial', labelKey: 'ov.nCommercial', aggregation: 'sum' },
-			{ col: 'avg_height_m', labelKey: 'ov.avgHeight', aggregation: 'mean' },
-			{ col: 'avg_floors', labelKey: 'ov.avgFloors', aggregation: 'mean' },
-		],
-		primaryVariable: 'building_count',
-		colorScale: 'sequential',
-		aggregation: 'sum',
-		titleKey: 'analysis.buildingDensity.title',
-		perDepartment: false,
-	},
-	land_use_mix: {
-		id: 'land_use_mix',
-		parquet: 'overture_base',
-		variables: [
-			{ col: 'landuse_count', labelKey: 'ov.landuseCount', aggregation: 'sum' },
-			{ col: 'n_lu_residential', labelKey: 'ov.luResidential', aggregation: 'sum' },
-			{ col: 'n_lu_agriculture', labelKey: 'ov.luAgriculture', aggregation: 'sum' },
-			{ col: 'n_lu_developed', labelKey: 'ov.luDeveloped', aggregation: 'sum' },
-			{ col: 'n_lu_recreation', labelKey: 'ov.luRecreation', aggregation: 'sum' },
-		],
-		primaryVariable: 'landuse_count',
-		colorScale: 'sequential',
-		aggregation: 'sum',
-		titleKey: 'analysis.landUseMix.title',
-		perDepartment: false,
-	},
-	infra_coverage: {
-		id: 'infra_coverage',
-		parquet: 'overture_base',
-		variables: [
-			{ col: 'infra_count', labelKey: 'ov.infraCount', aggregation: 'sum' },
-			{ col: 'n_power', labelKey: 'ov.infraPower', aggregation: 'sum' },
-			{ col: 'n_water_infra', labelKey: 'ov.infraWater', aggregation: 'sum' },
-			{ col: 'n_communication', labelKey: 'ov.infraComm', aggregation: 'sum' },
-			{ col: 'n_transportation', labelKey: 'ov.infraTransport', aggregation: 'sum' },
-		],
-		primaryVariable: 'infra_count',
-		colorScale: 'sequential',
-		aggregation: 'sum',
-		titleKey: 'analysis.infraCoverage.title',
-		perDepartment: false,
 	},
 	// ── EMSA: Infraestructura eléctrica ──
 	powerline_density: {
@@ -262,151 +233,13 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		titleKey: 'emsa.title',
 		perDepartment: false,
 	},
-	// ── Overture: Producir ──
-	road_network: {
-		id: 'road_network',
-		parquet: 'overture_transportation',
-		variables: [
-			{ col: 'segment_count', labelKey: 'ov.segmentCount', aggregation: 'sum' },
-			{ col: 'n_primary', labelKey: 'ov.roadPrimary', aggregation: 'sum' },
-			{ col: 'n_secondary', labelKey: 'ov.roadSecondary', aggregation: 'sum' },
-			{ col: 'n_tertiary', labelKey: 'ov.roadTertiary', aggregation: 'sum' },
-			{ col: 'n_paved', labelKey: 'ov.roadPaved', aggregation: 'sum' },
-			{ col: 'n_unpaved', labelKey: 'ov.roadUnpaved', aggregation: 'sum' },
-		],
-		primaryVariable: 'segment_count',
-		colorScale: 'sequential',
-		aggregation: 'sum',
-		titleKey: 'analysis.roadNetwork.title',
-		perDepartment: false,
-	},
-	agricultural_land: {
-		id: 'agricultural_land',
-		parquet: 'overture_base',
-		variables: [
-			{ col: 'n_lu_agriculture', labelKey: 'ov.luAgriculture', aggregation: 'sum' },
-			{ col: 'n_lu_horticulture', labelKey: 'ov.luHorticulture', aggregation: 'sum' },
-			{ col: 'n_lu_managed', labelKey: 'ov.luManaged', aggregation: 'sum' },
-		],
-		primaryVariable: 'n_lu_agriculture',
-		colorScale: 'sequential',
-		aggregation: 'sum',
-		titleKey: 'analysis.agriculturalLand.title',
-		perDepartment: false,
-	},
-	industrial_footprint: {
-		id: 'industrial_footprint',
-		parquet: 'overture_buildings',
-		variables: [
-			{ col: 'n_industrial', labelKey: 'ov.bldgIndustrial', aggregation: 'sum' },
-			{ col: 'n_warehouse', labelKey: 'ov.bldgWarehouse', aggregation: 'sum' },
-			{ col: 'n_factory', labelKey: 'ov.bldgFactory', aggregation: 'sum' },
-			{ col: 'n_agricultural', labelKey: 'ov.bldgAgricultural', aggregation: 'sum' },
-		],
-		primaryVariable: 'n_industrial',
-		colorScale: 'sequential',
-		aggregation: 'sum',
-		titleKey: 'analysis.industrialFootprint.title',
-		perDepartment: false,
-	},
-	// ── Overture: Servir ──
-	health_education: {
-		id: 'health_education',
-		parquet: 'overture_places',
-		variables: [
-			{ col: 'n_health_care', labelKey: 'ov.poiHealthCare', aggregation: 'sum' },
-			{ col: 'n_education', labelKey: 'ov.poiEducation', aggregation: 'sum' },
-			{ col: 'n_hospital', labelKey: 'ov.poiHospital', aggregation: 'sum' },
-			{ col: 'n_school', labelKey: 'ov.poiSchool', aggregation: 'sum' },
-		],
-		primaryVariable: 'n_health_care',
-		colorScale: 'sequential',
-		aggregation: 'sum',
-		titleKey: 'analysis.healthEducation.title',
-		perDepartment: false,
-	},
-	community_services: {
-		id: 'community_services',
-		parquet: 'overture_places',
-		variables: [
-			{ col: 'n_community_and_government', labelKey: 'ov.poiCommunity', aggregation: 'sum' },
-			{ col: 'n_services_and_business', labelKey: 'ov.poiServices', aggregation: 'sum' },
-		],
-		primaryVariable: 'n_community_and_government',
-		colorScale: 'sequential',
-		aggregation: 'sum',
-		titleKey: 'analysis.communityServices.title',
-		perDepartment: false,
-	},
-	emergency_infra: {
-		id: 'emergency_infra',
-		parquet: 'overture_base',
-		variables: [
-			{ col: 'n_emergency', labelKey: 'ov.infraEmergency', aggregation: 'sum' },
-			{ col: 'n_barrier', labelKey: 'ov.infraBarrier', aggregation: 'sum' },
-		],
-		primaryVariable: 'n_emergency',
-		colorScale: 'sequential',
-		aggregation: 'sum',
-		titleKey: 'analysis.emergencyInfra.title',
-		perDepartment: false,
-	},
-	// ── Overture: Vivir ──
-	urban_amenities: {
-		id: 'urban_amenities',
-		parquet: 'overture_places',
-		variables: [
-			{ col: 'place_count', labelKey: 'ov.placeCount', aggregation: 'sum' },
-			{ col: 'n_food_and_drink', labelKey: 'ov.poiFoodDrink', aggregation: 'sum' },
-			{ col: 'n_shopping', labelKey: 'ov.poiShopping', aggregation: 'sum' },
-			{ col: 'n_arts_and_entertainment', labelKey: 'ov.poiArts', aggregation: 'sum' },
-			{ col: 'n_sports_and_recreation', labelKey: 'ov.poiSports', aggregation: 'sum' },
-		],
-		primaryVariable: 'place_count',
-		colorScale: 'sequential',
-		aggregation: 'sum',
-		titleKey: 'analysis.urbanAmenities.title',
-		perDepartment: false,
-	},
-	green_water: {
-		id: 'green_water',
-		parquet: 'overture_base',
-		variables: [
-			{ col: 'n_lu_park', labelKey: 'ov.luPark', aggregation: 'sum' },
-			{ col: 'n_lu_recreation', labelKey: 'ov.luRecreation', aggregation: 'sum' },
-			{ col: 'water_count', labelKey: 'ov.waterCount', aggregation: 'sum' },
-			{ col: 'n_river', labelKey: 'ov.waterRiver', aggregation: 'sum' },
-			{ col: 'n_lake', labelKey: 'ov.waterLake', aggregation: 'sum' },
-		],
-		primaryVariable: 'water_count',
-		colorScale: 'sequential',
-		aggregation: 'sum',
-		titleKey: 'analysis.greenWater.title',
-		perDepartment: false,
-	},
-	walkability: {
-		id: 'walkability',
-		parquet: 'overture_transportation',
-		variables: [
-			{ col: 'n_pedestrian', labelKey: 'ov.roadPedestrian', aggregation: 'sum' },
-			{ col: 'n_footway', labelKey: 'ov.roadFootway', aggregation: 'sum' },
-			{ col: 'n_cycleway', labelKey: 'ov.roadCycleway', aggregation: 'sum' },
-			{ col: 'n_living_street', labelKey: 'ov.roadLivingStreet', aggregation: 'sum' },
-			{ col: 'n_steps', labelKey: 'ov.roadSteps', aggregation: 'sum' },
-		],
-		primaryVariable: 'n_pedestrian',
-		colorScale: 'sequential',
-		aggregation: 'sum',
-		titleKey: 'analysis.walkability.title',
-		perDepartment: false,
-	},
 	// ── Satellite composite scores ──
 	environmental_risk: {
 		id: 'environmental_risk',
 		parquet: 'sat_environmental_risk',
 		variables: [
-			{ col: 'score', labelKey: 'sat.envRisk.score', aggregation: 'mean' },
-			{ col: 'c_fire', labelKey: 'sat.envRisk.fire', aggregation: 'mean' },
+			{ col: 'type', labelKey: 'sat.envRisk.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.envRisk.typeLabel', aggregation: 'mean' },
 			{ col: 'c_deforest', labelKey: 'sat.envRisk.deforest', aggregation: 'mean' },
 			{ col: 'c_thermal_amp', labelKey: 'sat.envRisk.thermal', aggregation: 'mean' },
 			{ col: 'c_slope', labelKey: 'sat.envRisk.slope', aggregation: 'mean' },
@@ -422,7 +255,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'climate_comfort',
 		parquet: 'sat_climate_comfort',
 		variables: [
-			{ col: 'score', labelKey: 'sat.climate.score', aggregation: 'mean' },
+			{ col: 'type', labelKey: 'sat.climate.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.climate.typeLabel', aggregation: 'mean' },
 			{ col: 'c_heat_day', labelKey: 'sat.climate.heatDay', aggregation: 'mean' },
 			{ col: 'c_heat_night', labelKey: 'sat.climate.heatNight', aggregation: 'mean' },
 			{ col: 'c_precipitation', labelKey: 'sat.climate.precip', aggregation: 'mean' },
@@ -439,7 +273,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'green_capital',
 		parquet: 'sat_green_capital',
 		variables: [
-			{ col: 'score', labelKey: 'sat.green.score', aggregation: 'mean' },
+			{ col: 'type', labelKey: 'sat.green.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.green.typeLabel', aggregation: 'mean' },
 			{ col: 'c_ndvi', labelKey: 'sat.green.ndvi', aggregation: 'mean' },
 			{ col: 'c_treecover', labelKey: 'sat.green.treecover', aggregation: 'mean' },
 			{ col: 'c_npp', labelKey: 'sat.green.npp', aggregation: 'mean' },
@@ -456,12 +291,12 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'change_pressure',
 		parquet: 'sat_change_pressure',
 		variables: [
-			{ col: 'score', labelKey: 'sat.change.score', aggregation: 'mean' },
+			{ col: 'type', labelKey: 'sat.change.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.change.typeLabel', aggregation: 'mean' },
 			{ col: 'c_viirs_trend', labelKey: 'sat.change.viirsTrend', aggregation: 'mean' },
 			{ col: 'c_ghsl_change', labelKey: 'sat.change.ghslChange', aggregation: 'mean' },
 			{ col: 'c_hansen_loss', labelKey: 'sat.change.hansenLoss', aggregation: 'mean' },
 			{ col: 'c_ndvi_trend', labelKey: 'sat.change.ndviTrend', aggregation: 'mean' },
-			{ col: 'c_fire_count', labelKey: 'sat.change.fireCount', aggregation: 'mean' },
 		],
 		primaryVariable: 'score',
 		colorScale: 'sequential',
@@ -473,7 +308,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'location_value',
 		parquet: 'sat_location_value',
 		variables: [
-			{ col: 'score', labelKey: 'sat.locValue.score', aggregation: 'mean' },
+			{ col: 'type', labelKey: 'sat.locValue.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.locValue.typeLabel', aggregation: 'mean' },
 			{ col: 'c_access_20k', labelKey: 'sat.locValue.access20k', aggregation: 'mean' },
 			{ col: 'c_healthcare', labelKey: 'sat.locValue.healthcare', aggregation: 'mean' },
 			{ col: 'c_nightlights', labelKey: 'sat.locValue.nightlights', aggregation: 'mean' },
@@ -490,7 +326,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'agri_potential',
 		parquet: 'sat_agri_potential',
 		variables: [
-			{ col: 'score', labelKey: 'sat.agri.score', aggregation: 'mean' },
+			{ col: 'type', labelKey: 'sat.agri.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.agri.typeLabel', aggregation: 'mean' },
 			{ col: 'c_soc', labelKey: 'sat.agri.soc', aggregation: 'mean' },
 			{ col: 'c_ph_optimal', labelKey: 'sat.agri.ph', aggregation: 'mean' },
 			{ col: 'c_clay', labelKey: 'sat.agri.clay', aggregation: 'mean' },
@@ -508,10 +345,10 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'forest_health',
 		parquet: 'sat_forest_health',
 		variables: [
-			{ col: 'score', labelKey: 'sat.forestH.score', aggregation: 'mean' },
+			{ col: 'type', labelKey: 'sat.forestH.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.forestH.typeLabel', aggregation: 'mean' },
 			{ col: 'c_ndvi_trend', labelKey: 'sat.forestH.ndviTrend', aggregation: 'mean' },
 			{ col: 'c_loss_ratio', labelKey: 'sat.forestH.lossRatio', aggregation: 'mean' },
-			{ col: 'c_fire', labelKey: 'sat.forestH.fire', aggregation: 'mean' },
 			{ col: 'c_gpp', labelKey: 'sat.forestH.gpp', aggregation: 'mean' },
 			{ col: 'c_et', labelKey: 'sat.forestH.et', aggregation: 'mean' },
 		],
@@ -525,7 +362,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'forestry_aptitude',
 		parquet: 'sat_forestry_aptitude',
 		variables: [
-			{ col: 'score', labelKey: 'sat.forestry.score', aggregation: 'mean' },
+			{ col: 'type', labelKey: 'sat.forestry.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.forestry.typeLabel', aggregation: 'mean' },
 			{ col: 'c_ph', labelKey: 'sat.forestry.ph', aggregation: 'mean' },
 			{ col: 'c_clay', labelKey: 'sat.forestry.clay', aggregation: 'mean' },
 			{ col: 'c_precipitation', labelKey: 'sat.forestry.precip', aggregation: 'mean' },
@@ -543,7 +381,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'isolation_index',
 		parquet: 'sat_isolation_index',
 		variables: [
-			{ col: 'score', labelKey: 'sat.isolation.score', aggregation: 'mean' },
+			{ col: 'type', labelKey: 'sat.isolation.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.isolation.typeLabel', aggregation: 'mean' },
 			{ col: 'c_access_100k', labelKey: 'sat.isolation.access100k', aggregation: 'mean' },
 			{ col: 'c_travel_posadas', labelKey: 'sat.isolation.travelPosadas', aggregation: 'mean' },
 			{ col: 'c_road_density', labelKey: 'sat.isolation.roadDensity', aggregation: 'mean' },
@@ -560,7 +399,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'territorial_gap',
 		parquet: 'sat_territorial_gap',
 		variables: [
-			{ col: 'score', labelKey: 'sat.gap.score', aggregation: 'mean' },
+			{ col: 'type', labelKey: 'sat.gap.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.gap.typeLabel', aggregation: 'mean' },
 			{ col: 'c_nightlights', labelKey: 'sat.gap.nightlights', aggregation: 'mean' },
 			{ col: 'c_nbi', labelKey: 'sat.gap.nbi', aggregation: 'mean' },
 			{ col: 'c_sin_agua', labelKey: 'sat.gap.sinAgua', aggregation: 'mean' },
@@ -577,7 +417,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'land_use',
 		parquet: 'sat_land_use',
 		variables: [
-			{ col: 'score', labelKey: 'sat.landUse.score', aggregation: 'mean' },
+			{ col: 'type', labelKey: 'sat.landUse.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.landUse.typeLabel', aggregation: 'mean' },
 			{ col: 'frac_trees', labelKey: 'sat.landUse.trees', aggregation: 'mean' },
 			{ col: 'frac_crops', labelKey: 'sat.landUse.crops', aggregation: 'mean' },
 			{ col: 'frac_built', labelKey: 'sat.landUse.built', aggregation: 'mean' },
@@ -595,7 +436,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'health_access',
 		parquet: 'sat_health_access',
 		variables: [
-			{ col: 'score', labelKey: 'sat.health.score', aggregation: 'mean' },
+			{ col: 'type', labelKey: 'sat.health.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.health.typeLabel', aggregation: 'mean' },
 			{ col: 'c_healthcare_time', labelKey: 'sat.health.time', aggregation: 'mean' },
 			{ col: 'c_healthcare_walk', labelKey: 'sat.health.walk', aggregation: 'mean' },
 			{ col: 'c_pop_density', labelKey: 'sat.health.popDensity', aggregation: 'mean' },
@@ -612,7 +454,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'education_gap',
 		parquet: 'sat_education_gap',
 		variables: [
-			{ col: 'score', labelKey: 'sat.edu.score', aggregation: 'mean' },
+			{ col: 'type', labelKey: 'sat.edu.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.edu.typeLabel', aggregation: 'mean' },
 			{ col: 'c_no_instruction', labelKey: 'sat.edu.noInstruction', aggregation: 'mean' },
 			{ col: 'c_dropout_13_18', labelKey: 'sat.edu.dropout', aggregation: 'mean' },
 			{ col: 'c_only_primary', labelKey: 'sat.edu.onlyPrimary', aggregation: 'mean' },
@@ -623,6 +466,107 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		colorScale: 'flood',
 		aggregation: 'mean',
 		titleKey: 'sat.edu.title',
+		perDepartment: true,
+	},
+	// ── Territorial classification (PCA + metabolic clustering) ──
+	territorial_types: {
+		id: 'territorial_types',
+		parquet: 'sat_territorial_types',
+		variables: [
+			{ col: 'territorial_type', labelKey: 'sat.types.type', aggregation: 'mean' },
+			{ col: 'c_npp', labelKey: 'sat.types.npp', aggregation: 'mean' },
+			{ col: 'c_ndvi', labelKey: 'sat.types.ndvi', aggregation: 'mean' },
+			{ col: 'c_treecover', labelKey: 'sat.types.treecover', aggregation: 'mean' },
+			{ col: 'c_frac_trees', labelKey: 'sat.types.fracTrees', aggregation: 'mean' },
+			{ col: 'c_frac_crops', labelKey: 'sat.types.fracCrops', aggregation: 'mean' },
+			{ col: 'c_frac_built', labelKey: 'sat.types.fracBuilt', aggregation: 'mean' },
+			{ col: 'c_deforest', labelKey: 'sat.types.deforest', aggregation: 'mean' },
+			{ col: 'c_nightlights', labelKey: 'sat.types.nightlights', aggregation: 'mean' },
+			{ col: 'c_viirs_trend', labelKey: 'sat.types.viirsTrend', aggregation: 'mean' },
+			{ col: 'c_ghsl_change', labelKey: 'sat.types.ghslChange', aggregation: 'mean' },
+			{ col: 'c_precipitation', labelKey: 'sat.types.precip', aggregation: 'mean' },
+		],
+		primaryVariable: 'territorial_type',
+		colorScale: 'categorical',
+		aggregation: 'mean',
+		titleKey: 'sat.types.title',
+		perDepartment: true,
+	},
+	// ── Migrated from radio/catastro to H3 ──
+	territorial_scores: {
+		id: 'territorial_scores',
+		parquet: 'overture_scores',
+		variables: [
+			{ col: 'type', labelKey: 'analysis.scores.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'analysis.scores.typeLabel', aggregation: 'mean' },
+			{ col: 'urban_consolidation', labelKey: 'scores.urbanConsolidation', aggregation: 'mean' },
+			{ col: 'paving_index', labelKey: 'scores.paving', aggregation: 'mean' },
+			{ col: 'service_access', labelKey: 'scores.serviceAccess', aggregation: 'mean' },
+			{ col: 'commercial_vitality', labelKey: 'scores.commercial', aggregation: 'mean' },
+			{ col: 'road_connectivity', labelKey: 'scores.roadConnectivity', aggregation: 'mean' },
+			{ col: 'building_mix', labelKey: 'scores.buildingMix', aggregation: 'mean' },
+			{ col: 'urbanization', labelKey: 'scores.urbanization', aggregation: 'mean' },
+			{ col: 'water_exposure', labelKey: 'scores.waterExposure', aggregation: 'mean' },
+		],
+		primaryVariable: 'type',
+		colorScale: 'categorical',
+		aggregation: 'mean',
+		titleKey: 'analysis.scores.title',
+		perDepartment: true,
+	},
+	sociodemographic: {
+		id: 'sociodemographic',
+		parquet: 'sat_sociodemographic',
+		variables: [
+			{ col: 'type', labelKey: 'analysis.socio.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'analysis.socio.typeLabel', aggregation: 'mean' },
+			{ col: 'densidad_hab_km2', labelKey: 'radio.densidad', aggregation: 'mean' },
+			{ col: 'pct_nbi', labelKey: 'radio.nbi', aggregation: 'mean' },
+			{ col: 'pct_hacinamiento', labelKey: 'radio.hacinamiento', aggregation: 'mean' },
+			{ col: 'pct_propietario', labelKey: 'radio.propietario', aggregation: 'mean' },
+			{ col: 'tamano_medio_hogar', labelKey: 'radio.tamHogar', aggregation: 'mean' },
+			{ col: 'pct_computadora', labelKey: 'radio.computadora', aggregation: 'mean' },
+		],
+		primaryVariable: 'type',
+		colorScale: 'categorical',
+		aggregation: 'mean',
+		titleKey: 'analysis.socio.title',
+		perDepartment: true,
+	},
+	economic_activity: {
+		id: 'economic_activity',
+		parquet: 'sat_economic_activity',
+		variables: [
+			{ col: 'type', labelKey: 'analysis.economic.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'analysis.economic.typeLabel', aggregation: 'mean' },
+			{ col: 'tasa_empleo', labelKey: 'radio.empleo', aggregation: 'mean' },
+			{ col: 'tasa_actividad', labelKey: 'radio.actividad', aggregation: 'mean' },
+			{ col: 'pct_universitario', labelKey: 'radio.universitario', aggregation: 'mean' },
+			{ col: 'viirs_mean_radiance', labelKey: 'radio.viirs', aggregation: 'mean' },
+			{ col: 'building_density_per_km2', labelKey: 'radio.buildingDensity', aggregation: 'mean' },
+		],
+		primaryVariable: 'type',
+		colorScale: 'categorical',
+		aggregation: 'mean',
+		titleKey: 'analysis.economic.title',
+		perDepartment: true,
+	},
+	accessibility: {
+		id: 'accessibility',
+		parquet: 'sat_accessibility',
+		variables: [
+			{ col: 'type', labelKey: 'analysis.accessibility.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'analysis.accessibility.typeLabel', aggregation: 'mean' },
+			{ col: 'travel_min_posadas', labelKey: 'radio.travelPosadas', aggregation: 'mean' },
+			{ col: 'travel_min_cabecera', labelKey: 'radio.travelCabecera', aggregation: 'mean' },
+			{ col: 'dist_nearest_hospital_km', labelKey: 'radio.distHospital', aggregation: 'mean' },
+			{ col: 'dist_nearest_secundaria_km', labelKey: 'radio.distSecundaria', aggregation: 'mean' },
+			{ col: 'dist_primary_m', labelKey: 'radio.distPrimaria', aggregation: 'mean' },
+		],
+		primaryVariable: 'type',
+		colorScale: 'categorical',
+		aggregation: 'mean',
+		titleKey: 'analysis.accessibility.title',
 		perDepartment: true,
 	},
 };
@@ -637,6 +581,7 @@ export interface AnalysisConfig {
 	icon: string;
 	status: 'available' | 'coming_soon';
 	spatialUnit?: 'radio' | 'hexagon' | 'catastro';
+	dashboard?: boolean;
 	choropleth?: {
 		parquet: string;
 		column: string;
@@ -652,9 +597,9 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'analysis.floodRisk.title',
 		descKey: 'analysis.floodRisk.desc',
-		icon: '🌊',
+		icon: '',
 		status: 'available',
-		spatialUnit: 'catastro',
+		spatialUnit: 'hexagon',
 	},
 	// ── Perfil Territorial (cross-lens, catastro-integrated) ──
 	{
@@ -662,9 +607,9 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'invertir',
 		titleKey: 'analysis.scores.title',
 		descKey: 'analysis.scores.desc',
-		icon: '🧭',
+		icon: '',
 		status: 'available',
-		spatialUnit: 'catastro',
+		spatialUnit: 'hexagon',
 	},
 	// ── Radio-based analyses (radio_stats_master via crosswalk) ──
 	// investment_value removed — re_median_usd_m2 only covers 26% of radios
@@ -673,9 +618,9 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'analysis.socio.title',
 		descKey: 'analysis.socio.desc',
-		icon: '👥',
+		icon: '',
 		status: 'available',
-		spatialUnit: 'catastro',
+		spatialUnit: 'hexagon',
 	},
 	// forest_potential hidden — covered by forest_health + forestry_aptitude (H3)
 	{
@@ -683,9 +628,9 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'invertir',
 		titleKey: 'analysis.economic.title',
 		descKey: 'analysis.economic.desc',
-		icon: '💼',
+		icon: '',
 		status: 'available',
-		spatialUnit: 'catastro',
+		spatialUnit: 'hexagon',
 	},
 	// change_dynamics hidden — covered by change_pressure (H3)
 	// productive_aptitude hidden — covered by agri_potential (H3)
@@ -694,9 +639,9 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'analysis.accessibility.title',
 		descKey: 'analysis.accessibility.desc',
-		icon: '🛣️',
+		icon: '',
 		status: 'available',
-		spatialUnit: 'catastro',
+		spatialUnit: 'hexagon',
 	},
 	// natural_risks hidden — covered by environmental_risk (H3)
 	// ── Satellite H3 analyses ──
@@ -705,7 +650,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'sat.envRisk.title',
 		descKey: 'sat.envRisk.desc',
-		icon: '🔥',
+		icon: '',
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -714,7 +659,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'sat.climate.title',
 		descKey: 'sat.climate.desc',
-		icon: '🌡️',
+		icon: '',
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -723,7 +668,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'sat.green.title',
 		descKey: 'sat.green.desc',
-		icon: '🌿',
+		icon: '',
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -732,7 +677,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'invertir',
 		titleKey: 'sat.change.title',
 		descKey: 'sat.change.desc',
-		icon: '🔄',
+		icon: '',
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -741,7 +686,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'invertir',
 		titleKey: 'sat.locValue.title',
 		descKey: 'sat.locValue.desc',
-		icon: '📍',
+		icon: '',
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -750,7 +695,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'sat.agri.title',
 		descKey: 'sat.agri.desc',
-		icon: '🌾',
+		icon: '',
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -759,7 +704,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'emsa.title',
 		descKey: 'emsa.desc',
-		icon: '\u26A1',
+		icon: '',
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -768,7 +713,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'sat.forestH.title',
 		descKey: 'sat.forestH.desc',
-		icon: '🌳',
+		icon: '',
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -777,7 +722,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'sat.forestry.title',
 		descKey: 'sat.forestry.desc',
-		icon: '🪵',
+		icon: '',
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -786,7 +731,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'sat.isolation.title',
 		descKey: 'sat.isolation.desc',
-		icon: '🏔️',
+		icon: '',
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -795,7 +740,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'sat.gap.title',
 		descKey: 'sat.gap.desc',
-		icon: '⚖️',
+		icon: '',
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -804,7 +749,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'sat.health.title',
 		descKey: 'sat.health.desc',
-		icon: '🏥',
+		icon: '',
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -813,7 +758,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'sat.edu.title',
 		descKey: 'sat.edu.desc',
-		icon: '🎓',
+		icon: '',
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -822,7 +767,27 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'sat.landUse.title',
 		descKey: 'sat.landUse.desc',
-		icon: '🗺️',
+		icon: '',
+		status: 'available',
+		spatialUnit: 'hexagon',
+	},
+	// ── EUDR ──
+	{
+		id: 'eudr',
+		lensId: 'producir',
+		titleKey: 'trade.eudr.analysis_title',
+		descKey: 'trade.eudr.analysis_desc',
+		icon: '',
+		status: 'available',
+		spatialUnit: 'hexagon',
+	},
+	// ── Territorial classification ──
+	{
+		id: 'territorial_types',
+		lensId: 'vivir',
+		titleKey: 'sat.types.title',
+		descKey: 'sat.types.desc',
+		icon: '',
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1010,6 +975,7 @@ export function getAnalysesForLens(lensId: LensId): AnalysisConfig[] {
 	return ANALYSIS_REGISTRY.filter(a => a.lensId === lensId);
 }
 
+
 export function getAnalysisById(id: string): AnalysisConfig | undefined {
 	return ANALYSIS_REGISTRY.find(a => a.id === id);
 }
@@ -1081,6 +1047,7 @@ export const DATA_FRESHNESS: Record<string, { dataDate: string; processedDate: s
 	sat_education_gap: { dataDate: 'Baseline Censo 2022 + Nelson 2019', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
 	sat_land_use: { dataDate: 'Baseline Dynamic World 2024 (Sentinel-2, 10m)', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
 	emsa_powerlines: { dataDate: 'EMSA abril 2024', processedDate: '27/03/2026', sourceKey: 'data.source.emsa' },
+	sat_territorial_types: { dataDate: 'PCA + k-means sobre 13 analisis satelitales 2019-2024', processedDate: '28/03/2026', sourceKey: 'data.source.satellite' },
 };
 
 // ── EUDR Configuration ──────────────────────────────────────────────────
@@ -1094,11 +1061,11 @@ export const MAP_EUDR = {
 const R2_EUDR_BASE = `${R2_PROD}/data/eudr`;
 
 export function getEudrParquetUrl(name: string): string {
-	return `${R2_EUDR_BASE}/${name}.parquet?v=1`;
+	return `${R2_EUDR_BASE}/${name}.parquet?v=20`;
 }
 
 export function getEudrProvinceParquetUrl(province: string): string {
-	return `${R2_EUDR_BASE}/by_province/eudr_${province}.parquet?v=1`;
+	return `${R2_EUDR_BASE}/by_province/eudr_${province}.parquet?v=20`;
 }
 
 export const EUDR_RISK_COLORS = {

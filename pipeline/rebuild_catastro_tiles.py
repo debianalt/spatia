@@ -71,7 +71,7 @@ def get_tiles_for_bbox(bbox, zoom):
 
 def features_to_mvt(features, tile_bounds_wsen, layer_name, extent=4096):
     w, s, e, n = tile_bounds_wsen
-    buf = (e - w) * 0.01
+    buf = (e - w) * 0.10
     clipped = []
     for feat in features:
         try:

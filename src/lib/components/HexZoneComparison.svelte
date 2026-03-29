@@ -67,32 +67,6 @@
 		{/each}
 	</div>
 
-	<!-- Dimension bars -->
-	{#if variables.length > 0}
-		<div class="hzc-dim-section">
-			{#each labels as label, i}
-				<div class="hzc-dim-row">
-					<div class="hzc-dim-label">{label}</div>
-					<div class="hzc-dim-bars">
-						{#each zones as zone}
-							{@const raw = zone.stats.rawValues[i] ?? 0}
-							{@const maxVal = Math.max(...zones.map(z => z.stats.rawValues[i] ?? 0), 1)}
-							{@const pct = (raw / maxVal) * 100}
-							<div class="hzc-dim-bar-track">
-								<div class="hzc-dim-bar-fill" style:width="{pct}%" style:background={zone.color}></div>
-							</div>
-						{/each}
-					</div>
-					<div class="hzc-dim-values">
-						{#each zones as zone}
-							{@const raw = zone.stats.rawValues[i] ?? 0}
-							<span class="hzc-dim-val">{raw.toFixed(1)}</span>
-						{/each}
-					</div>
-				</div>
-			{/each}
-		</div>
-	{/if}
 </div>
 
 <style>

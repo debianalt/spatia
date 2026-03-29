@@ -1,5 +1,5 @@
 import { query, isReady } from '$lib/stores/duckdb';
-import { PARQUETS, HEX_LAYER_REGISTRY, getFloodDptoUrl, getScoresDptoUrl, getSatDptoUrl, type HexLayerConfig, type HexVariable } from '$lib/config';
+import { PARQUETS, HEX_LAYER_REGISTRY, getFloodDptoUrl, getScoresDptoUrl, getSatDptoUrl, getTemporalCol, type HexLayerConfig, type HexVariable, type TemporalMode } from '$lib/config';
 import { pointInPolygon } from '$lib/utils/geometry';
 import { i18n } from '$lib/stores/i18n.svelte';
 import { cellToLatLng, cellToBoundary } from 'h3-js';
@@ -9,7 +9,7 @@ const ZONE_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 // Persistent cache that survives clearAll() / layer toggling
 interface LayerCache {
-	data: Map<string, Record<string, number>>;
+	data: Map<string, Record<string, any>>;
 	centroids: Map<string, [number, number]>;
 	boundaries: Map<string, number[][]>;
 	provincialAvg: number[] | null;
@@ -18,7 +18,7 @@ const layerDataCache = new Map<string, LayerCache>();
 
 export interface HexSelectionData {
 	color: string;
-	data: Record<string, number>;
+	data: Record<string, any>;
 }
 
 export interface HexZoneStats {
@@ -35,16 +35,23 @@ export interface HexZone {
 	stats: HexZoneStats;
 }
 
+const NON_NUMERIC_COLS = new Set(['type', 'type_label', 'pca_1', 'pca_2', 'pca_3', 'score', 'territorial_type']);
+
 export class HexStore {
 	activeLayer: HexLayerConfig | null = $state(null);
-	visibleData: Map<string, Record<string, number>> = $state(new Map());
+	visibleData: Map<string, Record<string, any>> = $state(new Map());
 	selectedHexes: Map<string, HexSelectionData> = $state(new Map());
 	hexZones: HexZone[] = $state([]);
 	loading: boolean = $state(false);
+	temporalMode: TemporalMode = $state('current');
 
 	private colorIndex = 0;
 	private provincialAvg: number[] | null = $state(null);
 	selectedDpto: string | null = $state(null);
+
+	get numericVariables(): HexVariable[] {
+		return this.activeLayer?.variables.filter(v => !NON_NUMERIC_COLS.has(v.col)) ?? [];
+	}
 
 	// Monotonic counter: increments on every meaningful visibleData change.
 	// Used by $effect to detect changes regardless of data size.
@@ -54,6 +61,11 @@ export class HexStore {
 	centroidCache: Map<string, [number, number]> = new Map(); // h3index → [lng, lat]
 	boundaryCache: Map<string, number[][]> = new Map(); // h3index → [[lng, lat], ...]
 
+	setTemporalMode(mode: TemporalMode) {
+		this.temporalMode = mode;
+		this.dataVersion++;
+	}
+
 	setLayer(layerId: string | null) {
 		if (!layerId) {
 			this.activeLayer = null;
@@ -61,6 +73,7 @@ export class HexStore {
 			this.centroidCache = new Map();
 			this.boundaryCache = new Map();
 			this.selectedDpto = null;
+			this.temporalMode = 'current';
 			this.dataVersion++;
 			this.clearSelection();
 			this.clearHexZones();
@@ -69,6 +82,7 @@ export class HexStore {
 		const cfg = HEX_LAYER_REGISTRY[layerId];
 		if (!cfg) return;
 		this.activeLayer = cfg;
+		this.temporalMode = 'current';
 		this.selectedDpto = null;
 
 		// Per-department layers: don't load all data, wait for department selection
@@ -114,21 +128,26 @@ export class HexStore {
 			} else {
 				url = getScoresDptoUrl(parquetKey);
 			}
-			const cols = layer.variables.map(v => v.col).join(', ');
+			// Use SELECT * for robustness — temporal parquets may or may not have _baseline/_delta cols
 			const result = await query(
-				`SELECT h3index, ${cols} FROM '${url}' WHERE ${layer.primaryVariable} IS NOT NULL`
+				`SELECT * FROM '${url}' WHERE ${layer.primaryVariable} IS NOT NULL`
 			);
 
-			const data = new Map<string, Record<string, number>>();
+			const data = new Map<string, Record<string, any>>();
 			const centroids = new Map<string, [number, number]>();
 			const boundaries = new Map<string, number[][]>();
+
+			const resultCols = new Set(result.schema.fields.map((f: any) => f.name));
 
 			for (let i = 0; i < result.numRows; i++) {
 				const row = result.get(i)!.toJSON() as Record<string, any>;
 				const h3index = row.h3index as string;
-				const values: Record<string, number> = {};
-				for (const v of layer.variables) {
-					values[v.col] = Number(row[v.col]) || 0;
+				const values: Record<string, any> = {};
+				for (const col of resultCols) {
+					if (col === 'h3index') continue;
+					const val = row[col];
+					if (val === undefined || val === null) continue;
+					values[col] = typeof val === 'string' ? val : (Number(val) || 0);
 				}
 				data.set(h3index, values);
 
@@ -182,21 +201,31 @@ export class HexStore {
 		const url = PARQUETS[layer.parquet as keyof typeof PARQUETS];
 		if (!url) return;
 
-		const cols = layer.variables.map(v => v.col).join(', ');
+		const baseCols = layer.variables.map(v => v.col);
+		const allCols = new Set(baseCols);
+		if (layer.temporal) {
+			for (const col of baseCols) {
+				allCols.add(getTemporalCol(col, 'baseline'));
+				allCols.add(getTemporalCol(col, 'delta'));
+			}
+		}
+		const cols = [...allCols].join(', ');
 		const result = await query(
 			`SELECT h3index, ${cols} FROM '${url}' WHERE ${layer.primaryVariable} IS NOT NULL`
 		);
 
-		const data = new Map<string, Record<string, number>>();
+		const data = new Map<string, Record<string, any>>();
 		const centroids = new Map<string, [number, number]>();
 		const boundaries = new Map<string, number[][]>();
 
 		for (let i = 0; i < result.numRows; i++) {
 			const row = result.get(i)!.toJSON() as Record<string, any>;
 			const h3index = row.h3index as string;
-			const values: Record<string, number> = {};
-			for (const v of layer.variables) {
-				values[v.col] = Number(row[v.col]) || 0;
+			const values: Record<string, any> = {};
+			for (const col of allCols) {
+				const val = row[col];
+				if (val === undefined || val === null) continue;
+				values[col] = typeof val === 'string' ? val : (Number(val) || 0);
 			}
 			data.set(h3index, values);
 
@@ -261,11 +290,14 @@ export class HexStore {
 
 	get choroplethEntries(): { h3index: string; value: number; properties: Record<string, number>; boundary?: number[][] }[] {
 		if (!this.activeLayer) return [];
-		const primary = this.activeLayer.primaryVariable;
+		const effectivePrimary = this.activeLayer.temporal && this.temporalMode !== 'current'
+			? getTemporalCol(this.activeLayer.primaryVariable, this.temporalMode)
+			: this.activeLayer.primaryVariable;
+		const isDelta = this.activeLayer.temporal && this.temporalMode === 'delta';
 		const entries: { h3index: string; value: number; properties: Record<string, number>; boundary?: number[][] }[] = [];
 		for (const [h3index, data] of this.visibleData) {
-			const value = data[primary] ?? 0;
-			if (value > 0) {
+			const value = data[effectivePrimary] ?? 0;
+			if (isDelta ? value !== 0 : value > 0) {
 				entries.push({ h3index, value, properties: data, boundary: this.boundaryCache.get(h3index) });
 			}
 		}
@@ -304,12 +336,14 @@ export class HexStore {
 		const dataUrl = PARQUETS[layer.parquet as keyof typeof PARQUETS];
 		if (!dataUrl) return [];
 
-		const aggExprs = layer.variables.map(v => `AVG(${v.col}) as avg_${v.col}`).join(', ');
+		const numVars = this.numericVariables;
+		if (numVars.length === 0) return [];
+		const aggExprs = numVars.map(v => `AVG(${v.col}) as avg_${v.col}`).join(', ');
 		const sql = `SELECT ${aggExprs} FROM '${dataUrl}' WHERE ${layer.primaryVariable} IS NOT NULL`;
 		const result = await query(sql);
 		const row = result.get(0)!.toJSON() as Record<string, any>;
 
-		this.provincialAvg = layer.variables.map(v => Number(row[`avg_${v.col}`]) || 1);
+		this.provincialAvg = numVars.map(v => Number(row[`avg_${v.col}`]) || 1);
 		// Update persistent cache with provincial avg
 		const cached = layerDataCache.get(layer.id);
 		if (cached) cached.provincialAvg = this.provincialAvg;
@@ -336,15 +370,16 @@ export class HexStore {
 		try {
 			const provAvg = await this.ensureProvincialAvg();
 
-			// Compute averages from visibleData
-			const rawValues = new Array(layer.variables.length).fill(0);
+			// Compute averages from visibleData (numeric vars only)
+			const numVars = this.numericVariables;
+			const rawValues = new Array(numVars.length).fill(0);
 			let count = 0;
 			for (const h3index of h3indices) {
 				const data = this.visibleData.get(h3index);
 				if (!data) continue;
 				count++;
-				for (let v = 0; v < layer.variables.length; v++) {
-					rawValues[v] += data[layer.variables[v].col] || 0;
+				for (let v = 0; v < numVars.length; v++) {
+					rawValues[v] += data[numVars[v].col] || 0;
 				}
 			}
 			if (count > 0) {
@@ -391,8 +426,7 @@ export class HexStore {
 	}
 
 	get petalLabels(): string[] {
-		if (!this.activeLayer) return [];
-		return this.activeLayer.variables.map(v => i18n.t(v.labelKey));
+		return this.numericVariables.map(v => i18n.t(v.labelKey));
 	}
 
 	// ── Selection petal data (individual hex clicks) ─────────────────────
@@ -400,7 +434,7 @@ export class HexStore {
 	get selectionPetalLayers(): Array<{ values: number[]; color: string }> {
 		if (!this.activeLayer || this.selectedHexes.size === 0 || !this.provincialAvg) return [];
 		const provAvg = this.provincialAvg;
-		const vars = this.activeLayer.variables;
+		const vars = this.numericVariables;
 		const result: Array<{ values: number[]; color: string }> = [];
 		for (const [, sel] of this.selectedHexes) {
 			const rawValues = vars.map(v => sel.data[v.col] ?? 0);
@@ -422,6 +456,7 @@ export class HexStore {
 		this.centroidCache = new Map();
 		this.boundaryCache = new Map();
 		this.selectedDpto = null;
+		this.temporalMode = 'current';
 		this.dataVersion++;
 		this.selectedHexes = new Map();
 		this.hexZones = [];

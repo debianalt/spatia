@@ -2,7 +2,8 @@
 	import type { HexStore } from '$lib/stores/hex.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import CTADiagnostic from '$lib/components/CTADiagnostic.svelte';
-	import { HEX_LAYER_REGISTRY, DATA_FRESHNESS, type AnalysisConfig } from '$lib/config';
+	import PetalChart from '$lib/components/PetalChart.svelte';
+	import { HEX_LAYER_REGISTRY, DATA_FRESHNESS, getTemporalCol, type AnalysisConfig, type TemporalMode } from '$lib/config';
 	import { initDuckDB, query } from '$lib/stores/duckdb';
 
 	let {
@@ -44,6 +45,12 @@
 		health_access: () => import('$lib/data/sat_health_access_dept_summary.json'),
 		education_gap: () => import('$lib/data/sat_education_gap_dept_summary.json'),
 		land_use: () => import('$lib/data/sat_land_use_dept_summary.json'),
+		territorial_types: () => import('$lib/data/sat_territorial_types_dept_summary.json'),
+		flood_risk: () => import('$lib/data/flood_dept_summary.json'),
+		territorial_scores: () => import('$lib/data/scores_dept_summary.json'),
+		sociodemographic: () => import('$lib/data/sat_sociodemographic_dept_summary.json'),
+		economic_activity: () => import('$lib/data/sat_economic_activity_dept_summary.json'),
+		accessibility: () => import('$lib/data/sat_accessibility_dept_summary.json'),
 	};
 
 	$effect(() => {
@@ -60,15 +67,20 @@
 	});
 
 	const colorScale = $derived(layerCfg?.colorScale ?? 'sequential');
+	const isCategorical = $derived(colorScale === 'categorical');
+	const PALETTE = ['#1565c0', '#7e57c2', '#4db6ac', '#66bb6a', '#c0ca33', '#ffb74d', '#e65100', '#78909c'];
+
+	function getTypeColor(type: number): string {
+		return PALETTE[(type - 1) % PALETTE.length];
+	}
 
 	function getScoreColor(score: number): string {
+		if (isCategorical) return getTypeColor(Math.round(score));
 		if (colorScale === 'flood') {
-			// Blue → yellow → red (risk: high = bad)
 			if (score >= 70) return '#dc2626';
 			if (score >= 40) return '#eab308';
 			return '#3b82f6';
 		}
-		// Blue → white → red (sequential: high = intense)
 		if (score >= 70) return '#b2182b';
 		if (score >= 40) return '#d6604d';
 		if (score >= 20) return '#92c5de';
@@ -95,13 +107,7 @@
 	);
 
 	// Auto-select top department on first load
-	let hasAutoSelected = false;
-	$effect(() => {
-		if (deptList.length > 0 && !hasAutoSelected && !selectedDpto) {
-			hasAutoSelected = true;
-			setTimeout(() => handleDptoClick(deptList[0]), 400);
-		}
-	});
+	// Department list loads, user picks manually
 
 	function handleDptoClick(dept: any) {
 		if (onSelectDpto) {
@@ -145,10 +151,23 @@
 		return `https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_dpto/sat_${layerCfg.id}_${dept.parquetKey}.parquet`;
 	});
 
-	// Component variables (skip 'score' itself)
+	// Component variables (skip score, type, type_label, pca)
 	const componentVars = $derived(
-		layerCfg?.variables.filter(v => v.col !== 'score') ?? []
+		layerCfg?.variables.filter(v =>
+			!['score', 'type', 'type_label', 'pca_1', 'pca_2'].includes(v.col)
+		) ?? []
 	);
+
+	// Petal chart data for selected hex
+	const petalLabels = $derived(componentVars.map(v => i18n.t(v.labelKey)));
+	const hexPetalLayers = $derived.by(() => {
+		if (!selectedHex || componentVars.length === 0) return [];
+		const values = componentVars.map(v => {
+			const val = selectedHex[v.col];
+			return typeof val === 'number' ? Math.min(100, Math.max(0, val)) : 0;
+		});
+		return [{ values, color: getTypeColor(selectedHex.type ?? 1) }];
+	});
 
 	// PDF report URL for selected department
 	const reportUrl = $derived.by(() => {
@@ -159,71 +178,73 @@
 	});
 
 	// ── Explanatory content per analysis ──
+	const METHOD_COMMON = 'Clasificacion por PCA (analisis de componentes principales) seguido de k-means clustering sobre las variables estandarizadas. Cada hexagono se asigna al tipo cuyo centroide multivariado es mas cercano. La validacion se realiza mediante coeficiente de silueta.';
+
 	const ANALYSIS_CONTENT: Record<string, { howToRead: string; implications: string; method: string }> = {
 		environmental_risk: {
-			howToRead: 'El mapa muestra un score de 0 a 100 donde mayor valor indica mayor riesgo ambiental acumulado. Se combinan cinco factores: frecuencia de incendios, pérdida forestal histórica, amplitud térmica diurna-nocturna, pendiente del terreno y altura sobre el drenaje más cercano. Colores cálidos (rojo) indican zonas con múltiples riesgos superpuestos.',
-			implications: 'Zonas con score alto presentan vulnerabilidad ambiental múltiple: mayor probabilidad de incendios, suelos inestables por pendiente, y exposición a inundaciones por baja elevación sobre cauces. Estas áreas requieren evaluación detallada antes de cualquier intervención territorial.',
-			method: 'Score = promedio ponderado de 5 componentes normalizados por percentil (0-100): frecuencia de incendios MODIS (25%), pérdida forestal Hansen GFC (25%), amplitud térmica LST MODIS (20%), pendiente FABDEM 30m (15%), HAND invertido MERIT Hydro (15%). Baseline satelital 2019-2024.',
+			howToRead: 'El mapa clasifica cada hexagono en tipos de riesgo ambiental segun la co-ocurrencia de deforestacion, amplitud termica, pendiente y altura sobre drenaje. Cada color representa un tipo distinto de configuracion de riesgo.',
+			implications: 'Los tipos permiten identificar configuraciones de riesgo cualitativamente distintas: zonas de alta pendiente con baja deforestacion difieren estructuralmente de zonas planas con alta perdida forestal, aunque ambas puedan tener "riesgo" similar en un indice unico.',
+			method: `${METHOD_COMMON} Variables: deforestacion Hansen GFC, amplitud termica LST MODIS, pendiente FABDEM 30m, HAND MERIT Hydro. k=5 tipos, silueta=0.33.`,
 		},
 		climate_comfort: {
-			howToRead: 'El score indica qué tan confortable es el clima de la zona en una escala de 0 a 100. Valores altos implican menor estrés térmico, menos heladas y mejor balance hídrico. Se combinan temperatura diurna y nocturna, precipitación, días de helada y relación evapotranspiración/potencial.',
-			implications: 'Zonas con bajo confort climático presentan extremos térmicos (calor diurno intenso o heladas frecuentes), precipitación insuficiente o excesiva, y estrés hídrico. Esto impacta tanto la habitabilidad como la productividad agrícola y forestal.',
-			method: 'Score = promedio ponderado de: LST diurno invertido (25%), LST nocturno invertido (20%), precipitación CHIRPS (20%), días de helada invertido ERA5 (15%), ratio ET/PET MODIS (20%). Baseline satelital 2019-2024. Temperaturas en °C (MODIS 1km), precipitación en mm/año (CHIRPS 5km).',
+			howToRead: 'El mapa clasifica cada hexagono en tipos climaticos segun la co-ocurrencia de temperatura diurna, nocturna, precipitacion, heladas y estres hidrico. Cada color representa un regimen climatico distinto.',
+			implications: 'Los tipos climaticos revelan gradientes territoriales que un indice unico no captura: zonas calidas y humedas difieren estructuralmente de zonas frescas y secas, con implicancias distintas para habitabilidad y produccion.',
+			method: `${METHOD_COMMON} Variables: LST diurno/nocturno MODIS, precipitacion CHIRPS, heladas ERA5, ratio ET/PET MODIS. k=4 tipos, silueta=0.40.`,
 		},
 		green_capital: {
-			howToRead: 'El score mide la cantidad y calidad de vegetación en cada zona. Valores altos indican mayor cobertura vegetal, bosque más denso y ecosistemas más productivos. Se combinan cinco indicadores satelitales complementarios de verdor, cobertura arbórea y productividad primaria.',
-			implications: 'Zonas con alto capital verde son reservorios de biodiversidad, regulan el clima local, protegen el suelo de la erosión y proveen servicios ecosistémicos. Su pérdida genera efectos cascada: mayor temperatura, menor retención hídrica, pérdida de hábitat.',
-			method: 'Score = promedio ponderado de: NDVI medio MODIS 250m (25%), cobertura arbórea Hansen 2000 (20%), NPP MODIS (20%), LAI MODIS (15%), fracción arbórea VCF MODIS (20%). Baseline satelital 2019-2024 excepto Hansen (baseline 2000).',
+			howToRead: 'El mapa clasifica cada hexagono en tipos de capital verde segun la co-ocurrencia de verdor, cobertura arborea, productividad primaria, area foliar y fraccion de vegetacion. Cada color representa un estado ecosistemico distinto.',
+			implications: 'Los tipos distinguen selva densa de alta productividad, bosque secundario con cobertura residual, y zonas deforestadas con baja vegetacion. Esta distincion cualitativa informa mejor las politicas de conservacion que un gradiente continuo.',
+			method: `${METHOD_COMMON} Variables: NDVI MODIS 250m, cobertura arborea Hansen 2000, NPP MODIS, LAI MODIS, VCF MODIS. k=3 tipos, silueta=0.46.`,
 		},
 		change_pressure: {
-			howToRead: 'El score indica cuánto se está transformando cada zona. Valores altos señalan cambios intensos: urbanización creciente, pérdida de cobertura vegetal o expansión de la frontera agropecuaria. Se combinan tendencias temporales (luces, NDVI) con cambios acumulados (GHSL, Hansen).',
-			implications: 'Zonas con alta presión de cambio están en transición activa: pueden representar oportunidades de inversión (urbanización) o alertas ambientales (deforestación). La combinación de tendencia VIIRS creciente con NDVI decreciente señala conversión de uso del suelo.',
-			method: 'Score = promedio ponderado de: tendencia VIIRS 2016-2025 regr_slope (25%), cambio GHSL built fraction 2000-2020 (25%), pérdida forestal total Hansen (20%), tendencia NDVI invertida 2019-2024 (15%), actividad de fuego MODIS (15%).',
+			howToRead: 'El mapa clasifica cada hexagono en tipos de presion de cambio segun la co-ocurrencia de tendencia de urbanizacion, expansion construida, perdida forestal y cambio de vegetacion.',
+			implications: 'Los tipos separan urbanizacion activa de deforestacion agricola y de zonas estables. Un municipio con "alta presion" por urbanizacion requiere politicas distintas a uno con "alta presion" por avance de frontera agraria.',
+			method: `${METHOD_COMMON} Variables: tendencia VIIRS 2016-2025, cambio GHSL 2000-2020, perdida Hansen, tendencia NDVI. k=5 tipos, silueta=0.34.`,
 		},
 		location_value: {
-			howToRead: 'El score estima el valor posicional de cada zona según su accesibilidad, conectividad y actividad económica. Valores altos indican zonas bien conectadas, cercanas a servicios de salud, con actividad económica visible y topografía favorable.',
-			implications: 'El valor posicional es un predictor de precio del suelo y potencial de desarrollo. Zonas con alto score pero baja densidad edilicia pueden representar oportunidades de inversión. Zonas con bajo score están funcionalmente aisladas.',
-			method: 'Score = promedio ponderado de: tiempo a ciudad 20k invertido Nelson (25%), acceso a salud invertido Oxford (20%), radiancia nocturna VIIRS (25%), pendiente invertida FABDEM (15%), distancia a ruta invertida OSM (15%).',
+			howToRead: 'El mapa clasifica cada hexagono en tipos de valor posicional segun la co-ocurrencia de accesibilidad, conectividad a salud, actividad economica, topografia y distancia a rutas.',
+			implications: 'Los tipos distinguen nucleos urbanos bien conectados, periferias accesibles pero poco activas, y zonas rurales aisladas. El valor posicional emergente de la clasificacion es mas informativo que un ranking lineal.',
+			method: `${METHOD_COMMON} Variables: tiempo a ciudad 20k Nelson, acceso a salud Oxford, radiancia VIIRS, pendiente FABDEM, distancia a ruta OSM. k=4 tipos, silueta=0.43.`,
 		},
 		agri_potential: {
-			howToRead: 'El score indica la aptitud agroclimática del suelo. Valores altos señalan suelos fértiles con buena lluvia, calor suficiente y pendiente manejable para cultivos. Se combinan propiedades del suelo (SoilGrids), clima (CHIRPS, ERA5) y topografía (FABDEM).',
-			implications: 'Zonas con score alto son óptimas para cultivos extensivos e intensivos. El pH cercano a 6.0-6.5 y alto carbono orgánico favorecen yerba mate, té y tabaco. Pendientes >15° limitan la mecanización. Precipitación <1200mm/año requiere riego.',
-			method: 'Score = promedio ponderado de: carbono orgánico SoilGrids (20%), distancia pH a óptimo 6.25 invertida (15%), contenido de arcilla (15%), precipitación CHIRPS (20%), GDD base 10 ERA5 (15%), pendiente invertida FABDEM (15%). Suelos a 0-5cm, 250m resolución.',
+			howToRead: 'El mapa clasifica cada hexagono en tipos de aptitud agricola segun la co-ocurrencia de calidad del suelo, regimen hidrico, acumulacion termica y topografia.',
+			implications: 'Los tipos reflejan configuraciones edafoclimaticas distintas: suelos acidos con alta lluvia (aptitud para yerba mate), suelos neutros con calor acumulado (aptitud para tabaco/citricos), y zonas con limitaciones multiples.',
+			method: `${METHOD_COMMON} Variables: carbono organico SoilGrids, pH optimo, arcilla, precipitacion CHIRPS, GDD ERA5, pendiente FABDEM. k=3 tipos, silueta=0.32.`,
 		},
 		forest_health: {
-			howToRead: 'El score indica la integridad y salud del bosque. Valores altos señalan bosques con tendencia de verdor estable o creciente, baja pérdida arbórea, poca actividad de fuego y alta productividad fotosintética.',
-			implications: 'Bosques con score bajo están en proceso de degradación: pérdida de cobertura, incendios recurrentes o reducción de productividad. La combinación de tendencia NDVI negativa con alta pérdida Hansen señala deforestación activa.',
-			method: 'Score = promedio ponderado de: tendencia NDVI 5 años (25%), ratio pérdida/cobertura Hansen invertido (25%), fracción quemada MODIS invertida (20%), GPP MODIS (15%), ET MODIS (15%). Baseline satelital 2019-2024.',
+			howToRead: 'El mapa clasifica cada hexagono en tipos de integridad forestal segun la co-ocurrencia de tendencia de verdor, perdida arborea, productividad fotosintetica y evapotranspiracion.',
+			implications: 'Los tipos separan bosque sano y productivo, bosque en degradacion con perdida activa, y zonas sin cobertura forestal significativa. Esta clasificacion permite priorizar intervenciones de restauracion donde la degradacion es incipiente.',
+			method: `${METHOD_COMMON} Variables: tendencia NDVI 5 anos, ratio perdida/cobertura Hansen, GPP MODIS, ET MODIS. k=4 tipos, silueta=0.38.`,
 		},
 		forestry_aptitude: {
-			howToRead: 'El score indica dónde es más rentable establecer plantaciones forestales comerciales. Valores altos señalan zonas con suelo ácido (favorable para pinos), lluvia suficiente, pendiente mecanizable y buena logística de transporte.',
-			implications: 'Misiones concentra el 80% de las plantaciones forestales de Argentina. Las zonas con alto score combinan condiciones edafoclimáticas óptimas con accesibilidad logística. El pH bajo (ácido) es preferido por Pinus y Eucalyptus.',
-			method: 'Score = promedio ponderado de: pH invertido SoilGrids (15%), arcilla invertida (10%), precipitación CHIRPS (25%), pendiente invertida FABDEM (20%), distancia a ruta invertida OSM (15%), tiempo a ciudad 50k invertido Nelson (15%).',
+			howToRead: 'El mapa clasifica cada hexagono en tipos de aptitud forestal comercial segun la co-ocurrencia de acidez del suelo, precipitacion, pendiente, y accesibilidad logistica.',
+			implications: 'Los tipos identifican zonas optimas para plantaciones de pino/eucalipto (suelo acido, lluvia suficiente, pendiente mecanizable, cerca de rutas) frente a zonas marginales donde la forestacion comercial no es viable.',
+			method: `${METHOD_COMMON} Variables: pH SoilGrids, arcilla, precipitacion CHIRPS, pendiente FABDEM, distancia a ruta OSM, accesibilidad Nelson. k=3 tipos, silueta=0.33.`,
 		},
 		isolation_index: {
-			howToRead: 'El score indica cuán aislado está cada lugar. Valores altos señalan zonas con largo tiempo de viaje a centros urbanos, baja densidad vial, poca actividad económica nocturna y alta fricción de desplazamiento.',
-			implications: 'El aislamiento limita el acceso a salud, educación y mercados. Zonas con score alto tienen mayor costo logístico, menor cobertura de servicios y menor conectividad digital. Poblaciones aisladas son más vulnerables ante emergencias.',
-			method: 'Score = promedio ponderado de: tiempo a ciudad 100k Nelson (25%), tiempo a Posadas custom (25%), densidad vial invertida OSM (20%), radiancia nocturna invertida VIIRS (15%), fricción motorizada Oxford (15%).',
+			howToRead: 'El mapa clasifica cada hexagono en tipos de aislamiento territorial segun la co-ocurrencia de tiempo de viaje a centros urbanos, densidad vial, actividad economica nocturna y friccion de desplazamiento.',
+			implications: 'Los tipos distinguen aislamiento por distancia (lejos de ciudades pero con rutas), aislamiento por friccion (terreno dificil aunque cercano), y conectividad plena. Cada tipo requiere estrategias de acceso distintas.',
+			method: `${METHOD_COMMON} Variables: tiempo a ciudad 100k Nelson, tiempo a Posadas, densidad vial OSM, radiancia VIIRS, friccion Oxford. k=4 tipos, silueta=0.45.`,
 		},
 		health_access: {
-			howToRead: 'El score indica el déficit de acceso a servicios de salud. Valores altos señalan zonas donde la combinación de lejanía al centro de salud, alta demanda poblacional y vulnerabilidad social genera una brecha sanitaria significativa.',
-			implications: 'Zonas con score alto tienen poblaciones que enfrentan barreras concretas para acceder a atención médica: largo tiempo de viaje, falta de cobertura formal, y condiciones socioeconómicas que agravan los problemas de salud.',
-			method: 'Score = promedio ponderado de: tiempo motorizado a salud Oxford MAP (30%), tiempo a pie a salud (20%), densidad poblacional censo 2022 (15%), cobertura de salud invertida (15%), NBI (20%). Resolución: 1km (Oxford) + radio censal (censo).',
+			howToRead: 'El mapa clasifica cada hexagono en tipos de acceso a salud segun la co-ocurrencia de tiempo al centro de salud, densidad poblacional, cobertura sanitaria y vulnerabilidad social.',
+			implications: 'Los tipos separan deficit por distancia (zonas rurales lejanas al hospital), deficit por saturacion (zonas densas con demanda excesiva), y deficit por vulnerabilidad (zonas con alto NBI aunque cercanas a servicios).',
+			method: `${METHOD_COMMON} Variables: tiempo motorizado y a pie a salud Oxford MAP, densidad poblacional, cobertura sanitaria, NBI Censo 2022. k=5 tipos, silueta=0.33.`,
 		},
 		education_gap: {
-			howToRead: 'El score mide la brecha educativa territorial. Valores altos indican zonas con alto porcentaje de población sin instrucción, alta deserción adolescente, bajo nivel educativo máximo, y aislamiento que dificulta el acceso a instituciones educativas.',
-			implications: 'La brecha educativa tiene efectos intergeneracionales: zonas con alta deserción y bajo nivel educativo reproducen la pobreza. El aislamiento amplifica el problema al limitar el acceso a escuelas secundarias y terciarias.',
-			method: 'Score = promedio ponderado de: sin instrucción censo 2022 (25%), deserción 13-18 años (25%), solo primaria (20%), universitarios invertido (15%), aislamiento Nelson (15%). Datos del Censo Nacional 2022 a nivel radio censal.',
+			howToRead: 'El mapa clasifica cada hexagono en tipos de brecha educativa segun la co-ocurrencia de poblacion sin instruccion, desercion adolescente, nivel educativo maximo y aislamiento territorial.',
+			implications: 'Los tipos distinguen brecha por pobreza educativa (alta desercion + sin instruccion), brecha por aislamiento (lejos de instituciones terciarias), y zonas con alta formacion universitaria. Cada configuracion demanda intervenciones diferentes.',
+			method: `${METHOD_COMMON} Variables: sin instruccion Censo 2022, desercion 13-18, solo primaria, universitarios, aislamiento Nelson. k=4 tipos, silueta=0.35.`,
 		},
 		land_use: {
-			howToRead: 'El mapa muestra la diversidad de uso del suelo (índice de Shannon, 0-100). Valores altos indican zonas con múltiples usos del suelo coexistiendo (mosaico agro-forestal). Valores bajos indican uso homogéneo (bosque puro o monocultivo). Los componentes muestran la fracción de cada clase.',
-			implications: 'Alta diversidad de uso puede indicar resiliencia territorial (múltiples actividades económicas) o fragmentación del paisaje. Zonas de bosque puro (diversidad baja, frac_trees alto) son prioritarias para conservación. Zonas con alto frac_built y bajo frac_trees indican islas de calor urbano.',
-			method: 'Fuente: Google Dynamic World v1 (Sentinel-2, 10m, 2024). Composite anual (moda por píxel). 9 clases: agua, bosque, pasto, vegetación inundable, cultivos, arbustos, construido, desnudo, nieve. Score = Shannon entropy normalizada sobre 9 clases × 100.',
+			howToRead: 'El mapa clasifica cada hexagono en tipos de cobertura del suelo segun la co-ocurrencia de las 9 fracciones de uso: bosque, cultivos, pasturas, construido, agua, arbustos, inundable, desnudo y otros.',
+			implications: 'Los tipos separan bosque dominante (72% de Misiones), paisaje abierto agropecuario, cuerpos de agua, y nucleos urbanos. Esta clasificacion reemplaza el indice de Shannon con una tipologia directamente interpretable.',
+			method: `${METHOD_COMMON} Fuente: Dynamic World v1 (Sentinel-2, 10m, 2024). 9 fracciones de cobertura. k=4 tipos, silueta=0.52.`,
 		},
 		territorial_gap: {
-			howToRead: 'El score mide la desigualdad territorial: la brecha entre actividad económica visible y acceso a servicios básicos. Valores altos indican zonas donde hay actividad económica (luces nocturnas) pero falta infraestructura básica (agua, cloacas) o hay alta pobreza.',
-			implications: 'La brecha territorial señala zonas donde el crecimiento económico no se traduce en bienestar. Alta radiancia nocturna con alto NBI indica urbanización sin servicios. Zonas aisladas con bajo NBI no son "brecha" sino pobreza estructural — un problema diferente.',
-			method: 'Score = promedio ponderado de: radiancia nocturna invertida VIIRS (15%), NBI censo 2022 (25%), sin red de agua censo 2022 (25%), sin cloacas censo 2022 (20%), tiempo a ciudad 20k Nelson (15%). La inversión de VIIRS penaliza zonas con luces pero sin servicios.',
+			howToRead: 'El mapa clasifica cada hexagono en tipos de brecha territorial segun la co-ocurrencia de actividad economica, pobreza, acceso a agua, cloacas y aislamiento.',
+			implications: 'Los tipos separan urbanizacion sin servicios (luces nocturnas pero sin cloacas), pobreza rural estructural (alto NBI + aislamiento), y zonas con servicios consolidados. La clasificacion multivariada evita confundir causas distintas de desigualdad.',
+			method: `${METHOD_COMMON} Variables: radiancia VIIRS, NBI Censo 2022, acceso a agua y cloacas Censo 2022, aislamiento Nelson. k=4 tipos, silueta=0.31.`,
 		},
 	};
 
@@ -231,6 +252,33 @@
 	// SAT_SUMMARIES and ANALYSIS_CONTENT entries are ready for when the parquet exists
 
 	const content = $derived(ANALYSIS_CONTENT[analysis.id] ?? null);
+
+	// ── Temporal toggle support ──
+	const isTemporal = $derived(layerCfg?.temporal === true);
+	const tMode = $derived(hexStore.temporalMode);
+
+	function getDisplayCol(col: string): string {
+		if (!isTemporal || tMode === 'current') return col;
+		return getTemporalCol(col, tMode);
+	}
+
+	function getDisplayVal(hex: Record<string, any>, col: string): number | null {
+		const tCol = getDisplayCol(col);
+		return hex[tCol] !== undefined ? (hex[tCol] as number) : null;
+	}
+
+	const effectiveLegendGradient = $derived(
+		isTemporal && tMode === 'delta'
+			? 'linear-gradient(to right, #dc2626, #737373, #22c55e)'
+			: legendGradient
+	);
+	const effectiveLegendLabels = $derived(
+		isTemporal && tMode === 'delta'
+			? [i18n.t('temporal.legend.worse'), i18n.t('temporal.legend.noChange'), i18n.t('temporal.legend.better')]
+			: legendLabels
+	);
+
+	const displayScore = $derived(selectedHex ? (getDisplayVal(selectedHex, 'score') ?? 0) : 0);
 </script>
 
 {#if selectedHex && selectedDpto && isPerDept}
@@ -242,32 +290,24 @@
 			<div class="hex-id" title={selectedHex.h3index}>
 				{selectedHex.h3index.slice(0, 4)}...{selectedHex.h3index.slice(-4)}
 			</div>
-			<div class="risk-badge" style:background={getScoreColor(selectedHex.score ?? 0)}>
-				{getScoreLevel(selectedHex.score ?? 0)}
-			</div>
-		</div>
-
-		<div class="score-bar">
-			<div class="score-label">Score</div>
-			<div class="score-track">
-				<div class="score-fill" style:width="{selectedHex.score ?? 0}%"
-					style:background={getScoreColor(selectedHex.score ?? 0)}></div>
-			</div>
-			<div class="score-value" style:color={getScoreColor(selectedHex.score ?? 0)}>
-				{(selectedHex.score ?? 0).toFixed(1)}
-			</div>
-		</div>
-
-		<div class="detail-grid">
-			{#each componentVars as v}
-				{@const val = selectedHex[v.col] ?? 0}
-				<div class="detail-item">
-					<div class="detail-label">{i18n.t(v.labelKey)}</div>
-					<div class="detail-value">{typeof val === 'number' ? val.toFixed(1) : val}</div>
-					<div class="detail-desc">Percentil provincial (0-100)</div>
+			{#if isCategorical}
+				<div class="risk-badge" style:background={getTypeColor(selectedHex.type ?? 1)}>
+					{selectedHex.type_label ?? `Tipo ${selectedHex.type ?? '?'}`}
 				</div>
-			{/each}
+			{:else}
+				<div class="risk-badge" style:background={getScoreColor(displayScore)}>
+					{getScoreLevel(displayScore)}
+				</div>
+			{/if}
 		</div>
+
+		{#if hexPetalLayers.length > 0}
+			<div class="petal-section">
+				<div class="petal-wrapper">
+					<PetalChart layers={hexPetalLayers} labels={petalLabels} size={240} />
+				</div>
+			</div>
+		{/if}
 
 		{#if freshness}
 			<div class="source-note-box">
@@ -281,6 +321,7 @@
 	<!-- ═══ DEPARTMENT SELECTED (minimal, like FloodRisk) ═══ -->
 	<div class="view">
 		<button class="back-btn" onclick={handleBackToDepts}>{i18n.t('analysis.flood.topDepts')}</button>
+
 		<div class="dept-active-title">{selectedDpto}</div>
 
 		{#if loading}
@@ -342,12 +383,6 @@
 					<div class="card-value">{deptSummary.province.total_hexes?.toLocaleString()}</div>
 					<div class="card-label">Zonas analizadas</div>
 				</div>
-				<div class="summary-card">
-					<div class="card-value" style:color={getScoreColor(deptSummary.province.avg_score ?? 50)}>
-						{deptSummary.province.avg_score?.toFixed(1)}
-					</div>
-					<div class="card-label">Score promedio</div>
-				</div>
 			</div>
 		{/if}
 
@@ -356,12 +391,8 @@
 			{#each deptList as dept}
 				<button class="dept-row dept-clickable" onclick={() => handleDptoClick(dept)}>
 					<div class="dept-name">{dept.dpto}</div>
-					<div class="dept-bar-wrap">
-						<div class="dept-bar" style:width="{dept.avg_score}%"
-							style:background={getScoreColor(dept.avg_score)}></div>
-					</div>
-					<div class="dept-score" style:color={getScoreColor(dept.avg_score)}>
-						{dept.avg_score.toFixed(1)}
+					<div class="dept-score">
+						{dept.hex_count?.toLocaleString() ?? ''} hex
 					</div>
 				</button>
 			{/each}
@@ -372,12 +403,6 @@
 				<summary class="method-summary">Como leer este mapa</summary>
 				<div class="method-body">
 					<p class="explain-text">{content.howToRead}</p>
-					<div class="mini-legend">
-						<div class="legend-bar" style:background={legendGradient}></div>
-						<div class="legend-labels">
-							{#each legendLabels as label}<span>{label}</span>{/each}
-						</div>
-					</div>
 				</div>
 			</details>
 
@@ -403,15 +428,6 @@
 			</details>
 		{/if}
 
-		<div class="flood-legend">
-			<div class="legend-title">Escala de score</div>
-			<div class="legend-bar" style:background={legendGradient}></div>
-			<div class="legend-labels">
-				{#each legendLabels as label}
-					<span>{label}</span>
-				{/each}
-			</div>
-		</div>
 
 		{#if freshness}
 			<div class="source-note-box">
@@ -494,6 +510,7 @@
 	.dept-name { font-size: 9px; color: #d4d4d4; width: 72px; text-align: left; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.dept-bar-wrap { flex: 1; height: 4px; background: rgba(100,116,139,0.15); border-radius: 2px; overflow: hidden; }
 	.dept-bar { height: 100%; border-radius: 2px; transition: width 0.3s; }
+	.dept-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 	.dept-score { font-size: 9px; font-weight: 600; min-width: 24px; text-align: right; }
 	.dept-active-title { font-size: 14px; font-weight: 700; color: #e2e8f0; margin-bottom: 8px; }
 
@@ -510,8 +527,8 @@
 	.score-track { flex: 1; height: 6px; background: rgba(100,116,139,0.2); border-radius: 3px; overflow: hidden; }
 	.score-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
 	.score-value { font-size: 13px; font-weight: 700; min-width: 32px; text-align: right; }
-	.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-	.detail-item { background: rgba(100,116,139,0.08); border-radius: 6px; padding: 8px; }
+	.petal-section { margin: 6px 0; }
+	.petal-wrapper { display: flex; justify-content: center; margin: 0 auto; max-width: 260px; }
 	.detail-label { font-size: 9px; color: #d4d4d4; margin-bottom: 2px; }
 	.detail-value { font-size: 14px; font-weight: 700; color: #e2e8f0; }
 	.detail-desc { font-size: 8px; color: #a3a3a3; margin-top: 2px; }
@@ -557,4 +574,11 @@
 	.hex-val { display: flex; justify-content: space-between; align-items: baseline; }
 	.hex-val-label { color: #a3a3a3; }
 	.hex-val-num { color: #e5e5e5; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+	/* ── Temporal toggle ── */
+	.temporal-toggle { display: flex; gap: 0; margin-bottom: 10px; border-radius: 6px; overflow: hidden; border: 1px solid rgba(100,116,139,0.2); }
+	.temporal-toggle button { flex: 1; background: rgba(255,255,255,0.03); border: none; color: #a3a3a3; font-size: 9px; font-weight: 500; padding: 5px 4px; cursor: pointer; transition: all 0.15s; }
+	.temporal-toggle button:not(:last-child) { border-right: 1px solid rgba(100,116,139,0.15); }
+	.temporal-toggle button.active { background: rgba(59,130,246,0.15); color: #60a5fa; font-weight: 700; }
+	.temporal-toggle button:hover:not(.active) { background: rgba(255,255,255,0.06); }
 </style>

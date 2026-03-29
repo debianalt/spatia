@@ -45,7 +45,6 @@
 {#if analysis && cfg}
 	<div class="analysis-view">
 		<div class="view-header">
-			<span class="view-icon">{analysis.icon}</span>
 			<div class="view-title-group">
 				<div class="view-title">{i18n.t(analysis.titleKey)}</div>
 				<div class="view-lens" style:color={cfg.color}>
@@ -60,16 +59,11 @@
 				<p class="coming-soon-text">{i18n.t(analysis.descKey)}</p>
 				<p class="coming-soon-body">{i18n.t('analysis.comingSoon.body')}</p>
 			</div>
-		{:else if analysis.id === 'real_estate'}
-			<RealEstateAnalysis {lensStore} {mapStore} {onRemoveRadio} />
-		{:else if analysis.id === 'flood_risk'}
-			<FloodRiskAnalysis {lensStore} {mapStore} {hexStore} {onRemoveRadio} {onSelectFloodDpto} {onSelectFloodCatastroDpto} />
-		{:else if analysis.id === 'catastro'}
-			<CatastroAnalysis {lensStore} {mapStore} {onRemoveRadio} {onSelectCatastroDpto} />
-		{:else if analysis.id === 'territorial_scores'}
-			<TerritorialScoresAnalysis {lensStore} {mapStore} {hexStore} {onSelectScoresCatastroDpto} />
-		{:else if RADIO_ANALYSIS_REGISTRY[analysis.id]}
-			<RadioAnalysis config={RADIO_ANALYSIS_REGISTRY[analysis.id]} {mapStore} {hexStore} onSelectRadioAnalysisDpto={onSelectRadioAnalysisDpto} />
+		{:else if analysis.id === 'eudr'}
+			<div class="eudr-link">
+				<p class="text-[11px]" style="color: #a3a3a3; line-height: 1.6; margin: 0 0 12px;">{i18n.t(analysis.descKey)}</p>
+				<a href="/trade/eudr/check" class="eudr-btn">Abrir verificador EUDR</a>
+			</div>
 		{:else if HEX_LAYER_REGISTRY[analysis.id]}
 			<OvertureAnalysis {analysis} {hexStore} onSelectDpto={onSelectFloodDpto} />
 		{:else}
@@ -143,4 +137,7 @@
 		margin: 0;
 		line-height: 1.4;
 	}
+	.eudr-link { padding: 4px 0; }
+	.eudr-btn { display: block; text-align: center; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: #d4d4d4; font-size: 11px; text-decoration: none; transition: all 0.15s; }
+	.eudr-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
 </style>

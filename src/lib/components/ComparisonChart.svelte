@@ -90,30 +90,6 @@
 		<PetalChart layers={petalLayers} labels={petalLabels} size={300} />
 	{/if}
 
-	<!-- Dimension bars (raw values) -->
-	{#if entries.length > 0}
-		<div class="dim-section">
-			{#each petalLabels as label, i}
-				<div class="dim-row">
-					<div class="dim-label">{label}</div>
-					<div class="dim-bars-container">
-						{#each entries as entry}
-							{@const raw = entry.rawValues[i] ?? 0}
-							<div class="dim-bar-track">
-								<div class="dim-bar-fill" style:width="{raw}%" style:background={entry.color}></div>
-							</div>
-						{/each}
-					</div>
-					<div class="dim-values">
-						{#each entries as entry}
-							{@const raw = entry.rawValues[i] ?? 0}
-							<span class="dim-val">{raw.toFixed(1)}</span>
-						{/each}
-					</div>
-				</div>
-			{/each}
-		</div>
-	{/if}
 
 	<div class="sources">
 		<span class="sources-title">{i18n.t('source.title')}</span>

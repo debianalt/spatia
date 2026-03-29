@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import MapComponent from '$lib/components/Map.svelte';
+	import MapLegend from '$lib/components/MapLegend.svelte';
 	import Controls from '$lib/components/Controls.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import ChatPanel from '$lib/components/ChatPanel.svelte';
@@ -248,15 +249,14 @@
 			return;
 		}
 
-		// Catastro-based analyses (flood risk on parcels)
+		// Catastro-based analyses
 		if (analysis.spatialUnit === 'catastro') {
 			analysisDataLoaded = false;
 			mapComponent?.clearAnalysisChoropleth();
 			mapComponent?.clearHexChoropleth();
 			mapStore.clearHexState();
 			hexStore.clearAll();
-			// Show catastro layer — flood coloring happens when user selects a dept
-			mapComponent?.showCatastroLayer();
+			mapComponent?.hideCatastroLayer();
 			return;
 		}
 
@@ -281,10 +281,6 @@
 			mapComponent?.clearHexChoropleth();
 			mapStore.clearHexState();
 			loadAnalysisChoropleth(analysis);
-			// Show catastro parcel overlay when catastro analysis is active
-			if (id === 'catastro') {
-				mapComponent?.showCatastroLayer();
-			}
 		}
 	});
 
@@ -333,9 +329,25 @@
 			return;
 		}
 
-		const colorScale = (layer?.colorScale ?? 'flood') as 'flood' | 'sequential';
+		let colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' = layer?.colorScale ?? 'flood';
+		if (layer?.temporal && hexStore.temporalMode === 'delta') colorScale = 'diverging';
 		mapComponent?.setHexChoropleth(entries, colorScale);
 		analysisDataLoaded = true;
+	});
+
+	// ── Temporal mode toggle: re-render perDepartment layers on mode change ──
+	let prevTemporalMode: string = 'current';
+	$effect(() => {
+		const mode = hexStore.temporalMode;
+		const layer = hexStore.activeLayer;
+		if (mode === prevTemporalMode) return;
+		prevTemporalMode = mode;
+		if (!layer?.temporal || !layer?.perDepartment) return;
+		const entries = hexStore.choroplethEntries;
+		if (entries.length === 0) return;
+		let colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' = layer.colorScale ?? 'flood';
+		if (mode === 'delta') colorScale = 'diverging';
+		mapComponent?.setHexChoropleth(entries, colorScale);
 	});
 
 	async function loadAnalysisChoropleth(analysis: AnalysisConfig) {
@@ -651,7 +663,8 @@
 		setTimeout(() => {
 			const entries = hexStore.choroplethEntries;
 			if (entries.length > 0) {
-				const colorScale = (hexStore.activeLayer?.colorScale ?? 'flood') as 'flood' | 'sequential';
+				let colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' = hexStore.activeLayer?.colorScale ?? 'flood';
+				if (hexStore.activeLayer?.temporal && hexStore.temporalMode === 'delta') colorScale = 'diverging';
 				mapComponent?.setHexChoropleth(entries, colorScale);
 				analysisDataLoaded = true;
 			}
@@ -744,11 +757,6 @@
 				<h1 class="text-[15px] font-bold text-white tracking-wide cursor-pointer hover:opacity-80 transition-opacity" onclick={clearAll}>
 					{i18n.t('header.title')}
 				</h1>
-				<nav class="flex items-center gap-1 text-[12px]">
-					<span class="text-white font-semibold">{i18n.t('header.nav.map')}</span>
-					<span class="text-white/20">&middot;</span>
-					<a href="/trade" class="text-white/40 hover:text-white transition-colors">{i18n.t('header.nav.dashboards')}</a>
-				</nav>
 			</div>
 
 			<!-- Lens selector (center) -->
@@ -768,6 +776,7 @@
 		<!-- Map container -->
 		<div bind:this={mapContainer} class="flex-1 relative min-h-0">
 			<MapComponent bind:this={mapComponent} {mapStore} />
+			<MapLegend {hexStore} />
 
 			<!-- Controls (positioned relative to map) -->
 			<Controls

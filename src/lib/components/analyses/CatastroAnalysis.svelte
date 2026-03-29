@@ -74,14 +74,7 @@
 	});
 	const petalLabels = $derived(HOUSING_LABELS_KEYS.map(k => i18n.t(k)));
 
-	// Auto-select top department on first load
-	let hasAutoSelected = false;
-	$effect(() => {
-		if (deptSummary.length > 0 && !hasAutoSelected && !selectedDpto) {
-			hasAutoSelected = true;
-			setTimeout(() => handleDptoClick(deptSummary[0].code), 400);
-		}
-	});
+	// Department list loads, user picks manually
 
 	onMount(() => { loadData(); });
 
@@ -264,34 +257,6 @@
 			{/if}
 		</div>
 
-		<!-- Comparison table -->
-		<div class="cmp-table">
-			<div class="cmp-header-row">
-				<div class="cmp-metric-label"></div>
-				{#each selectedEntries as entry}
-					<div class="cmp-col-header" style:color={entry.color}>{entry.redcode.slice(-4)}</div>
-				{/each}
-			</div>
-			{#each CMP_METRICS as m}
-				{@const vals = selectedEntries.map(e => (allData.get(e.redcode)?.[m.key] ?? 0) as number)}
-				{@const maxVal = Math.max(...vals, 1)}
-				<div class="cmp-metric-row">
-					<div class="cmp-metric-label">{i18n.t(m.labelKey)}</div>
-					<div class="cmp-bars">
-						{#each selectedEntries as entry, idx}
-							{@const v = vals[idx]}
-							<div class="cmp-bar-cell">
-								<div class="cmp-bar-track">
-									<div class="cmp-bar-fill" style:width="{(v / maxVal) * 100}%" style:background={entry.color}></div>
-								</div>
-								<span class="cmp-bar-val">{fmtMetric(v, m.type)}</span>
-							</div>
-						{/each}
-					</div>
-				</div>
-			{/each}
-		</div>
-
 		<!-- Housing quality petals (overlaid) -->
 		{#if petalLayers.length > 0}
 			<div class="section">
@@ -299,19 +264,6 @@
 				<div class="petal-wrapper">
 					<PetalChart layers={petalLayers} labels={petalLabels} size={220} />
 				</div>
-				<!-- Housing values per radio -->
-				{#each selectedEntries as entry}
-					{#if housingCache.has(entry.redcode)}
-						{@const hd = housingCache.get(entry.redcode)}
-						<div class="housing-radio-row">
-							<span class="chip-dot" style:background={entry.color}></span>
-							<span class="housing-radio-code">{entry.redcode.slice(-4)}</span>
-							{#each HOUSING_COLS as col, i}
-								<span class="housing-cell">{fmtPct(HOUSING_DEFICIT[i] ? 100 - (hd?.[col] ?? 0) : hd?.[col])}</span>
-							{/each}
-						</div>
-					{/if}
-				{/each}
 				<div class="petal-hint">{i18n.t('analysis.catastro.petalHint')}</div>
 			</div>
 		{/if}
@@ -367,18 +319,12 @@
 		</div>
 
 		{#if deptSummary.length > 0}
-			{@const maxN = deptSummary[0].nUrban}
 			<div class="section">
 				<div class="section-title">{i18n.t('analysis.catastro.topDepts')}</div>
-				{#each deptSummary as dept}
+				{#each deptSummary as dept, di}
 					<button class="dept-row dept-clickable" onclick={() => handleDptoClick(dept.code)}>
-						<div class="dept-top">
-							<span class="dept-name">{dept.dpto}</span>
-							<span class="dept-count">{fmt(dept.nUrban)}</span>
-						</div>
-						<div class="dept-bar-bg">
-							<div class="dept-bar" style:width="{(dept.nUrban / maxN) * 100}%"></div>
-						</div>
+						<span class="dept-name">{dept.dpto}</span>
+						<span class="dept-count">{fmt(dept.nUrban)} urbanas</span>
 					</button>
 				{/each}
 			</div>
@@ -437,27 +383,12 @@
 	.legend-swatch { width: 10px; height: 3px; border-radius: 1px; flex-shrink: 0; }
 	.legend-gap { margin-left: 8px; }
 
-	/* Comparison table */
-	.cmp-table { margin-bottom: 10px; }
-	.cmp-header-row { display: flex; gap: 4px; margin-bottom: 4px; padding-left: 70px; }
-	.cmp-col-header { flex: 1; font-size: 8px; font-weight: 700; font-family: monospace; text-align: center; }
-	.cmp-metric-row { display: flex; align-items: center; gap: 4px; margin-bottom: 3px; }
-	.cmp-metric-label { width: 66px; flex-shrink: 0; font-size: 7px; color: #a3a3a3; text-transform: uppercase; letter-spacing: 0.03em; }
-	.cmp-bars { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-	.cmp-bar-cell { display: flex; align-items: center; gap: 4px; }
-	.cmp-bar-track { flex: 1; height: 6px; background: rgba(255,255,255,0.04); border-radius: 3px; overflow: hidden; }
-	.cmp-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease; }
-	.cmp-bar-val { font-size: 8px; font-weight: 600; color: #e2e8f0; min-width: 36px; text-align: right; }
-
 	/* Sections */
 	.section { margin-bottom: 8px; }
 	.section-title { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #a3a3a3; border-bottom: 1px solid #1e293b; padding-bottom: 2px; margin-bottom: 4px; }
 
 	/* Petal */
 	.petal-wrapper { display: flex; justify-content: center; margin: 4px 0; }
-	.housing-radio-row { display: flex; align-items: center; gap: 4px; font-size: 8px; padding: 1px 0; }
-	.housing-radio-code { font-family: monospace; font-weight: 600; color: #e2e8f0; width: 32px; }
-	.housing-cell { flex: 1; text-align: center; color: #a3a3a3; }
 	.petal-hint { font-size: 7px; color: #737373; text-align: center; margin-top: 4px; }
 
 	/* Stat grid (province view) */
@@ -469,14 +400,12 @@
 	.stat-value.new-count { color: #06b6d4; }
 
 	/* Department rows */
-	.dept-row { margin-bottom: 4px; }
+	.dept-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
 	.dept-clickable { background: none; border: none; width: 100%; text-align: left; cursor: pointer; padding: 3px 4px; border-radius: 4px; transition: background 0.15s; }
 	.dept-clickable:hover { background: rgba(6,182,212,0.1); }
-	.dept-top { display: flex; justify-content: space-between; align-items: baseline; }
+	.dept-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 	.dept-name { font-size: 10px; color: #d4d4d4; }
-	.dept-count { font-size: 9px; color: #a3a3a3; }
-	.dept-bar-bg { height: 3px; background: rgba(255,255,255,0.05); border-radius: 2px; margin-top: 1px; }
-	.dept-bar { height: 100%; background: #06b6d4; border-radius: 2px; transition: width 0.3s ease; }
+	.dept-count { font-size: 9px; color: #a3a3a3; margin-left: auto; }
 
 	/* Department detail */
 	.dept-detail { font-size: 11px; }

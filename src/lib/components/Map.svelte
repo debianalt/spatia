@@ -677,14 +677,14 @@
 			});
 		}
 
-		// Line layer — thin crisp borders
+		// Line layer — only at high zoom to avoid tile boundary artifacts
 		if (!map.getLayer('catastro-line')) {
 			map.addLayer({
 				id: 'catastro-line',
 				type: 'line',
 				source: 'catastro',
 				'source-layer': 'catastro',
-				minzoom: 11,
+				minzoom: 14,
 				paint: {
 					'line-color': [
 						'match', ['get', 'tipo'],
@@ -692,8 +692,8 @@
 						'rural', '#4ade80',
 						'#22d3ee'
 					],
-					'line-width': ['interpolate', ['linear'], ['zoom'], 11, 0.3, 12, 0.6, 14, 0.9],
-					'line-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0.5, 12, 0.7, 14, 0.85]
+					'line-width': 0.5,
+					'line-opacity': 0.4
 				}
 			});
 		}
@@ -1072,7 +1072,9 @@
 
 	// ── Hexagon H3 choropleth functions ──────────────────────────────────
 
-	export function setHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' = 'flood') {
+	const CATEGORICAL_PALETTE = ['#1565c0', '#7e57c2', '#4db6ac', '#66bb6a', '#c0ca33', '#ffb74d', '#e65100', '#78909c'];
+
+	export function setHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' = 'flood') {
 		if (!map || !map.isStyleLoaded()) return;
 
 		const src = map.getSource('hexagons') as maplibregl.GeoJSONSource | undefined;
@@ -1091,16 +1093,32 @@
 		const range = maxVal - minVal || 1;
 
 		function getColor(value: number): string {
-			const t = (value - minVal) / range;
+			if (colorScale === 'categorical') {
+				const idx = Math.round(value) - 1;
+				return CATEGORICAL_PALETTE[idx % CATEGORICAL_PALETTE.length];
+			}
 			let r: number, g: number, b: number;
-			if (colorScale === 'flood') {
-				r = Math.round(t < 0.5 ? 59 + t * 2 * (234 - 59) : 234 + (t - 0.5) * 2 * (220 - 234));
-				g = Math.round(t < 0.5 ? 130 + t * 2 * (179 - 130) : 179 + (t - 0.5) * 2 * (38 - 179));
-				b = Math.round(t < 0.5 ? 246 + t * 2 * (8 - 246) : 8 + (t - 0.5) * 2 * (38 - 8));
+			if (colorScale === 'diverging') {
+				const absMax = Math.max(Math.abs(minVal), Math.abs(maxVal)) || 1;
+				const t = value / absMax; // -1 to +1
+				if (t < 0) {
+					const s = -t;
+					r = Math.round(115 + s * 140); g = Math.round(115 - s * 75); b = Math.round(115 - s * 75);
+				} else {
+					const s = t;
+					r = Math.round(115 - s * 75); g = Math.round(115 + s * 100); b = Math.round(115 - s * 75);
+				}
 			} else {
-				r = Math.round(t < 0.5 ? 33 + t * 2 * (247 - 33) : 247 + (t - 0.5) * 2 * (178 - 247));
-				g = Math.round(t < 0.5 ? 102 + t * 2 * (247 - 102) : 247 + (t - 0.5) * 2 * (24 - 247));
-				b = Math.round(t < 0.5 ? 172 + t * 2 * (247 - 172) : 247 + (t - 0.5) * 2 * (43 - 247));
+				const t = (value - minVal) / range;
+				if (colorScale === 'flood') {
+					r = Math.round(t < 0.5 ? 59 + t * 2 * (234 - 59) : 234 + (t - 0.5) * 2 * (220 - 234));
+					g = Math.round(t < 0.5 ? 130 + t * 2 * (179 - 130) : 179 + (t - 0.5) * 2 * (38 - 179));
+					b = Math.round(t < 0.5 ? 246 + t * 2 * (8 - 246) : 8 + (t - 0.5) * 2 * (38 - 8));
+				} else {
+					r = Math.round(t < 0.5 ? 33 + t * 2 * (247 - 33) : 247 + (t - 0.5) * 2 * (178 - 247));
+					g = Math.round(t < 0.5 ? 102 + t * 2 * (247 - 102) : 247 + (t - 0.5) * 2 * (24 - 247));
+					b = Math.round(t < 0.5 ? 172 + t * 2 * (247 - 172) : 247 + (t - 0.5) * 2 * (43 - 247));
+				}
 			}
 			return `rgb(${r},${g},${b})`;
 		}

@@ -63,14 +63,7 @@
 		return 'Muy bajo';
 	}
 
-	// Auto-select top department on first load
-	let hasAutoSelected = false;
-	$effect(() => {
-		if (deptSummaries.length > 0 && !hasAutoSelected && !activeDpto) {
-			hasAutoSelected = true;
-			setTimeout(() => handleDptoClick(deptSummaries[0]), 400);
-		}
-	});
+	// Department list loads, user picks manually
 
 	function handleDptoClick(dept: any) {
 		activeDpto = dept.dpto;
@@ -134,33 +127,6 @@
 			</div>
 		</div>
 
-		<!-- Score detail per parcel -->
-		{#each selectedParcels as parcel}
-			<div class="parcel-block">
-				<div class="parcel-header">
-					<span class="chip-dot" style:background={parcel.color}></span>
-					<span>{parcel.tipo === 'rural' ? 'Rural' : 'Urbana'}</span>
-					{#if parcel.area_m2 > 0}
-						<span class="chip-area">{parcel.area_m2.toLocaleString('es-AR', { maximumFractionDigits: 0 })} m²</span>
-					{/if}
-				</div>
-				<div class="detail-grid">
-					{#each TERRITORIAL_SCORE_COLS as col}
-						{@const val = parcel.scores[col] ?? 0}
-						<div class="detail-item">
-							<div class="detail-label">{TERRITORIAL_SCORE_LABELS[col]?.[locale] ?? col}</div>
-							<div class="detail-value-row">
-								<span class="detail-value" style:color={getScoreColor(val)}>{val.toFixed(0)}</span>
-								<span class="detail-level" style:color={getScoreColor(val)}>{getScoreLevel(val)}</span>
-							</div>
-							<div class="detail-bar"><div class="detail-bar-fill" style:width="{val}%" style:background={getScoreColor(val)}></div></div>
-							<div class="detail-desc">{TERRITORIAL_SCORE_DESCS[col]?.[locale] ?? ''}</div>
-						</div>
-					{/each}
-				</div>
-			</div>
-		{/each}
-
 		<div class="source-note-box">
 			<div><strong>Fuente:</strong> Overture Maps Foundation via walkthru.earth (CC BY 4.0)</div>
 			<div><strong>Grilla:</strong> H3 resolución 9 (~174 m de lado) · <strong>Actualización:</strong> {freshness.processedDate}</div>
@@ -194,13 +160,6 @@
 		</details>
 
 		<div class="scores-legend">
-			<div class="legend-title">{TERRITORIAL_SCORE_LABELS[activeIndicator]?.[locale] ?? activeIndicator}</div>
-			<div class="legend-bar"></div>
-			<div class="legend-labels">
-				<span>0 — Bajo</span>
-				<span>50</span>
-				<span>100 — Alto</span>
-			</div>
 		</div>
 
 		<div class="source-note-box">
@@ -221,16 +180,10 @@
 		<!-- Department ranking -->
 		<div class="dept-section">
 			<div class="section-title">{i18n.t('analysis.scores.selectDept')}</div>
-			{#each deptSummaries as dept}
+			{#each deptSummaries as dept, di}
 				<button class="dept-row" onclick={() => handleDptoClick(dept)}>
-					<div class="dept-name">{dept.dpto}</div>
-					<div class="dept-bar-wrap">
-						<div class="dept-bar" style:width="{Math.min(dept.overall_score * 5, 100)}%"
-							style:background={getScoreColor(dept.overall_score)}></div>
-					</div>
-					<div class="dept-score" style:color={getScoreColor(dept.overall_score)}>
-						{dept.overall_score.toFixed(1)}
-					</div>
+					<span class="dept-name">{dept.dpto}</span>
+					<span class="dept-count">{dept.hex_count} hex</span>
 				</button>
 			{/each}
 		</div>
@@ -239,16 +192,8 @@
 		<details class="method-details">
 			<summary class="method-summary">Cómo leer este análisis</summary>
 			<div class="method-body">
-				<p class="explain-text">Cada parcela catastral recibe un perfil de 8 indicadores territoriales, todos en escala 0 a 100. Al seleccionar un departamento, las parcelas se colorean según el indicador elegido. Al hacer click en una parcela, un gráfico de pétalos muestra los 8 indicadores simultáneamente: mayor extensión del pétalo = mejor dotación.</p>
-				<div class="mini-legend">
-					<div class="legend-bar"></div>
-					<div class="legend-labels">
-						<span>0 — Sin dotación</span>
-						<span>50</span>
-						<span>100 — Máxima</span>
-					</div>
+				<p class="explain-text">Cada hexagono recibe un perfil de 8 indicadores territoriales clasificados por PCA + k-means. Al seleccionar un departamento, los hexagonos se colorean por tipo. Al hacer click, un grafico de petalos muestra los 8 indicadores simultaneamente.</p>
 				</div>
-			</div>
 		</details>
 
 		<!-- What each indicator measures -->
@@ -332,21 +277,6 @@
 	.petal-note { font-size: 9px; color: #a3a3a3; margin: 2px 0 6px 0; line-height: 1.4; }
 	.petal-wrapper { margin: 0 auto; max-width: 300px; }
 
-	/* ── Parcel detail block ── */
-	.parcel-block { margin: 8px 0; padding: 6px; background: rgba(255,255,255,0.03); border-radius: 6px; }
-	.parcel-header { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #d4d4d4; margin-bottom: 6px; }
-
-	/* ── Detail grid (replicates flood pattern) ── */
-	.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-	.detail-item { background: rgba(100,116,139,0.08); border-radius: 4px; padding: 5px 6px; }
-	.detail-label { font-size: 9px; color: #d4d4d4; margin-bottom: 2px; }
-	.detail-value-row { display: flex; align-items: baseline; gap: 6px; }
-	.detail-value { font-size: 14px; font-weight: 700; }
-	.detail-level { font-size: 9px; font-weight: 500; }
-	.detail-bar { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; margin: 3px 0; overflow: hidden; }
-	.detail-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
-	.detail-desc { font-size: 8px; color: #a3a3a3; line-height: 1.3; }
-
 	/* ── Department view ── */
 	.dept-title { font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 8px; }
 	.indicator-select { margin-bottom: 8px; }
@@ -372,10 +302,9 @@
 	.section-title { font-size: 10px; font-weight: 600; color: #a3a3a3; margin-bottom: 6px; }
 	.dept-row { display: flex; align-items: center; gap: 6px; width: 100%; padding: 4px 0; background: none; border: none; cursor: pointer; color: inherit; text-align: left; }
 	.dept-row:hover { background: rgba(255,255,255,0.04); }
-	.dept-name { width: 100px; font-size: 10px; color: #d4d4d4; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.dept-bar-wrap { flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
-	.dept-bar { height: 100%; border-radius: 3px; transition: width 0.3s; }
-	.dept-score { width: 28px; text-align: right; font-size: 10px; font-weight: 600; flex-shrink: 0; }
+	.dept-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+	.dept-name { font-size: 10px; color: #d4d4d4; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.dept-count { font-size: 9px; color: #a3a3a3; margin-left: auto; }
 
 	/* ── Collapsible details (same pattern as FloodRisk) ── */
 	.method-details { border: 1px solid rgba(100,116,139,0.15); border-radius: 6px; margin: 6px 0; overflow: hidden; }

@@ -43,29 +43,6 @@
 		</div>
 	{/if}
 
-	<!-- Dimension bars per variable -->
-	{#if variables.length > 0}
-		<div class="hc-bars-section">
-			{#each variables as variable, vi}
-				<div class="hc-var-row">
-					<div class="hc-var-label">{i18n.t(variable.labelKey)}</div>
-					<div class="hc-var-bars">
-						{#each selected as [h3index, data]}
-							{@const raw = data.data[variable.col] ?? 0}
-							{@const maxVal = Math.max(...selected.map(([, d]) => d.data[variable.col] ?? 0), 1)}
-							{@const pct = (raw / maxVal) * 100}
-							<div class="hc-bar-row">
-								<div class="hc-bar-track">
-									<div class="hc-bar-fill" style:width="{pct}%" style:background={data.color}></div>
-								</div>
-								<span class="hc-bar-val">{raw.toFixed(1)}</span>
-							</div>
-						{/each}
-					</div>
-				</div>
-			{/each}
-		</div>
-	{/if}
 </div>
 
 <style>
