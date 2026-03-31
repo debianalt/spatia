@@ -1,15 +1,10 @@
 <script lang="ts">
-	import { LENS_CONFIG, HEX_LAYER_REGISTRY, RADIO_ANALYSIS_REGISTRY, type AnalysisConfig } from '$lib/config';
+	import { LENS_CONFIG, HEX_LAYER_REGISTRY, type AnalysisConfig } from '$lib/config';
 	import type { LensStore } from '$lib/stores/lens.svelte';
 	import type { MapStore } from '$lib/stores/map.svelte';
 	import type { HexStore } from '$lib/stores/hex.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
-	import RealEstateAnalysis from './analyses/RealEstateAnalysis.svelte';
-	import FloodRiskAnalysis from './analyses/FloodRiskAnalysis.svelte';
-	import CatastroAnalysis from './analyses/CatastroAnalysis.svelte';
 	import OvertureAnalysis from './analyses/OvertureAnalysis.svelte';
-	import TerritorialScoresAnalysis from './analyses/TerritorialScoresAnalysis.svelte';
-	import RadioAnalysis from './analyses/RadioAnalysis.svelte';
 
 	let {
 		lensStore,
@@ -23,7 +18,6 @@
 		onSelectScoresCatastroDpto,
 		onSelectRadioAnalysisDpto,
 	}: {
-
 		lensStore: LensStore;
 		mapStore: MapStore;
 		hexStore: HexStore;
@@ -58,11 +52,6 @@
 				<div class="coming-soon-badge">{i18n.t('analysis.status.comingSoon')}</div>
 				<p class="coming-soon-text">{i18n.t(analysis.descKey)}</p>
 				<p class="coming-soon-body">{i18n.t('analysis.comingSoon.body')}</p>
-			</div>
-		{:else if analysis.id === 'eudr'}
-			<div class="eudr-link">
-				<p class="text-[11px]" style="color: #a3a3a3; line-height: 1.6; margin: 0 0 12px;">{i18n.t(analysis.descKey)}</p>
-				<a href="/trade/eudr/check" class="eudr-btn">Abrir verificador EUDR</a>
 			</div>
 		{:else if HEX_LAYER_REGISTRY[analysis.id]}
 			<OvertureAnalysis {analysis} {hexStore} onSelectDpto={onSelectFloodDpto} />

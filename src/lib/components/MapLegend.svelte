@@ -1,14 +1,26 @@
 <script lang="ts">
 	import type { HexStore } from '$lib/stores/hex.svelte';
+	import { i18n } from '$lib/stores/i18n.svelte';
 
 	let { hexStore }: { hexStore: HexStore } = $props();
 
 	const PALETTE = ['#1565c0', '#7e57c2', '#4db6ac', '#66bb6a', '#c0ca33', '#ffb74d', '#e65100', '#78909c'];
 
 	const layer = $derived(hexStore.activeLayer);
-	const isCategorical = $derived(layer?.colorScale === 'categorical');
+	// Use diverging scale when temporal delta mode is active, otherwise use layer's configured scale
+	const effectiveScale = $derived(
+		layer?.temporal && hexStore.temporalMode === 'delta' ? 'diverging' : layer?.colorScale
+	);
+	const isCategorical = $derived(effectiveScale === 'categorical');
+	const isSequential = $derived(effectiveScale === 'sequential');
+	const isFlood = $derived(effectiveScale === 'flood');
+	const isGreen = $derived(effectiveScale === 'green');
+	const isDiverging = $derived(effectiveScale === 'diverging');
+	const isGradient = $derived(isSequential || isFlood || isGreen || isDiverging);
 
-	// Extract unique type labels from visible data
+	const title = $derived(layer ? i18n.t(layer.titleKey) : '');
+
+	// Extract unique type labels from visible data (categorical)
 	const typeEntries = $derived.by(() => {
 		if (!isCategorical) return [];
 		const types = new Map<number, string>();
@@ -21,10 +33,28 @@
 		}
 		return [...types.entries()].sort((a, b) => a[0] - b[0]);
 	});
+
+	const gradient = $derived(
+		isFlood
+			? 'linear-gradient(to right, #3b82f6, #eab308, #dc2626)'
+			: isGreen
+			? 'linear-gradient(to right, #1e293b, #166534, #bbf7d0)'
+			: isDiverging
+			? 'linear-gradient(to right, #b2182b, #f7f7f7, #2166ac)'
+			: 'linear-gradient(to right, #2166ac, #f7f7f7, #b2182b)'
+	);
+
+	const lowLabel = $derived(
+		isFlood ? i18n.t('legend.lowRisk') : isDiverging ? i18n.t('temporal.legend.worse') : i18n.t('legend.low')
+	);
+	const highLabel = $derived(
+		isFlood ? i18n.t('legend.highRisk') : isDiverging ? i18n.t('temporal.legend.better') : i18n.t('legend.high')
+	);
 </script>
 
-{#if layer && isCategorical && typeEntries.length > 0}
+{#if layer && (isCategorical && typeEntries.length > 0)}
 	<div class="legend">
+		<div class="legend-title">{title}</div>
 		<div class="legend-items">
 			{#each typeEntries as [type, label]}
 				<div class="legend-item">
@@ -32,6 +62,16 @@
 					<span class="legend-label">{label || `Tipo ${type}`}</span>
 				</div>
 			{/each}
+		</div>
+	</div>
+{:else if layer && isGradient}
+	<div class="legend">
+		<div class="legend-title">{title}</div>
+		<div class="gradient-bar" style:background={gradient}></div>
+		<div class="gradient-labels">
+			<span>{lowLabel}</span>
+			<span class="gradient-range">0–100</span>
+			<span>{highLabel}</span>
 		</div>
 	</div>
 {/if}
@@ -47,8 +87,17 @@
 		border-radius: 6px;
 		padding: 8px 10px;
 		z-index: 10;
-		min-width: 100px;
-		max-width: 180px;
+		min-width: 120px;
+		max-width: 200px;
+	}
+	.legend-title {
+		font-size: 9px;
+		font-weight: 600;
+		color: rgba(255,255,255,0.7);
+		margin-bottom: 6px;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		line-height: 1.3;
 	}
 	.legend-items {
 		display: flex;
@@ -69,5 +118,30 @@
 	.legend-label {
 		font-size: 9px;
 		color: #d4d4d4;
+	}
+	.gradient-bar {
+		height: 8px;
+		border-radius: 3px;
+		width: 100%;
+	}
+	.gradient-labels {
+		display: flex;
+		justify-content: space-between;
+		font-size: 8px;
+		color: rgba(255,255,255,0.55);
+		margin-top: 3px;
+	}
+	.gradient-range {
+		font-size: 7px;
+		color: rgba(255,255,255,0.35);
+	}
+
+	@media (max-width: 768px) {
+		.legend {
+			bottom: 12px;
+			left: 8px;
+			max-width: 160px;
+			padding: 6px 8px;
+		}
 	}
 </style>

@@ -12,6 +12,8 @@
 	let { mapStore }: { mapStore: MapStore } = $props();
 
 	let container: HTMLDivElement;
+	let hexLayerTitle = '';
+	let hexLayerIsCategorical = false;
 	let map: maplibregl.Map;
 	let lassoActive = false;
 	let catastroActive = false;
@@ -415,9 +417,18 @@
 			const p = e.features![0].properties!;
 			if (!p.h3index) return;
 			map.getCanvas().style.cursor = 'pointer';
-			const score = p.value != null ? Number(p.value).toFixed(1) : '—';
-			const h3short = p.h3index.slice(0, 4) + '...' + p.h3index.slice(-4);
-			tooltip.innerHTML = `<b style="color:#60a5fa">${h3short}</b><br>Score: <span style="color:#e2e8f0;font-weight:600">${score}</span>`;
+
+			const titleLine = hexLayerTitle ? `<div style="color:rgba(255,255,255,0.5);font-size:9px;margin-bottom:2px">${hexLayerTitle}</div>` : '';
+
+			let valueLine: string;
+			if (hexLayerIsCategorical && p.type_label) {
+				valueLine = `<span style="color:#e2e8f0;font-weight:600">${p.type_label}</span>`;
+			} else {
+				const score = p.value != null ? Number(p.value).toFixed(1) : '—';
+				valueLine = `<span style="color:#e2e8f0;font-weight:600">${score}</span><span style="color:rgba(255,255,255,0.4);font-size:9px"> /100</span>`;
+			}
+
+			tooltip.innerHTML = `${titleLine}${valueLine}`;
 			tooltip.style.display = 'block';
 			tooltip.style.left = (e.originalEvent.clientX + 14) + 'px';
 			tooltip.style.top = (e.originalEvent.clientY + 14) + 'px';
@@ -427,6 +438,11 @@
 			if (!lassoActive) map.getCanvas().style.cursor = '';
 			tooltip.style.display = 'none';
 		});
+	}
+
+	export function setHexLayerInfo(title: string, isCategorical: boolean) {
+		hexLayerTitle = title;
+		hexLayerIsCategorical = isCategorical;
 	}
 
 	export function flyToInit() {
@@ -1074,7 +1090,7 @@
 
 	const CATEGORICAL_PALETTE = ['#1565c0', '#7e57c2', '#4db6ac', '#66bb6a', '#c0ca33', '#ffb74d', '#e65100', '#78909c'];
 
-	export function setHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' = 'flood') {
+	export function setHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' = 'flood') {
 		if (!map || !map.isStyleLoaded()) return;
 
 		const src = map.getSource('hexagons') as maplibregl.GeoJSONSource | undefined;
@@ -1114,6 +1130,11 @@
 					r = Math.round(t < 0.5 ? 59 + t * 2 * (234 - 59) : 234 + (t - 0.5) * 2 * (220 - 234));
 					g = Math.round(t < 0.5 ? 130 + t * 2 * (179 - 130) : 179 + (t - 0.5) * 2 * (38 - 179));
 					b = Math.round(t < 0.5 ? 246 + t * 2 * (8 - 246) : 8 + (t - 0.5) * 2 * (38 - 8));
+				} else if (colorScale === 'green') {
+					// dark → forest green → bright green → light green
+					r = Math.round(t < 0.5 ? 30 + t * 2 * (22 - 30) : 22 + (t - 0.5) * 2 * (187 - 22));
+					g = Math.round(t < 0.5 ? 41 + t * 2 * (101 - 41) : 101 + (t - 0.5) * 2 * (247 - 101));
+					b = Math.round(t < 0.5 ? 59 + t * 2 * (52 - 59) : 52 + (t - 0.5) * 2 * (208 - 52));
 				} else {
 					r = Math.round(t < 0.5 ? 33 + t * 2 * (247 - 33) : 247 + (t - 0.5) * 2 * (178 - 247));
 					g = Math.round(t < 0.5 ? 102 + t * 2 * (247 - 102) : 247 + (t - 0.5) * 2 * (24 - 247));

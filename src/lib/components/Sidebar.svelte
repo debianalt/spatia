@@ -12,7 +12,7 @@
 	import type { LensStore } from '$lib/stores/lens.svelte';
 	import type { LassoStore } from '$lib/stores/lasso.svelte';
 	import type { HexStore } from '$lib/stores/hex.svelte';
-	import type { AnalysisConfig } from '$lib/config';
+	import { LENS_CONFIG, type AnalysisConfig, type LensId } from '$lib/config';
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import CTADiagnostic from './CTADiagnostic.svelte';
 
@@ -79,7 +79,7 @@
 <div class="sidebar absolute top-0 right-0 bottom-0 z-10 rounded-l-lg p-3 px-4 border-l border-border w-[440px] text-xs leading-relaxed"
 	style="background: var(--color-panel); backdrop-filter: blur(8px);">
 
-	<button class="collapse-btn" onclick={() => collapsed = true} title="Ocultar panel">
+	<button class="collapse-btn" onclick={() => collapsed = true} title={i18n.t('side.welcome.hidePanel')}>
 		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 4 L18 12 L10 20"/></svg>
 	</button>
 
@@ -133,33 +133,23 @@
 			<div class="welcome-divider">{i18n.t('side.welcome.analysesIntro')}</div>
 
 			<div class="welcome-lenses">
-				<div class="welcome-lens">
-					<span class="lens-name">VIVIR</span>
-					<span class="lens-items">Riesgo hídrico · Riesgo ambiental · Confort climático ·...</span>
-				</div>
-				<div class="welcome-lens">
-					<span class="lens-name">INVERTIR</span>
-					<span class="lens-items">Perfil territorial · Actividad económica · Presión de cambio ·...</span>
-				</div>
-				<div class="welcome-lens">
-					<span class="lens-name">PRODUCIR</span>
-					<span class="lens-items">Potencial agrícola · Salud de la selva · Aptitud silvícola ·...</span>
-				</div>
-				<div class="welcome-lens">
-					<span class="lens-name">SERVIR</span>
-					<span class="lens-items">Accesibilidad · Aislamiento · Brecha territorial ·...</span>
-				</div>
+				{#each (['vivir', 'invertir', 'producir', 'servir'] as LensId[]) as lensId}
+					<div class="welcome-lens">
+						<span class="lens-name" style:color={LENS_CONFIG[lensId].color}>{LENS_CONFIG[lensId].label[i18n.locale]}</span>
+						<span class="lens-items">{i18n.t(`side.welcome.lens.${lensId}.items`)}</span>
+					</div>
+				{/each}
 			</div>
 
 			<div class="welcome-divider">{i18n.t('side.welcome.dataTitle')}</div>
 
 			<div class="welcome-stats">
-				<div>— 319.871 hexágonos H3 a 100m de resolución</div>
-				<div>— 2.012 radios censales · Censo Nacional 2022</div>
-				<div>— 445.000 parcelas catastrales</div>
-				<div>— 1.250.000 edificaciones detectadas por IA</div>
-				<div>— Series históricas desde 1984 · Monitoreo SAR cada ~12 días</div>
-				<div>— Informes PDF por departamento · Diagnósticos por microzona bajo demanda</div>
+				<div>— {i18n.t('side.welcome.stat.hex')}</div>
+				<div>— {i18n.t('side.welcome.stat.radios')}</div>
+				<div>— {i18n.t('side.welcome.stat.parcels')}</div>
+				<div>— {i18n.t('side.welcome.stat.buildings')}</div>
+				<div>— {i18n.t('side.welcome.stat.history')}</div>
+				<div>— {i18n.t('side.welcome.stat.reports')}</div>
 			</div>
 
 			<div class="welcome-divider">{i18n.t('side.onboarding.title')}</div>
@@ -171,9 +161,9 @@
 			</div>
 
 			<div class="welcome-footer">
-				<div>Investigación aplicada en inteligencia territorial</div>
-				<div>Raimundo Elías Gómez · CONICET</div>
-				<div>Google Earth Engine Partner</div>
+				<div>{i18n.t('side.welcome.footer.research')}</div>
+				<div>{i18n.t('side.welcome.footer.author')}</div>
+				<div>{i18n.t('side.welcome.footer.partner')}</div>
 			</div>
 
 			<CTADiagnostic />
@@ -182,7 +172,7 @@
 
 </div>
 {:else}
-	<button class="expand-btn" onclick={() => collapsed = false} title="Mostrar panel">
+	<button class="expand-btn" onclick={() => collapsed = false} title={i18n.t('side.welcome.showPanel')}>
 		<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 4 L6 12 L14 20"/></svg>
 	</button>
 {/if}
@@ -255,8 +245,8 @@
 	.welcome-desc { font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.7; font-weight: 300; }
 	.welcome-divider { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.5); letter-spacing: 0.06em; text-transform: uppercase; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 10px; }
 	.welcome-lenses { display: flex; flex-direction: column; gap: 8px; }
-	.welcome-lens { display: flex; flex-direction: column; gap: 2px; }
-	.lens-name { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.95); letter-spacing: 0.04em; }
+	.welcome-lens { display: flex; flex-direction: column; gap: 2px; padding-left: 10px; border-left: 2px solid rgba(255,255,255,0.1); }
+	.lens-name { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
 	.lens-items { font-size: 12px; color: rgba(255,255,255,0.55); line-height: 1.6; font-weight: 300; }
 	.welcome-stats { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: rgba(255,255,255,0.65); line-height: 1.6; font-weight: 300; }
 	.welcome-steps { display: flex; flex-direction: column; gap: 8px; }
@@ -284,4 +274,14 @@
 		transition: all 0.15s;
 	}
 	.expand-btn:hover { color: #e2e8f0; border-color: #60a5fa; background: rgba(59,130,246,0.1); }
+
+	@media (max-width: 768px) {
+		.sidebar {
+			width: 100% !important;
+			border-radius: 0;
+			border-left: none;
+			max-height: 60vh;
+			bottom: auto;
+		}
+	}
 </style>

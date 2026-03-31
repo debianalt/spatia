@@ -115,9 +115,10 @@ export const PARQUETS = {
 	get sat_sociodemographic() { return getParquetUrl('sat_sociodemographic'); },
 	get sat_economic_activity() { return getParquetUrl('sat_economic_activity'); },
 	get sat_accessibility() { return getParquetUrl('sat_accessibility'); },
-	get overture_scores() { return getParquetUrl('overture_scores'); },
 	// Public infrastructure (datos.gob.ar)
 	get emsa_powerlines() { return getParquetUrl('emsa_powerlines'); },
+	// EUDR deforestation (H3 res-7, 10 provinces)
+	get eudr_deforestation() { return getEudrParquetUrl('eudr_deforestation'); },
 };
 
 export const BASEMAP = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
@@ -180,7 +181,7 @@ export interface HexLayerConfig {
 	parquet: string;
 	variables: HexVariable[];
 	primaryVariable: string;
-	colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical';
+	colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green';
 	aggregation: 'mean' | 'sum' | 'max';
 	petalVars?: HexVariable[];
 	titleKey: string;
@@ -199,6 +200,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'flood_risk',
 		parquet: 'hex_flood_risk',
 		variables: [
+			{ col: 'flood_risk_score', labelKey: 'analysis.flood.riskScore', aggregation: 'mean' },
 			{ col: 'type', labelKey: 'analysis.flood.type', aggregation: 'mean' },
 			{ col: 'type_label', labelKey: 'analysis.flood.typeLabel', aggregation: 'mean' },
 			{ col: 'jrc_occurrence', labelKey: 'analysis.flood.jrcOccurrence', aggregation: 'mean' },
@@ -206,8 +208,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'jrc_seasonality', labelKey: 'analysis.flood.jrcSeasonality', aggregation: 'mean' },
 			{ col: 'flood_extent_pct', labelKey: 'analysis.flood.currentExtent', aggregation: 'mean' },
 		],
-		primaryVariable: 'type',
-		colorScale: 'categorical',
+		primaryVariable: 'flood_risk_score',
+		colorScale: 'flood',
 		aggregation: 'mean',
 		petalVars: [
 			{ col: 'flood_risk_score', labelKey: 'analysis.flood.riskScore', aggregation: 'mean' },
@@ -282,7 +284,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'c_vcf', labelKey: 'sat.green.vcf', aggregation: 'mean' },
 		],
 		primaryVariable: 'score',
-		colorScale: 'sequential',
+		colorScale: 'green',
 		aggregation: 'mean',
 		titleKey: 'sat.green.title',
 		perDepartment: true,
@@ -336,7 +338,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'c_slope', labelKey: 'sat.agri.slope', aggregation: 'mean' },
 		],
 		primaryVariable: 'score',
-		colorScale: 'sequential',
+		colorScale: 'green',
 		aggregation: 'mean',
 		titleKey: 'sat.agri.title',
 		perDepartment: true,
@@ -353,7 +355,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'c_et', labelKey: 'sat.forestH.et', aggregation: 'mean' },
 		],
 		primaryVariable: 'score',
-		colorScale: 'sequential',
+		colorScale: 'green',
 		aggregation: 'mean',
 		titleKey: 'sat.forestH.title',
 		perDepartment: true,
@@ -372,7 +374,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'c_access_50k', labelKey: 'sat.forestry.access50k', aggregation: 'mean' },
 		],
 		primaryVariable: 'score',
-		colorScale: 'sequential',
+		colorScale: 'green',
 		aggregation: 'mean',
 		titleKey: 'sat.forestry.title',
 		perDepartment: true,
@@ -411,25 +413,6 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		colorScale: 'flood',
 		aggregation: 'mean',
 		titleKey: 'sat.gap.title',
-		perDepartment: true,
-	},
-	land_use: {
-		id: 'land_use',
-		parquet: 'sat_land_use',
-		variables: [
-			{ col: 'type', labelKey: 'sat.landUse.type', aggregation: 'mean' },
-			{ col: 'type_label', labelKey: 'sat.landUse.typeLabel', aggregation: 'mean' },
-			{ col: 'frac_trees', labelKey: 'sat.landUse.trees', aggregation: 'mean' },
-			{ col: 'frac_crops', labelKey: 'sat.landUse.crops', aggregation: 'mean' },
-			{ col: 'frac_built', labelKey: 'sat.landUse.built', aggregation: 'mean' },
-			{ col: 'frac_grass', labelKey: 'sat.landUse.grass', aggregation: 'mean' },
-			{ col: 'frac_water', labelKey: 'sat.landUse.water', aggregation: 'mean' },
-			{ col: 'frac_shrub', labelKey: 'sat.landUse.shrub', aggregation: 'mean' },
-		],
-		primaryVariable: 'score',
-		colorScale: 'sequential',
-		aggregation: 'mean',
-		titleKey: 'sat.landUse.title',
 		perDepartment: true,
 	},
 	health_access: {
@@ -473,6 +456,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'territorial_types',
 		parquet: 'sat_territorial_types',
 		variables: [
+			{ col: 'score', labelKey: 'sat.types.score', aggregation: 'mean' },
 			{ col: 'territorial_type', labelKey: 'sat.types.type', aggregation: 'mean' },
 			{ col: 'c_npp', labelKey: 'sat.types.npp', aggregation: 'mean' },
 			{ col: 'c_ndvi', labelKey: 'sat.types.ndvi', aggregation: 'mean' },
@@ -486,8 +470,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'c_ghsl_change', labelKey: 'sat.types.ghslChange', aggregation: 'mean' },
 			{ col: 'c_precipitation', labelKey: 'sat.types.precip', aggregation: 'mean' },
 		],
-		primaryVariable: 'territorial_type',
-		colorScale: 'categorical',
+		primaryVariable: 'score',
+		colorScale: 'sequential',
 		aggregation: 'mean',
 		titleKey: 'sat.types.title',
 		perDepartment: true,
@@ -497,6 +481,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'territorial_scores',
 		parquet: 'overture_scores',
 		variables: [
+			{ col: 'score', labelKey: 'analysis.scores.score', aggregation: 'mean' },
 			{ col: 'type', labelKey: 'analysis.scores.type', aggregation: 'mean' },
 			{ col: 'type_label', labelKey: 'analysis.scores.typeLabel', aggregation: 'mean' },
 			{ col: 'urban_consolidation', labelKey: 'scores.urbanConsolidation', aggregation: 'mean' },
@@ -508,8 +493,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'urbanization', labelKey: 'scores.urbanization', aggregation: 'mean' },
 			{ col: 'water_exposure', labelKey: 'scores.waterExposure', aggregation: 'mean' },
 		],
-		primaryVariable: 'type',
-		colorScale: 'categorical',
+		primaryVariable: 'score',
+		colorScale: 'sequential',
 		aggregation: 'mean',
 		titleKey: 'analysis.scores.title',
 		perDepartment: true,
@@ -518,6 +503,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'sociodemographic',
 		parquet: 'sat_sociodemographic',
 		variables: [
+			{ col: 'score', labelKey: 'analysis.socio.score', aggregation: 'mean' },
 			{ col: 'type', labelKey: 'analysis.socio.type', aggregation: 'mean' },
 			{ col: 'type_label', labelKey: 'analysis.socio.typeLabel', aggregation: 'mean' },
 			{ col: 'densidad_hab_km2', labelKey: 'radio.densidad', aggregation: 'mean' },
@@ -527,8 +513,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'tamano_medio_hogar', labelKey: 'radio.tamHogar', aggregation: 'mean' },
 			{ col: 'pct_computadora', labelKey: 'radio.computadora', aggregation: 'mean' },
 		],
-		primaryVariable: 'type',
-		colorScale: 'categorical',
+		primaryVariable: 'score',
+		colorScale: 'flood',
 		aggregation: 'mean',
 		titleKey: 'analysis.socio.title',
 		perDepartment: true,
@@ -537,6 +523,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'economic_activity',
 		parquet: 'sat_economic_activity',
 		variables: [
+			{ col: 'score', labelKey: 'analysis.economic.score', aggregation: 'mean' },
 			{ col: 'type', labelKey: 'analysis.economic.type', aggregation: 'mean' },
 			{ col: 'type_label', labelKey: 'analysis.economic.typeLabel', aggregation: 'mean' },
 			{ col: 'tasa_empleo', labelKey: 'radio.empleo', aggregation: 'mean' },
@@ -545,8 +532,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'viirs_mean_radiance', labelKey: 'radio.viirs', aggregation: 'mean' },
 			{ col: 'building_density_per_km2', labelKey: 'radio.buildingDensity', aggregation: 'mean' },
 		],
-		primaryVariable: 'type',
-		colorScale: 'categorical',
+		primaryVariable: 'score',
+		colorScale: 'sequential',
 		aggregation: 'mean',
 		titleKey: 'analysis.economic.title',
 		perDepartment: true,
@@ -555,6 +542,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'accessibility',
 		parquet: 'sat_accessibility',
 		variables: [
+			{ col: 'score', labelKey: 'analysis.accessibility.score', aggregation: 'mean' },
 			{ col: 'type', labelKey: 'analysis.accessibility.type', aggregation: 'mean' },
 			{ col: 'type_label', labelKey: 'analysis.accessibility.typeLabel', aggregation: 'mean' },
 			{ col: 'travel_min_posadas', labelKey: 'radio.travelPosadas', aggregation: 'mean' },
@@ -563,11 +551,34 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'dist_nearest_secundaria_km', labelKey: 'radio.distSecundaria', aggregation: 'mean' },
 			{ col: 'dist_primary_m', labelKey: 'radio.distPrimaria', aggregation: 'mean' },
 		],
-		primaryVariable: 'type',
-		colorScale: 'categorical',
+		primaryVariable: 'score',
+		colorScale: 'flood',
 		aggregation: 'mean',
 		titleKey: 'analysis.accessibility.title',
 		perDepartment: true,
+	},
+	// ── EUDR deforestation risk (H3 res-7, 10 provinces) ──
+	eudr: {
+		id: 'eudr',
+		parquet: 'eudr_deforestation',
+		variables: [
+			{ col: 'risk_score', labelKey: 'eudr.riskScore', aggregation: 'mean' },
+			{ col: 'loss_post_2020_pct', labelKey: 'eudr.lossPost2020', aggregation: 'mean' },
+			{ col: 'fire_post_2020_pct', labelKey: 'eudr.firePost2020', aggregation: 'mean' },
+			{ col: 'forest_cover_2020', labelKey: 'eudr.forest2020', aggregation: 'mean' },
+			{ col: 'forest_cover_current', labelKey: 'eudr.forestCurrent', aggregation: 'mean' },
+		],
+		primaryVariable: 'risk_score',
+		colorScale: 'flood',
+		aggregation: 'mean',
+		petalVars: [
+			{ col: 'risk_score', labelKey: 'eudr.riskScore', aggregation: 'mean' },
+			{ col: 'loss_post_2020_pct', labelKey: 'eudr.lossPost2020', aggregation: 'mean' },
+			{ col: 'fire_post_2020_pct', labelKey: 'eudr.firePost2020', aggregation: 'mean' },
+			{ col: 'forest_cover_2020', labelKey: 'eudr.forest2020', aggregation: 'mean' },
+		],
+		titleKey: 'trade.eudr.analysis_title',
+		perDepartment: false,
 	},
 };
 
@@ -758,15 +769,6 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'sat.edu.title',
 		descKey: 'sat.edu.desc',
-		icon: '',
-		status: 'available',
-		spatialUnit: 'hexagon',
-	},
-	{
-		id: 'land_use',
-		lensId: 'producir',
-		titleKey: 'sat.landUse.title',
-		descKey: 'sat.landUse.desc',
 		icon: '',
 		status: 'available',
 		spatialUnit: 'hexagon',
@@ -1045,9 +1047,13 @@ export const DATA_FRESHNESS: Record<string, { dataDate: string; processedDate: s
 	sat_territorial_gap: { dataDate: 'Baseline VIIRS 2022-2024 / Censo 2022 / Nelson 2019', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
 	sat_health_access: { dataDate: 'Baseline Oxford MAP 2019 + Censo 2022', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
 	sat_education_gap: { dataDate: 'Baseline Censo 2022 + Nelson 2019', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
-	sat_land_use: { dataDate: 'Baseline Dynamic World 2024 (Sentinel-2, 10m)', processedDate: '26/03/2026', sourceKey: 'data.source.satellite' },
+	sat_land_use: { dataDate: 'MapBiomas Argentina Collection 1 (Landsat 30m, 2022)', processedDate: '29/03/2026', sourceKey: 'data.source.satellite' },
 	emsa_powerlines: { dataDate: 'EMSA abril 2024', processedDate: '27/03/2026', sourceKey: 'data.source.emsa' },
 	sat_territorial_types: { dataDate: 'PCA + k-means sobre 13 analisis satelitales 2019-2024', processedDate: '28/03/2026', sourceKey: 'data.source.satellite' },
+	sat_sociodemographic: { dataDate: 'Censo Nacional 2022 (INDEC)', processedDate: '29/03/2026', sourceKey: 'data.source.censo' },
+	sat_economic_activity: { dataDate: 'Censo 2022 + VIIRS 2022-2024 + GBA 2025', processedDate: '29/03/2026', sourceKey: 'data.source.satellite' },
+	sat_accessibility: { dataDate: 'Nelson 2019 / Oxford MAP 2019 / OSM', processedDate: '29/03/2026', sourceKey: 'data.source.satellite' },
+	eudr_deforestation: { dataDate: 'Hansen GFC v1.12 + MODIS MCD64A1 (cutoff 31/12/2020)', processedDate: '27/03/2026', sourceKey: 'data.source.satellite' },
 };
 
 // ── EUDR Configuration ──────────────────────────────────────────────────

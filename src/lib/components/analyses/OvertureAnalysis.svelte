@@ -3,7 +3,7 @@
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import CTADiagnostic from '$lib/components/CTADiagnostic.svelte';
 	import PetalChart from '$lib/components/PetalChart.svelte';
-	import { HEX_LAYER_REGISTRY, DATA_FRESHNESS, getTemporalCol, type AnalysisConfig, type TemporalMode } from '$lib/config';
+	import { HEX_LAYER_REGISTRY, DATA_FRESHNESS, getSatDptoUrl, getFloodDptoUrl, getScoresDptoUrl, getTemporalCol, type AnalysisConfig, type TemporalMode } from '$lib/config';
 	import { initDuckDB, query } from '$lib/stores/duckdb';
 
 	let {
@@ -81,6 +81,11 @@
 			if (score >= 40) return '#eab308';
 			return '#3b82f6';
 		}
+		if (colorScale === 'green') {
+			if (score >= 70) return '#22c55e';
+			if (score >= 40) return '#166534';
+			return '#1e293b';
+		}
 		if (score >= 70) return '#b2182b';
 		if (score >= 40) return '#d6604d';
 		if (score >= 20) return '#92c5de';
@@ -88,22 +93,26 @@
 	}
 
 	function getScoreLevel(score: number): string {
-		if (score >= 70) return 'Alto';
-		if (score >= 40) return 'Medio';
-		if (score >= 20) return 'Bajo';
-		return 'Muy bajo';
+		if (score >= 70) return i18n.t('legend.high');
+		if (score >= 40) return i18n.t('legend.medium');
+		if (score >= 20) return i18n.t('legend.low');
+		return i18n.t('legend.veryLow');
 	}
 
 	const legendGradient = $derived(
 		colorScale === 'flood'
 			? 'linear-gradient(to right, #3b82f6, #eab308, #dc2626)'
+			: colorScale === 'green'
+			? 'linear-gradient(to right, #1e293b, #166534, #22c55e, #bbf7d0)'
 			: 'linear-gradient(to right, #2166ac, #f7f7f7, #b2182b)'
 	);
 
 	const legendLabels = $derived(
-		colorScale === 'flood'
-			? ['Bajo', 'Medio', 'Alto']
-			: ['Bajo', 'Medio', 'Alto']
+		[i18n.t('legend.low'), i18n.t('legend.medium'), i18n.t('legend.high')]
+	);
+
+	const scoreDirection = $derived(
+		colorScale === 'flood' ? 'danger' : isCategorical ? 'categorical' : 'good'
 	);
 
 	// Auto-select top department on first load
@@ -154,7 +163,7 @@
 	// Component variables (skip score, type, type_label, pca)
 	const componentVars = $derived(
 		layerCfg?.variables.filter(v =>
-			!['score', 'type', 'type_label', 'pca_1', 'pca_2'].includes(v.col)
+			!['score', 'flood_risk_score', 'risk_score', 'type', 'type_label', 'territorial_type', 'pca_1', 'pca_2'].includes(v.col)
 		) ?? []
 	);
 
@@ -169,6 +178,106 @@
 		return [{ values, color: getTypeColor(selectedHex.type ?? 1) }];
 	});
 
+	// ── Cross-analysis profile for selected hex ──
+	const CROSS_ANALYSIS_IDS = ['environmental_risk', 'climate_comfort', 'green_capital', 'change_pressure', 'agri_potential', 'forest_health', 'land_use', 'isolation_index'];
+	const CROSS_TITLE_KEYS: Record<string, string> = { land_use: 'sat.landUse.title' };
+	const CROSS_ANALYSES = $derived(
+		CROSS_ANALYSIS_IDS.map(id => {
+			const cfg = HEX_LAYER_REGISTRY[id];
+			const titleKey = cfg?.titleKey ?? CROSS_TITLE_KEYS[id] ?? id;
+			return { id, label: i18n.t(titleKey) };
+		})
+	);
+
+	let crossProfile = $state<{ label: string; typeLabel: string }[]>([]);
+
+	$effect(() => {
+		const hex = selectedHex;
+		const dpto = selectedDpto;
+		if (!hex || !dpto || !deptList.length) { crossProfile = []; return; }
+
+		const dept = deptList.find((d: any) => d.dpto === dpto);
+		if (!dept) { crossProfile = []; return; }
+
+		const h3 = hex.h3index;
+		const promises = CROSS_ANALYSES
+			.filter(a => a.id !== analysis.id)
+			.map(async (a) => {
+				try {
+					let url: string;
+					if (a.id === 'flood_risk') url = getFloodDptoUrl(dept.parquetKey);
+					else if (a.id === 'territorial_scores') url = getScoresDptoUrl(dept.parquetKey);
+					else url = getSatDptoUrl(a.id, dept.parquetKey);
+					const r = await query(`SELECT type_label FROM '${url}' WHERE h3index = '${h3}'`);
+					if (r.numRows > 0) {
+						const row = r.get(0)!.toJSON() as Record<string, any>;
+						return { label: a.label, typeLabel: String(row.type_label || '—') };
+					}
+				} catch { /* skip unavailable */ }
+				return { label: a.label, typeLabel: '—' };
+			});
+
+		Promise.all(promises).then(results => { crossProfile = results; });
+	});
+
+	// ── Type distribution for selected department ──
+	let typeDistribution = $state<{ type: number; label: string; count: number; pct: number; avgScore: number | null }[]>([]);
+
+	$effect(() => {
+		const dpto = selectedDpto;
+		if (!dpto || !dataUrl) { typeDistribution = []; return; }
+
+		const pv = layerCfg?.primaryVariable ?? 'score';
+		const scoreCol = pv === 'type' || pv === 'territorial_type' ? '' : `, AVG(${pv}) as avg_score`;
+		query(`SELECT type, type_label, COUNT(*) as n${scoreCol} FROM '${dataUrl}' GROUP BY type, type_label ORDER BY n DESC`)
+			.then(r => {
+				const total = Array.from({ length: r.numRows }, (_, i) => Number(r.get(i)!.toJSON().n)).reduce((a, b) => a + b, 0);
+				typeDistribution = Array.from({ length: r.numRows }, (_, i) => {
+					const row = r.get(i)!.toJSON() as Record<string, any>;
+					return {
+						type: Number(row.type),
+						label: String(row.type_label || `Tipo ${row.type}`),
+						count: Number(row.n),
+						pct: Math.round(Number(row.n) / total * 100),
+						avgScore: row.avg_score != null ? Number(row.avg_score) : null,
+					};
+				});
+			})
+			.catch(() => { typeDistribution = []; });
+	});
+
+	// ── Diagnostic: dominant type per analysis for department ──
+	let showDiagnostic = $state(false);
+	let diagnosticData = $state<{ label: string; dominant: string; pct: number }[]>([]);
+
+	async function loadDiagnostic() {
+		if (!selectedDpto || !deptList.length) return;
+		const dept = deptList.find((d: any) => d.dpto === selectedDpto);
+		if (!dept) return;
+
+		showDiagnostic = true;
+		const allAnalyses = [...CROSS_ANALYSES, { id: analysis.id, label: i18n.t(analysis.titleKey).replace(/ \(Misiones\)/, '') }];
+
+		const results = await Promise.all(allAnalyses.map(async (a) => {
+			try {
+				let url: string;
+				if (a.id === 'flood_risk') url = getFloodDptoUrl(dept.parquetKey);
+				else if (a.id === 'territorial_scores') url = getScoresDptoUrl(dept.parquetKey);
+				else url = getSatDptoUrl(a.id, dept.parquetKey);
+				const r = await query(`SELECT type_label, COUNT(*) as n FROM '${url}' GROUP BY type_label ORDER BY n DESC LIMIT 1`);
+				if (r.numRows > 0) {
+					const row = r.get(0)!.toJSON() as Record<string, any>;
+					const total_r = await query(`SELECT COUNT(*) as t FROM '${url}'`);
+					const total = Number(total_r.get(0)!.toJSON().t);
+					return { label: a.label, dominant: String(row.type_label), pct: Math.round(Number(row.n) / total * 100) };
+				}
+			} catch { /* skip */ }
+			return { label: a.label, dominant: '—', pct: 0 };
+		}));
+
+		diagnosticData = results;
+	}
+
 	// PDF report URL for selected department
 	const reportUrl = $derived.by(() => {
 		if (!selectedDpto || !layerCfg || !deptList.length) return null;
@@ -181,6 +290,16 @@
 	const METHOD_COMMON = 'Clasificacion por PCA (analisis de componentes principales) seguido de k-means clustering sobre las variables estandarizadas. Cada hexagono se asigna al tipo cuyo centroide multivariado es mas cercano. La validacion se realiza mediante coeficiente de silueta.';
 
 	const ANALYSIS_CONTENT: Record<string, { howToRead: string; implications: string; method: string }> = {
+		flood_risk: {
+			howToRead: 'Los colores representan el riesgo hidrico de cada hexagono, combinando la presencia historica de agua (JRC, 1984–2021) y la deteccion actual de inundacion (Sentinel-1 SAR). Azul oscuro = riesgo bajo; amarillo = riesgo medio; rojo = riesgo alto. Selecciona un departamento para ver el detalle.',
+			implications: 'Las zonas de riesgo alto pueden enfrentar anegamientos recurrentes, afectando el valor inmobiliario, la habitabilidad y la infraestructura de servicios basicos (agua, cloacas). La recurrencia interanual distingue inundaciones estacionales predecibles de eventos extremos esporadicos.',
+			method: 'Indice compuesto 0–100: 50% presencia historica de agua (JRC Global Surface Water, Landsat 1984–2021) + 20% recurrencia interanual (JRC) + 30% extension actual (Sentinel-1 SAR, ultima imagen procesada). Fuentes: JRC v1.4 + Copernicus Sentinel-1. Resolucion: H3 resolucion 9.',
+		},
+		territorial_scores: {
+			howToRead: 'El mapa clasifica cada hexagono en tipos de consolidacion urbana segun 8 indicadores derivados de Overture Maps: pavimentacion, consolidacion, acceso a servicios, vitalidad comercial, conectividad vial, mezcla edilicia, urbanizacion y exposicion hidrica. Cada color representa un perfil urbano distinto.',
+			implications: 'Los tipos permiten distinguir nucleos urbanos consolidados, periferias en expansion con servicios incompletos, y zonas rurales sin infraestructura urbana. La clasificacion multivariada evita reducir la complejidad urbana a un unico indicador de "desarrollo".',
+			method: `${METHOD_COMMON} 8 variables: paving_index, urban_consolidation, service_access, commercial_vitality, road_connectivity, building_mix, urbanization, water_exposure. Fuente: Overture Maps Foundation (CC BY 4.0, release 2026-03-18) via walkthru.earth. k=5 tipos.`,
+		},
 		environmental_risk: {
 			howToRead: 'El mapa clasifica cada hexagono en tipos de riesgo ambiental segun la co-ocurrencia de deforestacion, amplitud termica, pendiente y altura sobre drenaje. Cada color representa un tipo distinto de configuracion de riesgo.',
 			implications: 'Los tipos permiten identificar configuraciones de riesgo cualitativamente distintas: zonas de alta pendiente con baja deforestacion difieren estructuralmente de zonas planas con alta perdida forestal, aunque ambas puedan tener "riesgo" similar en un indice unico.',
@@ -218,7 +337,7 @@
 		},
 		forestry_aptitude: {
 			howToRead: 'El mapa clasifica cada hexagono en tipos de aptitud forestal comercial segun la co-ocurrencia de acidez del suelo, precipitacion, pendiente, y accesibilidad logistica.',
-			implications: 'Los tipos identifican zonas optimas para plantaciones de pino/eucalipto (suelo acido, lluvia suficiente, pendiente mecanizable, cerca de rutas) frente a zonas marginales donde la forestacion comercial no es viable.',
+			implications: 'Los tipos identifican zonas optimas para plantaciones de pino/eucalipto (suelo acido, lluvia suficiente, pendiente mecanizable, cerca de rutas) frente a zonas marginales donde la forestacion comercial no es viable. Este analisis evalua aptitud del suelo y clima — no reemplaza la verificacion de restricciones legales (areas protegidas, comunidades indigenas, Ley de Bosques 26.331).',
 			method: `${METHOD_COMMON} Variables: pH SoilGrids, arcilla, precipitacion CHIRPS, pendiente FABDEM, distancia a ruta OSM, accesibilidad Nelson. k=3 tipos, silueta=0.33.`,
 		},
 		isolation_index: {
@@ -237,14 +356,44 @@
 			method: `${METHOD_COMMON} Variables: sin instruccion Censo 2022, desercion 13-18, solo primaria, universitarios, aislamiento Nelson. k=4 tipos, silueta=0.35.`,
 		},
 		land_use: {
-			howToRead: 'El mapa clasifica cada hexagono en tipos de cobertura del suelo segun la co-ocurrencia de las 9 fracciones de uso: bosque, cultivos, pasturas, construido, agua, arbustos, inundable, desnudo y otros.',
-			implications: 'Los tipos separan bosque dominante (72% de Misiones), paisaje abierto agropecuario, cuerpos de agua, y nucleos urbanos. Esta clasificacion reemplaza el indice de Shannon con una tipologia directamente interpretable.',
-			method: `${METHOD_COMMON} Fuente: Dynamic World v1 (Sentinel-2, 10m, 2024). 9 fracciones de cobertura. k=4 tipos, silueta=0.52.`,
+			howToRead: 'El mapa clasifica cada hexagono segun su cobertura dominante: selva nativa, plantacion forestal, pastizal, agricultura, agua o urbano. La fuente es MapBiomas Argentina (Landsat 30m, 2022) que distingue bosque nativo de silvicultura.',
+			implications: 'La separacion entre selva nativa (73%) y plantacion forestal (12%) permite evaluar el estado de conservacion real: los pinares/eucaliptos no son selva paranaense aunque Dynamic World los clasifique igual. Los mosaicos agropecuarios indican zonas de transicion activa.',
+			method: `${METHOD_COMMON} Fuente: MapBiomas Argentina Collection 1 (Landsat 30m, 2022). Clases remapeadas: bosque nativo, plantacion, pastizal, agricultura, mosaico, humedal, urbano, agua. k=6 tipos, silueta=0.62.`,
 		},
 		territorial_gap: {
 			howToRead: 'El mapa clasifica cada hexagono en tipos de brecha territorial segun la co-ocurrencia de actividad economica, pobreza, acceso a agua, cloacas y aislamiento.',
 			implications: 'Los tipos separan urbanizacion sin servicios (luces nocturnas pero sin cloacas), pobreza rural estructural (alto NBI + aislamiento), y zonas con servicios consolidados. La clasificacion multivariada evita confundir causas distintas de desigualdad.',
 			method: `${METHOD_COMMON} Variables: radiancia VIIRS, NBI Censo 2022, acceso a agua y cloacas Censo 2022, aislamiento Nelson. k=4 tipos, silueta=0.31.`,
+		},
+		powerline_density: {
+			howToRead: 'Mapa de densidad de lineas de media y alta tension. Hexagonos mas claros = mayor densidad de infraestructura electrica. Score basado en longitud total y cantidad de lineas dentro de cada hexagono.',
+			implications: 'La cobertura electrica condiciona toda actividad productiva y residencial. Zonas con baja densidad de lineas requieren extension de red para habilitar nuevos emprendimientos. La distancia a lineas existentes es el principal factor de costo de electrificacion rural.',
+			method: 'Fuente: EMSA (Secretaria de Energia, datos.energia.gob.ar, abril 2024). Lineas de media y alta tension georreferenciadas, intersectadas con grilla H3 resolucion 9. Score = longitud total de lineas / area del hexagono, normalizado 0-100.',
+		},
+		territorial_types: {
+			howToRead: 'El mapa clasifica cada hexagono en tipos territoriales segun su metabolismo ecosistemico: productividad, apropiacion humana y dinamica de cambio. Cada color representa un tipo cualitativamente distinto de territorio.',
+			implications: 'Los tipos territoriales sintetizan 13 variables satelitales en una clasificacion interpretable. Permiten identificar selva productiva intacta, mosaicos agro-forestales en transicion, zonas agricolas consolidadas, periurbanos en expansion y nucleos urbanos — cada uno con necesidades de gestion distintas.',
+			method: `${METHOD_COMMON} 13 variables: NPP, NDVI, cobertura arborea, fraccion arboles/cultivos/construido, deforestacion, luces nocturnas, tendencia VIIRS, expansion GHSL, precipitacion. k=8 tipos. Fuentes: MODIS, Hansen GFC, VIIRS, GHSL, CHIRPS.`,
+		},
+		sociodemographic: {
+			howToRead: 'El mapa clasifica cada hexagono en tipos sociodemograficos segun la co-ocurrencia de densidad poblacional, pobreza (NBI), hacinamiento, tenencia de vivienda, tamano de hogar y acceso digital. Cada color representa un perfil censal distinto.',
+			implications: 'Los tipos distinguen zonas urbanas densas con bajo NBI, periferias con hacinamiento y pobreza, y zonas rurales dispersas con alta propiedad pero baja conectividad. Esta clasificacion multivariada evita reducir la complejidad social a un solo indicador.',
+			method: `${METHOD_COMMON} 6 variables del Censo Nacional 2022 (INDEC): densidad hab/km2, % NBI, % hacinamiento, % propietarios, tamano medio hogar, % computadora. Variables a nivel radio censal, agregadas a H3 via crosswalk ponderado por area.`,
+		},
+		economic_activity: {
+			howToRead: 'El mapa clasifica cada hexagono en tipos de actividad economica segun la co-ocurrencia de empleo, actividad economica, formacion universitaria, luces nocturnas y densidad edilicia. Cada color representa un nivel de dinamismo distinto.',
+			implications: 'Los tipos separan centros economicos consolidados (alto empleo + universitarios + luces), periferias activas con posible informalidad (alta actividad, bajo empleo formal), y zonas rurales de baja actividad economica. La radiancia nocturna (VIIRS) es un proxy robusto de actividad que complementa los datos censales.',
+			method: `${METHOD_COMMON} 5 variables: tasa de empleo y actividad (Censo 2022 INDEC, 14+ anos), % universitarios (Censo 2022), radiancia media VIIRS 500m (2022-2024), densidad edilicia Global Building Atlas 2025. Variables censales agregadas a H3 via crosswalk.`,
+		},
+		eudr: {
+			howToRead: 'El mapa muestra el riesgo de deforestacion post-2020 por hexagono (H3 res-7, ~5 km2). Score alto (rojo) = mayor perdida forestal o actividad de fuego despues del cutoff EUDR (31/12/2020). Cobertura: 10 provincias del NOA y NEA argentino.',
+			implications: 'Hexagonos con deforestacion post-2020 representan riesgo de no-conformidad bajo la Regulacion (UE) 2023/1115. Exportaciones de commodities (soja, carne, madera) originados en estas zonas requieren due diligence reforzado. Este analisis es orientativo — la verificacion formal requiere geometria parcelaria exacta.',
+			method: 'Score compuesto 0-100: 70% perdida forestal post-2020 (Hansen GFC v1.12, Landsat 30m) + 20% area quemada post-2020 (MODIS MCD64A1, 500m) + 10% perdida de cobertura previa. Cutoff EUDR: 31/12/2020. Resolucion espacial: H3 resolucion 7 (~5.16 km2). Cobertura: Salta, Jujuy, Tucuman, Catamarca, Sgo. del Estero, Formosa, Chaco, Corrientes, Misiones, Entre Rios.',
+		},
+		accessibility: {
+			howToRead: 'El mapa clasifica cada hexagono en tipos de accesibilidad segun la co-ocurrencia de tiempo de viaje a Posadas, a la cabecera departamental, distancia a hospital, escuela secundaria y ruta principal. Cada color representa un nivel de conectividad distinto.',
+			implications: 'Los tipos distinguen conectividad plena (cercania a servicios y rutas), accesibilidad parcial (cerca de ruta pero lejos de servicios especializados), y aislamiento funcional (lejos de todo). Cada configuracion requiere estrategias de inversion en infraestructura distintas.',
+			method: `${METHOD_COMMON} 5 variables: tiempo motorizado a Posadas y cabecera (Nelson et al. 2019, superficie de friccion Oxford MAP), distancia euclidiana a hospital, escuela secundaria y ruta primaria (OSM). Fuente: Nelson 2019 + Oxford MAP 2019 + OSM.`,
 		},
 	};
 
@@ -278,7 +427,7 @@
 			: legendLabels
 	);
 
-	const displayScore = $derived(selectedHex ? (getDisplayVal(selectedHex, 'score') ?? 0) : 0);
+	const displayScore = $derived(selectedHex ? (getDisplayVal(selectedHex, layerCfg?.primaryVariable ?? 'score') ?? 0) : 0);
 </script>
 
 {#if selectedHex && selectedDpto && isPerDept}
@@ -309,10 +458,22 @@
 			</div>
 		{/if}
 
+		{#if crossProfile.length > 0}
+			<div class="cross-profile">
+				<div class="cross-title">{i18n.t('section.territorialProfile')}</div>
+				{#each crossProfile as cp}
+					<div class="cross-row">
+						<span class="cross-label">{cp.label}</span>
+						<span class="cross-value">{cp.typeLabel}</span>
+					</div>
+				{/each}
+			</div>
+		{/if}
+
 		{#if freshness}
 			<div class="source-note-box">
-				<div><strong>Fuente:</strong> {i18n.t(freshness.sourceKey)}</div>
-				<div><strong>Procesado:</strong> {freshness.processedDate}</div>
+				<div><strong>{i18n.t('section.source')}:</strong> {i18n.t(freshness.sourceKey)}</div>
+				<div><strong>{i18n.t('section.processed')}:</strong> {freshness.processedDate}</div>
 			</div>
 		{/if}
 	</div>
@@ -330,34 +491,38 @@
 			<div class="hint">{i18n.t('analysis.flood.clickHint')}</div>
 		{/if}
 
-		{#if reportUrl}
-			<div class="download-row">
-				<a class="download-btn" href={reportUrl} target="_blank" rel="noopener">
-					Informe PDF <span class="download-date">({freshness?.processedDate})</span>
-				</a>
-				{#if dataUrl}
-					<button class="download-btn download-secondary" onclick={downloadCsv}>
-						Datos (CSV)
-					</button>
-				{/if}
+		{#if typeDistribution.length > 0}
+			<div class="type-dist">
+				<div class="cross-title">{i18n.t('section.typeDistribution')}</div>
+				{#each typeDistribution as td}
+					<div class="cross-row">
+						<span class="type-dot" style:background={isCategorical ? getTypeColor(td.type) : getScoreColor(td.avgScore ?? 50)}></span>
+						<span class="cross-label">{td.label}</span>
+						<span class="cross-value">{td.count.toLocaleString()} ({td.pct}%)</span>
+					</div>
+				{/each}
 			</div>
 		{/if}
 
+		<div class="action-row">
+			<a class="action-btn" href="mailto:spatia.unused740@passinbox.com?subject=Solicitud%20de%20informe%20{selectedDpto}%20-%20{analysis.id}&body=Solicito%20informe%20territorial%20para%20el%20departamento%20{selectedDpto}%20en%20el%20analisis%20{analysis.id}." style="text-align:center;text-decoration:none;">{i18n.t('section.requestReport')}</a>
+		</div>
+
 		{#if content}
 			<details class="method-details">
-				<summary class="method-summary">Como leer este mapa</summary>
+				<summary class="method-summary">{i18n.t('section.howToRead')}</summary>
 				<div class="method-body">
 					<p class="explain-text">{content.howToRead}</p>
 				</div>
 			</details>
 			<details class="method-details">
-				<summary class="method-summary">Implicancias</summary>
+				<summary class="method-summary">{i18n.t('section.implications')}</summary>
 				<div class="method-body">
 					<p class="explain-text">{content.implications}</p>
 				</div>
 			</details>
 			<details class="method-details">
-				<summary class="method-summary">Metodologia</summary>
+				<summary class="method-summary">{i18n.t('section.methodology')}</summary>
 				<div class="method-body">
 					<p class="explain-text">{content.method}</p>
 				</div>
@@ -366,8 +531,8 @@
 
 		{#if freshness}
 			<div class="source-note-box">
-				<div><strong>Fuente:</strong> {i18n.t(freshness.sourceKey)}</div>
-				<div><strong>Procesado:</strong> {freshness.processedDate}</div>
+				<div><strong>{i18n.t('section.source')}:</strong> {i18n.t(freshness.sourceKey)}</div>
+				<div><strong>{i18n.t('section.processed')}:</strong> {freshness.processedDate}</div>
 			</div>
 		{/if}
 	</div>
@@ -377,11 +542,22 @@
 	<div class="view">
 		<p class="desc">{i18n.t(analysis.descKey)}</p>
 
+		{#if !isCategorical}
+			<div class="score-info-box">
+				<span class="score-range">{i18n.t('legend.range')}</span>
+				{#if scoreDirection === 'danger'}
+					<span class="score-dir score-dir-danger">{i18n.t('legend.highMeansDanger')}</span>
+				{:else}
+					<span class="score-dir score-dir-good">{i18n.t('legend.highMeansGood')}</span>
+				{/if}
+			</div>
+		{/if}
+
 		{#if deptSummary}
 			<div class="summary-cards">
 				<div class="summary-card">
 					<div class="card-value">{deptSummary.province.total_hexes?.toLocaleString()}</div>
-					<div class="card-label">Zonas analizadas</div>
+					<div class="card-label">{i18n.t('section.zonesAnalyzed')}</div>
 				</div>
 			</div>
 		{/if}
@@ -400,21 +576,21 @@
 
 		{#if content}
 			<details class="method-details">
-				<summary class="method-summary">Como leer este mapa</summary>
+				<summary class="method-summary">{i18n.t('section.howToRead')}</summary>
 				<div class="method-body">
 					<p class="explain-text">{content.howToRead}</p>
 				</div>
 			</details>
 
 			<details class="method-details">
-				<summary class="method-summary">Implicancias</summary>
+				<summary class="method-summary">{i18n.t('section.implications')}</summary>
 				<div class="method-body">
 					<p class="explain-text">{content.implications}</p>
 				</div>
 			</details>
 
 			<details class="method-details">
-				<summary class="method-summary">Metodologia</summary>
+				<summary class="method-summary">{i18n.t('section.methodology')}</summary>
 				<div class="method-body">
 					<p class="explain-text">{content.method}</p>
 					<div class="method-components">
@@ -431,8 +607,8 @@
 
 		{#if freshness}
 			<div class="source-note-box">
-				<div><strong>Fuente:</strong> {i18n.t(freshness.sourceKey)}</div>
-				<div><strong>Procesado:</strong> {freshness.processedDate}</div>
+				<div><strong>{i18n.t('section.source')}:</strong> {i18n.t(freshness.sourceKey)}</div>
+				<div><strong>{i18n.t('section.processed')}:</strong> {freshness.processedDate}</div>
 			</div>
 		{/if}
 
@@ -489,6 +665,11 @@
 <style>
 	.view { font-size: 11px; }
 	.desc { color: #a3a3a3; margin: 0 0 8px; line-height: 1.4; }
+	.score-info-box { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding: 5px 8px; background: rgba(255,255,255,0.04); border-radius: 4px; border: 1px solid rgba(255,255,255,0.06); }
+	.score-range { font-size: 9px; color: #737373; font-weight: 600; }
+	.score-dir { font-size: 9px; font-weight: 500; }
+	.score-dir-danger { color: #f87171; }
+	.score-dir-good { color: #4ade80; }
 	.freshness { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; padding: 4px 6px; background: rgba(255,255,255,0.03); border-radius: 4px; }
 	.freshness-label { color: #737373; font-size: 9px; }
 	.freshness-source { color: #525252; font-size: 9px; }
@@ -529,6 +710,17 @@
 	.score-value { font-size: 13px; font-weight: 700; min-width: 32px; text-align: right; }
 	.petal-section { margin: 6px 0; }
 	.petal-wrapper { display: flex; justify-content: center; margin: 0 auto; max-width: 260px; }
+
+	/* Cross-analysis profile + type distribution + diagnostic */
+	.cross-profile, .type-dist, .diagnostic { margin: 10px 0; padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+	.cross-title { font-size: 9px; font-weight: 600; color: #a3a3a3; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+	.cross-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; font-size: 10px; }
+	.cross-label { color: #737373; flex-shrink: 0; min-width: 90px; }
+	.cross-value { color: #d4d4d4; font-weight: 500; }
+	.type-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+	.action-row { display: flex; gap: 6px; margin: 10px 0; }
+	.action-btn { flex: 1; padding: 6px 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 4px; color: #a3a3a3; font-size: 9px; cursor: pointer; transition: all 0.15s; }
+	.action-btn:hover { background: rgba(255,255,255,0.08); color: #d4d4d4; }
 	.detail-label { font-size: 9px; color: #d4d4d4; margin-bottom: 2px; }
 	.detail-value { font-size: 14px; font-weight: 700; color: #e2e8f0; }
 	.detail-desc { font-size: 8px; color: #a3a3a3; margin-top: 2px; }

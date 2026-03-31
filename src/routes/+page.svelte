@@ -4,15 +4,15 @@
 	import MapLegend from '$lib/components/MapLegend.svelte';
 	import Controls from '$lib/components/Controls.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
-	import ChatPanel from '$lib/components/ChatPanel.svelte';
 	import LensSelector from '$lib/components/LensSelector.svelte';
 	import { MapStore } from '$lib/stores/map.svelte';
 	import { LensStore } from '$lib/stores/lens.svelte';
 	import { LassoStore } from '$lib/stores/lasso.svelte';
 	import { HexStore } from '$lib/stores/hex.svelte';
 	import { initDuckDB, query, isReady } from '$lib/stores/duckdb';
-	import { PARQUETS, MAP_INIT, HEX_LAYER_REGISTRY, type AnalysisConfig } from '$lib/config';
+	import { PARQUETS, MAP_INIT, HEX_LAYER_REGISTRY, getAnalysisById, getAnalysesForLens, type AnalysisConfig, type LensId } from '$lib/config';
 	import { i18n, type Locale } from '$lib/stores/i18n.svelte';
+	import { page } from '$app/stores';
 
 	const mapStore = new MapStore();
 	const lensStore = new LensStore();
@@ -21,16 +21,41 @@
 
 	let mapComponent: ReturnType<typeof MapComponent>;
 	let mapContainer: HTMLDivElement;
-	let chatCollapsed = $state(true);
+	// ── URL state: read params on mount, write on change ──
+	function updateUrlState() {
+		const params = new URLSearchParams();
+		if (lensStore.activeLens) params.set('lens', lensStore.activeLens);
+		if (lensStore.activeAnalysis) params.set('a', lensStore.activeAnalysis.id);
+		if (hexStore.selectedDpto) params.set('dept', hexStore.selectedDpto);
+		const qs = params.toString();
+		window.history.replaceState({}, '', qs ? `?${qs}` : window.location.pathname);
+	}
+
+	$effect(() => {
+		const _lens = lensStore.activeLens;
+		const _analysis = lensStore.activeAnalysis;
+		const _dept = hexStore.selectedDpto;
+		if (typeof window !== 'undefined') updateUrlState();
+	});
 
 	onMount(() => {
+		// Restore state from URL params
+		const params = new URLSearchParams(window.location.search);
+		const lens = params.get('lens') as LensId | null;
+		const analysisId = params.get('a');
+		if (lens) {
+			lensStore.setLens(lens);
+			if (analysisId) {
+				const a = getAnalysisById(analysisId);
+				if (a) lensStore.setAnalysis(a);
+			}
+		}
+
 		initDuckDB()
 			.then(() => {
 				warmupRadioStats();
 			})
 			.catch(e => console.warn('DuckDB init failed:', e));
-
-		// No animation — map starts directly at Posadas with 3D buildings
 
 		mapContainer?.addEventListener('radio-select', ((e: CustomEvent) => {
 			if (lassoStore.active) return;
@@ -268,6 +293,7 @@
 			if (layerCfg) {
 				hexStore.setLayer(analysis.id);
 				mapStore.setActiveHexLayer(analysis.id);
+				mapComponent?.setHexLayerInfo(i18n.t(layerCfg.titleKey), layerCfg.colorScale === 'categorical');
 			} else {
 				// Fallback: direct load (legacy)
 				loadHexChoropleth(analysis);
@@ -657,6 +683,9 @@
 		mapComponent?.clearHexChoropleth();
 		mapComponent?.clearHexZoneHighlight();
 		mapStore.setActiveHexLayer(hexStore.activeLayer?.id ?? null);
+		if (hexStore.activeLayer) {
+			mapComponent?.setHexLayerInfo(i18n.t(hexStore.activeLayer.titleKey), hexStore.activeLayer.colorScale === 'categorical');
+		}
 		await hexStore.loadDepartment(dpto, parquetKey);
 		prevDataVersion = hexStore.dataVersion;
 		// Render outside Svelte's reactive batch to prevent $effect interference
@@ -676,6 +705,7 @@
 		mapStore.clearRadios();
 		mapStore.clearChatState();
 		mapStore.clearHexState();
+		mapComponent?.setHexLayerInfo('', false);
 		mapStore.clearFloodParcelState();
 		mapStore.clearScoresParcelState();
 		hexStore.clearAll();
@@ -698,63 +728,16 @@
 		}
 	}
 
-	function handleChatResponse(response: {
-		text: string;
-		mapActions: Array<{ type: string; redcodes?: string[]; values?: number[]; h3indices?: string[]; indicator?: string; lat?: number; lng?: number; zoom?: number }>;
-		chartData: Array<{ title: string; type: string; data: Array<{ label: string; value: number }>; unit?: string }>;
-		toolCalls: Array<{ name: string; elapsed: number }>;
-	}) {
-		// Process map actions
-		for (const action of response.mapActions) {
-			if (action.type === 'hex_choropleth' && action.h3indices && action.values) {
-				const entries = action.h3indices.map((h, i) => ({ h3index: h, value: action.values![i] }));
-				mapComponent?.setHexChoropleth(entries, 'flood');
-			} else if (action.type === 'choropleth' && action.redcodes && action.values) {
-				const entries = action.redcodes.map((rc, i) => ({ redcode: rc, value: action.values![i] }));
-				mapStore.setChatHighlight(action.redcodes);
-				mapComponent?.setChatChoropleth(entries);
-			} else if (action.type === 'highlight' && action.redcodes) {
-				mapStore.setChatHighlight(action.redcodes);
-				if (action.redcodes.length === 1) {
-					// Single radio from chat: select with red, highlight red
-					const redcode = action.redcodes[0];
-					if (!mapStore.hasRadio(redcode)) {
-						mapStore.addRadio(redcode, { census: {}, enriched: null, buildingCount: 0 }, '#ef4444');
-					}
-					const radioColor = mapStore.selectedRadios.get(redcode)?.color ?? '#ef4444';
-					mapComponent?.highlightChatRadios(action.redcodes, radioColor);
-					mapComponent?.setRadioHighlight(getRadioHighlightEntries());
-					// Async: fill census + enrichment data
-					fetchRadioCensus(redcode).then(census => {
-						mapStore.updateCensus(redcode, census);
-					});
-					fetchRadioEnrichment(redcode);
-				} else {
-					mapComponent?.highlightChatRadios(action.redcodes);
-				}
-			} else if (action.type === 'flyTo' && action.lat != null && action.lng != null) {
-				mapComponent?.flyToCoords(action.lat, action.lng, action.zoom);
-			}
-		}
-
-		// Pass chart data to sidebar
-		if (response.chartData && response.chartData.length > 0) {
-			mapStore.setChatCharts(response.chartData as any);
-		}
-	}
 </script>
 
 <div class="flex h-screen w-full">
-	<!-- Chat column (left) -->
-	<ChatPanel onResponse={handleChatResponse} bind:collapsed={chatCollapsed} />
-
-	<!-- Map + overlays (right) -->
+	<!-- Map + overlays -->
 	<div class="flex-1 flex flex-col relative min-w-0">
 		<!-- Header -->
-		<div class="flex items-center justify-between px-4 py-2.5 border-b border-border z-10 shrink-0"
+		<div class="app-header flex items-center justify-between px-4 py-2.5 border-b border-border z-10 shrink-0"
 			style="background: rgba(10,12,18,0.88); backdrop-filter: blur(8px);">
 			<div class="flex items-center gap-4">
-				<h1 class="text-[15px] font-bold text-white tracking-wide cursor-pointer hover:opacity-80 transition-opacity" onclick={clearAll}>
+				<h1 class="app-title text-[15px] font-bold text-white tracking-wide cursor-pointer hover:opacity-80 transition-opacity" onclick={clearAll}>
 					{i18n.t('header.title')}
 				</h1>
 			</div>
@@ -777,6 +760,13 @@
 		<div bind:this={mapContainer} class="flex-1 relative min-h-0">
 			<MapComponent bind:this={mapComponent} {mapStore} />
 			<MapLegend {hexStore} />
+
+			{#if hexStore.loading}
+				<div class="loading-overlay">
+					<div class="loading-spinner"></div>
+					<span class="loading-text">{i18n.t('analysis.loading')}</span>
+				</div>
+			{/if}
 
 			<!-- Controls (positioned relative to map) -->
 			<Controls
@@ -811,3 +801,47 @@
 		</div>
 	</div>
 </div>
+
+<style>
+	.loading-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 10px;
+		background: rgba(10, 12, 18, 0.5);
+		z-index: 8;
+		pointer-events: none;
+	}
+	.loading-spinner {
+		width: 18px;
+		height: 18px;
+		border: 2px solid rgba(255,255,255,0.15);
+		border-top-color: #60a5fa;
+		border-radius: 50%;
+		animation: spin 0.7s linear infinite;
+	}
+	.loading-text {
+		font-size: 12px;
+		color: rgba(255,255,255,0.7);
+		font-weight: 500;
+	}
+	@keyframes spin {
+		to { transform: rotate(360deg); }
+	}
+
+	@media (max-width: 768px) {
+		.app-header {
+			padding: 6px 8px;
+			flex-wrap: wrap;
+			gap: 4px;
+		}
+		.app-title {
+			font-size: 13px;
+		}
+	}
+</style>

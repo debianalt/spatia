@@ -50,4 +50,11 @@
 		font-weight: 700;
 		border-bottom-color: var(--lc);
 	}
+
+	@media (max-width: 768px) {
+		.lens-btn {
+			padding: 4px 8px;
+			font-size: 10px;
+		}
+	}
 </style>
