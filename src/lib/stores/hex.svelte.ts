@@ -361,12 +361,14 @@ export class HexStore {
 
 		const pv = layer.primaryVariable;
 		try {
-			const sql = `SELECT APPROX_QUANTILE(${pv}, 0.02) as p2, APPROX_QUANTILE(${pv}, 0.98) as p98 FROM '${dataUrl}' WHERE ${pv} IS NOT NULL`;
+			const sql = `SELECT MIN(${pv}) as lo, MAX(${pv}) as hi FROM '${dataUrl}' WHERE ${pv} IS NOT NULL`;
 			const result = await query(sql);
 			const row = result.get(0)!.toJSON() as Record<string, any>;
-			const p2 = Number(row.p2) ?? 0;
-			const p98 = Number(row.p98) ?? 100;
-			this.colorDomain = [p2, p98];
+			const lo = Number(row.lo) || 0;
+			const hi = Number(row.hi) || 100;
+			if (hi > lo) {
+				this.colorDomain = [lo, hi];
+			}
 			return this.colorDomain;
 		} catch {
 			return null;

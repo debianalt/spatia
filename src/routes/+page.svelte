@@ -688,13 +688,11 @@
 			mapComponent?.setHexLayerInfo(i18n.t(hexStore.activeLayer.titleKey), hexStore.activeLayer.colorScale === 'categorical');
 		}
 		await hexStore.loadDepartment(dpto, parquetKey);
-		// Compute provincial P2/P98 for consistent cross-department coloring (fire-and-forget if already cached)
-		hexStore.ensureColorDomain().catch(() => {});
+		// Compute provincial min/max for consistent cross-department coloring
+		await hexStore.ensureColorDomain().catch(() => {});
 		prevDataVersion = hexStore.dataVersion;
 		// Render outside Svelte's reactive batch to prevent $effect interference
-		setTimeout(async () => {
-			// Wait for color domain if not yet available
-			if (!hexStore.colorDomain) await hexStore.ensureColorDomain().catch(() => {});
+		setTimeout(() => {
 			const entries = hexStore.choroplethEntries;
 			if (entries.length > 0) {
 				let colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' = hexStore.activeLayer?.colorScale ?? 'flood';
