@@ -47,6 +47,7 @@ export class HexStore {
 
 	private colorIndex = 0;
 	private provincialAvg: number[] | null = $state(null);
+	colorDomain: [number, number] | null = $state(null);
 	selectedDpto: string | null = $state(null);
 
 	get numericVariables(): HexVariable[] {
@@ -350,6 +351,28 @@ export class HexStore {
 		return this.provincialAvg;
 	}
 
+	async ensureColorDomain(): Promise<[number, number] | null> {
+		if (this.colorDomain) return this.colorDomain;
+		if (!this.activeLayer) return null;
+
+		const layer = this.activeLayer;
+		const dataUrl = PARQUETS[layer.parquet as keyof typeof PARQUETS];
+		if (!dataUrl) return null;
+
+		const pv = layer.primaryVariable;
+		try {
+			const sql = `SELECT APPROX_QUANTILE(${pv}, 0.02) as p2, APPROX_QUANTILE(${pv}, 0.98) as p98 FROM '${dataUrl}' WHERE ${pv} IS NOT NULL`;
+			const result = await query(sql);
+			const row = result.get(0)!.toJSON() as Record<string, any>;
+			const p2 = Number(row.p2) ?? 0;
+			const p98 = Number(row.p98) ?? 100;
+			this.colorDomain = [p2, p98];
+			return this.colorDomain;
+		} catch {
+			return null;
+		}
+	}
+
 	private normalize(rawValues: number[], provAvg: number[]): number[] {
 		return rawValues.map((v, i) => {
 			const avg = provAvg[i];
@@ -462,5 +485,6 @@ export class HexStore {
 		this.hexZones = [];
 		this.colorIndex = 0;
 		this.provincialAvg = null;
+		this.colorDomain = null;
 	}
 }

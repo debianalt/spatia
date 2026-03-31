@@ -1090,7 +1090,7 @@
 
 	const CATEGORICAL_PALETTE = ['#1565c0', '#7e57c2', '#4db6ac', '#66bb6a', '#c0ca33', '#ffb74d', '#e65100', '#78909c'];
 
-	export function setHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' = 'flood') {
+	export function setHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' = 'flood', domain?: [number, number]) {
 		if (!map || !map.isStyleLoaded()) return;
 
 		const src = map.getSource('hexagons') as maplibregl.GeoJSONSource | undefined;
@@ -1103,19 +1103,15 @@
 			return;
 		}
 
-		const values = entries.map(e => e.value);
-		let minVal = Infinity, maxVal = -Infinity;
-		for (const v of values) { if (v < minVal) minVal = v; if (v > maxVal) maxVal = v; }
-
-		// Ensure minimum range of 20 points to prevent tiny-variance data from
-		// stretching negligible differences across the full color spectrum
-		if (colorScale !== 'diverging' && colorScale !== 'categorical') {
-			const MIN_RANGE = 20;
-			if ((maxVal - minVal) < MIN_RANGE) {
-				const mid = (minVal + maxVal) / 2;
-				minVal = Math.max(0, mid - MIN_RANGE / 2);
-				maxVal = Math.min(100, mid + MIN_RANGE / 2);
-			}
+		let minVal: number, maxVal: number;
+		if (domain && colorScale !== 'diverging' && colorScale !== 'categorical') {
+			// Use provincial percentile bounds (P2/P98) for consistent cross-department coloring
+			[minVal, maxVal] = domain;
+		} else {
+			// Fallback: local min/max from entries
+			minVal = Infinity; maxVal = -Infinity;
+			const values = entries.map(e => e.value);
+			for (const v of values) { if (v < minVal) minVal = v; if (v > maxVal) maxVal = v; }
 		}
 		const range = maxVal - minVal || 1;
 
@@ -1136,7 +1132,7 @@
 					r = Math.round(115 - s * 75); g = Math.round(115 + s * 100); b = Math.round(115 - s * 75);
 				}
 			} else {
-				const t = (value - minVal) / range;
+				const t = Math.max(0, Math.min(1, (value - minVal) / range));
 				if (colorScale === 'flood') {
 					r = Math.round(t < 0.5 ? 59 + t * 2 * (234 - 59) : 234 + (t - 0.5) * 2 * (220 - 234));
 					g = Math.round(t < 0.5 ? 130 + t * 2 * (179 - 130) : 179 + (t - 0.5) * 2 * (38 - 179));

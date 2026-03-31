@@ -292,6 +292,7 @@
 			const layerCfg = HEX_LAYER_REGISTRY[analysis.id];
 			if (layerCfg) {
 				hexStore.setLayer(analysis.id);
+				hexStore.ensureColorDomain().catch(() => {});
 				mapStore.setActiveHexLayer(analysis.id);
 				mapComponent?.setHexLayerInfo(i18n.t(layerCfg.titleKey), layerCfg.colorScale === 'categorical');
 			} else {
@@ -357,7 +358,7 @@
 
 		let colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' = layer?.colorScale ?? 'flood';
 		if (layer?.temporal && hexStore.temporalMode === 'delta') colorScale = 'diverging';
-		mapComponent?.setHexChoropleth(entries, colorScale);
+		mapComponent?.setHexChoropleth(entries, colorScale, hexStore.colorDomain ?? undefined);
 		analysisDataLoaded = true;
 	});
 
@@ -373,7 +374,7 @@
 		if (entries.length === 0) return;
 		let colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' = layer.colorScale ?? 'flood';
 		if (mode === 'delta') colorScale = 'diverging';
-		mapComponent?.setHexChoropleth(entries, colorScale);
+		mapComponent?.setHexChoropleth(entries, colorScale, hexStore.colorDomain ?? undefined);
 	});
 
 	async function loadAnalysisChoropleth(analysis: AnalysisConfig) {
@@ -687,14 +688,18 @@
 			mapComponent?.setHexLayerInfo(i18n.t(hexStore.activeLayer.titleKey), hexStore.activeLayer.colorScale === 'categorical');
 		}
 		await hexStore.loadDepartment(dpto, parquetKey);
+		// Compute provincial P2/P98 for consistent cross-department coloring (fire-and-forget if already cached)
+		hexStore.ensureColorDomain().catch(() => {});
 		prevDataVersion = hexStore.dataVersion;
 		// Render outside Svelte's reactive batch to prevent $effect interference
-		setTimeout(() => {
+		setTimeout(async () => {
+			// Wait for color domain if not yet available
+			if (!hexStore.colorDomain) await hexStore.ensureColorDomain().catch(() => {});
 			const entries = hexStore.choroplethEntries;
 			if (entries.length > 0) {
 				let colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' = hexStore.activeLayer?.colorScale ?? 'flood';
 				if (hexStore.activeLayer?.temporal && hexStore.temporalMode === 'delta') colorScale = 'diverging';
-				mapComponent?.setHexChoropleth(entries, colorScale);
+				mapComponent?.setHexChoropleth(entries, colorScale, hexStore.colorDomain ?? undefined);
 				analysisDataLoaded = true;
 			}
 			mapComponent?.flyToCoords(centroid[1], centroid[0], 10);
