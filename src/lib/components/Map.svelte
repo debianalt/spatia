@@ -1106,6 +1106,12 @@
 		const values = entries.map(e => e.value);
 		let minVal = Infinity, maxVal = -Infinity;
 		for (const v of values) { if (v < minVal) minVal = v; if (v > maxVal) maxVal = v; }
+
+		// Use fixed 0-100 range for score-based scales so colors are globally comparable across departments
+		if (colorScale !== 'diverging' && colorScale !== 'categorical') {
+			minVal = 0;
+			maxVal = 100;
+		}
 		const range = maxVal - minVal || 1;
 
 		function getColor(value: number): string {
