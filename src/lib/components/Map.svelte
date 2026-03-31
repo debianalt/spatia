@@ -1107,10 +1107,15 @@
 		let minVal = Infinity, maxVal = -Infinity;
 		for (const v of values) { if (v < minVal) minVal = v; if (v > maxVal) maxVal = v; }
 
-		// Use fixed 0-100 range for score-based scales so colors are globally comparable across departments
+		// Ensure minimum range of 20 points to prevent tiny-variance data from
+		// stretching negligible differences across the full color spectrum
 		if (colorScale !== 'diverging' && colorScale !== 'categorical') {
-			minVal = 0;
-			maxVal = 100;
+			const MIN_RANGE = 20;
+			if ((maxVal - minVal) < MIN_RANGE) {
+				const mid = (minVal + maxVal) / 2;
+				minVal = Math.max(0, mid - MIN_RANGE / 2);
+				maxVal = Math.min(100, mid + MIN_RANGE / 2);
+			}
 		}
 		const range = maxVal - minVal || 1;
 
