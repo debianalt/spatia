@@ -438,6 +438,25 @@
 			if (!lassoActive) map.getCanvas().style.cursor = '';
 			tooltip.style.display = 'none';
 		});
+
+		// ── Intro flyover: zoom to Posadas 3D, then back to province ──
+		setTimeout(() => {
+			map.flyTo({
+				center: [-55.89, -27.37],
+				zoom: 14.5,
+				pitch: 60,
+				bearing: 20,
+				duration: 3000,
+				essential: true,
+			});
+			setTimeout(() => {
+				map.flyTo({
+					...MAP_PROVINCE,
+					duration: 2500,
+					essential: true,
+				});
+			}, 4000);
+		}, 800);
 	}
 
 	export function setHexLayerInfo(title: string, isCategorical: boolean) {
@@ -673,7 +692,7 @@
 			map.addSource('catastro', { type: 'vector', url: getTilesUrl('catastro') });
 		}
 
-		// Fill layer — visible cyan/green parcels (minzoom 11 for crisp rendering)
+		// Fill layer — cyan=urbano, green=rural, yellow=new parcels
 		if (!map.getLayer('catastro-fill')) {
 			map.addLayer({
 				id: 'catastro-fill',
@@ -683,17 +702,25 @@
 				minzoom: 11,
 				paint: {
 					'fill-color': [
-						'match', ['get', 'tipo'],
-						'urbano', '#22d3ee',
-						'rural', '#4ade80',
-						'#22d3ee'
+						'case',
+						['==', ['get', 'is_new'], 1], '#fbbf24',
+						['match', ['get', 'tipo'],
+							'urbano', '#22d3ee',
+							'rural', '#4ade80',
+							'#22d3ee'
+						]
 					],
-					'fill-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0.10, 12, 0.18, 14, 0.25]
+					'fill-opacity': [
+						'case',
+						['==', ['get', 'is_new'], 1],
+						['interpolate', ['linear'], ['zoom'], 11, 0.25, 12, 0.40, 14, 0.55],
+						['interpolate', ['linear'], ['zoom'], 11, 0.10, 12, 0.18, 14, 0.25]
+					]
 				}
 			});
 		}
 
-		// Line layer — only at high zoom to avoid tile boundary artifacts
+		// Line layer — only at high zoom
 		if (!map.getLayer('catastro-line')) {
 			map.addLayer({
 				id: 'catastro-line',
@@ -703,13 +730,16 @@
 				minzoom: 14,
 				paint: {
 					'line-color': [
-						'match', ['get', 'tipo'],
-						'urbano', '#22d3ee',
-						'rural', '#4ade80',
-						'#22d3ee'
+						'case',
+						['==', ['get', 'is_new'], 1], '#fbbf24',
+						['match', ['get', 'tipo'],
+							'urbano', '#22d3ee',
+							'rural', '#4ade80',
+							'#22d3ee'
+						]
 					],
-					'line-width': 0.5,
-					'line-opacity': 0.4
+					'line-width': ['case', ['==', ['get', 'is_new'], 1], 1.0, 0.5],
+					'line-opacity': ['case', ['==', ['get', 'is_new'], 1], 0.7, 0.4]
 				}
 			});
 		}

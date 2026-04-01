@@ -283,7 +283,7 @@
 			mapComponent?.clearHexChoropleth();
 			mapStore.clearHexState();
 			hexStore.clearAll();
-			mapComponent?.hideCatastroLayer();
+			mapComponent?.showCatastroLayer();
 			return;
 		}
 
@@ -532,10 +532,9 @@
 
 	function handleSelectCatastroDpto(centroid: [number, number] | null) {
 		if (centroid) {
-			// Just fly — keep buildings, radios, and choropleth visible
-			mapComponent?.flyToCoords(centroid[0], centroid[1], 10);
+			mapComponent?.showCatastroLayer();
+			mapComponent?.flyToCoords(centroid[0], centroid[1], 12);
 		} else {
-			// Back to province view
 			mapComponent?.flyToProvince();
 		}
 	}

@@ -593,6 +593,15 @@ export interface AnalysisConfig {
 export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 	// ── Vivir ──
 	{
+		id: 'catastro',
+		lensId: 'vivir',
+		titleKey: 'analysis.catastro.title',
+		descKey: 'analysis.catastro.desc',
+		icon: '',
+		status: 'available',
+		spatialUnit: 'catastro',
+	},
+	{
 		id: 'flood_risk',
 		lensId: 'vivir',
 		titleKey: 'analysis.floodRisk.title',

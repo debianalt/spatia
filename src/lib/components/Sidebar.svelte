@@ -54,7 +54,7 @@
 		onSelectRadioAnalysisDpto?: (dpto: string, analysisId: string, centroid: [number, number]) => void;
 	} = $props();
 
-	let collapsed = $state(false);
+	let collapsed = $state(true);
 
 	// Auto-open when there's content to show
 	$effect(() => {

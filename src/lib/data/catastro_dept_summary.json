@@ -1,0 +1,279 @@
+{
+  "updated": "2026-04-01",
+  "total_parcelas": 445043,
+  "total_new_90d": 445043,
+  "departments": [
+    {
+      "code": "54028",
+      "name": "Capital",
+      "parquetKey": "54028",
+      "centroid": [
+        -27.38,
+        -55.9
+      ],
+      "n_parcelas": 112746,
+      "n_urbano": 108256,
+      "n_rural": 4490,
+      "n_new_7d": 0,
+      "n_removed_7d": 0,
+      "n_new_90d": 112746,
+      "trend": "stable"
+    },
+    {
+      "code": "54091",
+      "name": "Obera",
+      "parquetKey": "54091",
+      "centroid": [
+        -27.48,
+        -55.12
+      ],
+      "n_parcelas": 44579,
+      "n_urbano": 33653,
+      "n_rural": 10926,
+      "n_new_7d": 0,
+      "n_removed_7d": 0,
+      "n_new_90d": 44579,
+      "trend": "stable"
+    },
+    {
+      "code": "54042",
+      "name": "Eldorado",
+      "parquetKey": "54042",
+      "centroid": [
+        -26.4,
+        -54.63
+      ],
+      "n_parcelas": 32375,
+      "n_urbano": 25955,
+      "n_rural": 6420,
+      "n_new_7d": 0,
+      "n_removed_7d": 0,
+      "n_new_90d": 32375,
+      "trend": "stable"
+    },
+    {
+      "code": "54098",
+      "name": "San Ignacio",
+      "parquetKey": "54098",
+      "centroid": [
+        -27.25,
+        -55.53
+      ],
+      "n_parcelas": 28417,
+      "n_urbano": 19928,
+      "n_rural": 8489,
+      "n_new_7d": 0,
+      "n_removed_7d": 0,
+      "n_new_90d": 28417,
+      "trend": "stable"
+    },
+    {
+      "code": "54063",
+      "name": "Iguazu",
+      "parquetKey": "54063",
+      "centroid": [
+        -25.95,
+        -54.3
+      ],
+      "n_parcelas": 27215,
+      "n_urbano": 23246,
+      "n_rural": 3969,
+      "n_new_7d": 0,
+      "n_removed_7d": 0,
+      "n_new_90d": 27215,
+      "trend": "stable"
+    },
+    {
+      "code": "54070",
+      "name": "L.G. San Martin",
+      "parquetKey": "54070",
+      "centroid": [
+        -27.08,
+        -54.95
+      ],
+      "n_parcelas": 25562,
+      "n_urbano": 18177,
+      "n_rural": 7385,
+      "n_new_7d": 0,
+      "n_removed_7d": 0,
+      "n_new_90d": 25562,
+      "trend": "stable"
+    },
+    {
+      "code": "54077",
+      "name": "L. N. Alem",
+      "parquetKey": "54077",
+      "centroid": [
+        -27.6,
+        -55.32
+      ],
+      "n_parcelas": 25440,
+      "n_urbano": 17920,
+      "n_rural": 7520,
+      "n_new_7d": 0,
+      "n_removed_7d": 0,
+      "n_new_90d": 25440,
+      "trend": "stable"
+    },
+    {
+      "code": "54056",
+      "name": "Guarani",
+      "parquetKey": "54056",
+      "centroid": [
+        -27.18,
+        -54.18
+      ],
+      "n_parcelas": 25044,
+      "n_urbano": 13686,
+      "n_rural": 11358,
+      "n_new_7d": 0,
+      "n_removed_7d": 0,
+      "n_new_90d": 25044,
+      "trend": "stable"
+    },
+    {
+      "code": "54014",
+      "name": "Cainguas",
+      "parquetKey": "54014",
+      "centroid": [
+        -27.18,
+        -54.73
+      ],
+      "n_parcelas": 24232,
+      "n_urbano": 15181,
+      "n_rural": 9051,
+      "n_new_7d": 0,
+      "n_removed_7d": 0,
+      "n_new_90d": 24232,
+      "trend": "stable"
+    },
+    {
+      "code": "54007",
+      "name": "Apostoles",
+      "parquetKey": "54007",
+      "centroid": [
+        -27.92,
+        -55.75
+      ],
+      "n_parcelas": 20434,
+      "n_urbano": 15701,
+      "n_rural": 4733,
+      "n_new_7d": 0,
+      "n_removed_7d": 0,
+      "n_new_90d": 20434,
+      "trend": "stable"
+    },
+    {
+      "code": "54021",
+      "name": "Candelaria",
+      "parquetKey": "54021",
+      "centroid": [
+        -27.45,
+        -55.73
+      ],
+      "n_parcelas": 16700,
+      "n_urbano": 13208,
+      "n_rural": 3492,
+      "n_new_7d": 0,
+      "n_removed_7d": 0,
+      "n_new_90d": 16700,
+      "trend": "stable"
+    },
+    {
+      "code": "54049",
+      "name": "G. M. Belgrano",
+      "parquetKey": "54049",
+      "centroid": [
+        -26.08,
+        -53.78
+      ],
+      "n_parcelas": 15722,
+      "n_urbano": 9586,
+      "n_rural": 6136,
+      "n_new_7d": 0,
+      "n_removed_7d": 0,
+      "n_new_90d": 15722,
+      "trend": "stable"
+    },
+    {
+      "code": "54084",
+      "name": "Montecarlo",
+      "parquetKey": "54084",
+      "centroid": [
+        -26.58,
+        -54.78
+      ],
+      "n_parcelas": 14363,
+      "n_urbano": 10255,
+      "n_rural": 4108,
+      "n_new_7d": 0,
+      "n_removed_7d": 0,
+      "n_new_90d": 14363,
+      "trend": "stable"
+    },
+    {
+      "code": "54112",
+      "name": "San Pedro",
+      "parquetKey": "54112",
+      "centroid": [
+        -26.62,
+        -54.12
+      ],
+      "n_parcelas": 10265,
+      "n_urbano": 3832,
+      "n_rural": 6433,
+      "n_new_7d": 0,
+      "n_removed_7d": 0,
+      "n_new_90d": 10265,
+      "trend": "stable"
+    },
+    {
+      "code": "54119",
+      "name": "25 de Mayo",
+      "parquetKey": "54119",
+      "centroid": [
+        -27.37,
+        -54.02
+      ],
+      "n_parcelas": 9548,
+      "n_urbano": 3417,
+      "n_rural": 6131,
+      "n_new_7d": 0,
+      "n_removed_7d": 0,
+      "n_new_90d": 9548,
+      "trend": "stable"
+    },
+    {
+      "code": "54105",
+      "name": "San Javier",
+      "parquetKey": "54105",
+      "centroid": [
+        -27.77,
+        -55.13
+      ],
+      "n_parcelas": 8519,
+      "n_urbano": 5352,
+      "n_rural": 3167,
+      "n_new_7d": 0,
+      "n_removed_7d": 0,
+      "n_new_90d": 8519,
+      "trend": "stable"
+    },
+    {
+      "code": "54035",
+      "name": "Concepcion",
+      "parquetKey": "54035",
+      "centroid": [
+        -27.98,
+        -55.52
+      ],
+      "n_parcelas": 3882,
+      "n_urbano": 2315,
+      "n_rural": 1567,
+      "n_new_7d": 0,
+      "n_removed_7d": 0,
+      "n_new_90d": 3882,
+      "trend": "stable"
+    }
+  ]
+}

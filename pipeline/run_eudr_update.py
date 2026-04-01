@@ -50,10 +50,52 @@ def download_from_gcs():
             client = storage.Client()
 
         bucket = client.bucket(GCS_BUCKET)
-        blob_name = f"eudr/{raster_name}"
-        print(f"  Downloading gs://{GCS_BUCKET}/{blob_name}...")
-        blob = bucket.blob(blob_name)
-        blob.download_to_filename(local_path)
+
+        # GEE exports sharded files — find all .tif blobs with the prefix
+        prefix = "eudr/eudr_deforestation_combined"
+        blobs = list(bucket.list_blobs(prefix=prefix, max_results=20))
+        tif_blobs = [b for b in blobs if b.name.endswith(".tif")]
+        if not tif_blobs:
+            print(f"  No .tif files found with prefix gs://{GCS_BUCKET}/{prefix}")
+            print(f"  Available blobs: {[b.name for b in blobs]}")
+            return False
+
+        if len(tif_blobs) == 1:
+            # Single file — download directly
+            blob = tif_blobs[0]
+            print(f"  Downloading gs://{GCS_BUCKET}/{blob.name}...")
+            blob.download_to_filename(local_path)
+        else:
+            # Multiple shards — download and merge with GDAL
+            shard_paths = []
+            for i, blob in enumerate(tif_blobs):
+                shard_path = os.path.join(OUTPUT_DIR, f"_shard_{i}.tif")
+                print(f"  Downloading shard {i+1}/{len(tif_blobs)}: {blob.name}...")
+                blob.download_to_filename(shard_path)
+                shard_paths.append(shard_path)
+
+            print(f"  Merging {len(shard_paths)} shards with gdal_merge...")
+            merge_cmd = [
+                sys.executable, "-m", "osgeo_utils.gdal_merge",
+                "-o", local_path, "-co", "COMPRESS=LZW",
+            ] + shard_paths
+            result = subprocess.run(merge_cmd, capture_output=True, text=True)
+            if result.returncode != 0:
+                # Fallback: try gdal_merge.py directly
+                merge_cmd2 = ["gdal_merge.py", "-o", local_path] + shard_paths
+                result = subprocess.run(merge_cmd2, capture_output=True, text=True)
+                if result.returncode != 0:
+                    # Last fallback: use the largest shard
+                    print(f"  gdal_merge not available, using largest shard")
+                    largest = max(shard_paths, key=os.path.getsize)
+                    import shutil
+                    shutil.move(largest, local_path)
+
+            # Cleanup shards
+            for sp in shard_paths:
+                if os.path.exists(sp):
+                    os.remove(sp)
+
         size_mb = os.path.getsize(local_path) / (1024 * 1024)
         print(f"    OK: {size_mb:.1f} MB")
         return True

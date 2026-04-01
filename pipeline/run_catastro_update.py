@@ -31,6 +31,9 @@ RADIOS_PATH = os.path.join(OUTPUT_DIR, "radios_misiones.parquet")
 STATE_DIR = os.path.join(OUTPUT_DIR, "catastro_state")
 CATASTRO_PARQUET = os.path.join(OUTPUT_DIR, "catastro_by_radio.parquet")
 CHANGES_PARQUET = os.path.join(OUTPUT_DIR, "catastro_changes_summary.parquet")
+DEPT_SUMMARY_JSON = os.path.join(
+    os.path.dirname(OUTPUT_DIR), "src", "lib", "data", "catastro_dept_summary.json"
+)
 RUN_LOG = os.path.join(OUTPUT_DIR, "catastro_run_log.jsonl")
 
 # R2 keys for state persistence
@@ -165,6 +168,14 @@ def run(args):
         if not validate_parquets():
             print("\n  [x] Validation failed. Aborting upload.")
             return 1
+
+    # ── Step 3b: Generate department summary JSON ──────────────────
+    if not args.dry_run:
+        from catastro_extract import export_dept_summary_json
+        try:
+            export_dept_summary_json(CATASTRO_PARQUET, CHANGES_PARQUET, DEPT_SUMMARY_JSON)
+        except Exception as e:
+            print(f"  [warn] Could not generate dept summary JSON: {e}")
 
     # ── Step 4: Upload to R2 ──────────────────────────────────────
     if not args.skip_upload:

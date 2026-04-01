@@ -21,6 +21,8 @@ import os
 import time
 from collections import defaultdict
 
+from datetime import date, timedelta
+
 import h3
 import mapbox_vector_tile as mvt
 import pandas as pd
@@ -99,6 +101,7 @@ def load_parcels():
     print("Step 1: Loading parcels...")
     features = []
     skipped = 0
+    cutoff_90d = pd.Timestamp(date.today() - timedelta(days=90))
 
     for tipo, filename in [("urbano", "catastro_urbano.parquet"), ("rural", "catastro_rural.parquet")]:
         path = os.path.join(STATE_DIR, filename)
@@ -108,6 +111,7 @@ def load_parcels():
 
         df = pd.read_parquet(path)
         count = 0
+        n_new = 0
         for _, row in df.iterrows():
             try:
                 geom = wkb.loads(row["geometry"])
@@ -123,10 +127,19 @@ def load_parcels():
             centroid = geom.centroid
             h3index = h3.latlng_to_cell(centroid.y, centroid.x, H3_RES)
 
+            # Check if parcel is new (first_seen within 90 days)
+            is_new = 0
+            fs = row.get("first_seen")
+            if fs is not None and pd.notna(fs):
+                if pd.Timestamp(fs) >= cutoff_90d:
+                    is_new = 1
+                    n_new += 1
+
             props = {
                 "tipo": tipo,
                 "h3index": h3index,
                 "area_m2": round(float(row.get("area_m2", 0)), 0),
+                "is_new": is_new,
             }
             # Add departamento if available
             dept = row.get("departamento")
@@ -136,7 +149,7 @@ def load_parcels():
             features.append({"geometry": geom, "properties": props})
             count += 1
 
-        print(f"  {tipo}: {count:,} parcels loaded")
+        print(f"  {tipo}: {count:,} parcels loaded ({n_new:,} new)")
 
     print(f"  Total: {len(features):,} parcels ({skipped} skipped)")
     return features
@@ -227,6 +240,7 @@ def generate_pmtiles(features):
                     "h3index": "String",
                     "area_m2": "Number",
                     "departamento": "String",
+                    "is_new": "Number",
                 },
                 "minzoom": MIN_ZOOM,
                 "maxzoom": MAX_ZOOM,

@@ -247,6 +247,10 @@ def track_changes(new_gdf, existing_gdf, parcel_type):
     )
     new_gdf["last_updated"] = today
 
+    # Build departamento lookup for change records
+    new_dpto = new_gdf.set_index("cca")["departamento"].to_dict() if "departamento" in new_gdf.columns else {}
+    old_dpto = existing_gdf.set_index("cca")["departamento"].to_dict() if "departamento" in existing_gdf.columns else {}
+
     # Log changes
     for cca in added:
         changes.append({
@@ -254,6 +258,7 @@ def track_changes(new_gdf, existing_gdf, parcel_type):
             "parcel_type": parcel_type,
             "change_type": "new",
             "cca": cca,
+            "departamento": new_dpto.get(cca, ""),
         })
     for cca in removed:
         changes.append({
@@ -261,6 +266,7 @@ def track_changes(new_gdf, existing_gdf, parcel_type):
             "parcel_type": parcel_type,
             "change_type": "removed",
             "cca": cca,
+            "departamento": old_dpto.get(cca, ""),
         })
 
     print(
@@ -386,15 +392,17 @@ def export_changes_summary(all_changes, existing_changes_path, output_path):
             print("  No new changes, kept existing summary")
         else:
             pd.DataFrame(
-                columns=["change_date", "parcel_type", "change_type", "n"]
+                columns=["change_date", "parcel_type", "change_type", "departamento", "n"]
             ).to_parquet(output_path, index=False)
             print("  No changes, created empty summary")
         return
 
-    # Aggregate today's changes
+    # Aggregate today's changes (including departamento)
     df_new = pd.DataFrame(all_changes)
+    if "departamento" not in df_new.columns:
+        df_new["departamento"] = ""
     summary = (
-        df_new.groupby(["change_date", "parcel_type", "change_type"])
+        df_new.groupby(["change_date", "parcel_type", "change_type", "departamento"])
         .size()
         .reset_index(name="n")
     )
@@ -407,6 +415,94 @@ def export_changes_summary(all_changes, existing_changes_path, output_path):
     summary = summary.sort_values("change_date", ascending=False).reset_index(drop=True)
     summary.to_parquet(output_path, index=False, engine="pyarrow")
     print(f"  Exported changes summary: {len(summary):,} rows")
+
+
+def export_dept_summary_json(catastro_path, changes_path, output_json_path):
+    """
+    Generate catastro_dept_summary.json for the frontend department selector.
+    Aggregates parcel counts + recent changes per department.
+    """
+    import json as _json
+    from datetime import timedelta
+
+    DPTO_INFO = {
+        "54007": {"name": "Apostoles", "centroid": [-27.92, -55.75]},
+        "54014": {"name": "Cainguas", "centroid": [-27.18, -54.73]},
+        "54021": {"name": "Candelaria", "centroid": [-27.45, -55.73]},
+        "54028": {"name": "Capital", "centroid": [-27.38, -55.90]},
+        "54035": {"name": "Concepcion", "centroid": [-27.98, -55.52]},
+        "54042": {"name": "Eldorado", "centroid": [-26.40, -54.63]},
+        "54049": {"name": "G. M. Belgrano", "centroid": [-26.08, -53.78]},
+        "54056": {"name": "Guarani", "centroid": [-27.18, -54.18]},
+        "54063": {"name": "Iguazu", "centroid": [-25.95, -54.30]},
+        "54070": {"name": "L.G. San Martin", "centroid": [-27.08, -54.95]},
+        "54077": {"name": "L. N. Alem", "centroid": [-27.60, -55.32]},
+        "54084": {"name": "Montecarlo", "centroid": [-26.58, -54.78]},
+        "54091": {"name": "Obera", "centroid": [-27.48, -55.12]},
+        "54098": {"name": "San Ignacio", "centroid": [-27.25, -55.53]},
+        "54105": {"name": "San Javier", "centroid": [-27.77, -55.13]},
+        "54112": {"name": "San Pedro", "centroid": [-26.62, -54.12]},
+        "54119": {"name": "25 de Mayo", "centroid": [-27.37, -54.02]},
+    }
+
+    df = pd.read_parquet(catastro_path)
+    today = date.today()
+    cutoff_7d = pd.Timestamp(today - timedelta(days=7))
+
+    # Aggregate catastro_by_radio per department
+    df["dpto_code"] = df["redcode"].str[:5]
+    dept_agg = df.groupby("dpto_code").agg(
+        n_parcelas_urbano=("n_parcelas_urbano", "sum"),
+        n_parcelas_rural=("n_parcelas_rural", "sum"),
+        n_new_90d=("n_new_parcels_90d", "sum"),
+    ).reset_index()
+
+    # Load changes for 7d window
+    n_new_7d_by_dpto = {}
+    n_removed_7d_by_dpto = {}
+    if os.path.exists(changes_path):
+        df_ch = pd.read_parquet(changes_path)
+        if "departamento" in df_ch.columns and len(df_ch) > 0:
+            df_ch["change_date"] = pd.to_datetime(df_ch["change_date"])
+            recent = df_ch[df_ch["change_date"] >= cutoff_7d]
+            if len(recent) > 0:
+                for dpto, grp in recent.groupby("departamento"):
+                    n_new_7d_by_dpto[dpto] = int(grp[grp["change_type"] == "new"]["n"].sum())
+                    n_removed_7d_by_dpto[dpto] = int(grp[grp["change_type"] == "removed"]["n"].sum())
+
+    departments = []
+    for _, row in dept_agg.iterrows():
+        code = row["dpto_code"]
+        info = DPTO_INFO.get(code)
+        if not info:
+            continue
+        n_new_7d = n_new_7d_by_dpto.get(code, 0)
+        n_removed_7d = n_removed_7d_by_dpto.get(code, 0)
+        departments.append({
+            "code": code,
+            "name": info["name"],
+            "parquetKey": code,
+            "centroid": info["centroid"],
+            "n_parcelas": int(row["n_parcelas_urbano"] + row["n_parcelas_rural"]),
+            "n_urbano": int(row["n_parcelas_urbano"]),
+            "n_rural": int(row["n_parcelas_rural"]),
+            "n_new_7d": n_new_7d,
+            "n_removed_7d": n_removed_7d,
+            "n_new_90d": int(row["n_new_90d"]),
+            "trend": "up" if n_new_7d > n_removed_7d else ("down" if n_removed_7d > n_new_7d else "stable"),
+        })
+
+    departments.sort(key=lambda d: d["n_parcelas"], reverse=True)
+    result = {
+        "updated": today.isoformat(),
+        "total_parcelas": int(df["n_parcelas_urbano"].sum() + df["n_parcelas_rural"].sum()),
+        "total_new_90d": int(df["n_new_parcels_90d"].sum()),
+        "departments": departments,
+    }
+
+    with open(output_json_path, "w", encoding="utf-8") as f:
+        _json.dump(result, f, ensure_ascii=False, indent=2)
+    print(f"  Exported dept summary JSON: {len(departments)} departments -> {output_json_path}")
 
 
 # ── High-level entry point ───────────────────────────────────────────────────
