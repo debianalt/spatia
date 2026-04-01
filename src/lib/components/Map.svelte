@@ -1012,6 +1012,10 @@
 
 		const matchExpr: any[] = ['match', ['to-string', ['get', 'redcode']]];
 		for (const entry of entries) {
+			if (entry.value === 0) {
+				matchExpr.push(String(entry.redcode), 'rgb(30,41,59)');
+				continue;
+			}
 			const t = (entry.value - minVal) / range;
 			let r: number, g: number, b: number;
 			if (colorScale === 'sequential') {
@@ -1024,9 +1028,10 @@
 				g = Math.round(t < 0.5 ? 197 + t * 2 * (179 - 197) : 179 + (t - 0.5) * 2 * (68 - 179));
 				b = Math.round(t < 0.5 ? 94 + t * 2 * (8 - 94) : 8 + (t - 0.5) * 2 * (68 - 8));
 			} else {
-				r = Math.round(t < 0.5 ? 33 + t * 2 * (247 - 33) : 247 + (t - 0.5) * 2 * (178 - 247));
-				g = Math.round(t < 0.5 ? 102 + t * 2 * (247 - 102) : 247 + (t - 0.5) * 2 * (24 - 247));
-				b = Math.round(t < 0.5 ? 172 + t * 2 * (247 - 172) : 247 + (t - 0.5) * 2 * (43 - 247));
+				// Viridis: dark purple → teal → yellow
+				r = Math.round(t < 0.5 ? 68 + t * 2 * (33 - 68) : 33 + (t - 0.5) * 2 * (253 - 33));
+				g = Math.round(t < 0.5 ? 1 + t * 2 * (145 - 1) : 145 + (t - 0.5) * 2 * (231 - 145));
+				b = Math.round(t < 0.5 ? 84 + t * 2 * (140 - 84) : 140 + (t - 0.5) * 2 * (37 - 140));
 			}
 			matchExpr.push(String(entry.redcode), `rgb(${r},${g},${b})`);
 		}
@@ -1090,7 +1095,7 @@
 
 	const CATEGORICAL_PALETTE = ['#1565c0', '#7e57c2', '#4db6ac', '#66bb6a', '#c0ca33', '#ffb74d', '#e65100', '#78909c'];
 
-	export function setHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' = 'flood', domain?: [number, number]) {
+	export function setHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = 'flood', domain?: [number, number]) {
 		if (!map || !map.isStyleLoaded()) return;
 
 		const src = map.getSource('hexagons') as maplibregl.GeoJSONSource | undefined;
@@ -1116,8 +1121,13 @@
 		const range = maxVal - minVal || 1;
 
 		function getColor(value: number): string {
+			// No-data: score exactly 0 → neutral dark gray (distinct from lowest scale color)
+			if (value === 0 && colorScale !== 'diverging' && colorScale !== 'categorical') {
+				return 'rgb(55,65,81)';
+			}
 			if (colorScale === 'categorical') {
 				const idx = Math.round(value) - 1;
+				if (idx < 0) return 'rgb(55,65,81)';
 				return CATEGORICAL_PALETTE[idx % CATEGORICAL_PALETTE.length];
 			}
 			let r: number, g: number, b: number;
@@ -1126,10 +1136,10 @@
 				const t = value / absMax; // -1 to +1
 				if (t < 0) {
 					const s = -t;
-					r = Math.round(115 + s * 140); g = Math.round(115 - s * 75); b = Math.round(115 - s * 75);
+					r = Math.round(163 + s * 76); g = Math.round(163 - s * 95); b = Math.round(163 - s * 95);
 				} else {
 					const s = t;
-					r = Math.round(115 - s * 75); g = Math.round(115 + s * 100); b = Math.round(115 - s * 75);
+					r = Math.round(163 - s * 129); g = Math.round(163 + s * 34); b = Math.round(163 - s * 69);
 				}
 			} else {
 				const t = Math.max(0, Math.min(1, (value - minVal) / range));
@@ -1138,14 +1148,20 @@
 					g = Math.round(t < 0.5 ? 130 + t * 2 * (179 - 130) : 179 + (t - 0.5) * 2 * (38 - 179));
 					b = Math.round(t < 0.5 ? 246 + t * 2 * (8 - 246) : 8 + (t - 0.5) * 2 * (38 - 8));
 				} else if (colorScale === 'green') {
-					// dark → forest green → bright green → light green
-					r = Math.round(t < 0.5 ? 30 + t * 2 * (22 - 30) : 22 + (t - 0.5) * 2 * (187 - 22));
-					g = Math.round(t < 0.5 ? 41 + t * 2 * (101 - 41) : 101 + (t - 0.5) * 2 * (247 - 101));
-					b = Math.round(t < 0.5 ? 59 + t * 2 * (52 - 59) : 52 + (t - 0.5) * 2 * (208 - 52));
+					// visible dark green → forest green → mint
+					r = Math.round(t < 0.5 ? 20 + t * 2 * (22 - 20) : 22 + (t - 0.5) * 2 * (187 - 22));
+					g = Math.round(t < 0.5 ? 83 + t * 2 * (101 - 83) : 101 + (t - 0.5) * 2 * (247 - 101));
+					b = Math.round(t < 0.5 ? 45 + t * 2 * (52 - 45) : 52 + (t - 0.5) * 2 * (208 - 52));
+				} else if (colorScale === 'warm') {
+					// dark amber → amber → bright yellow
+					r = Math.round(t < 0.5 ? 120 + t * 2 * (245 - 120) : 245 + (t - 0.5) * 2 * (253 - 245));
+					g = Math.round(t < 0.5 ? 53 + t * 2 * (158 - 53) : 158 + (t - 0.5) * 2 * (231 - 158));
+					b = Math.round(t < 0.5 ? 15 + t * 2 * (11 - 15) : 11 + (t - 0.5) * 2 * (37 - 11));
 				} else {
-					r = Math.round(t < 0.5 ? 33 + t * 2 * (247 - 33) : 247 + (t - 0.5) * 2 * (178 - 247));
-					g = Math.round(t < 0.5 ? 102 + t * 2 * (247 - 102) : 247 + (t - 0.5) * 2 * (24 - 247));
-					b = Math.round(t < 0.5 ? 172 + t * 2 * (247 - 172) : 247 + (t - 0.5) * 2 * (43 - 247));
+					// Viridis: visible purple → teal → yellow
+					r = Math.round(t < 0.5 ? 91 + t * 2 * (33 - 91) : 33 + (t - 0.5) * 2 * (253 - 33));
+					g = Math.round(t < 0.5 ? 33 + t * 2 * (145 - 33) : 145 + (t - 0.5) * 2 * (231 - 145));
+					b = Math.round(t < 0.5 ? 182 + t * 2 * (140 - 182) : 140 + (t - 0.5) * 2 * (37 - 140));
 				}
 			}
 			return `rgb(${r},${g},${b})`;

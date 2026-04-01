@@ -45,6 +45,8 @@ COMPONENT_COLS = [
     "segment_count", "water_kring_total",
 ]
 
+META_COLS = ["score", "type", "type_label", "pca_1", "pca_2"]
+
 
 def h3_to_latlng(h3index: str) -> tuple[float, float]:
     """Convert H3 index to (lat, lng)."""
@@ -159,7 +161,7 @@ def main():
 
     print("\nLoading scores data...")
     scores = pd.read_parquet(SCORES_PATH)
-    all_cols = ["h3index"] + SCORE_COLS + COMPONENT_COLS
+    all_cols = ["h3index"] + META_COLS + SCORE_COLS + COMPONENT_COLS
     scores = scores[[c for c in all_cols if c in scores.columns]]
     print(f"  {len(scores):,} hexes loaded")
 
@@ -179,7 +181,7 @@ def main():
     print(f"\nSplitting into {len(dptos)} departments...")
 
     summary = []
-    output_cols = ["h3index"] + SCORE_COLS + COMPONENT_COLS
+    output_cols = ["h3index"] + META_COLS + SCORE_COLS + COMPONENT_COLS
 
     for dpto in dptos:
         subset = scores_assigned[scores_assigned["dpto"] == dpto]

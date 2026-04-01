@@ -40,7 +40,6 @@
 		agri_potential: () => import('$lib/data/sat_agri_potential_dept_summary.json'),
 		forest_health: () => import('$lib/data/sat_forest_health_dept_summary.json'),
 		forestry_aptitude: () => import('$lib/data/sat_forestry_aptitude_dept_summary.json'),
-		isolation_index: () => import('$lib/data/sat_isolation_index_dept_summary.json'),
 		territorial_gap: () => import('$lib/data/sat_territorial_gap_dept_summary.json'),
 		health_access: () => import('$lib/data/sat_health_access_dept_summary.json'),
 		education_gap: () => import('$lib/data/sat_education_gap_dept_summary.json'),
@@ -86,10 +85,15 @@
 			if (score >= 40) return '#166534';
 			return '#1e293b';
 		}
-		if (score >= 70) return '#b2182b';
-		if (score >= 40) return '#d6604d';
-		if (score >= 20) return '#92c5de';
-		return '#2166ac';
+		if (colorScale === 'warm') {
+			if (score >= 70) return '#fde725';
+			if (score >= 40) return '#f59e0b';
+			return '#0f172a';
+		}
+		// Sequential (viridis)
+		if (score >= 70) return '#fde725';
+		if (score >= 40) return '#21918c';
+		return '#440154';
 	}
 
 	function getScoreLevel(score: number): string {
@@ -179,7 +183,7 @@
 	});
 
 	// ── Cross-analysis profile for selected hex ──
-	const CROSS_ANALYSIS_IDS = ['environmental_risk', 'climate_comfort', 'green_capital', 'change_pressure', 'agri_potential', 'forest_health', 'land_use', 'isolation_index'];
+	const CROSS_ANALYSIS_IDS = ['environmental_risk', 'climate_comfort', 'green_capital', 'change_pressure', 'agri_potential', 'forest_health'];
 	const CROSS_TITLE_KEYS: Record<string, string> = { land_use: 'sat.landUse.title' };
 	const CROSS_ANALYSES = $derived(
 		CROSS_ANALYSIS_IDS.map(id => {
@@ -339,11 +343,6 @@
 			howToRead: 'El mapa clasifica cada hexagono en tipos de aptitud forestal comercial segun la co-ocurrencia de acidez del suelo, precipitacion, pendiente, y accesibilidad logistica.',
 			implications: 'Los tipos identifican zonas optimas para plantaciones de pino/eucalipto (suelo acido, lluvia suficiente, pendiente mecanizable, cerca de rutas) frente a zonas marginales donde la forestacion comercial no es viable. Este analisis evalua aptitud del suelo y clima — no reemplaza la verificacion de restricciones legales (areas protegidas, comunidades indigenas, Ley de Bosques 26.331).',
 			method: `${METHOD_COMMON} Variables: pH SoilGrids, arcilla, precipitacion CHIRPS, pendiente FABDEM, distancia a ruta OSM, accesibilidad Nelson. k=3 tipos, silueta=0.33.`,
-		},
-		isolation_index: {
-			howToRead: 'El mapa clasifica cada hexagono en tipos de aislamiento territorial segun la co-ocurrencia de tiempo de viaje a centros urbanos, densidad vial, actividad economica nocturna y friccion de desplazamiento.',
-			implications: 'Los tipos distinguen aislamiento por distancia (lejos de ciudades pero con rutas), aislamiento por friccion (terreno dificil aunque cercano), y conectividad plena. Cada tipo requiere estrategias de acceso distintas.',
-			method: `${METHOD_COMMON} Variables: tiempo a ciudad 100k Nelson, tiempo a Posadas, densidad vial OSM, radiancia VIIRS, friccion Oxford. k=4 tipos, silueta=0.45.`,
 		},
 		health_access: {
 			howToRead: 'El mapa clasifica cada hexagono en tipos de acceso a salud segun la co-ocurrencia de tiempo al centro de salud, densidad poblacional, cobertura sanitaria y vulnerabilidad social.',

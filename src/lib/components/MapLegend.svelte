@@ -15,8 +15,9 @@
 	const isSequential = $derived(effectiveScale === 'sequential');
 	const isFlood = $derived(effectiveScale === 'flood');
 	const isGreen = $derived(effectiveScale === 'green');
+	const isWarm = $derived(effectiveScale === 'warm');
 	const isDiverging = $derived(effectiveScale === 'diverging');
-	const isGradient = $derived(isSequential || isFlood || isGreen || isDiverging);
+	const isGradient = $derived(isSequential || isFlood || isGreen || isWarm || isDiverging);
 
 	const title = $derived(layer ? i18n.t(layer.titleKey) : '');
 
@@ -38,10 +39,12 @@
 		isFlood
 			? 'linear-gradient(to right, #3b82f6, #eab308, #dc2626)'
 			: isGreen
-			? 'linear-gradient(to right, #1e293b, #166534, #bbf7d0)'
+			? 'linear-gradient(to right, #14532d, #166534, #bbf7d0)'
+			: isWarm
+			? 'linear-gradient(to right, #78350f, #f59e0b, #fde725)'
 			: isDiverging
-			? 'linear-gradient(to right, #b2182b, #f7f7f7, #2166ac)'
-			: 'linear-gradient(to right, #2166ac, #f7f7f7, #b2182b)'
+			? 'linear-gradient(to right, #ef4444, #a3a3a3, #22c55e)'
+			: 'linear-gradient(to right, #5b21b6, #21918c, #fde725)'
 	);
 
 	const lowLabel = $derived(
@@ -72,6 +75,10 @@
 			<span>{lowLabel}</span>
 			<span class="gradient-range">0–100</span>
 			<span>{highLabel}</span>
+		</div>
+		<div class="nodata-row">
+			<span class="nodata-swatch"></span>
+			<span class="nodata-label">{i18n.t('legend.noData')}</span>
 		</div>
 	</div>
 {/if}
@@ -134,6 +141,25 @@
 	.gradient-range {
 		font-size: 7px;
 		color: rgba(255,255,255,0.35);
+	}
+	.nodata-row {
+		display: flex;
+		align-items: center;
+		gap: 5px;
+		margin-top: 5px;
+		padding-top: 4px;
+		border-top: 1px solid rgba(255,255,255,0.06);
+	}
+	.nodata-swatch {
+		width: 10px;
+		height: 10px;
+		border-radius: 2px;
+		background: #374151;
+		flex-shrink: 0;
+	}
+	.nodata-label {
+		font-size: 8px;
+		color: rgba(255,255,255,0.4);
 	}
 
 	@media (max-width: 768px) {

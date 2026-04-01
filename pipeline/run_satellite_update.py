@@ -22,7 +22,7 @@ DPTO_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "sat_dpto")
 ALL_ANALYSES = [
     "environmental_risk", "climate_comfort", "green_capital",
     "change_pressure", "location_value", "agri_potential",
-    "forest_health", "forestry_aptitude", "isolation_index",
+    "forest_health", "forestry_aptitude",
     "territorial_gap",
 ]
 

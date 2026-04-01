@@ -224,6 +224,7 @@
 	});
 
 	function handleSelectAnalysis(analysis: AnalysisConfig) {
+		showAbout = false;
 		if (analysis.status === 'coming_soon') {
 			// Still set it so AnalysisView shows the coming-soon card
 			lensStore.setAnalysis(analysis);
@@ -239,6 +240,7 @@
 	// ── Analysis choropleth reactivity ──────────────────────────────────────
 	let prevAnalysisId: string | null = null;
 	let analysisDataLoaded = $state(false);
+	let showAbout = $state(false);
 
 	$effect(() => {
 		const analysis = lensStore.activeAnalysis;
@@ -356,7 +358,7 @@
 			return;
 		}
 
-		let colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' = layer?.colorScale ?? 'flood';
+		let colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = layer?.colorScale ?? 'flood';
 		if (layer?.temporal && hexStore.temporalMode === 'delta') colorScale = 'diverging';
 		mapComponent?.setHexChoropleth(entries, colorScale, hexStore.colorDomain ?? undefined);
 		analysisDataLoaded = true;
@@ -743,6 +745,12 @@
 				<h1 class="app-title text-[15px] font-bold text-white tracking-wide cursor-pointer hover:opacity-80 transition-opacity" onclick={clearAll}>
 					{i18n.t('header.title')}
 				</h1>
+				<button
+					class="text-[11px] text-white/50 hover:text-white/80 cursor-pointer transition-colors"
+					onclick={() => { showAbout = !showAbout; }}
+					title={i18n.t('header.whatIsThis')}>
+					{i18n.t('header.whatIsThis')}
+				</button>
 			</div>
 
 			<!-- Lens selector (center) -->
@@ -788,6 +796,7 @@
 				{lensStore}
 				{lassoStore}
 				{hexStore}
+				{showAbout}
 				onRemoveRadio={handleRemoveRadio}
 				onClearRadios={handleClearRadios}
 				onSelectAnalysis={handleSelectAnalysis}

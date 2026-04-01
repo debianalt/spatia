@@ -14,8 +14,7 @@ Analyses:
   6. agri_potential      — SOC, pH, clay, precipitation, GDD, slope
   7. forest_health       — NDVI trend, loss ratio, fire, GPP, ET
   8. forestry_aptitude   — pH, clay, precipitation, slope, road dist, accessibility
-  9. isolation_index     — Travel time, road density, nightlights, friction
-  10. territorial_gap    — Nightlights vs NBI, water access, sewage, isolation
+  9. territorial_gap     — Nightlights vs NBI, water access, sewage, isolation
 
 Usage:
   python pipeline/compute_satellite_scores.py
@@ -315,33 +314,6 @@ ANALYSIS_DEFS = [
         ],
     },
     # ── SERVIR ────────────────────────────────────────────────────────────
-    {
-        "id": "isolation_index",
-        "sql": """
-            SELECT r.redcode,
-                COALESCE(n.tt_cities_100k_min, 300) AS c_access_100k,
-                COALESCE(ca.travel_min_posadas, 300) AS c_travel_posadas,
-                COALESCE(rd.road_density_km_per_km2, 0) AS c_road_density,
-                COALESCE(v.mean_radiance, 0) AS c_nightlights,
-                COALESCE(o.friction_motorised, 100) AS c_friction
-            FROM radios_misiones r
-            LEFT JOIN nelson_accessibility n ON r.redcode = n.redcode
-            LEFT JOIN custom_accessibility ca ON r.redcode = ca.redcode
-            LEFT JOIN road_access rd ON r.redcode = rd.redcode
-            LEFT JOIN (
-                SELECT redcode, AVG(mean_radiance) AS mean_radiance
-                FROM viirs_annual WHERE year >= 2022 GROUP BY redcode
-            ) v ON r.redcode = v.redcode
-            LEFT JOIN oxford_accessibility o ON r.redcode = o.redcode
-        """,
-        "components": [
-            ("c_access_100k", "c_access_100k", 0.25, False),   # more time = more isolated
-            ("c_travel_posadas", "c_travel_posadas", 0.25, False),
-            ("c_road_density", "c_road_density", 0.20, True),   # less roads = more isolated
-            ("c_nightlights", "c_nightlights", 0.15, True),     # darker = more isolated
-            ("c_friction", "c_friction", 0.15, False),           # more friction = more isolated
-        ],
-    },
     {
         "id": "territorial_gap",
         "sql": """

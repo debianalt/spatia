@@ -131,7 +131,7 @@ export class HexStore {
 			}
 			// Use SELECT * for robustness — temporal parquets may or may not have _baseline/_delta cols
 			const result = await query(
-				`SELECT * FROM '${url}' WHERE ${layer.primaryVariable} IS NOT NULL`
+				`SELECT * FROM '${url}'`
 			);
 
 			const data = new Map<string, Record<string, any>>();
@@ -212,7 +212,7 @@ export class HexStore {
 		}
 		const cols = [...allCols].join(', ');
 		const result = await query(
-			`SELECT h3index, ${cols} FROM '${url}' WHERE ${layer.primaryVariable} IS NOT NULL`
+			`SELECT h3index, ${cols} FROM '${url}'`
 		);
 
 		const data = new Map<string, Record<string, any>>();
@@ -298,7 +298,7 @@ export class HexStore {
 		const entries: { h3index: string; value: number; properties: Record<string, number>; boundary?: number[][] }[] = [];
 		for (const [h3index, data] of this.visibleData) {
 			const value = data[effectivePrimary] ?? 0;
-			if (isDelta ? value !== 0 : value > 0) {
+			if (!isDelta || value !== 0) {
 				entries.push({ h3index, value, properties: data, boundary: this.boundaryCache.get(h3index) });
 			}
 		}

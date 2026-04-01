@@ -21,6 +21,7 @@
 		lensStore,
 		lassoStore,
 		hexStore,
+		showAbout = false,
 		onRemoveRadio,
 		onClearRadios,
 		onSelectAnalysis,
@@ -38,6 +39,7 @@
 		lensStore: LensStore;
 		lassoStore: LassoStore;
 		hexStore: HexStore;
+		showAbout?: boolean;
 		onRemoveRadio: (redcode: string) => void;
 		onClearRadios: () => void;
 		onSelectAnalysis: (analysis: AnalysisConfig) => void;
@@ -122,24 +124,13 @@
 				<ResponseChart {chart} />
 			{/each}
 		</div>
-	{:else}
-		<!-- Welcome panel -->
+	{:else if showAbout}
+		<!-- Welcome panel (triggered by header button) -->
 		<div class="chart-scroll welcome-panel">
 			<div class="welcome-brand">spatia.ar</div>
 			<div class="welcome-subtitle">{i18n.t('header.subtitle')}</div>
 
 			<p class="welcome-desc">{i18n.t('side.welcome.desc')}</p>
-
-			<div class="welcome-divider">{i18n.t('side.welcome.analysesIntro')}</div>
-
-			<div class="welcome-lenses">
-				{#each (['vivir', 'invertir', 'producir', 'servir'] as LensId[]) as lensId}
-					<div class="welcome-lens">
-						<span class="lens-name" style:color={LENS_CONFIG[lensId].color}>{LENS_CONFIG[lensId].label[i18n.locale]}</span>
-						<span class="lens-items">{i18n.t(`side.welcome.lens.${lensId}.items`)}</span>
-					</div>
-				{/each}
-			</div>
 
 			<div class="welcome-divider">{i18n.t('side.welcome.dataTitle')}</div>
 

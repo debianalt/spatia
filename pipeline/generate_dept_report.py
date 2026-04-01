@@ -59,7 +59,7 @@ plt.rcParams.update({
 ALL_ANALYSES = [
     "environmental_risk", "climate_comfort", "green_capital",
     "change_pressure", "location_value", "agri_potential",
-    "forest_health", "forestry_aptitude", "isolation_index",
+    "forest_health", "forestry_aptitude",
     "territorial_gap", "health_access", "education_gap", "land_use",
 ]
 
@@ -177,20 +177,6 @@ ANALYSIS_META = {
         "weights": "pH inv. 15% + Arcilla inv. 10% + Precipitación 25% + Pendiente inv. 20% + Ruta inv. 15% + Acceso 50k inv. 15%",
         "interpretation_high": "reúne condiciones óptimas para forestación comercial: suelo ácido, lluvia abundante, terreno mecanizable y buena logística",
         "interpretation_low": "presenta limitaciones para forestación: suelo inadecuado, pendiente excesiva o aislamiento logístico",
-    },
-    "isolation_index": {
-        "title": "¿Cuán aislado está este lugar?",
-        "subtitle": "Índice de aislamiento territorial",
-        "components": {
-            "c_access_100k": {"name": "Tiempo a ciudad de 100.000 hab.", "source": "Nelson et al. 2019 (1km)", "desc": "Minutos de viaje motorizado a la ciudad más cercana de ≥100k habitantes. Mayor tiempo = mayor aislamiento.", "unit": "percentil"},
-            "c_travel_posadas": {"name": "Tiempo a Posadas", "source": "Superficie de fricción custom (1km)", "desc": "Minutos de viaje motorizado a la capital provincial. Determinante para acceso a servicios especializados.", "unit": "percentil"},
-            "c_road_density": {"name": "Densidad vial", "source": "OpenStreetMap 2024", "desc": "Kilómetros de ruta por km² (invertida). Menor densidad = menor conectividad = mayor aislamiento.", "unit": "percentil (inv.)"},
-            "c_nightlights": {"name": "Actividad nocturna", "source": "VIIRS DNB (500m, 2022-2024)", "desc": "Radiancia nocturna (invertida). Ausencia de luces indica baja densidad poblacional e infraestructura.", "unit": "percentil (inv.)"},
-            "c_friction": {"name": "Fricción de desplazamiento", "source": "Oxford MAP 2019 (1km)", "desc": "Costo de atravesar cada píxel en transporte motorizado. Mayor fricción = terreno más difícil de transitar.", "unit": "percentil"},
-        },
-        "weights": "Acceso 100k 25% + Posadas 25% + Densidad vial inv. 20% + VIIRS inv. 15% + Fricción 15%",
-        "interpretation_high": "se encuentra altamente aislado: lejos de centros urbanos, con baja conectividad vial y difícil acceso",
-        "interpretation_low": "tiene buena conectividad territorial con acceso rápido a centros urbanos y servicios",
     },
     "territorial_gap": {
         "title": "¿Dónde hay mayor desigualdad?",

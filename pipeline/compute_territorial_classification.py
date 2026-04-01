@@ -42,7 +42,6 @@ SOURCES = [
     ('sat_forest_health', 'forh', ['score', 'c_ndvi_trend', 'c_loss_ratio', 'c_gpp', 'c_et']),
     ('sat_location_value', 'locv', ['score', 'c_access_20k', 'c_healthcare', 'c_nightlights', 'c_slope', 'c_road_dist']),
     ('sat_forestry_aptitude', 'fora', ['score', 'c_ph', 'c_clay', 'c_precipitation', 'c_slope', 'c_road_dist', 'c_access_50k']),
-    ('sat_isolation_index', 'isol', ['score', 'c_access_100k', 'c_travel_posadas', 'c_road_density', 'c_nightlights', 'c_friction']),
     ('sat_territorial_gap', 'tgap', ['score', 'c_nightlights', 'c_nbi', 'c_sin_agua', 'c_sin_cloacas', 'c_isolation']),
     ('sat_health_access', 'heal', ['score', 'c_healthcare_time', 'c_healthcare_walk', 'c_pop_density', 'c_health_coverage', 'c_nbi']),
     ('sat_education_gap', 'educ', ['score', 'c_no_instruction', 'c_dropout_13_18', 'c_only_primary', 'c_university', 'c_isolation']),

@@ -33,28 +33,42 @@ from config import OUTPUT_DIR
 ALL_ANALYSES = [
     "environmental_risk", "climate_comfort", "green_capital",
     "change_pressure", "location_value", "agri_potential",
-    "forest_health", "forestry_aptitude", "isolation_index",
+    "forest_health", "forestry_aptitude",
     "territorial_gap", "health_access", "education_gap", "land_use",
+    "territorial_scores",
 ]
 
 
-def auto_label(cluster_means, global_means, var_names, analysis_id):
-    """Generate an interpretive label based on the most deviated variable."""
+def auto_label(cluster_means, global_means, var_names, analysis_id, used_labels=None):
+    """Generate an interpretive label based on the top 2 most deviated variables."""
     deviation = cluster_means - global_means
     abs_dev = np.abs(deviation)
-    top_idx = np.argmax(abs_dev)
-    top_var = var_names[top_idx]
-    top_dev = deviation[top_idx]
-    direction = "alto" if top_dev > 0 else "bajo"
+    sorted_idx = np.argsort(abs_dev)[::-1]
 
-    # Clean variable name for label
-    clean = top_var.replace("c_", "").replace("frac_", "")
-    return f"{clean} {direction}"
+    def clean(v):
+        return v.replace("c_", "").replace("frac_", "")
 
+    top = sorted_idx[0]
+    d1 = "alto" if deviation[top] > 0 else "bajo"
+    label = f"{clean(var_names[top])} {d1}"
+
+    # If label already used, add second variable to disambiguate
+    if used_labels and label in used_labels and len(sorted_idx) > 1:
+        sec = sorted_idx[1]
+        d2 = "alto" if deviation[sec] > 0 else "bajo"
+        label = f"{clean(var_names[top])} {d1}, {clean(var_names[sec])} {d2}"
+
+    return label
+
+
+PARQUET_NAMES = {
+    'territorial_scores': 'overture_scores',
+}
 
 def process_analysis(analysis_id, fixed_k=None, k_range=(3, 5)):
     """Run PCA + k-means on a single analysis."""
-    path = os.path.join(OUTPUT_DIR, f"sat_{analysis_id}.parquet")
+    parquet_name = PARQUET_NAMES.get(analysis_id, f"sat_{analysis_id}")
+    path = os.path.join(OUTPUT_DIR, f"{parquet_name}.parquet")
     if not os.path.exists(path):
         print(f"  SKIP {analysis_id}: file not found")
         return None
@@ -132,12 +146,14 @@ def process_analysis(analysis_id, fixed_k=None, k_range=(3, 5)):
     type_labels = {}
 
     print(f"\n  Cluster profiles:")
+    used_labels = set()
     for c in range(k_opt):
         mask = labels == c
         count = mask.sum()
         pct = count / n_total * 100
         cluster_means = df.loc[mask, valid_cols].mean().values
-        label = auto_label(cluster_means, global_means, valid_cols, analysis_id)
+        label = auto_label(cluster_means, global_means, valid_cols, analysis_id, used_labels)
+        used_labels.add(label)
         type_labels[c + 1] = label
 
         print(f"    Type {c+1} ({count:,}, {pct:.0f}%): {label}")
@@ -147,11 +163,10 @@ def process_analysis(analysis_id, fixed_k=None, k_range=(3, 5)):
             d = deviation[idx]
             print(f"      {valid_cols[idx]}: {cluster_means[idx]:.1f} ({d:+.1f})")
 
-    # Build output dataframe
-    result = df[['h3index']].copy()
+    # Build output dataframe — preserve original continuous score (0-100)
+    result = df[['h3index', 'score']].copy()
     result['type'] = labels + 1
     result['type_label'] = result['type'].map(type_labels)
-    result['score'] = result['type'].astype(float)  # compat with split script
     result['pca_1'] = X_pca[:, 0]
     result['pca_2'] = X_pca[:, 1] if X_pca.shape[1] > 1 else 0.0
 

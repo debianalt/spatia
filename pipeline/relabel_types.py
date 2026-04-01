@@ -54,12 +54,6 @@ LABELS = {
         2: 'Cerca de rutas, accesible',
         3: 'Seco, pendiente, alejado',
     },
-    'isolation_index': {
-        1: 'Conectado a Posadas',
-        2: 'Terreno dificil, muy aislado',
-        3: 'Facil acceso, baja friccion',
-        4: 'Baja densidad vial',
-    },
     'territorial_gap': {
         1: 'Sin cloacas ni agua de red',
         2: 'Aislado, sin agua de red',

@@ -30,22 +30,38 @@ RADIO_STATS_PATH = os.path.join(OUTPUT_DIR, "radio_stats_master.parquet")
 ANALYSES = {
     'sociodemographic': {
         'cols': ['densidad_hab_km2', 'pct_nbi', 'pct_hacinamiento', 'pct_propietario', 'tamano_medio_hogar', 'pct_computadora'],
+        # Invert: high value = less deprived → flip so high score = more deprived
+        'invert': ['densidad_hab_km2', 'pct_propietario', 'pct_computadora'],
     },
     'economic_activity': {
         'cols': ['tasa_empleo', 'tasa_actividad', 'pct_universitario', 'viirs_mean_radiance', 'building_density_per_km2'],
+        'invert': [],  # all vars: high = more activity (correct direction)
     },
     'accessibility': {
         'cols': ['travel_min_posadas', 'travel_min_cabecera', 'dist_nearest_hospital_km', 'dist_nearest_secundaria_km', 'dist_primary_m'],
+        'invert': [],  # all vars: high = more isolated (correct direction)
     },
 }
 
 
-def auto_label(cluster_means, global_means, var_names):
+def auto_label(cluster_means, global_means, var_names, used_labels=None):
     deviation = cluster_means - global_means
-    top_idx = np.argmax(np.abs(deviation))
-    direction = "alto" if deviation[top_idx] > 0 else "bajo"
-    clean = var_names[top_idx].replace('pct_', '').replace('dist_nearest_', '').replace('travel_min_', '')
-    return f"{clean} {direction}"
+    abs_dev = np.abs(deviation)
+    sorted_idx = np.argsort(abs_dev)[::-1]
+
+    def clean(v):
+        return v.replace('pct_', '').replace('dist_nearest_', '').replace('travel_min_', '')
+
+    top = sorted_idx[0]
+    d1 = "alto" if deviation[top] > 0 else "bajo"
+    label = f"{clean(var_names[top])} {d1}"
+
+    if used_labels and label in used_labels and len(sorted_idx) > 1:
+        sec = sorted_idx[1]
+        d2 = "alto" if deviation[sec] > 0 else "bajo"
+        label = f"{clean(var_names[top])} {d1}, {clean(var_names[sec])} {d2}"
+
+    return label
 
 
 def main():
@@ -133,10 +149,12 @@ def main():
         # Auto-label
         global_means = df[cols].mean().values
         type_labels = {}
+        used_labels = set()
         for c in range(best_k):
             mask = best_labels == c
             cluster_means = df.loc[mask, cols].mean().values
-            label = auto_label(cluster_means, global_means, cols)
+            label = auto_label(cluster_means, global_means, cols, used_labels)
+            used_labels.add(label)
             type_labels[c + 1] = label
             count = mask.sum()
             print(f"    Type {c+1}: {label} ({count:,})")
@@ -145,7 +163,6 @@ def main():
         result = df[['h3index']].copy()
         result['type'] = best_labels + 1
         result['type_label'] = result['type'].map(type_labels)
-        result['score'] = result['type'].astype(float)
         result['pca_1'] = X_pca[:, 0]
         result['pca_2'] = X_pca[:, 1] if X_pca.shape[1] > 1 else 0.0
         for col in cols:
@@ -156,6 +173,16 @@ def main():
             valid = result[col].notna()
             if valid.sum() > 1:
                 result.loc[valid, col] = result.loc[valid, col].rank(pct=True) * 100.0
+
+        # Compute continuous score (0-100) from percentile-ranked components
+        invert_cols = set(cfg.get('invert', []))
+        score_cols = []
+        for col in cols:
+            if col in invert_cols:
+                score_cols.append(100.0 - result[col])
+            else:
+                score_cols.append(result[col])
+        result['score'] = pd.concat(score_cols, axis=1).mean(axis=1).round(1)
 
         out_path = os.path.join(OUTPUT_DIR, f"sat_{aid}.parquet")
         result.to_parquet(out_path, index=False)
