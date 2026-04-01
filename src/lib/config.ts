@@ -364,8 +364,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.forestH.title',
 		perDepartment: true,
-		legendLowKey: 'legend.veryHealthy',
-		legendHighKey: 'legend.veryUnhealthy',
+		legendLowKey: 'legend.veryUnhealthy',
+		legendHighKey: 'legend.veryHealthy',
 	},
 	forestry_aptitude: {
 		id: 'forestry_aptitude',
