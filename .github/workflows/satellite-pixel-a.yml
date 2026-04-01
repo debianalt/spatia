@@ -37,6 +37,7 @@ jobs:
         run: |
           if [ ! -f pipeline/output/hexagons-lite.geojson ]; then
             python pipeline/generate_h3_grid.py
+            python pipeline/simplify_geojson.py
           fi
 
       - name: Run pixel update pipeline

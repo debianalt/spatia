@@ -26,6 +26,42 @@ sys.path.insert(0, SCRIPT_DIR)
 from config_eudr import OUTPUT_DIR, GRID_PATH, PARQUET_PATH, R2_EUDR_PREFIX
 
 
+GCS_BUCKET = "spatia-satellite"
+
+
+def download_from_gcs():
+    """Download EUDR raster from GCS after GEE export."""
+    raster_name = "eudr_deforestation_combined.tif"
+    local_path = os.path.join(OUTPUT_DIR, raster_name)
+    if os.path.exists(local_path):
+        print(f"  Raster already exists: {local_path}")
+        return True
+    try:
+        from google.cloud import storage
+        import json
+
+        key_env = os.environ.get("GEE_SERVICE_ACCOUNT_KEY", "")
+        if key_env and not os.path.isfile(key_env):
+            key_data = json.loads(key_env)
+            from google.oauth2 import service_account
+            credentials = service_account.Credentials.from_service_account_info(key_data)
+            client = storage.Client(credentials=credentials, project=key_data.get("project_id"))
+        else:
+            client = storage.Client()
+
+        bucket = client.bucket(GCS_BUCKET)
+        blob_name = f"eudr/{raster_name}"
+        print(f"  Downloading gs://{GCS_BUCKET}/{blob_name}...")
+        blob = bucket.blob(blob_name)
+        blob.download_to_filename(local_path)
+        size_mb = os.path.getsize(local_path) / (1024 * 1024)
+        print(f"    OK: {size_mb:.1f} MB")
+        return True
+    except Exception as e:
+        print(f"  GCS download failed: {e}")
+        return False
+
+
 def run(desc, cmd):
     print(f"\n{'─' * 50}\n  {desc}\n{'─' * 50}")
     result = subprocess.run(cmd, cwd=SCRIPT_DIR)
@@ -95,18 +131,11 @@ def main():
                     [sys.executable, os.path.join(SCRIPT_DIR, "gee_deforestation_eudr.py")]):
             return 1
 
-        # Step 3: Download from Drive
+        # Step 3: Download from GCS
         print(f"\n{'─' * 50}")
-        print(f"  Step 3: Download raster from Google Drive")
-        print(f"  >> Manual step: download 'eudr_deforestation_combined.tif'")
-        print(f"  >> from Drive folder '{os.environ.get('DRIVE_FOLDER', 'spatia-eudr')}'")
-        print(f"  >> to: {OUTPUT_DIR}/")
+        print(f"  Step 3: Download raster from GCS")
         print(f"{'─' * 50}")
-
-        raster_path = os.path.join(OUTPUT_DIR, "eudr_deforestation_combined.tif")
-        if not os.path.exists(raster_path):
-            print(f"\n  Raster not found at {raster_path}")
-            print(f"  Download it from Google Drive, then re-run with --skip-gee")
+        if not download_from_gcs():
             return 1
     else:
         print(f"\n  Steps 2-3: Skipped (--skip-gee)")

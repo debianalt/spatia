@@ -26,6 +26,8 @@ from config import (
     MIN_OVERTURE_HEXAGONS,
 )
 
+GCS_BUCKET = "spatia-satellite"
+
 
 # Expected columns per theme (h3index is always present)
 THEME_SCHEMA = {
@@ -50,6 +52,43 @@ THEME_SCHEMA = {
         "min_rows": 10_000,
     },
 }
+
+
+def download_static_from_gcs():
+    """Download static reference files from GCS (needed for department split)."""
+    STATIC_FILES = ["radios_misiones.parquet", "radio_stats_master.parquet"]
+    needed = [f for f in STATIC_FILES if not os.path.exists(os.path.join(OUTPUT_DIR, f))]
+    if not needed:
+        return True
+    try:
+        from google.cloud import storage
+        import json
+
+        key_env = os.environ.get("GEE_SERVICE_ACCOUNT_KEY", "")
+        if not key_env:
+            print("  No GCS credentials — skipping static file download")
+            return True
+
+        if not os.path.isfile(key_env):
+            key_data = json.loads(key_env)
+            from google.oauth2 import service_account
+            credentials = service_account.Credentials.from_service_account_info(key_data)
+            client = storage.Client(credentials=credentials, project=key_data.get("project_id"))
+        else:
+            client = storage.Client()
+
+        bucket = client.bucket(GCS_BUCKET)
+        for fname in needed:
+            local_path = os.path.join(OUTPUT_DIR, fname)
+            print(f"  Downloading gs://{GCS_BUCKET}/static/{fname}...")
+            blob = bucket.blob(f"static/{fname}")
+            blob.download_to_filename(local_path)
+            size_mb = os.path.getsize(local_path) / (1024 * 1024)
+            print(f"    OK: {size_mb:.1f} MB")
+        return True
+    except Exception as e:
+        print(f"  Static files download failed: {e}")
+        return False
 
 
 def step(n, msg):
@@ -115,6 +154,10 @@ def run(args):
         return 1
 
     scores_path = os.path.join(OUTPUT_DIR, "overture_scores.parquet")
+
+    # ── Download static reference files (if in CI) ────────────────
+    if not download_static_from_gcs():
+        return 1
 
     # ── Step 2c: Split scores by department ──────────────────────
     step("2c", "Split scores by department")

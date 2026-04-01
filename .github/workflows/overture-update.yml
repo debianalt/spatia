@@ -54,6 +54,7 @@ jobs:
           fi
           python run_overture_update.py $ARGS
         env:
+          GEE_SERVICE_ACCOUNT_KEY: ${{ secrets.GEE_SERVICE_ACCOUNT_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Upload parquets as artifact
