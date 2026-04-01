@@ -12,7 +12,7 @@
 		size?: number;
 	} = $props();
 
-	const pad = 75;
+	const pad = 90;
 	const vw = $derived(size + 2 * pad);
 	const vh = $derived(size + 2 * pad);
 	const cx = $derived(vw / 2);
