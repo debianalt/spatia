@@ -64,6 +64,8 @@ const dict: Record<string, Record<Locale, string>> = {
 	'legend.veryLow': { es: 'Muy bajo', en: 'Very low', gn: 'Michĩmĩ' },
 	'legend.lowRisk': { es: 'Bajo riesgo', en: 'Low risk', gn: 'Michĩ riesgo' },
 	'legend.highRisk': { es: 'Alto riesgo', en: 'High risk', gn: 'Yvate riesgo' },
+	'legend.veryHealthy': { es: 'Muy sana', en: 'Very healthy', gn: 'Iporãiterei' },
+	'legend.veryUnhealthy': { es: 'Muy poco sana', en: 'Very unhealthy', gn: "Ndaiporãi" },
 	'legend.range': { es: 'Score 0–100', en: 'Score 0–100', gn: 'Score 0–100' },
 	'legend.noData': { es: 'Sin cobertura', en: 'No data', gn: "Ndaipóri dato" },
 	// ── Analysis section headings ──

@@ -185,6 +185,8 @@ export interface HexLayerConfig {
 	titleKey: string;
 	perDepartment?: boolean;
 	temporal?: boolean;
+	legendLowKey?: string;
+	legendHighKey?: string;
 }
 
 export function getTemporalCol(col: string, mode: TemporalMode): string {
@@ -362,6 +364,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.forestH.title',
 		perDepartment: true,
+		legendLowKey: 'legend.veryHealthy',
+		legendHighKey: 'legend.veryUnhealthy',
 	},
 	forestry_aptitude: {
 		id: 'forestry_aptitude',

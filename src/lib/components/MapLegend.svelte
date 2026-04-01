@@ -48,10 +48,16 @@
 	);
 
 	const lowLabel = $derived(
-		isFlood ? i18n.t('legend.lowRisk') : isDiverging ? i18n.t('temporal.legend.worse') : i18n.t('legend.low')
+		layer?.legendLowKey ? i18n.t(layer.legendLowKey)
+		: isFlood ? i18n.t('legend.lowRisk')
+		: isDiverging ? i18n.t('temporal.legend.worse')
+		: i18n.t('legend.low')
 	);
 	const highLabel = $derived(
-		isFlood ? i18n.t('legend.highRisk') : isDiverging ? i18n.t('temporal.legend.better') : i18n.t('legend.high')
+		layer?.legendHighKey ? i18n.t(layer.legendHighKey)
+		: isFlood ? i18n.t('legend.highRisk')
+		: isDiverging ? i18n.t('temporal.legend.better')
+		: i18n.t('legend.high')
 	);
 </script>
 
