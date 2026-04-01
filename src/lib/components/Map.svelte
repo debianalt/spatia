@@ -439,24 +439,6 @@
 			tooltip.style.display = 'none';
 		});
 
-		// ── Intro flyover: zoom to Posadas 3D, then back to province ──
-		setTimeout(() => {
-			map.flyTo({
-				center: [-55.89, -27.37],
-				zoom: 14.5,
-				pitch: 60,
-				bearing: 20,
-				duration: 3000,
-				essential: true,
-			});
-			setTimeout(() => {
-				map.flyTo({
-					...MAP_PROVINCE,
-					duration: 2500,
-					essential: true,
-				});
-			}, 4000);
-		}, 800);
 	}
 
 	export function setHexLayerInfo(title: string, isCategorical: boolean) {

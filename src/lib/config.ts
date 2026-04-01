@@ -124,7 +124,7 @@ export const BASEMAP = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/st
 export const MAP_INIT = {
 	center: [-54.4, -27.0] as [number, number],  // Misiones provincia
 	zoom: 7.5,
-	pitch: 30,
+	pitch: 50,
 	bearing: -15,
 	minZoom: 6,
 	maxZoom: 18
@@ -133,7 +133,7 @@ export const MAP_INIT = {
 export const MAP_PROVINCE = {
 	center: [-54.4, -27.0] as [number, number],
 	zoom: 7.5,
-	pitch: 30,
+	pitch: 50,
 	bearing: -15,
 } as const;
 
