@@ -511,7 +511,6 @@
 				<div class="cross-title">{i18n.t('section.typeDistribution')}</div>
 				{#each typeDistribution as td}
 					<div class="cross-row">
-						<span class="type-dot" style:background={isCategorical ? getTypeColor(td.type) : getScoreColor(td.avgScore ?? 50)}></span>
 						<span class="cross-label">{td.label}</span>
 						<span class="cross-value">{td.count.toLocaleString()} ({td.pct}%)</span>
 					</div>
