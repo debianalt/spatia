@@ -465,7 +465,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'sat.eduCap.type': { es: 'Tipo', en: 'Type', gn: 'Laja' },
 	'sat.eduCap.typeLabel': { es: 'Clasificación', en: 'Classification', gn: 'Clasificación' },
 	'sat.eduFlow.title': { es: '¿Dónde hay más problemas educativos? (Misiones)', en: 'Where are education problems greatest? (Misiones)', gn: "Moõpa oĩve mbo'ehao apañuãi?" },
-	'sat.eduFlow.desc': { es: 'Flujo educativo: inasistencia primaria y secundaria, embarazo adolescente, vulnerabilidad socioeconómica (NBI)', en: 'Education flow: primary and secondary dropout, teen pregnancy, socioeconomic vulnerability (UBN)', gn: "Mbo'ehao flujo" },
+	'sat.eduFlow.desc': { es: 'Flujo educativo: inasistencia primaria y secundaria, embarazo adolescente', en: 'Education flow: primary and secondary dropout, teen pregnancy', gn: "Mbo'ehao flujo" },
 	'sat.eduFlow.dropoutPrimary': { es: 'Inasistencia 6-12', en: 'Dropout 6-12', gn: "Oheja 6-12" },
 	'sat.eduFlow.dropoutSecondary': { es: 'Inasistencia 13-18', en: 'Dropout 13-18', gn: "Oheja 13-18" },
 	'sat.eduFlow.teenPregnancy': { es: 'Maternidad adolescente', en: 'Teen pregnancy', gn: "Mitãkuña memby" },

@@ -429,16 +429,14 @@ ANALYSIS_DEFS = [
             SELECT r.redcode,
                 COALESCE(ce.tasa_inasistencia_6a12, 0) AS c_dropout_primary,
                 COALESCE(ce.tasa_inasistencia_13a18, 0) AS c_dropout_secondary,
-                COALESCE(ce.tasa_maternidad_adolescente, 0) AS c_teen_pregnancy,
-                COALESCE(ce.pct_nbi, 0) AS c_nbi
+                COALESCE(ce.tasa_maternidad_adolescente, 0) AS c_teen_pregnancy
             FROM radios_misiones r
             LEFT JOIN censo2022_variables ce ON r.redcode = ce.redcode
         """,
         "components": [
-            ("c_dropout_primary", "c_dropout_primary", 0.25, False),       # more = worse flow
-            ("c_dropout_secondary", "c_dropout_secondary", 0.25, False),   # more = worse flow
-            ("c_teen_pregnancy", "c_teen_pregnancy", 0.25, False),          # more = worse flow
-            ("c_nbi", "c_nbi", 0.25, False),                               # more = more vulnerability
+            ("c_dropout_primary", "c_dropout_primary", 0.35, False),       # more = worse flow
+            ("c_dropout_secondary", "c_dropout_secondary", 0.35, False),   # more = worse flow
+            ("c_teen_pregnancy", "c_teen_pregnancy", 0.30, False),          # more = worse flow
         ],
     },
 ]

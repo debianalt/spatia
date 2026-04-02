@@ -505,7 +505,6 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'c_dropout_primary', labelKey: 'sat.eduFlow.dropoutPrimary', aggregation: 'mean' },
 			{ col: 'c_dropout_secondary', labelKey: 'sat.eduFlow.dropoutSecondary', aggregation: 'mean' },
 			{ col: 'c_teen_pregnancy', labelKey: 'sat.eduFlow.teenPregnancy', aggregation: 'mean' },
-			{ col: 'c_nbi', labelKey: 'sat.eduFlow.nbi', aggregation: 'mean' },
 		],
 		primaryVariable: 'score',
 		colorScale: 'flood',
