@@ -164,7 +164,8 @@ def process_analysis(analysis_id, fixed_k=None, k_range=(3, 5)):
             print(f"      {valid_cols[idx]}: {cluster_means[idx]:.1f} ({d:+.1f})")
 
     # Build output dataframe — preserve original continuous score (0-100)
-    result = df[['h3index', 'score']].copy()
+    score_col = 'score' if 'score' in df.columns else None
+    result = df[['h3index', score_col]].copy() if score_col else df[['h3index']].copy()
     result['type'] = labels + 1
     result['type_label'] = result['type'].map(type_labels)
     result['pca_1'] = X_pca[:, 0]
