@@ -337,7 +337,6 @@ ANALYSIS_DEFS = [
         "sql": """
             SELECT r.redcode,
                 COALESCE(ce.pct_nbi, 0) AS c_nbi,
-                100.0 - COALESCE(ce.pct_agua_red, 0) AS c_sin_agua,
                 100.0 - COALESCE(ce.pct_cloacas, 0) AS c_sin_cloacas,
                 COALESCE(ce.pct_sin_piso_adecuado, 0) AS c_piso,
                 COALESCE(ce.pct_hacinamiento, 0) AS c_hacinamiento,
@@ -348,12 +347,11 @@ ANALYSIS_DEFS = [
         """,
         "components": [
             ("c_nbi", "c_nbi", 0.20, False),
-            ("c_sin_agua", "c_sin_agua", 0.15, False),
-            ("c_sin_cloacas", "c_sin_cloacas", 0.15, False),
+            ("c_sin_cloacas", "c_sin_cloacas", 0.20, False),
             ("c_piso", "c_piso", 0.15, False),
-            ("c_hacinamiento", "c_hacinamiento", 0.10, False),
+            ("c_hacinamiento", "c_hacinamiento", 0.15, False),
             ("c_hacinamiento_crit", "c_hacinamiento_crit", 0.10, False),
-            ("c_sin_computadora", "c_sin_computadora", 0.15, False),
+            ("c_sin_computadora", "c_sin_computadora", 0.20, False),
         ],
     },
     {
@@ -431,18 +429,14 @@ ANALYSIS_DEFS = [
             SELECT r.redcode,
                 COALESCE(ce.tasa_inasistencia_6a12, 0) AS c_dropout_primary,
                 COALESCE(ce.tasa_inasistencia_13a18, 0) AS c_dropout_secondary,
-                COALESCE(ce.tasa_maternidad_adolescente, 0) AS c_teen_pregnancy,
-                COALESCE(ce.pct_jovenes_18a29, 0) AS c_youth_pct,
-                COALESCE(ce.pct_jefatura_femenina, 0) AS c_female_headed
+                COALESCE(ce.tasa_maternidad_adolescente, 0) AS c_teen_pregnancy
             FROM radios_misiones r
             LEFT JOIN censo2022_variables ce ON r.redcode = ce.redcode
         """,
         "components": [
-            ("c_dropout_primary", "c_dropout_primary", 0.25, False),       # more = worse flow
-            ("c_dropout_secondary", "c_dropout_secondary", 0.25, False),   # more = worse flow
-            ("c_teen_pregnancy", "c_teen_pregnancy", 0.20, False),          # more = worse flow
-            ("c_youth_pct", "c_youth_pct", 0.15, False),                   # more youth = more pressure
-            ("c_female_headed", "c_female_headed", 0.15, False),           # proxy for vulnerability
+            ("c_dropout_primary", "c_dropout_primary", 0.35, False),       # more = worse flow
+            ("c_dropout_secondary", "c_dropout_secondary", 0.35, False),   # more = worse flow
+            ("c_teen_pregnancy", "c_teen_pregnancy", 0.30, False),          # more = worse flow
         ],
     },
 ]
