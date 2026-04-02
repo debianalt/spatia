@@ -1,14 +1,14 @@
 {
   "province": {
-    "total_hexes": 319932,
-    "avg_score": 46.1,
-    "unassigned": 251195
+    "total_hexes": 68737,
+    "avg_score": 46.6,
+    "unassigned": 0
   },
   "departments": [
     {
       "dpto": "Concepción",
       "parquetKey": "concepcion",
-      "avg_score": 46.2,
+      "avg_score": 67.8,
       "hex_count": 1279,
       "centroid": [
         -55.427,
@@ -18,7 +18,7 @@
     {
       "dpto": "G. M. Belgrano",
       "parquetKey": "g._m._belgrano",
-      "avg_score": 45.8,
+      "avg_score": 63.7,
       "hex_count": 5251,
       "centroid": [
         -53.7532,
@@ -26,19 +26,9 @@
       ]
     },
     {
-      "dpto": "Iguazú",
-      "parquetKey": "iguazu",
-      "avg_score": 36.8,
-      "hex_count": 2441,
-      "centroid": [
-        -54.5599,
-        -26.0319
-      ]
-    },
-    {
       "dpto": "Guaraní",
       "parquetKey": "guarani",
-      "avg_score": 34.8,
+      "avg_score": 53.2,
       "hex_count": 14570,
       "centroid": [
         -54.1852,
@@ -48,7 +38,7 @@
     {
       "dpto": "San Pedro",
       "parquetKey": "san_pedro",
-      "avg_score": 34.3,
+      "avg_score": 52.7,
       "hex_count": 5484,
       "centroid": [
         -54.0439,
@@ -58,7 +48,7 @@
     {
       "dpto": "25 de Mayo",
       "parquetKey": "25_de_mayo",
-      "avg_score": 32.5,
+      "avg_score": 50.7,
       "hex_count": 4713,
       "centroid": [
         -54.4412,
@@ -66,39 +56,9 @@
       ]
     },
     {
-      "dpto": "San Ignacio",
-      "parquetKey": "san_ignacio",
-      "avg_score": 28.5,
-      "hex_count": 3211,
-      "centroid": [
-        -55.2322,
-        -27.0667
-      ]
-    },
-    {
-      "dpto": "Montecarlo",
-      "parquetKey": "montecarlo",
-      "avg_score": 28.4,
-      "hex_count": 1510,
-      "centroid": [
-        -54.6354,
-        -26.6158
-      ]
-    },
-    {
-      "dpto": "Candelaria",
-      "parquetKey": "candelaria",
-      "avg_score": 27.9,
-      "hex_count": 1838,
-      "centroid": [
-        -55.6618,
-        -27.4836
-      ]
-    },
-    {
       "dpto": "Apóstoles",
       "parquetKey": "apostoles",
-      "avg_score": 27.8,
+      "avg_score": 45.4,
       "hex_count": 2200,
       "centroid": [
         -55.7556,
@@ -106,9 +66,19 @@
       ]
     },
     {
+      "dpto": "Iguazú",
+      "parquetKey": "iguazu",
+      "avg_score": 45.1,
+      "hex_count": 2441,
+      "centroid": [
+        -54.5599,
+        -26.0319
+      ]
+    },
+    {
       "dpto": "Cainguás",
       "parquetKey": "cainguas",
-      "avg_score": 25.5,
+      "avg_score": 44.2,
       "hex_count": 5872,
       "centroid": [
         -54.9522,
@@ -116,9 +86,19 @@
       ]
     },
     {
+      "dpto": "San Ignacio",
+      "parquetKey": "san_ignacio",
+      "avg_score": 43.6,
+      "hex_count": 3211,
+      "centroid": [
+        -55.2322,
+        -27.0667
+      ]
+    },
+    {
       "dpto": "San Javier",
       "parquetKey": "san_javier",
-      "avg_score": 23.3,
+      "avg_score": 42.8,
       "hex_count": 2518,
       "centroid": [
         -55.2573,
@@ -126,9 +106,19 @@
       ]
     },
     {
+      "dpto": "Candelaria",
+      "parquetKey": "candelaria",
+      "avg_score": 42.6,
+      "hex_count": 1838,
+      "centroid": [
+        -55.6618,
+        -27.4836
+      ]
+    },
+    {
       "dpto": "L. N. Alem",
       "parquetKey": "l._n._alem",
-      "avg_score": 22.1,
+      "avg_score": 41.8,
       "hex_count": 4193,
       "centroid": [
         -55.5247,
@@ -136,9 +126,19 @@
       ]
     },
     {
+      "dpto": "Montecarlo",
+      "parquetKey": "montecarlo",
+      "avg_score": 41.4,
+      "hex_count": 1510,
+      "centroid": [
+        -54.6354,
+        -26.6158
+      ]
+    },
+    {
       "dpto": "Oberá",
       "parquetKey": "obera",
-      "avg_score": 21.7,
+      "avg_score": 37.5,
       "hex_count": 6358,
       "centroid": [
         -55.071,
@@ -148,7 +148,7 @@
     {
       "dpto": "Eldorado",
       "parquetKey": "eldorado",
-      "avg_score": 21.6,
+      "avg_score": 32.4,
       "hex_count": 2281,
       "centroid": [
         -54.4038,
@@ -158,7 +158,7 @@
     {
       "dpto": "L.G. San Martín",
       "parquetKey": "l.g._san_martin",
-      "avg_score": 19.4,
+      "avg_score": 31.9,
       "hex_count": 2736,
       "centroid": [
         -55.0748,
@@ -168,7 +168,7 @@
     {
       "dpto": "Capital",
       "parquetKey": "capital",
-      "avg_score": 14.7,
+      "avg_score": 21.0,
       "hex_count": 2282,
       "centroid": [
         -55.9408,

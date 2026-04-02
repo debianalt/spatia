@@ -651,13 +651,12 @@ def main():
         print(f"\n[{i}/{len(analyses)}] Computing {aid}...")
 
         try:
-            # Census-based analyses: dasymetric only (data where people live)
-            # Satellite/spatial analyses: hybrid dasymetric + areal fallback
-            CENSUS_ANALYSES = {'service_deprivation', 'health_access', 'education_capital', 'education_flow'}
-            use_areal = None if aid in CENSUS_ANALYSES else areal_crosswalk
+            # All crosswalk-based analyses: dasymetric only (no areal fallback)
+            # Radio data projected to hex without buildings creates artifacts (rivers, forests)
+            # Pixel-level analyses (process_raster_to_h3.py) have their own full coverage
             result = compute_analysis(
                 conn, crosswalk, analysis_def,
-                areal_crosswalk=use_areal,
+                areal_crosswalk=None,
                 emit_diagnostics=args.diagnostics,
                 emit_legacy=args.legacy,
                 output_dir=args.output_dir,

@@ -403,7 +403,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'sat.agri.slope': { es: 'Pendiente', en: 'Slope', gn: "Yvy sa'i" },
 	'sat.agri.type': { es: 'Tipo agroclimático', en: 'Agroclimatic type', gn: 'Laja' },
 	'sat.agri.typeLabel': { es: 'Clasificación', en: 'Classification', gn: 'Clasificación' },
-	'sat.forestH.title': { es: '¿Cuán sana está la selva? (Misiones)', en: 'How healthy is the forest? (Misiones)', gn: "Iporãpa ka'aguy?" },
+	'sat.forestH.title': { es: '¿Cuán sana está la vegetación? (Misiones)', en: 'How healthy is the vegetation? (Misiones)', gn: "Iporãpa ka'a?" },
 	'sat.forestH.desc': { es: 'Integridad de la selva: tendencia NDVI, pérdida arbórea, fuego, productividad y transpiración', en: 'Forest integrity: NDVI trend, tree loss, fire, productivity and transpiration', gn: "Ka'aguy porã" },
 	'sat.forestH.score': { es: 'Score de selva', en: 'Forest score', gn: 'Score' },
 	'sat.forestH.ndviTrend': { es: 'Tendencia NDVI', en: 'NDVI trend', gn: "Hovyũ tendencia" },
