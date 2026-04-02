@@ -28,6 +28,9 @@
 		return { h3index, ...sel.data };
 	});
 
+	// Census-based analyses: hide petals (radio-level data → identical within radio, not informative)
+	const CENSUS_ANALYSES = new Set(['service_deprivation', 'health_access', 'education_capital', 'education_flow', 'sociodemographic', 'economic_activity', 'accessibility']);
+
 	// Department summaries for perDepartment layers
 	let deptSummary = $state<any>(null);
 
@@ -461,7 +464,7 @@
 			{/if}
 		</div>
 
-		{#if hexPetalLayers.length > 0}
+		{#if hexPetalLayers.length > 0 && !CENSUS_ANALYSES.has(analysis.id)}
 			<div class="petal-section">
 				<div class="petal-wrapper">
 					<PetalChart layers={hexPetalLayers} labels={petalLabels} size={240} />
