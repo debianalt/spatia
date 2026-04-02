@@ -38,7 +38,9 @@ ALL_ANALYSES = [
     "environmental_risk", "climate_comfort", "green_capital",
     "change_pressure", "location_value", "agri_potential",
     "forest_health", "forestry_aptitude",
-    "territorial_gap", "health_access", "education_gap", "land_use",
+    "service_deprivation", "territorial_isolation",
+    "health_access", "education_capital", "education_flow",
+    "territorial_gap", "education_gap", "land_use",
     "territorial_types", "sociodemographic", "economic_activity", "accessibility",
 ]
 

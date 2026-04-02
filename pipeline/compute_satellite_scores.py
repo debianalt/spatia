@@ -333,71 +333,118 @@ ANALYSIS_DEFS = [
     },
     # ── SERVIR ────────────────────────────────────────────────────────────
     {
-        "id": "territorial_gap",
+        "id": "service_deprivation",
         "sql": """
             SELECT r.redcode,
-                COALESCE(v.mean_radiance, 0) AS c_nightlights,
                 COALESCE(ce.pct_nbi, 0) AS c_nbi,
-                COALESCE(ce.pct_agua_red, 0) AS c_sin_agua,
-                COALESCE(ce.pct_cloacas, 0) AS c_sin_cloacas,
-                COALESCE(n.tt_cities_20k_min, 300) AS c_isolation
+                100.0 - COALESCE(ce.pct_agua_red, 0) AS c_sin_agua,
+                100.0 - COALESCE(ce.pct_cloacas, 0) AS c_sin_cloacas,
+                COALESCE(ce.pct_sin_techo_adecuado, 0) AS c_techo,
+                COALESCE(ce.pct_sin_piso_adecuado, 0) AS c_piso,
+                COALESCE(ce.pct_combustible_precario, 0) AS c_combustible,
+                COALESCE(ce.pct_hacinamiento_critico, 0) AS c_hacinamiento
             FROM radios_misiones r
+            LEFT JOIN censo2022_variables ce ON r.redcode = ce.redcode
+        """,
+        "components": [
+            ("c_nbi", "c_nbi", 0.20, False),
+            ("c_sin_agua", "c_sin_agua", 0.15, False),
+            ("c_sin_cloacas", "c_sin_cloacas", 0.15, False),
+            ("c_techo", "c_techo", 0.15, False),
+            ("c_piso", "c_piso", 0.10, False),
+            ("c_combustible", "c_combustible", 0.10, False),
+            ("c_hacinamiento", "c_hacinamiento", 0.15, False),
+        ],
+    },
+    {
+        "id": "territorial_isolation",
+        "sql": """
+            SELECT r.redcode,
+                COALESCE(o.accessibility_cities_min, 300) AS c_access_cities,
+                COALESCE(o.accessibility_healthcare_min, 300) AS c_access_health,
+                COALESCE(rd.dist_primary_m, 50000) AS c_road_dist,
+                COALESCE(rd.road_density_km_per_km2, 0) AS c_road_density,
+                COALESCE(v.mean_radiance, 0) AS c_nightlights,
+                COALESCE(ce.densidad_hab_km2, 0) AS c_pop_density
+            FROM radios_misiones r
+            LEFT JOIN oxford_accessibility o ON r.redcode = o.redcode
+            LEFT JOIN road_access rd ON r.redcode = rd.redcode
             LEFT JOIN (
                 SELECT redcode, AVG(mean_radiance) AS mean_radiance
                 FROM viirs_annual WHERE year >= 2022 GROUP BY redcode
             ) v ON r.redcode = v.redcode
             LEFT JOIN censo2022_variables ce ON r.redcode = ce.redcode
-            LEFT JOIN nelson_accessibility n ON r.redcode = n.redcode
         """,
         "components": [
-            ("c_nightlights", "c_nightlights", 0.15, True),   # invert: high light + poor services = gap
-            ("c_nbi", "c_nbi", 0.25, False),                   # more NBI = more gap
-            ("c_sin_agua", "c_sin_agua", 0.25, False),          # more without water = more gap
-            ("c_sin_cloacas", "c_sin_cloacas", 0.20, False),    # more without sewage = more gap
-            ("c_isolation", "c_isolation", 0.15, False),         # more isolated = more gap
+            ("c_access_cities", "c_access_cities", 0.20, False),      # more time = more isolated
+            ("c_access_health", "c_access_health", 0.20, False),      # more time = more isolated
+            ("c_road_dist", "c_road_dist", 0.15, False),              # farther from road = more isolated
+            ("c_road_density", "c_road_density", 0.15, True),         # less roads = more isolated
+            ("c_nightlights", "c_nightlights", 0.15, True),           # less light = more isolated
+            ("c_pop_density", "c_pop_density", 0.15, True),           # less people = more isolated
         ],
     },
-    # ── SERVIR (nuevos) ───────────────────────────────────────────────
     {
         "id": "health_access",
         "sql": """
             SELECT r.redcode,
                 COALESCE(o.accessibility_healthcare_min, 300) AS c_healthcare_time,
-                COALESCE(o.accessibility_healthcare_walk, 600) AS c_healthcare_walk,
-                COALESCE(ce.densidad_hab_km2, 0) AS c_pop_density,
                 COALESCE(ce.pct_cobertura_salud, 0) AS c_health_coverage,
-                COALESCE(ce.pct_nbi, 0) AS c_nbi
+                COALESCE(ce.pct_nbi, 0) AS c_nbi,
+                COALESCE(ce.pct_adultos_mayores, 0) AS c_elderly,
+                COALESCE(ce.pct_menores_18, 0) AS c_children,
+                COALESCE(ce.densidad_hab_km2, 0) AS c_pop_density
             FROM radios_misiones r
             LEFT JOIN oxford_accessibility o ON r.redcode = o.redcode
             LEFT JOIN censo2022_variables ce ON r.redcode = ce.redcode
         """,
         "components": [
-            ("c_healthcare_time", "c_healthcare_time", 0.30, False),   # more time = worse access
-            ("c_healthcare_walk", "c_healthcare_walk", 0.20, False),   # more walk time = worse
-            ("c_pop_density", "c_pop_density", 0.15, False),           # more density = more demand
+            ("c_healthcare_time", "c_healthcare_time", 0.25, False),   # more time = worse access
             ("c_health_coverage", "c_health_coverage", 0.15, True),    # more coverage = less gap
             ("c_nbi", "c_nbi", 0.20, False),                           # more NBI = more vulnerability
+            ("c_elderly", "c_elderly", 0.15, False),                    # more elderly = more demand
+            ("c_children", "c_children", 0.10, False),                  # more children = more demand
+            ("c_pop_density", "c_pop_density", 0.15, False),            # more density = more demand
         ],
     },
     {
-        "id": "education_gap",
+        "id": "education_capital",
         "sql": """
             SELECT r.redcode,
                 COALESCE(ce.pct_sin_instruccion, 0) AS c_no_instruction,
-                COALESCE(ce.tasa_inasistencia_13a18, 0) AS c_dropout_13_18,
                 COALESCE(ce.pct_solo_primaria, 0) AS c_only_primary,
-                COALESCE(ce.pct_universitario, 0) AS c_university,
-                COALESCE(n.tt_cities_20k_min, 300) AS c_isolation
+                COALESCE(ce.pct_secundario_comp, 0) AS c_secondary,
+                COALESCE(ce.pct_terciario, 0) AS c_tertiary,
+                COALESCE(ce.pct_universitario, 0) AS c_university
             FROM radios_misiones r
             LEFT JOIN censo2022_variables ce ON r.redcode = ce.redcode
-            LEFT JOIN nelson_accessibility n ON r.redcode = n.redcode
         """,
         "components": [
-            ("c_no_instruction", "c_no_instruction", 0.25, False),    # more = worse gap
-            ("c_dropout_13_18", "c_dropout_13_18", 0.25, False),      # more = worse gap
-            ("c_only_primary", "c_only_primary", 0.20, False),        # more = worse gap
-            ("c_university", "c_university", 0.15, True),              # more university = less gap
-            ("c_isolation", "c_isolation", 0.15, False),               # more isolated = worse
+            ("c_no_instruction", "c_no_instruction", 0.25, False),    # more = less capital
+            ("c_only_primary", "c_only_primary", 0.20, False),        # more = less capital
+            ("c_secondary", "c_secondary", 0.20, True),               # more = more capital (invert)
+            ("c_tertiary", "c_tertiary", 0.15, True),                 # more = more capital (invert)
+            ("c_university", "c_university", 0.20, True),             # more = more capital (invert)
+        ],
+    },
+    {
+        "id": "education_flow",
+        "sql": """
+            SELECT r.redcode,
+                COALESCE(ce.tasa_inasistencia_6a12, 0) AS c_dropout_primary,
+                COALESCE(ce.tasa_inasistencia_13a18, 0) AS c_dropout_secondary,
+                COALESCE(ce.tasa_maternidad_adolescente, 0) AS c_teen_pregnancy,
+                COALESCE(ce.pct_jovenes_18a29, 0) AS c_youth_pct,
+                COALESCE(ce.pct_jefatura_femenina, 0) AS c_female_headed
+            FROM radios_misiones r
+            LEFT JOIN censo2022_variables ce ON r.redcode = ce.redcode
+        """,
+        "components": [
+            ("c_dropout_primary", "c_dropout_primary", 0.25, False),       # more = worse flow
+            ("c_dropout_secondary", "c_dropout_secondary", 0.25, False),   # more = worse flow
+            ("c_teen_pregnancy", "c_teen_pregnancy", 0.20, False),          # more = worse flow
+            ("c_youth_pct", "c_youth_pct", 0.15, False),                   # more youth = more pressure
+            ("c_female_headed", "c_female_headed", 0.15, False),           # proxy for vulnerability
         ],
     },
 ]
