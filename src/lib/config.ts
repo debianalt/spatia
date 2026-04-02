@@ -484,9 +484,9 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		variables: [
 			{ col: 'type', labelKey: 'sat.eduCap.type', aggregation: 'mean' },
 			{ col: 'type_label', labelKey: 'sat.eduCap.typeLabel', aggregation: 'mean' },
-			{ col: 'c_no_instruction', labelKey: 'sat.eduCap.noInstruction', aggregation: 'mean' },
+			{ col: 'c_no_primary', labelKey: 'sat.eduCap.noPrimary', aggregation: 'mean' },
 			{ col: 'c_only_primary', labelKey: 'sat.eduCap.onlyPrimary', aggregation: 'mean' },
-			{ col: 'c_secondary', labelKey: 'sat.eduCap.secondary', aggregation: 'mean' },
+			{ col: 'c_only_secondary', labelKey: 'sat.eduCap.onlySecondary', aggregation: 'mean' },
 			{ col: 'c_tertiary', labelKey: 'sat.eduCap.tertiary', aggregation: 'mean' },
 			{ col: 'c_university', labelKey: 'sat.eduCap.university', aggregation: 'mean' },
 		],

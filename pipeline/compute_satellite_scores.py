@@ -411,20 +411,20 @@ ANALYSIS_DEFS = [
         "id": "education_capital",
         "sql": """
             SELECT r.redcode,
-                COALESCE(ce.pct_sin_instruccion, 0) AS c_no_instruction,
-                COALESCE(ce.pct_solo_primaria, 0) AS c_only_primary,
-                COALESCE(ce.pct_secundario_comp, 0) AS c_secondary,
-                COALESCE(ce.pct_terciario, 0) AS c_tertiary,
+                100.0 - COALESCE(ce.pct_solo_primaria, 0) AS c_no_primary,
+                COALESCE(ce.pct_solo_primaria, 0) - COALESCE(ce.pct_secundario_comp, 0) AS c_only_primary,
+                COALESCE(ce.pct_secundario_comp, 0) - COALESCE(ce.pct_terciario, 0) AS c_only_secondary,
+                COALESCE(ce.pct_terciario, 0) - COALESCE(ce.pct_universitario, 0) AS c_tertiary,
                 COALESCE(ce.pct_universitario, 0) AS c_university
             FROM radios_misiones r
             LEFT JOIN censo2022_variables ce ON r.redcode = ce.redcode
         """,
         "components": [
-            ("c_no_instruction", "c_no_instruction", 0.25, False),    # more = less capital
-            ("c_only_primary", "c_only_primary", 0.20, False),        # more = less capital
-            ("c_secondary", "c_secondary", 0.20, True),               # more = more capital (invert)
-            ("c_tertiary", "c_tertiary", 0.15, True),                 # more = more capital (invert)
-            ("c_university", "c_university", 0.20, True),             # more = more capital (invert)
+            ("c_no_primary", "c_no_primary", 0.25, False),          # more without primary = less capital
+            ("c_only_primary", "c_only_primary", 0.20, False),      # more stuck at primary = less capital
+            ("c_only_secondary", "c_only_secondary", 0.20, True),   # more secondary = more capital (invert)
+            ("c_tertiary", "c_tertiary", 0.15, True),               # more tertiary = more capital (invert)
+            ("c_university", "c_university", 0.20, True),           # more university = more capital (invert)
         ],
     },
     {
