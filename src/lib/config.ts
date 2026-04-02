@@ -227,6 +227,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		],
 		titleKey: 'analysis.floodRisk.title',
 		perDepartment: true,
+		legendLowKey: 'legend.flood.low',
+		legendHighKey: 'legend.flood.high',
 	},
 	// ── EMSA: Infraestructura eléctrica ──
 	powerline_density: {
@@ -247,6 +249,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		],
 		titleKey: 'emsa.title',
 		perDepartment: false,
+		legendLowKey: 'legend.powerline.low',
+		legendHighKey: 'legend.powerline.high',
 	},
 	// ── Satellite composite scores ──
 	environmental_risk: {
@@ -265,6 +269,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.envRisk.title',
 		perDepartment: true,
+		legendLowKey: 'legend.envRisk.low',
+		legendHighKey: 'legend.envRisk.high',
 	},
 	climate_comfort: {
 		id: 'climate_comfort',
@@ -283,6 +289,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.climate.title',
 		perDepartment: true,
+		legendLowKey: 'legend.comfort.low',
+		legendHighKey: 'legend.comfort.high',
 	},
 	green_capital: {
 		id: 'green_capital',
@@ -301,6 +309,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.green.title',
 		perDepartment: true,
+		legendLowKey: 'legend.green.low',
+		legendHighKey: 'legend.green.high',
 	},
 	change_pressure: {
 		id: 'change_pressure',
@@ -318,6 +328,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.change.title',
 		perDepartment: true,
+		legendLowKey: 'legend.change.low',
+		legendHighKey: 'legend.change.high',
 	},
 	location_value: {
 		id: 'location_value',
@@ -336,6 +348,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.locValue.title',
 		perDepartment: true,
+		legendLowKey: 'legend.locValue.low',
+		legendHighKey: 'legend.locValue.high',
 	},
 	agri_potential: {
 		id: 'agri_potential',
@@ -355,6 +369,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.agri.title',
 		perDepartment: true,
+		legendLowKey: 'legend.agri.low',
+		legendHighKey: 'legend.agri.high',
 	},
 	forest_health: {
 		id: 'forest_health',
@@ -374,6 +390,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.veryUnhealthy',
 		legendHighKey: 'legend.veryHealthy',
+		legendLowKey: 'legend.forestH.low',
+		legendHighKey: 'legend.forestH.high',
 	},
 	forestry_aptitude: {
 		id: 'forestry_aptitude',
@@ -393,6 +411,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.forestry.title',
 		perDepartment: true,
+		legendLowKey: 'legend.forestry.low',
+		legendHighKey: 'legend.forestry.high',
 	},
 	service_deprivation: {
 		id: 'service_deprivation',
@@ -413,6 +433,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.deprivation.title',
 		perDepartment: true,
+		legendLowKey: 'legend.deprivation.low',
+		legendHighKey: 'legend.deprivation.high',
 	},
 	territorial_isolation: {
 		id: 'territorial_isolation',
@@ -432,6 +454,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.isolation.title',
 		perDepartment: true,
+		legendLowKey: 'legend.isolation.low',
+		legendHighKey: 'legend.isolation.high',
 	},
 	health_access: {
 		id: 'health_access',
@@ -451,6 +475,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.health.title',
 		perDepartment: true,
+		legendLowKey: 'legend.health.low',
+		legendHighKey: 'legend.health.high',
 	},
 	education_capital: {
 		id: 'education_capital',
@@ -469,6 +495,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.eduCap.title',
 		perDepartment: true,
+		legendLowKey: 'legend.eduCap.low',
+		legendHighKey: 'legend.eduCap.high',
 	},
 	education_flow: {
 		id: 'education_flow',
@@ -487,6 +515,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.eduFlow.title',
 		perDepartment: true,
+		legendLowKey: 'legend.eduFlow.low',
+		legendHighKey: 'legend.eduFlow.high',
 	},
 	// ── Territorial classification (PCA + metabolic clustering) ──
 	territorial_types: {
@@ -535,6 +565,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'analysis.scores.title',
 		perDepartment: true,
+		legendLowKey: 'legend.scores.low',
+		legendHighKey: 'legend.scores.high',
 	},
 	sociodemographic: {
 		id: 'sociodemographic',
@@ -616,6 +648,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		],
 		titleKey: 'trade.eudr.analysis_title',
 		perDepartment: false,
+		legendLowKey: 'legend.eudr.low',
+		legendHighKey: 'legend.eudr.high',
 	},
 };
 
