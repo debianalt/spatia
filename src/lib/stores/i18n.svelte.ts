@@ -200,6 +200,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'analysis.back': { es: '← Análisis', en: '← Analyses', gn: "← Mba'ekuaa" },
 	'analysis.noData': { es: 'Sin datos para este radio', en: 'No data for this radio', gn: "Mba'ekuaa'ỹ ko radio-pe" },
 	'analysis.loading': { es: 'Cargando datos...', en: 'Loading data...', gn: "Oñemyenyhẽ mba'ekuaa..." },
+	'analysis.petalHint': { es: 'Percentil provincial (0-100). Mayor extensión = mayor intensidad relativa.', en: 'Provincial percentile (0-100). Larger petal = higher relative intensity.', gn: 'Percentil provincial (0-100).' },
 	'analysis.comingSoon.body': { es: 'Este análisis está en desarrollo. Próximamente disponible con datos actualizados.', en: 'This analysis is under development. Coming soon with updated data.', gn: "Ko mba'ekuaa oñemoĩhína. Oguerahátama." },
 
 	// Analysis titles

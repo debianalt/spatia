@@ -456,6 +456,7 @@
 				<div class="petal-wrapper">
 					<PetalChart layers={hexPetalLayers} labels={petalLabels} size={240} />
 				</div>
+				<p class="petal-hint">{i18n.t('analysis.petalHint')}</p>
 			</div>
 		{/if}
 
@@ -710,6 +711,7 @@
 	.score-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
 	.score-value { font-size: 13px; font-weight: 700; min-width: 32px; text-align: right; }
 	.petal-section { margin: 6px 0; }
+	.petal-hint { font-size: 8px; color: rgba(255,255,255,0.35); text-align: center; margin: 2px 0 0; line-height: 1.3; }
 	.petal-wrapper { display: flex; justify-content: center; margin: 0 auto; max-width: 260px; }
 
 	/* Cross-analysis profile + type distribution + diagnostic */
