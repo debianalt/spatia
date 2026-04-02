@@ -484,10 +484,9 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		variables: [
 			{ col: 'type', labelKey: 'sat.eduCap.type', aggregation: 'mean' },
 			{ col: 'type_label', labelKey: 'sat.eduCap.typeLabel', aggregation: 'mean' },
-			{ col: 'c_no_primary', labelKey: 'sat.eduCap.noPrimary', aggregation: 'mean' },
-			{ col: 'c_only_primary', labelKey: 'sat.eduCap.onlyPrimary', aggregation: 'mean' },
-			{ col: 'c_only_secondary', labelKey: 'sat.eduCap.onlySecondary', aggregation: 'mean' },
-			{ col: 'c_tertiary', labelKey: 'sat.eduCap.tertiary', aggregation: 'mean' },
+			{ col: 'c_no_schooling', labelKey: 'sat.eduCap.noSchooling', aggregation: 'mean' },
+			{ col: 'c_secondary_plus', labelKey: 'sat.eduCap.secondaryPlus', aggregation: 'mean' },
+			{ col: 'c_higher_edu', labelKey: 'sat.eduCap.higherEdu', aggregation: 'mean' },
 			{ col: 'c_university', labelKey: 'sat.eduCap.university', aggregation: 'mean' },
 		],
 		primaryVariable: 'score',
