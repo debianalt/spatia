@@ -3,7 +3,7 @@
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import CTADiagnostic from '$lib/components/CTADiagnostic.svelte';
 	import PetalChart from '$lib/components/PetalChart.svelte';
-	import { HEX_LAYER_REGISTRY, DATA_FRESHNESS, getSatDptoUrl, getFloodDptoUrl, getScoresDptoUrl, getTemporalCol, type AnalysisConfig, type TemporalMode } from '$lib/config';
+	import { HEX_LAYER_REGISTRY, DATA_FRESHNESS, getSatDptoUrl, getFloodDptoUrl, getScoresDptoUrl, getReportUrl, getTemporalCol, type AnalysisConfig, type TemporalMode } from '$lib/config';
 	import { initDuckDB, query } from '$lib/stores/duckdb';
 
 	let {
@@ -161,7 +161,7 @@
 		if (!selectedDpto || !layerCfg || !deptList.length) return null;
 		const dept = deptList.find((d: any) => d.dpto === selectedDpto);
 		if (!dept) return null;
-		return `https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_dpto/sat_${layerCfg.id}_${dept.parquetKey}.parquet`;
+		return getSatDptoUrl(layerCfg.id, dept.parquetKey);
 	});
 
 	// Component variables (skip score, type, type_label, pca)
@@ -287,7 +287,7 @@
 		if (!selectedDpto || !layerCfg || !deptList.length) return null;
 		const dept = deptList.find((d: any) => d.dpto === selectedDpto);
 		if (!dept) return null;
-		return `https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/reports/sat_${layerCfg.id}_${dept.parquetKey}.pdf`;
+		return getReportUrl(layerCfg.id, dept.parquetKey);
 	});
 
 	// ── Explanatory content per analysis ──

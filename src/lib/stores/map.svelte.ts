@@ -9,13 +9,6 @@ export type RadioData = {
 
 const RADIO_COLORS = ['#60a5fa', '#f97316', '#22c55e', '#a855f7', '#ef4444', '#eab308'];
 
-export type ChartDataSet = {
-	title: string;
-	type: 'bar' | 'ranking';
-	data: Array<{ label: string; value: number }>;
-	unit?: string;
-};
-
 export type HexData = {
 	h3index: string;
 	jrc_occurrence?: number;
@@ -53,8 +46,6 @@ export class MapStore {
 	selectedRadios: Map<string, RadioData> = $state(new Map());
 	pitch: number = $state(31);
 	bearing: number = $state(-15);
-	chatHighlightedRedcodes: string[] = $state([]);
-	chatCharts: ChartDataSet[] = $state([]);
 	activeHexLayer: string | null = $state(null);
 	selectedHex: HexData | null = $state(null);
 	selectedFloodParcels: FloodParcelData[] = $state([]);
@@ -118,19 +109,6 @@ export class MapStore {
 		const updated = new Map(this.selectedRadios);
 		updated.set(redcode, { ...existing, census: { ...existing.census, ...census } });
 		this.selectedRadios = updated;
-	}
-
-	setChatHighlight(redcodes: string[]) {
-		this.chatHighlightedRedcodes = redcodes;
-	}
-
-	setChatCharts(charts: ChartDataSet[]) {
-		this.chatCharts = charts;
-	}
-
-	clearChatState() {
-		this.chatHighlightedRedcodes = [];
-		this.chatCharts = [];
 	}
 
 	setActiveHexLayer(layer: string | null) {

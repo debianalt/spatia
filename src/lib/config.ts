@@ -76,7 +76,11 @@ export function getScoresDptoUrl(parquetKey: string): string {
 }
 
 export function getSatDptoUrl(analysisId: string, parquetKey: string): string {
-	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet?v=20`;
+	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet?v=24`;
+}
+
+export function getReportUrl(analysisId: string, parquetKey: string): string {
+	return `${getBase()}/data/reports/sat_${analysisId}_${parquetKey}.pdf`;
 }
 
 export const PARQUETS = {
@@ -597,7 +601,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'analysis.catastro.title',
 		descKey: 'analysis.catastro.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'catastro',
 	},
@@ -606,7 +610,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'analysis.floodRisk.title',
 		descKey: 'analysis.floodRisk.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -616,7 +620,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'invertir',
 		titleKey: 'analysis.scores.title',
 		descKey: 'analysis.scores.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -627,7 +631,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'analysis.socio.title',
 		descKey: 'analysis.socio.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -637,7 +641,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'invertir',
 		titleKey: 'analysis.economic.title',
 		descKey: 'analysis.economic.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -648,7 +652,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'analysis.accessibility.title',
 		descKey: 'analysis.accessibility.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -659,7 +663,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'sat.envRisk.title',
 		descKey: 'sat.envRisk.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -668,7 +672,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'sat.climate.title',
 		descKey: 'sat.climate.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -677,7 +681,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'sat.green.title',
 		descKey: 'sat.green.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -686,7 +690,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'invertir',
 		titleKey: 'sat.change.title',
 		descKey: 'sat.change.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -695,7 +699,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'invertir',
 		titleKey: 'sat.locValue.title',
 		descKey: 'sat.locValue.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -704,7 +708,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'sat.agri.title',
 		descKey: 'sat.agri.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -713,7 +717,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'emsa.title',
 		descKey: 'emsa.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -722,7 +726,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'sat.forestH.title',
 		descKey: 'sat.forestH.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -731,7 +735,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'sat.forestry.title',
 		descKey: 'sat.forestry.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -740,7 +744,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'sat.gap.title',
 		descKey: 'sat.gap.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -749,7 +753,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'sat.health.title',
 		descKey: 'sat.health.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -758,7 +762,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'sat.edu.title',
 		descKey: 'sat.edu.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -768,7 +772,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'trade.eudr.analysis_title',
 		descKey: 'trade.eudr.analysis_desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -778,7 +782,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'sat.types.title',
 		descKey: 'sat.types.desc',
-		icon: '',
+
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},

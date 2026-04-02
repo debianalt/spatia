@@ -24,6 +24,7 @@
 	let selectedDpto = $state<string | null>(null);
 	let allData: Map<string, Record<string, any>> = $state(new Map());
 	let deptSummaryData = $state<any>(null);
+	let loadError = $state(false);
 
 	// Housing quality per radio (keyed by redcode)
 	let housingCache: Map<string, Record<string, number>> = $state(new Map());
@@ -143,7 +144,7 @@
 			} catch { /* changes parquet may not exist yet */ }
 
 			await loadHousingProvAvg();
-		} catch (e) { console.warn('Failed to load catastro data:', e); }
+		} catch (e) { console.warn('Failed to load catastro data:', e); loadError = true; }
 		finally { loading = false; }
 	}
 
@@ -223,6 +224,8 @@
 
 {#if loading}
 	<div class="loading">{i18n.t('analysis.loading')}</div>
+{:else if loadError}
+	<p class="text-white/30 text-xs text-center py-6">{i18n.t('error.dataLoadFailed')}</p>
 {:else if hasRadios}
 	<!-- Radio comparison view -->
 	<div class="radio-detail">

@@ -62,10 +62,6 @@
 			if (lensStore.activeAnalysis?.spatialUnit === 'catastro') return; // flood mode uses parcel clicks
 			const { redcode, selected, census } = e.detail;
 
-			// Unified behavior: clear chat highlights, add radio
-			mapStore.clearChatState();
-			mapComponent?.clearChatHighlights();
-
 			mapStore.addRadio(redcode, {
 				census,
 				enriched: null,
@@ -216,7 +212,6 @@
 		if (lens) {
 			mapStore.clearRadios();
 			mapComponent?.clearRadioHighlight();
-			mapComponent?.clearChatHighlights();
 			mapComponent?.clearAnalysisChoropleth();
 		} else {
 			mapComponent?.clearAnalysisChoropleth();
@@ -709,14 +704,12 @@
 
 	function clearAll() {
 		mapStore.clearRadios();
-		mapStore.clearChatState();
 		mapStore.clearHexState();
 		mapComponent?.setHexLayerInfo('', false);
 		mapStore.clearFloodParcelState();
 		mapStore.clearScoresParcelState();
 		hexStore.clearAll();
 		mapComponent?.clearRadioHighlight();
-		mapComponent?.clearChatHighlights();
 		mapComponent?.clearAnalysisChoropleth();
 		mapComponent?.clearHexChoropleth();
 		mapComponent?.clearHexZoneHighlight();

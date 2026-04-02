@@ -1,6 +1,5 @@
 <script lang="ts">
 	import ComparisonChart from './ComparisonChart.svelte';
-	import ResponseChart from './ResponseChart.svelte';
 	import AnalysisMenu from './AnalysisMenu.svelte';
 	import AnalysisView from './AnalysisView.svelte';
 	import ZoneComparison from './ZoneComparison.svelte';
@@ -79,7 +78,7 @@
 </script>
 
 {#if !collapsed}
-<div class="sidebar absolute top-0 right-0 bottom-0 z-10 rounded-l-lg p-3 px-4 border-l border-border w-[440px] text-xs leading-relaxed"
+<div class="sidebar absolute top-0 right-0 bottom-0 z-10 rounded-l-lg p-3 px-4 border-l border-border w-full md:w-[440px] text-xs leading-relaxed"
 	style="background: var(--color-panel); backdrop-filter: blur(8px);">
 
 	<button class="collapse-btn" onclick={() => collapsed = true} title={i18n.t('side.welcome.hidePanel')}>
@@ -118,12 +117,6 @@
 		<!-- Lens active, no analysis, no radio: show analysis menu -->
 		<div class="chart-scroll">
 			<AnalysisMenu {lensStore} {onSelectAnalysis} />
-		</div>
-	{:else if mapStore.chatCharts.length > 0}
-		<div class="chart-scroll">
-			{#each mapStore.chatCharts as chart}
-				<ResponseChart {chart} />
-			{/each}
 		</div>
 	{:else if showAbout}
 		<!-- Welcome panel (triggered by header button) -->

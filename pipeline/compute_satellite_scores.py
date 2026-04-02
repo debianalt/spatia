@@ -44,6 +44,7 @@ from scoring import (
 )
 
 CROSSWALK_PATH = os.path.join(OUTPUT_DIR, "h3_radio_crosswalk.parquet")
+AREAL_CROSSWALK_PATH = os.path.join(OUTPUT_DIR, "h3_radio_crosswalk_areal.parquet")
 RADIO_DATA_DIR = os.path.join(OUTPUT_DIR, "radio_data")
 
 # Tables used by analysis queries — loaded from parquets
@@ -423,13 +424,14 @@ def fetch_radio_data(conn, sql: str) -> pd.DataFrame:
     return conn.execute(sql).fetchdf()
 
 
-def join_to_h3(radio_df: pd.DataFrame, crosswalk: pd.DataFrame) -> pd.DataFrame:
-    """Project radio-level data onto H3 hexagons via dasymetric crosswalk.
+def join_to_h3(radio_df: pd.DataFrame, crosswalk: pd.DataFrame,
+               areal_crosswalk: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Project radio-level data onto H3 hexagons via hybrid crosswalk.
 
-    Weighted average using building-based weights: each hex value is the
-    weighted mean of overlapping radios, where weight = buildings_in_hex / buildings_in_radio.
+    1. Dasymetric (building-weighted) average where buildings exist (~69K hex)
+    2. Areal max-overlap fallback for remaining hexagons (~251K hex)
+    Full 320K coverage with building-weighted precision where available.
     """
-    merged = crosswalk.merge(radio_df, on="redcode", how="inner")
     value_cols = [c for c in radio_df.columns if c != "redcode"]
 
     def weighted_avg(g):
@@ -439,8 +441,28 @@ def join_to_h3(radio_df: pd.DataFrame, crosswalk: pd.DataFrame) -> pd.DataFrame:
             return pd.Series({c: np.nan for c in value_cols})
         return pd.Series({c: np.average(g[c].values, weights=w) for c in value_cols})
 
-    result = merged.groupby("h3index", group_keys=False).apply(weighted_avg, include_groups=False)
-    return result.reset_index()
+    # Step 1: Dasymetric weighted average
+    merged_dasy = crosswalk.merge(radio_df, on="redcode", how="inner")
+    hex_dasy = merged_dasy.groupby("h3index", group_keys=False).apply(
+        weighted_avg, include_groups=False
+    ).reset_index()
+
+    # Step 2: Areal fallback for hex without buildings
+    if areal_crosswalk is not None:
+        dasy_hex_set = set(hex_dasy["h3index"])
+        areal_missing = areal_crosswalk[~areal_crosswalk["h3index"].isin(dasy_hex_set)]
+        if len(areal_missing) > 0:
+            merged_areal = areal_missing.merge(radio_df, on="redcode", how="inner")
+            # Max-overlap assignment for areal (same as original approach)
+            idx = merged_areal.groupby("h3index")["weight"].idxmax()
+            hex_areal = merged_areal.loc[idx].drop(
+                columns=["redcode", "weight"]
+            ).reset_index(drop=True)
+            hex_combined = pd.concat([hex_dasy, hex_areal], ignore_index=True)
+            print(f"    Hybrid: {len(hex_dasy):,} dasymetric + {len(hex_areal):,} areal = {len(hex_combined):,}")
+            return hex_combined
+
+    return hex_dasy
 
 
 def normalize_percentile(series: pd.Series) -> pd.Series:
@@ -456,6 +478,7 @@ def compute_analysis(
     conn,
     crosswalk: pd.DataFrame,
     analysis_def: dict,
+    areal_crosswalk: pd.DataFrame | None = None,
     emit_diagnostics: bool = False,
     emit_legacy: bool = False,
     output_dir: str = OUTPUT_DIR,
@@ -469,8 +492,8 @@ def compute_analysis(
     print(f"    Radio data: {len(radio_data)} rows, "
           f"cols: {[c for c in radio_data.columns if c != 'redcode']}")
 
-    # Project to H3
-    hex_data = join_to_h3(radio_data, crosswalk)
+    # Project to H3 (hybrid: dasymetric + areal fallback)
+    hex_data = join_to_h3(radio_data, crosswalk, areal_crosswalk)
     print(f"    H3 hexagons: {len(hex_data):,}")
 
     # Normalize each component via percentile rank
@@ -569,10 +592,12 @@ def main():
     print(f"  Analyses: {len(analyses)}")
     print("=" * 60)
 
-    # Load crosswalk once
-    print("\nLoading areal crosswalk...")
+    # Load crosswalks
+    print("\nLoading crosswalks...")
     crosswalk = pd.read_parquet(CROSSWALK_PATH)
-    print(f"  {len(crosswalk):,} rows, {crosswalk['h3index'].nunique():,} unique hexagons")
+    print(f"  Dasymetric: {len(crosswalk):,} rows, {crosswalk['h3index'].nunique():,} unique hexagons")
+    areal_crosswalk = pd.read_parquet(AREAL_CROSSWALK_PATH)
+    print(f"  Areal: {len(areal_crosswalk):,} rows, {areal_crosswalk['h3index'].nunique():,} unique hexagons")
 
     # Load radio data tables into DuckDB
     print("Loading radio tables into DuckDB...")
@@ -588,6 +613,7 @@ def main():
         try:
             result = compute_analysis(
                 conn, crosswalk, analysis_def,
+                areal_crosswalk=areal_crosswalk,
                 emit_diagnostics=args.diagnostics,
                 emit_legacy=args.legacy,
                 output_dir=args.output_dir,

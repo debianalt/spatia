@@ -34,6 +34,7 @@
 	let activeDpto = $state<string | null>(null);
 	let deptSummaries = $state<any[]>([]);
 	let deptLoading = $state(false);
+	let loadError = $state(false);
 	let provAvgs = $state<Record<string, number>>({});
 
 	// Load dept summaries on mount
@@ -76,6 +77,7 @@
 			}
 		} catch (e) {
 			console.warn('Failed to load dept summaries:', e);
+			loadError = true;
 		}
 		deptLoading = false;
 	}
@@ -203,6 +205,8 @@
 	<div class="view">
 		{#if deptLoading}
 			<div class="loading">Cargando datos...</div>
+		{:else if loadError}
+			<p class="text-white/30 text-xs text-center py-6">{i18n.t('error.dataLoadFailed')}</p>
 		{:else}
 			<div class="dept-section">
 				<div class="section-title">Seleccioná un departamento</div>

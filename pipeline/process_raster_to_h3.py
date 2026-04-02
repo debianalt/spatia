@@ -26,10 +26,28 @@ from rasterio.features import geometry_mask
 from rasterio.windows import from_bounds
 from shapely.geometry import shape
 
+import duckdb
+
 from config import OUTPUT_DIR, H3_RESOLUTION
 from scoring import run_full_diagnostics, geometric_mean_score
 
 HEXAGONS_PATH = os.path.join(OUTPUT_DIR, "hexagons-lite.geojson")
+AREAL_CROSSWALK_PATH = os.path.join(OUTPUT_DIR, "h3_radio_crosswalk_areal.parquet")
+RADIO_DATA_DIR = os.path.join(OUTPUT_DIR, "radio_data")
+
+# Radio-level fallback queries for bands with no raster data
+RADIO_FALLBACK = {
+    'c_fire': {
+        'table': 'fire_annual',
+        'sql': "SELECT redcode, AVG(burned_fraction) AS value FROM fire_annual WHERE year >= 2019 GROUP BY redcode",
+        'invert': False,
+    },
+    'c_fire_count': {
+        'table': 'fire_annual',
+        'sql': "SELECT redcode, SUM(burn_count) AS value FROM fire_annual WHERE year >= 2019 GROUP BY redcode",
+        'invert': False,
+    },
+}
 
 # Component definitions per analysis: (band_name, output_col, weight, invert)
 ANALYSIS_COMPONENTS = {
@@ -112,6 +130,54 @@ def percentile_rank(series):
     return result
 
 
+def inject_radio_fallback(df: pd.DataFrame, nan_cols: list[str],
+                          components: list) -> pd.DataFrame:
+    """Inject radio-level data for columns where raster had no data.
+
+    Uses areal crosswalk + radio parquets to fill NaN columns with
+    percentile-ranked radio data projected to H3.
+    """
+    if not os.path.exists(AREAL_CROSSWALK_PATH):
+        print(f"    No areal crosswalk found — skipping fallback")
+        return df
+
+    xw = pd.read_parquet(AREAL_CROSSWALK_PATH)
+    conn = duckdb.connect()
+
+    for col in nan_cols:
+        fb = RADIO_FALLBACK.get(col)
+        if not fb:
+            print(f"    No fallback defined for {col}")
+            continue
+
+        table_path = os.path.join(RADIO_DATA_DIR, f"{fb['table']}.parquet")
+        if not os.path.exists(table_path):
+            print(f"    Missing {table_path} — skipping {col}")
+            continue
+
+        conn.execute(f"CREATE OR REPLACE TABLE {fb['table']} AS SELECT * FROM read_parquet('{table_path}')")
+        radio_df = conn.execute(fb['sql']).fetchdf()
+        print(f"    Radio fallback {col}: {len(radio_df)} radios with data")
+
+        # Join radio → H3 via areal crosswalk (max-overlap)
+        merged = xw.merge(radio_df, on="redcode", how="inner")
+        idx = merged.groupby("h3index")["weight"].idxmax()
+        h3_vals = merged.loc[idx][["h3index", "value"]].set_index("h3index")
+
+        # Map to df and percentile rank
+        raw = df["h3index"].map(h3_vals["value"]).astype(float)
+        # Find invert flag for this component
+        invert = any(c[3] for c in components if c[1] == col)
+        if invert:
+            raw = -raw
+        df[col] = percentile_rank(raw).round(1)
+        injected = df[col].notna().sum()
+        print(f"    Injected {col}: {injected:,} hexagons with data")
+
+    conn.close()
+    return df
+
+
 def process_analysis(analysis_id, raster_path, hexgrid_features, output_path):
     """Process a single analysis raster to H3 parquet."""
     components = ANALYSIS_COMPONENTS[analysis_id]
@@ -167,11 +233,17 @@ def process_analysis(analysis_id, raster_path, hexgrid_features, output_path):
     # PCA-validated geometric mean score (OECD/HDI methodology)
     comp_cols = [c[1] for c in components]
 
-    # Exclude 100% NaN columns (e.g. fire bands with no data)
+    # Inject radio-level fallback for 100% NaN columns (e.g. fire)
+    nan_cols = [c for c in comp_cols if df[c].isna().all()]
+    if nan_cols:
+        print(f"  100% NaN columns: {nan_cols} — attempting radio fallback")
+        df = inject_radio_fallback(df, nan_cols, components)
+
+    # Exclude remaining 100% NaN columns (no fallback available)
     valid_cols = [c for c in comp_cols if not df[c].isna().all()]
     dropped_nan = set(comp_cols) - set(valid_cols)
     if dropped_nan:
-        print(f"  Excluded (100% NaN): {dropped_nan}")
+        print(f"  Excluded (no data): {dropped_nan}")
 
     # Run diagnostics on non-NaN subset
     valid_mask = df[valid_cols].notna().all(axis=1)

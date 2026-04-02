@@ -91,16 +91,9 @@ const dict: Record<string, Record<Locale, string>> = {
 	'chart.absolute': { es: 'Valores absolutos', en: 'Absolute values', gn: "Papapy" },
 	'chart.rates': { es: 'Tasas (%)', en: 'Rates (%)', gn: "Jeku'e (%)" },
 
-	// Chat
-	'chat.placeholder': { es: 'Preguntale a Spatia...', en: 'Ask Spatia...', gn: "Eporandu Spatia-pe..." },
-	'chat.thinking': { es: 'Pensando', en: 'Thinking', gn: "Oñeha'ã" },
-	'chat.searching': { es: 'Buscando', en: 'Searching', gn: "Oheka" },
-	'chat.error': { es: 'Error al procesar la consulta', en: 'Error processing query', gn: "Javy oĩ" },
-	'chat.noKey': { es: 'Configurá tu API key primero (click ⚙)', en: 'Set your API key first (click ⚙)', gn: "Emoĩ ne API key (⚙)" },
-	'chat.send': { es: 'Enviar', en: 'Send', gn: "Mondo" },
-	'chat.emptyHint': { es: 'Explorá los datos de Misiones', en: 'Explore Misiones data', gn: "Ehecha Misiones mba'ekuaa" },
-	'chat.errorApiKey': { es: 'API key inválida. Revisala en ⚙', en: 'Invalid API key. Check ⚙', gn: "API key ndoikói" },
-	'chat.retry': { es: 'Reintentar', en: 'Retry', gn: "Eñeha'ã jey" },
+	'error.dataLoadFailed': { es: 'No se pudieron cargar los datos', en: 'Failed to load data', gn: "Ndaikatúi oñemyenyhẽ mba'ekuaa" },
+	'error.engineFailed': { es: 'Error al iniciar el motor de datos', en: 'Data engine failed to start', gn: "Mba'ekuaa ndoikói" },
+
 	'label.waterNetwork': { es: 'Sin red de agua (%)', en: 'No water network (%)', gn: 'Y juru ỹre (%)' },
 	'label.sewerage': { es: 'Cloacas (%)', en: 'Sewerage (%)', gn: 'Ykuaa (%)' },
 	'label.dependencyIndex': { es: 'Índ. dependencia', en: 'Dependency index', gn: "Ñemomba'e" },
@@ -156,10 +149,6 @@ const dict: Record<string, Record<Locale, string>> = {
 	'card.score': { es: 'Score', en: 'Score', gn: 'Score' },
 	'card.difference': { es: 'Diferencia más notable', en: 'Most notable difference', gn: 'Mba\'e iñambuéva' },
 	'card.back': { es: '← Volver a ficha', en: '← Back to card', gn: '← Ejevy' },
-
-	// Chat paywall
-	'chat.paywall.title': { es: 'Análisis IA Premium', en: 'Premium AI Analysis', gn: 'IA Premium' },
-	'chat.paywall.soon': { es: 'Próximamente', en: 'Coming soon', gn: 'Oguerahátama' },
 
 	// Department drill-down
 	'lens.departments': { es: 'Departamentos', en: 'Departments', gn: 'Departamento kuéra' },
@@ -221,6 +210,10 @@ const dict: Record<string, Record<Locale, string>> = {
 	'analysis.floodRisk.title': { es: '¿Dónde es mayor el riesgo de inundación? (Misiones)', en: 'Where is flood risk highest? (Misiones)', gn: "Moõpa ysoguy mba'asy tuichavéva?" },
 	'analysis.floodRisk.desc': { es: 'Presencia histórica de agua (JRC 1984–2021) e inundación actual (Sentinel-1 SAR) por parcela catastral', en: 'Historical water presence (JRC 1984–2021) and current flooding (Sentinel-1 SAR) per cadastral parcel', gn: "Y rehegua historia guive (JRC 1984–2021) ha ko'ag̃a ysoguy (Sentinel-1 SAR) yvy rupi" },
 	'analysis.floodRisk.legend': { es: 'Riesgo hídrico (0–100)', en: 'Flood risk (0–100)', gn: "Y tuicha mba'asy (0–100)" },
+	'analysis.flood.petal.occurrence': { es: 'Ocurrencia', en: 'Occurrence', gn: 'Oiko' },
+	'analysis.flood.petal.recurrence': { es: 'Recurrencia', en: 'Recurrence', gn: 'Jey' },
+	'analysis.flood.petal.seasonality': { es: 'Estacionalidad', en: 'Seasonality', gn: "Ára rehe" },
+	'analysis.flood.petal.extent': { es: 'Extensión actual', en: 'Current extent', gn: "Ko'ãga" },
 	'analysis.flood.riskScore': { es: 'Score de riesgo', en: 'Risk score', gn: "Mba'asy score" },
 	'analysis.flood.recurrence': { es: 'Recurrencia', en: 'Recurrence', gn: 'Jey' },
 	'analysis.flood.recurrenceDesc': { es: '% de meses con agua detectada', en: '% of months with water detected', gn: '% jasy y reheve' },

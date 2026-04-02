@@ -1,11 +1,13 @@
 {
   "rules": [
     {
-      "AllowedOrigins": ["*"],
-      "AllowedMethods": ["GET", "HEAD"],
-      "AllowedHeaders": ["*"],
-      "ExposeHeaders": ["Content-Length", "Content-Range"],
-      "MaxAgeSeconds": 86400
+      "allowed": {
+        "origins": ["https://spatia.ar", "https://www.spatia.ar", "https://neahub.pages.dev", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:8788"],
+        "methods": ["GET", "HEAD"],
+        "headers": ["*"]
+      },
+      "exposed_headers": ["Content-Length", "Content-Range"],
+      "max_age_seconds": 86400
     }
   ]
 }

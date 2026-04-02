@@ -112,7 +112,12 @@
 	}
 
 	// Petal chart for hex detail view
-	const floodPetalLabels = ['Ocurrencia', 'Recurrencia', 'Estacionalidad', 'Extensión actual'];
+	const floodPetalLabels = $derived([
+		i18n.t('analysis.flood.petal.occurrence'),
+		i18n.t('analysis.flood.petal.recurrence'),
+		i18n.t('analysis.flood.petal.seasonality'),
+		i18n.t('analysis.flood.petal.extent'),
+	]);
 	const hexPetalLayers = $derived.by(() => {
 		if (!selectedHex) return [];
 		const occ = selectedHex.jrc_occurrence ?? 0;
