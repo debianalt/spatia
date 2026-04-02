@@ -346,25 +346,35 @@
 			implications: 'Los tipos identifican zonas optimas para plantaciones de pino/eucalipto (suelo acido, lluvia suficiente, pendiente mecanizable, cerca de rutas) frente a zonas marginales donde la forestacion comercial no es viable. Este analisis evalua aptitud del suelo y clima — no reemplaza la verificacion de restricciones legales (areas protegidas, comunidades indigenas, Ley de Bosques 26.331).',
 			method: `${METHOD_COMMON} Variables: pH SoilGrids, arcilla, precipitacion CHIRPS, pendiente FABDEM, distancia a ruta OSM, accesibilidad Nelson. k=3 tipos, silueta=0.33.`,
 		},
-		health_access: {
-			howToRead: 'El mapa clasifica cada hexagono en tipos de acceso a salud segun la co-ocurrencia de tiempo al centro de salud, densidad poblacional, cobertura sanitaria y vulnerabilidad social.',
-			implications: 'Los tipos separan deficit por distancia (zonas rurales lejanas al hospital), deficit por saturacion (zonas densas con demanda excesiva), y deficit por vulnerabilidad (zonas con alto NBI aunque cercanas a servicios).',
-			method: `${METHOD_COMMON} Variables: tiempo motorizado y a pie a salud Oxford MAP, densidad poblacional, cobertura sanitaria, NBI Censo 2022. k=5 tipos, silueta=0.33.`,
+		service_deprivation: {
+			howToRead: 'El mapa clasifica cada hexagono en tipos de carencia de servicios basicos segun NBI, acceso a cloacas, calidad del piso, hacinamiento y acceso digital. Solo se muestran hexagonos con edificaciones detectadas (crosswalk dasimetrico). Cada color representa un perfil de carencia distinto.',
+			implications: 'Los tipos separan carencia habitacional (piso inadecuado + hacinamiento), carencia de infraestructura (sin cloacas), y brecha digital (sin computadora). Cada configuracion demanda intervenciones distintas: vivienda social, extension de red cloacal, o programas de inclusion digital.',
+			method: `${METHOD_COMMON} 6 variables Censo Nacional 2022 (INDEC): NBI, sin cloacas (100 - pct_cloacas), piso inadecuado, hacinamiento, hacinamiento critico, sin computadora (100 - pct_computadora). Crosswalk dasimetrico ponderado por edificios (2.8M footprints). KMO=0.73.`,
 		},
-		education_gap: {
-			howToRead: 'El mapa clasifica cada hexagono en tipos de brecha educativa segun la co-ocurrencia de poblacion sin instruccion, desercion adolescente, nivel educativo maximo y aislamiento territorial.',
-			implications: 'Los tipos distinguen brecha por pobreza educativa (alta desercion + sin instruccion), brecha por aislamiento (lejos de instituciones terciarias), y zonas con alta formacion universitaria. Cada configuracion demanda intervenciones diferentes.',
-			method: `${METHOD_COMMON} Variables: sin instruccion Censo 2022, desercion 13-18, solo primaria, universitarios, aislamiento Nelson. k=4 tipos, silueta=0.35.`,
+		territorial_isolation: {
+			howToRead: 'El mapa clasifica cada hexagono en tipos de aislamiento territorial segun tiempo de viaje a ciudades y centros de salud, distancia a rutas, densidad vial, luces nocturnas y densidad poblacional. Cobertura completa de la provincia (crosswalk hibrido).',
+			implications: 'Los tipos distinguen aislamiento por distancia (lejos de rutas y ciudades), aislamiento funcional (cerca de ruta pero sin servicios), y conectividad plena. Las zonas aisladas enfrentan costos de transporte, acceso limitado a salud y educacion, y menor oportunidad economica.',
+			method: `${METHOD_COMMON} 6 variables: acceso a ciudades y salud (Oxford MAP 2019, friccion motorizada), distancia a ruta primaria y densidad vial (OSM), radiancia VIIRS 2022-2024, densidad poblacional Censo 2022. Crosswalk hibrido (dasimetrico + areal). KMO=0.87.`,
+		},
+		health_access: {
+			howToRead: 'El mapa clasifica cada hexagono en tipos de acceso a salud segun tiempo al centro de salud, cobertura sanitaria, vulnerabilidad social (NBI), presion demografica (ancianos y menores) y densidad poblacional. Solo hexagonos con edificaciones.',
+			implications: 'Los tipos separan deficit por distancia (zonas rurales lejanas), deficit por saturacion (zonas densas con alta proporcion de poblacion vulnerable), y deficit por cobertura (alto NBI con baja cobertura sanitaria). Cada configuracion requiere respuestas distintas del sistema de salud.',
+			method: `${METHOD_COMMON} 6 variables: tiempo motorizado a salud (Oxford MAP 2019), cobertura sanitaria, NBI, % adultos mayores, % menores 18, densidad poblacional (Censo 2022). Crosswalk dasimetrico. KMO=0.60.`,
+		},
+		education_capital: {
+			howToRead: 'El mapa clasifica cada hexagono en tipos de capital educativo segun el nivel de instruccion acumulado: sin instruccion, secundario completo o mas, educacion superior (terciario + universitario), y universitario. Solo hexagonos con edificaciones.',
+			implications: 'Los tipos distinguen zonas con alto capital humano (universidades cercanas, alta formacion), zonas de educacion media (secundario completo pero sin terciario), y zonas de bajo capital (alta proporcion sin instruccion). El capital educativo es predictor de ingresos, salud y participacion civica.',
+			method: `${METHOD_COMMON} 4 variables Censo 2022: % sin instruccion, % secundario completo o mas (umbral acumulativo), % educacion superior (terciario + universitario), % universitario. Terciario y universitario son tracks paralelos en el sistema argentino. Crosswalk dasimetrico. KMO=0.71.`,
+		},
+		education_flow: {
+			howToRead: 'El mapa clasifica cada hexagono en tipos de desempeno del sistema educativo segun inasistencia escolar primaria (6-12), secundaria (13-18) y maternidad adolescente. Solo hexagonos con edificaciones.',
+			implications: 'Los tipos separan desercion temprana (primaria), desercion tardia (secundaria) y embarazo adolescente como factor de exclusion educativa. La inasistencia primaria indica fallas basicas del sistema; la secundaria indica problemas de retencion; la maternidad adolescente indica vulnerabilidad de genero intersectada con pobreza.',
+			method: `${METHOD_COMMON} 3 variables Censo 2022: tasa de inasistencia 6-12 anos, tasa de inasistencia 13-18 anos, tasa de maternidad adolescente. Variables directas (mayor = peor flujo). Crosswalk dasimetrico. KMO=0.61.`,
 		},
 		land_use: {
 			howToRead: 'El mapa clasifica cada hexagono segun su cobertura dominante: selva nativa, plantacion forestal, pastizal, agricultura, agua o urbano. La fuente es MapBiomas Argentina (Landsat 30m, 2022) que distingue bosque nativo de silvicultura.',
 			implications: 'La separacion entre selva nativa (73%) y plantacion forestal (12%) permite evaluar el estado de conservacion real: los pinares/eucaliptos no son selva paranaense aunque Dynamic World los clasifique igual. Los mosaicos agropecuarios indican zonas de transicion activa.',
 			method: `${METHOD_COMMON} Fuente: MapBiomas Argentina Collection 1 (Landsat 30m, 2022). Clases remapeadas: bosque nativo, plantacion, pastizal, agricultura, mosaico, humedal, urbano, agua. k=6 tipos, silueta=0.62.`,
-		},
-		territorial_gap: {
-			howToRead: 'El mapa clasifica cada hexagono en tipos de brecha territorial segun la co-ocurrencia de actividad economica, pobreza, acceso a agua, cloacas y aislamiento.',
-			implications: 'Los tipos separan urbanizacion sin servicios (luces nocturnas pero sin cloacas), pobreza rural estructural (alto NBI + aislamiento), y zonas con servicios consolidados. La clasificacion multivariada evita confundir causas distintas de desigualdad.',
-			method: `${METHOD_COMMON} Variables: radiancia VIIRS, NBI Censo 2022, acceso a agua y cloacas Censo 2022, aislamiento Nelson. k=4 tipos, silueta=0.31.`,
 		},
 		powerline_density: {
 			howToRead: 'Mapa de densidad de lineas de media y alta tension. Hexagonos mas claros = mayor densidad de infraestructura electrica. Score basado en longitud total y cantidad de lineas dentro de cada hexagono.',
