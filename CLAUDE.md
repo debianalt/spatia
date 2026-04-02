@@ -47,10 +47,17 @@ db/                     # D1 schema + import scripts (seed.sql gitignored)
 - **R2 uploads**: `npx wrangler r2 object put neahub/... --file ... --remote` — el pipeline usa `upload_to_r2.py` pero NO pasa `--remote`, hacer upload manual con `--remote` después.
 - **Parquet cache**: DuckDB-WASM en browser cachea parquets. Usar cache-buster `?v=N` en `getParquetUrl()` al cambiar schema (incrementar N en config.ts).
 
+## Scoring Methodology
+- **All composite scores** use PCA-validated geometric mean (OECD Handbook / UNDP HDI style)
+- **Pipeline**: percentile rank → correlation diagnostics → KMO/Bartlett → PCA (varimax) → select variables (drop |r|>0.70) → geometric mean (floor=1.0)
+- **Shared module**: `pipeline/scoring.py` — all diagnostics and scoring functions
+- **Diagnostics**: `--diagnostics` flag on `compute_satellite_scores.py` emits `*_diagnostics.json` per analysis
+- **Legacy comparison**: `--legacy` flag emits `score_legacy` column with old weighted arithmetic mean
+
 ## Flood Risk Layer
 - **Data sources**: JRC Global Surface Water v1.4 (Landsat 1984–2021) + Sentinel-1 SAR (current extent)
 - **Parquet columns**: `h3index`, `jrc_occurrence` (0-100%), `jrc_recurrence` (0-100%), `jrc_seasonality` (0-12), `flood_extent_pct` (0-100%), `flood_risk_score` (0-100)
-- **Score formula**: 50% JRC occurrence + 20% JRC recurrence + 30% S1 current extent
+- **Score formula**: Geometric mean of PCA-validated components (occurrence, recurrence, extent)
 - **Pipeline**: `python pipeline/run_flood_update.py --skip-gee` (con rasters locales)
 
 ## Deployment

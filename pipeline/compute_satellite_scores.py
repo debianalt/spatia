@@ -1,9 +1,12 @@
 """
-Compute 10 composite satellite/census scores at H3 res-9 for Spatia.
+Compute 11 composite satellite/census scores at H3 res-9 for Spatia.
 
-Reads radio-level data from PostGIS (ndvi_misiones), projects onto H3
-hexagons via areal crosswalk, normalizes via percentile rank (0-100),
-and computes weighted composite scores.
+Methodology: PCA-validated geometric mean (OECD Handbook / UNDP HDI).
+  1. Reads radio-level data from PostGIS, projects onto H3 via areal crosswalk
+  2. Normalizes each component via percentile rank (0-100)
+  3. Runs PCA diagnostics (correlation matrix, KMO, Bartlett's, varimax)
+  4. Selects variables by dropping redundant pairs (|r| > 0.70)
+  5. Computes geometric mean of retained components (floor=1.0, HDI-style)
 
 Analyses:
   1. environmental_risk  — Fire, deforestation, thermal amplitude, slope, HAND
@@ -15,10 +18,13 @@ Analyses:
   7. forest_health       — NDVI trend, loss ratio, fire, GPP, ET
   8. forestry_aptitude   — pH, clay, precipitation, slope, road dist, accessibility
   9. territorial_gap     — Nightlights vs NBI, water access, sewage, isolation
+ 10. health_access       — Healthcare time, walk, population, coverage, NBI
+ 11. education_gap       — No instruction, dropout, primary only, university, isolation
 
 Usage:
   python pipeline/compute_satellite_scores.py
   python pipeline/compute_satellite_scores.py --only environmental_risk,green_capital
+  python pipeline/compute_satellite_scores.py --diagnostics --legacy
 """
 
 import argparse
@@ -31,6 +37,11 @@ import pandas as pd
 import psycopg2
 
 from config import OUTPUT_DIR
+from scoring import (
+    geometric_mean_score,
+    run_full_diagnostics,
+    generate_report,
+)
 
 DB_URI = os.environ.get(
     "DATABASE_URL",
@@ -414,8 +425,11 @@ def compute_analysis(
     conn,
     crosswalk: pd.DataFrame,
     analysis_def: dict,
+    emit_diagnostics: bool = False,
+    emit_legacy: bool = False,
+    output_dir: str = OUTPUT_DIR,
 ) -> pd.DataFrame:
-    """Compute a single composite analysis."""
+    """Compute a single composite analysis using PCA-validated geometric mean."""
     analysis_id = analysis_def["id"]
     components = analysis_def["components"]
 
@@ -429,43 +443,68 @@ def compute_analysis(
     print(f"    H3 hexagons: {len(hex_data):,}")
 
     # Normalize each component via percentile rank
-    for out_col, sql_col, weight, invert in components:
+    for out_col, sql_col, _weight, invert in components:
         raw = hex_data[sql_col].astype(float)
         if invert:
-            # Invert before ranking: lower raw = higher score
             raw = -raw
         hex_data[out_col] = normalize_percentile(raw)
 
-    # Compute weighted composite score
-    score = pd.Series(0.0, index=hex_data.index)
-    total_weight = 0.0
-    for out_col, _, weight, _ in components:
-        valid = hex_data[out_col].notna()
-        score[valid] += hex_data.loc[valid, out_col] * weight
-        total_weight += weight
+    comp_cols = [c[0] for c in components]
 
-    hex_data["score"] = (score / total_weight).round(1)
+    # ── PCA diagnostics + variable selection ─────────────────────────────
+    diagnostics = run_full_diagnostics(hex_data, comp_cols, corr_threshold=0.70)
+    retained = diagnostics["variable_selection"]["retained"]
+    dropped = diagnostics["variable_selection"]["dropped"]
+
+    kmo = diagnostics["kmo_bartlett"].get("kmo_overall")
+    if kmo is not None:
+        print(f"    KMO: {kmo:.3f} {'OK' if kmo >= 0.60 else 'WARNING < 0.60'}")
+    if dropped:
+        print(f"    Dropped (|r|>0.70): {dropped}")
+    print(f"    Retained ({len(retained)}): {retained}")
+
+    # ── Geometric mean score (HDI-style, floor=1.0) ─────────────────────
+    hex_data["score"] = geometric_mean_score(hex_data, retained, floor=1.0).round(1)
+
+    # ── Legacy weighted arithmetic mean (for validation) ─────────────────
+    if emit_legacy:
+        legacy = pd.Series(0.0, index=hex_data.index)
+        total_weight = 0.0
+        for out_col, _, weight, _ in components:
+            valid = hex_data[out_col].notna()
+            legacy[valid] += hex_data.loc[valid, out_col] * weight
+            total_weight += weight
+        hex_data["score_legacy"] = (legacy / total_weight).round(1)
+
+    # ── Diagnostics report ───────────────────────────────────────────────
+    if emit_diagnostics:
+        generate_report(analysis_id, diagnostics, output_dir=output_dir)
 
     # Round component columns
     for out_col, _, _, _ in components:
         hex_data[out_col] = hex_data[out_col].round(1)
 
     # Select output columns
-    out_cols = ["h3index", "score"] + [c[0] for c in components]
+    out_cols = ["h3index", "score"] + comp_cols
+    if emit_legacy:
+        out_cols.append("score_legacy")
     result = hex_data[out_cols].copy()
 
     # Stats
     non_null = result["score"].notna().sum()
     avg = result["score"].mean()
     median = result["score"].median()
-    print(f"    Score: n={non_null:,}, avg={avg:.1f}, median={median:.1f}")
+    print(f"    Score (geometric mean): n={non_null:,}, avg={avg:.1f}, median={median:.1f}")
+    if emit_legacy:
+        avg_leg = result["score_legacy"].mean()
+        print(f"    Score (legacy arith.):  avg={avg_leg:.1f}")
 
     return result
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Compute 10 satellite composite scores at H3 res-9"
+        description="Compute satellite composite scores at H3 res-9 (PCA + geometric mean)"
     )
     parser.add_argument(
         "--only", default=None,
@@ -474,6 +513,14 @@ def main():
     parser.add_argument(
         "--output-dir", default=OUTPUT_DIR,
         help=f"Output directory (default: {OUTPUT_DIR})"
+    )
+    parser.add_argument(
+        "--diagnostics", action="store_true",
+        help="Emit PCA/KMO/correlation diagnostic JSON per analysis"
+    )
+    parser.add_argument(
+        "--legacy", action="store_true",
+        help="Include score_legacy column (old weighted arithmetic mean) for validation"
     )
     args = parser.parse_args()
 
@@ -508,7 +555,12 @@ def main():
         print(f"\n[{i}/{len(analyses)}] Computing {aid}...")
 
         try:
-            result = compute_analysis(conn, crosswalk, analysis_def)
+            result = compute_analysis(
+                conn, crosswalk, analysis_def,
+                emit_diagnostics=args.diagnostics,
+                emit_legacy=args.legacy,
+                output_dir=args.output_dir,
+            )
             out_path = os.path.join(args.output_dir, f"sat_{aid}.parquet")
             result.to_parquet(out_path, index=False)
             size_kb = os.path.getsize(out_path) / 1024

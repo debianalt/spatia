@@ -235,7 +235,7 @@
 				</div>
 				<div class="method-item">
 					<span class="method-term">Scores</span>
-					<span class="method-def">Cada indicador es un compuesto ponderado normalizado a 0–100</span>
+					<span class="method-def">Cada indicador es una media geométrica de componentes validados por PCA, normalizada a 0–100</span>
 				</div>
 				<div class="method-item">
 					<span class="method-term">Actualización</span>

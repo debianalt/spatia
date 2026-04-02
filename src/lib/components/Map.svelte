@@ -674,59 +674,7 @@
 			map.addSource('catastro', { type: 'vector', url: getTilesUrl('catastro') });
 		}
 
-		// Fill layer — cyan=urbano, green=rural, yellow=new parcels
-		if (!map.getLayer('catastro-fill')) {
-			map.addLayer({
-				id: 'catastro-fill',
-				type: 'fill',
-				source: 'catastro',
-				'source-layer': 'catastro',
-				minzoom: 11,
-				paint: {
-					'fill-color': [
-						'case',
-						['==', ['get', 'is_new'], 1], '#fbbf24',
-						['match', ['get', 'tipo'],
-							'urbano', '#22d3ee',
-							'rural', '#4ade80',
-							'#22d3ee'
-						]
-					],
-					'fill-opacity': [
-						'case',
-						['==', ['get', 'is_new'], 1],
-						['interpolate', ['linear'], ['zoom'], 11, 0.25, 12, 0.40, 14, 0.55],
-						['interpolate', ['linear'], ['zoom'], 11, 0.10, 12, 0.18, 14, 0.25]
-					]
-				}
-			});
-		}
-
-		// Line layer — only at high zoom
-		if (!map.getLayer('catastro-line')) {
-			map.addLayer({
-				id: 'catastro-line',
-				type: 'line',
-				source: 'catastro',
-				'source-layer': 'catastro',
-				minzoom: 14,
-				paint: {
-					'line-color': [
-						'case',
-						['==', ['get', 'is_new'], 1], '#fbbf24',
-						['match', ['get', 'tipo'],
-							'urbano', '#22d3ee',
-							'rural', '#4ade80',
-							'#22d3ee'
-						]
-					],
-					'line-width': ['case', ['==', ['get', 'is_new'], 1], 1.0, 0.5],
-					'line-opacity': ['case', ['==', ['get', 'is_new'], 1], 0.7, 0.4]
-				}
-			});
-		}
-
-		// Hide 3D buildings — add flat 2D fill version so catastro lines render on top
+		// Hide 3D buildings — add flat 2D fill BELOW catastro
 		if (map.getLayer('buildings-3d')) {
 			map.setLayoutProperty('buildings-3d', 'visibility', 'none');
 		}
@@ -738,13 +686,12 @@
 				'source-layer': 'buildings',
 				paint: {
 					'fill-color': mapStore.getColorExpr() as any,
-					'fill-opacity': 0.5
+					'fill-opacity': 0.3
 				}
 			});
-			// Click on flat buildings works the same as 3D
 			map.on('click', 'buildings-flat', (e) => {
 				if (lassoActive) return;
-				if (catastroClickMode !== 'none') return; // catastro-fill handler handles it
+				if (catastroClickMode !== 'none') return;
 				const redcode = e.features![0]?.properties?.redcode;
 				if (!redcode) return;
 				if (mapStore.hasRadio(redcode)) {
@@ -758,6 +705,53 @@
 			});
 			map.on('mouseenter', 'buildings-flat', () => { map.getCanvas().style.cursor = 'pointer'; });
 			map.on('mouseleave', 'buildings-flat', () => { map.getCanvas().style.cursor = ''; });
+		}
+
+		// Fill layer — bright solid colors ON TOP of everything
+		if (!map.getLayer('catastro-fill')) {
+			map.addLayer({
+				id: 'catastro-fill',
+				type: 'fill',
+				source: 'catastro',
+				'source-layer': 'catastro',
+				minzoom: 9,
+				paint: {
+					'fill-color': [
+						'match', ['get', 'tipo'],
+						'urbano', '#22d3ee',
+						'rural', '#4ade80',
+						'#22d3ee'
+					],
+					'fill-opacity': 0.95,
+					'fill-outline-color': [
+						'match', ['get', 'tipo'],
+						'urbano', '#0e7490',
+						'rural', '#15803d',
+						'#0e7490'
+					]
+				}
+			});
+		}
+
+		// Line layer at high zoom for definition — on top of fill
+		if (!map.getLayer('catastro-line')) {
+			map.addLayer({
+				id: 'catastro-line',
+				type: 'line',
+				source: 'catastro',
+				'source-layer': 'catastro',
+				minzoom: 13,
+				paint: {
+					'line-color': [
+						'match', ['get', 'tipo'],
+						'urbano', '#0e7490',
+						'rural', '#15803d',
+						'#0e7490'
+					],
+					'line-width': ['interpolate', ['linear'], ['zoom'], 13, 0.5, 15, 1.0],
+					'line-opacity': ['interpolate', ['linear'], ['zoom'], 13, 0.7, 15, 0.9]
+				}
+			});
 		}
 		for (const layerId of CARTO_BUILDING_LAYERS) {
 			if (map.getLayer(layerId)) {
@@ -850,15 +844,17 @@
 			map.setPaintProperty('catastro-fill', 'fill-color', [
 				'match', ['get', 'tipo'], 'urbano', '#22d3ee', 'rural', '#4ade80', '#22d3ee'
 			]);
-			map.setPaintProperty('catastro-fill', 'fill-opacity',
-				['interpolate', ['linear'], ['zoom'], 11, 0.10, 12, 0.18, 14, 0.25]);
+			map.setPaintProperty('catastro-fill', 'fill-opacity', 0.95);
+			map.setPaintProperty('catastro-fill', 'fill-outline-color', [
+				'match', ['get', 'tipo'], 'urbano', '#0e7490', 'rural', '#15803d', '#0e7490'
+			]);
 		}
 		if (map.getLayer('catastro-line')) {
 			map.setPaintProperty('catastro-line', 'line-color', [
-				'match', ['get', 'tipo'], 'urbano', '#22d3ee', 'rural', '#4ade80', '#22d3ee'
+				'match', ['get', 'tipo'], 'urbano', '#0e7490', 'rural', '#15803d', '#0e7490'
 			]);
 			map.setPaintProperty('catastro-line', 'line-opacity',
-				['interpolate', ['linear'], ['zoom'], 11, 0.5, 12, 0.7, 14, 0.85]);
+				['interpolate', ['linear'], ['zoom'], 13, 0.6, 15, 0.9]);
 		}
 	}
 

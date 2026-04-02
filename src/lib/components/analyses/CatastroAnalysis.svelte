@@ -273,7 +273,7 @@
 		{/if}
 
 		<div class="map-legend">
-			<span class="legend-swatch" style:background="#22d3ee"></span> {i18n.t('analysis.catastro.legendUrban')}
+			<span class="legend-swatch" style:background="#06b6d4"></span> {i18n.t('analysis.catastro.legendUrban')}
 			<span class="legend-swatch legend-gap" style:background="#4ade80"></span> {i18n.t('analysis.catastro.legendRural')}
 			<span class="legend-swatch legend-gap" style:background="#fbbf24"></span> {i18n.t('analysis.catastro.legendNew')}
 		</div>
@@ -334,7 +334,7 @@
 		<div class="hint">{i18n.t('analysis.catastro.clickDept')}</div>
 
 		<div class="map-legend">
-			<span class="legend-swatch" style:background="#22d3ee"></span> {i18n.t('analysis.catastro.legendUrban')}
+			<span class="legend-swatch" style:background="#06b6d4"></span> {i18n.t('analysis.catastro.legendUrban')}
 			<span class="legend-swatch legend-gap" style:background="#4ade80"></span> {i18n.t('analysis.catastro.legendRural')}
 			<span class="legend-swatch legend-gap" style:background="#fbbf24"></span> {i18n.t('analysis.catastro.legendNew')}
 		</div>
@@ -384,7 +384,7 @@
 			<div class="method-body">
 				<p class="explain-text">{i18n.t('analysis.catastro.howToReadBody')}</p>
 				<div class="map-legend" style="margin-top: 6px;">
-					<span class="legend-swatch" style:background="#22d3ee"></span> {i18n.t('analysis.catastro.legendUrban')}
+					<span class="legend-swatch" style:background="#06b6d4"></span> {i18n.t('analysis.catastro.legendUrban')}
 					<span class="legend-swatch legend-gap" style:background="#4ade80"></span> {i18n.t('analysis.catastro.legendRural')}
 				</div>
 			</div>

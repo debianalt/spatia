@@ -637,9 +637,9 @@ const dict: Record<string, Record<Locale, string>> = {
 		gn: "Mboy % yvy y guype oime ko'ag̃a imagen SAR ipahague rupi."
 	},
 	'analysis.flood.methodScore': {
-		es: 'Índice compuesto 0–100: 50% presencia histórica (JRC) + 20% recurrencia interanual (JRC) + 30% extensión actual (Sentinel-1 SAR). Una zona permanentemente sobre un río tendrá score alto; una zona seca con inundación actual también.',
-		en: 'Composite index 0–100: 50% historical presence (JRC) + 20% year-to-year recurrence (JRC) + 30% current extent (Sentinel-1 SAR). An area permanently on a river scores high; a dry area with current flooding also scores high.',
-		gn: "Índice 0–100: 50% y rehegua (JRC) + 20% jey ary ha ary (JRC) + 30% ko'ag̃a tuichakue (Sentinel-1 SAR)."
+		es: 'Índice compuesto 0–100: media geométrica de componentes validados por PCA (presencia histórica, recurrencia interanual, extensión actual). Fuentes: JRC Global Surface Water + Sentinel-1 SAR. Una zona permanentemente sobre un río tendrá score alto; una zona seca con inundación actual también.',
+		en: 'Composite index 0–100: geometric mean of PCA-validated components (historical presence, year-to-year recurrence, current extent). Sources: JRC Global Surface Water + Sentinel-1 SAR. An area permanently on a river scores high; a dry area with current flooding also scores high.',
+		gn: "Índice 0–100: media geométrica componente PCA rehegua (y rehegua, jey ary ha ary, ko'ag̃a tuichakue). JRC + Sentinel-1 SAR."
 	},
 	// Explanatory panels — flood risk
 	'analysis.flood.howToReadTitle': { es: 'Cómo leer este mapa', en: 'How to read this map', gn: "Mba'eichapa ejapokuaa ko mapa" },

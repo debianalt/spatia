@@ -26,6 +26,10 @@ import h3
 import numpy as np
 import pandas as pd
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, SCRIPT_DIR)
+from scoring import geometric_mean_score, run_full_diagnostics, generate_report
+
 try:
     import rasterio
     from rasterio.features import geometry_mask
@@ -137,21 +141,51 @@ def zonal_stats_sampling(gdf: gpd.GeoDataFrame, raster_path: str) -> pd.Series:
     return pd.Series(values, index=gdf.index)
 
 
+def normalize_percentile(series: pd.Series) -> pd.Series:
+    """Compute percentile rank 0-100 for a series."""
+    valid = series.notna()
+    result = pd.Series(np.nan, index=series.index)
+    if valid.sum() > 1:
+        result[valid] = series[valid].rank(pct=True) * 100.0
+    return result
+
+
 def compute_flood_risk_score(jrc_occurrence: pd.Series, jrc_recurrence: pd.Series,
-                             s1_extent: pd.Series) -> pd.Series:
+                             s1_extent: pd.Series,
+                             emit_diagnostics: bool = False,
+                             output_dir: str = None) -> pd.Series:
     """
-    Composite flood risk score (0–100).
+    Composite flood risk score (0–100) via PCA-validated geometric mean.
 
     Combines JRC Global Surface Water (1984–2021) historical data with
     Sentinel-1 SAR current flood extent.
 
-    Weights: 50% JRC occurrence + 20% JRC recurrence + 30% S1 current extent.
+    Methodology: percentile-rank each component, run PCA diagnostics,
+    select non-redundant variables (|r| < 0.70), compute geometric mean
+    with floor=1.0 (HDI-style, partially compensatory).
     """
-    occ_norm = (jrc_occurrence / 100).clip(0, 1)
-    rec_norm = (jrc_recurrence / 100).clip(0, 1)
-    ext_norm = s1_extent.clip(0, 1)
+    df = pd.DataFrame({
+        "c_occurrence": normalize_percentile(jrc_occurrence),
+        "c_recurrence": normalize_percentile(jrc_recurrence),
+        "c_extent": normalize_percentile(s1_extent),
+    })
 
-    score = (0.5 * occ_norm + 0.2 * rec_norm + 0.3 * ext_norm) * 100
+    comp_cols = ["c_occurrence", "c_recurrence", "c_extent"]
+    diagnostics = run_full_diagnostics(df, comp_cols, corr_threshold=0.70)
+    retained = diagnostics["variable_selection"]["retained"]
+    dropped = diagnostics["variable_selection"]["dropped"]
+
+    kmo = diagnostics["kmo_bartlett"].get("kmo_overall")
+    if kmo is not None:
+        print(f"    Flood KMO: {kmo:.3f}")
+    if dropped:
+        print(f"    Flood dropped (|r|>0.70): {dropped}")
+    print(f"    Flood retained ({len(retained)}): {retained}")
+
+    if emit_diagnostics and output_dir:
+        generate_report("flood_risk", diagnostics, output_dir=output_dir)
+
+    score = geometric_mean_score(df, retained, floor=1.0)
     return score.round(1)
 
 
@@ -170,15 +204,18 @@ def generate_synthetic_data(gdf: gpd.GeoDataFrame) -> pd.DataFrame:
     base_risk = 1 - lat_norm
 
     # Add some noise
-    recurrence = (base_risk * 0.4 + np.random.beta(2, 5, n) * 0.3).clip(0, 1)
-    extent = (np.random.beta(1.5, 10, n) * recurrence).clip(0, 1)
+    occurrence = (base_risk * 0.6 + np.random.beta(3, 5, n) * 0.4).clip(0, 1) * 100
+    recurrence = (base_risk * 0.4 + np.random.beta(2, 5, n) * 0.3).clip(0, 1) * 100
+    extent = (np.random.beta(1.5, 10, n) * base_risk).clip(0, 1)
     score = compute_flood_risk_score(
+        pd.Series(occurrence, index=gdf.index),
         pd.Series(recurrence, index=gdf.index),
         pd.Series(extent, index=gdf.index),
     )
 
     return pd.DataFrame({
         "h3index": gdf["h3index"],
+        "jrc_occurrence": occurrence.round(2),
         "flood_recurrence_mean": recurrence.round(4),
         "flood_extent_pct": (extent * 100).round(2),
         "flood_risk_score": score,
@@ -187,6 +224,7 @@ def generate_synthetic_data(gdf: gpd.GeoDataFrame) -> pd.DataFrame:
 
 def main():
     parser = argparse.ArgumentParser(description="Aggregate flood data to H3 hexagons")
+    parser.add_argument("--occurrence", help="Path to JRC occurrence GeoTIFF")
     parser.add_argument("--recurrence", help="Path to historical recurrence GeoTIFF")
     parser.add_argument("--current", help="Path to current flood extent GeoTIFF")
     parser.add_argument("--grid", required=True, help="Path to hexagons GeoJSON")
@@ -207,16 +245,25 @@ def main():
             print("Error: --recurrence and --current required (or use --synthetic)")
             sys.exit(1)
 
+        if args.occurrence:
+            print("Computing zonal statistics for JRC occurrence...")
+            occurrence = zonal_stats_rasterio(gdf, args.occurrence)
+        else:
+            occurrence = pd.Series(np.nan, index=gdf.index)
+
         print("Computing zonal statistics for recurrence...")
         recurrence = zonal_stats_rasterio(gdf, args.recurrence)
 
         print("Computing zonal statistics for current extent...")
         extent = zonal_stats_rasterio(gdf, args.current)
 
-        score = compute_flood_risk_score(recurrence, extent)
+        score = compute_flood_risk_score(
+            occurrence.fillna(0), recurrence.fillna(0), extent.fillna(0)
+        )
 
         df = pd.DataFrame({
             "h3index": gdf["h3index"],
+            "jrc_occurrence": occurrence.round(2),
             "flood_recurrence_mean": recurrence.round(4),
             "flood_extent_pct": (extent * 100).round(2),
             "flood_risk_score": score,

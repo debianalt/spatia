@@ -26,8 +26,10 @@ import sys
 import time
 
 import duckdb
+import pandas as pd
 
 from config import OUTPUT_DIR
+from scoring import geometric_mean_score, run_full_diagnostics
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -181,26 +183,22 @@ def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str) -> int:
     stats = conn.execute("SELECT count(*) FILTER (WHERE paving_index > 0), ROUND(AVG(paving_index) FILTER (WHERE paving_index > 0), 1) FROM score_paving").fetchone()
     print(f"  non-zero: {stats[0]:,}, avg: {stats[1]}")
 
-    # ── Score 2: Urban Consolidation (unchanged, good as-is) ─────────────
-    print("[2/8] Computing urban_consolidation...")
+    # ── Score 2: Urban Consolidation — raw sub-components for post-processing ──
+    print("[2/8] Computing urban_consolidation sub-components...")
     conn.execute(f"""
         CREATE TABLE score_urban AS
         SELECT
             h.h3index,
-            LEAST(100.0, GREATEST(0.0,
-                (
-                    0.35 * LEAST(1.0, COALESCE(b.building_count, 0)::FLOAT / {p95_building})
-                    + 0.25 * CASE
-                        WHEN COALESCE(b.building_count, 0) = 0 THEN 0
-                        ELSE LEAST(1.0, COALESCE(b.n_residential, 0)::FLOAT / b.building_count)
-                      END
-                    + 0.25 * COALESCE(sp.paving_index, 0) / 100.0
-                    + 0.15 * CASE
-                        WHEN COALESCE(t.n_primary, 0) + COALESCE(t.n_secondary, 0) + COALESCE(t.n_tertiary, 0) > 0
-                        THEN 1.0 ELSE 0.0
-                      END
-                ) * 100.0
-            )) AS urban_consolidation,
+            -- Raw sub-components (post-processed to geometric mean in Python)
+            LEAST(1.0, COALESCE(b.building_count, 0)::FLOAT / {p95_building}) AS uc_density,
+            CASE WHEN COALESCE(b.building_count, 0) = 0 THEN 0
+                 ELSE LEAST(1.0, COALESCE(b.n_residential, 0)::FLOAT / b.building_count)
+            END AS uc_residential,
+            COALESCE(sp.paving_index, 0) / 100.0 AS uc_paving,
+            CASE WHEN COALESCE(t.n_primary, 0) + COALESCE(t.n_secondary, 0) + COALESCE(t.n_tertiary, 0) > 0
+                 THEN 1.0 ELSE 0.0
+            END AS uc_hierarchy,
+            0.0 AS urban_consolidation,  -- placeholder, computed in Python post-processing
             COALESCE(b.building_count, 0) AS building_count
         FROM all_hexes h
         LEFT JOIN buildings b ON h.h3index = b.h3index
@@ -288,26 +286,24 @@ def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str) -> int:
     stats = conn.execute("SELECT count(*) FILTER (WHERE commercial_vitality > 0), ROUND(AVG(commercial_vitality) FILTER (WHERE commercial_vitality > 0), 1) FROM score_commercial").fetchone()
     print(f"  non-zero: {stats[0]:,}, avg: {stats[1]}")
 
-    # ── Score 5: Road Connectivity (unchanged) ───────────────────────────
-    print("[5/8] Computing road_connectivity...")
+    # ── Score 5: Road Connectivity — raw sub-components for post-processing ──
+    print("[5/8] Computing road_connectivity sub-components...")
     conn.execute(f"""
         CREATE TABLE score_connectivity AS
         SELECT h.h3index,
-            CASE WHEN t.h3index IS NULL THEN 0
-            ELSE LEAST(100.0, GREATEST(0.0,
-                (
-                    0.35 * CASE
-                        WHEN COALESCE(t.n_primary, 0) > 0 THEN 1.0
-                        WHEN COALESCE(t.n_secondary, 0) > 0 THEN 0.7
-                        WHEN COALESCE(t.n_tertiary, 0) > 0 THEN 0.4
-                        WHEN COALESCE(t.n_residential, 0) > 0 THEN 0.15
-                        ELSE 0.0 END
-                    + 0.35 * LEAST(1.0, COALESCE(t.segment_count, 0)::FLOAT / {p95_segment})
-                    + 0.15 * LEAST(1.0, COALESCE(t.n_bridge, 0)::FLOAT / 3.0)
-                    + 0.15 * CASE WHEN COALESCE(t.segment_count, 0) = 0 THEN 0
-                        ELSE LEAST(1.0, COALESCE(t.n_road, 0)::FLOAT / (t.segment_count * 0.5)) END
-                ) * 100.0
-            )) END AS road_connectivity,
+            CASE
+                WHEN COALESCE(t.n_primary, 0) > 0 THEN 1.0
+                WHEN COALESCE(t.n_secondary, 0) > 0 THEN 0.7
+                WHEN COALESCE(t.n_tertiary, 0) > 0 THEN 0.4
+                WHEN COALESCE(t.n_residential, 0) > 0 THEN 0.15
+                ELSE 0.0
+            END AS rc_hierarchy,
+            LEAST(1.0, COALESCE(t.segment_count, 0)::FLOAT / {p95_segment}) AS rc_density,
+            LEAST(1.0, COALESCE(t.n_bridge, 0)::FLOAT / 3.0) AS rc_bridges,
+            CASE WHEN COALESCE(t.segment_count, 0) = 0 THEN 0
+                 ELSE LEAST(1.0, COALESCE(t.n_road, 0)::FLOAT / (t.segment_count * 0.5))
+            END AS rc_road_ratio,
+            0.0 AS road_connectivity,  -- placeholder, computed in Python post-processing
             COALESCE(t.segment_count, 0) AS segment_count
         FROM all_hexes h
         LEFT JOIN transportation t ON h.h3index = t.h3index
@@ -351,21 +347,15 @@ def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str) -> int:
     stats = conn.execute("SELECT count(*) FILTER (WHERE building_mix > 0), ROUND(AVG(building_mix) FILTER (WHERE building_mix > 0), 1) FROM score_building_mix").fetchone()
     print(f"  non-zero: {stats[0]:,}, avg: {stats[1]}")
 
-    # ── Score 7: Urbanization (NEW — replaces land_use_profile) ──────────
-    print("[7/8] Computing urbanization...")
+    # ── Score 7: Urbanization — raw sub-components for post-processing ──
+    print("[7/8] Computing urbanization sub-components...")
     conn.execute(f"""
         CREATE TABLE score_urbanization AS
         SELECT h.h3index,
-            LEAST(100.0, GREATEST(0.0,
-                (
-                    -- 60% building density (normalized to P95)
-                    0.60 * LEAST(1.0, COALESCE(b.building_count, 0)::FLOAT / {p95_building})
-                    -- 25% developed land use presence
-                    + 0.25 * CASE WHEN COALESCE(ba.n_lu_developed, 0) > 0 THEN 1.0 ELSE 0.0 END
-                    -- 15% residential land use presence
-                    + 0.15 * CASE WHEN COALESCE(ba.n_lu_residential, 0) > 0 THEN 1.0 ELSE 0.0 END
-                ) * 100.0
-            )) AS urbanization
+            LEAST(1.0, COALESCE(b.building_count, 0)::FLOAT / {p95_building}) AS urb_density,
+            CASE WHEN COALESCE(ba.n_lu_developed, 0) > 0 THEN 1.0 ELSE 0.0 END AS urb_developed,
+            CASE WHEN COALESCE(ba.n_lu_residential, 0) > 0 THEN 1.0 ELSE 0.0 END AS urb_residential,
+            0.0 AS urbanization  -- placeholder, computed in Python post-processing
         FROM all_hexes h
         LEFT JOIN buildings b ON h.h3index = b.h3index
         LEFT JOIN base ba ON h.h3index = ba.h3index
@@ -409,21 +399,34 @@ def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str) -> int:
     stats = conn.execute("SELECT count(*) FILTER (WHERE water_exposure > 0), ROUND(AVG(water_exposure) FILTER (WHERE water_exposure > 0), 1) FROM score_water_final").fetchone()
     print(f"  non-zero: {stats[0]:,}, avg: {stats[1]}")
 
-    # ── Join all scores into final output ────────────────────────────────
-    print("\nJoining all scores...")
+    # ── Join all scores into intermediate output ───────────────────────
+    print("\nJoining all scores (intermediate)...")
+    tmp_path = output_path.replace(".parquet", "_tmp.parquet")
     conn.execute(f"""
         COPY (
             SELECT
                 h.h3index,
-                -- 8 scores
+                -- 8 scores (urban_consolidation, road_connectivity, urbanization are placeholders)
                 ROUND(COALESCE(sp.paving_index, 0), 1)          AS paving_index,
-                ROUND(COALESCE(su.urban_consolidation, 0), 1)   AS urban_consolidation,
+                0.0                                              AS urban_consolidation,
                 ROUND(COALESCE(ss.service_access, 0), 1)        AS service_access,
                 ROUND(COALESCE(sc.commercial_vitality, 0), 1)   AS commercial_vitality,
-                ROUND(COALESCE(sr.road_connectivity, 0), 1)     AS road_connectivity,
+                0.0                                              AS road_connectivity,
                 ROUND(COALESCE(sbm.building_mix, 0), 1)         AS building_mix,
-                ROUND(COALESCE(surb.urbanization, 0), 1)        AS urbanization,
+                0.0                                              AS urbanization,
                 ROUND(COALESCE(sw.water_exposure, 0), 1)        AS water_exposure,
+                -- Raw sub-components for PCA + geometric mean post-processing
+                COALESCE(su.uc_density, 0)         AS uc_density,
+                COALESCE(su.uc_residential, 0)     AS uc_residential,
+                COALESCE(su.uc_paving, 0)          AS uc_paving,
+                COALESCE(su.uc_hierarchy, 0)       AS uc_hierarchy,
+                COALESCE(sr.rc_hierarchy, 0)       AS rc_hierarchy,
+                COALESCE(sr.rc_density, 0)         AS rc_density,
+                COALESCE(sr.rc_bridges, 0)         AS rc_bridges,
+                COALESCE(sr.rc_road_ratio, 0)      AS rc_road_ratio,
+                COALESCE(surb.urb_density, 0)      AS urb_density,
+                COALESCE(surb.urb_developed, 0)    AS urb_developed,
+                COALESCE(surb.urb_residential, 0)  AS urb_residential,
                 -- Component columns for transparency
                 COALESCE(su.building_count, 0)     AS building_count,
                 COALESCE(sp.n_paved, 0)            AS n_paved,
@@ -441,8 +444,57 @@ def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str) -> int:
             LEFT JOIN score_urbanization surb ON h.h3index = surb.h3index
             LEFT JOIN score_water_final sw   ON h.h3index = sw.h3index
             ORDER BY h.h3index
-        ) TO '{output_path}' (FORMAT PARQUET, COMPRESSION ZSTD)
+        ) TO '{tmp_path}' (FORMAT PARQUET, COMPRESSION ZSTD)
     """)
+
+    # ── Post-process: PCA-validated geometric mean for 3 composite scores ──
+    print("\nPost-processing: PCA + geometric mean for composites...")
+    df = pd.read_parquet(tmp_path)
+
+    composites = {
+        "urban_consolidation": ["uc_density", "uc_residential", "uc_paving", "uc_hierarchy"],
+        "road_connectivity": ["rc_hierarchy", "rc_density", "rc_bridges", "rc_road_ratio"],
+        "urbanization": ["urb_density", "urb_developed", "urb_residential"],
+    }
+
+    for score_col, raw_cols in composites.items():
+        # Percentile rank each raw sub-component (0-100)
+        pct_cols = []
+        for col in raw_cols:
+            pct_name = f"{col}_pct"
+            valid = df[col].notna() & (df[col] > 0)
+            df[pct_name] = 0.0
+            if valid.sum() > 1:
+                df.loc[valid, pct_name] = df.loc[valid, col].rank(pct=True) * 100.0
+            pct_cols.append(pct_name)
+
+        # PCA diagnostics + variable selection
+        diagnostics = run_full_diagnostics(df[df[pct_cols].sum(axis=1) > 0], pct_cols, corr_threshold=0.70)
+        retained = diagnostics["variable_selection"]["retained"]
+        dropped = diagnostics["variable_selection"]["dropped"]
+
+        kmo = diagnostics["kmo_bartlett"].get("kmo_overall")
+        if kmo is not None:
+            print(f"  {score_col} KMO: {kmo:.3f}")
+        if dropped:
+            print(f"  {score_col} dropped: {dropped}")
+        print(f"  {score_col} retained ({len(retained)}): {retained}")
+
+        # Geometric mean of retained percentile-ranked components
+        df[score_col] = geometric_mean_score(df, retained, floor=1.0).round(1)
+
+        # Clean up temp columns
+        for pct_name in pct_cols:
+            df.drop(columns=[pct_name], inplace=True)
+
+    # Drop raw sub-component columns (not needed in final output)
+    raw_cols_all = [c for c in df.columns if c.startswith(("uc_", "rc_", "urb_"))]
+    df.drop(columns=raw_cols_all, inplace=True)
+
+    # Write final parquet
+    df.to_parquet(output_path, index=False, compression="zstd")
+    if os.path.exists(tmp_path):
+        os.remove(tmp_path)
 
     elapsed = time.time() - t0
     size_mb = os.path.getsize(output_path) / (1024 * 1024)

@@ -38,7 +38,7 @@ STATE_DIR = os.path.join(OUTPUT_DIR, "catastro_state")
 PMTILES_OUTPUT = os.path.join(OUTPUT_DIR, "catastro.pmtiles")
 
 # PMTiles config — same bbox as buildings (padded Misiones)
-MIN_ZOOM = 11
+MIN_ZOOM = 9
 MAX_ZOOM = 14
 LAYER_NAME = "catastro"
 EXTENT = 4096
@@ -110,6 +110,17 @@ def load_parcels():
             continue
 
         df = pd.read_parquet(path)
+
+        # Detect initial snapshot: if all first_seen are the same date,
+        # this is the initial load — no parcels are truly "new"
+        has_first_seen = "first_seen" in df.columns and df["first_seen"].notna().any()
+        is_initial_snapshot = False
+        if has_first_seen:
+            unique_dates = df["first_seen"].dropna().nunique()
+            is_initial_snapshot = unique_dates <= 1
+            if is_initial_snapshot:
+                print(f"  {tipo}: single snapshot date detected — no parcels marked as new")
+
         count = 0
         n_new = 0
         for _, row in df.iterrows():
@@ -128,12 +139,14 @@ def load_parcels():
             h3index = h3.latlng_to_cell(centroid.y, centroid.x, H3_RES)
 
             # Check if parcel is new (first_seen within 90 days)
+            # Skip if initial snapshot (all same date = first load, not incremental)
             is_new = 0
-            fs = row.get("first_seen")
-            if fs is not None and pd.notna(fs):
-                if pd.Timestamp(fs) >= cutoff_90d:
-                    is_new = 1
-                    n_new += 1
+            if not is_initial_snapshot:
+                fs = row.get("first_seen")
+                if fs is not None and pd.notna(fs):
+                    if pd.Timestamp(fs) >= cutoff_90d:
+                        is_new = 1
+                        n_new += 1
 
             props = {
                 "tipo": tipo,

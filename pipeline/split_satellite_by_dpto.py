@@ -184,8 +184,8 @@ def main():
         df_assigned = df.dropna(subset=["dpto"])
 
         # Province averages
-        score_col = "score"
-        component_cols = [c for c in df.columns if c not in ("h3index", "score", "dpto")]
+        score_col = "score" if "score" in df.columns else "territorial_type"
+        component_cols = [c for c in df.columns if c not in ("h3index", "score", "territorial_type", "dpto")]
         prov_avg = round(float(df[score_col].mean()), 1)
 
         dptos = sorted(df_assigned["dpto"].unique())
