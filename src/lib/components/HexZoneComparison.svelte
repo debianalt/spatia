@@ -13,10 +13,12 @@
 		onClearHexZones: () => void;
 	} = $props();
 
+	const CENSUS_ANALYSES = new Set(['service_deprivation', 'health_access', 'education_capital', 'education_flow', 'sociodemographic', 'economic_activity', 'accessibility']);
 	const zones = $derived(hexStore.hexZones);
 	const layers = $derived(hexStore.petalLayers);
 	const labels = $derived(hexStore.petalLabels);
 	const variables = $derived(hexStore.activeLayer?.variables ?? []);
+	const showPetals = $derived(hexStore.activeLayer ? !CENSUS_ANALYSES.has(hexStore.activeLayer.id) : true);
 </script>
 
 <div class="hzc">
@@ -39,7 +41,7 @@
 	</div>
 
 	<!-- Petal chart (normalized: 50 = provincial avg) -->
-	{#if layers.length > 0 && labels.length >= 3}
+	{#if layers.length > 0 && labels.length >= 3 && showPetals}
 		<p class="text-[8px] text-text-dim text-center m-0 mb-0.5">{i18n.t('zone.petalNote')}</p>
 		<PetalChart {layers} {labels} size={400} />
 	{/if}

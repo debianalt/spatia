@@ -9,8 +9,10 @@
 		hexStore: HexStore;
 	} = $props();
 
+	const CENSUS_ANALYSES = new Set(['service_deprivation', 'health_access', 'education_capital', 'education_flow', 'sociodemographic', 'economic_activity', 'accessibility']);
 	const selected = $derived([...hexStore.selectedHexes.entries()]);
 	const layer = $derived(hexStore.activeLayer);
+	const showPetals = $derived(layer ? !CENSUS_ANALYSES.has(layer.id) : true);
 	const variables = $derived(layer?.variables ?? []);
 	const petalLayers = $derived(hexStore.selectionPetalLayers);
 	const petalLabels = $derived(hexStore.petalLabels);
@@ -36,7 +38,7 @@
 	</div>
 
 	<!-- Petal chart (normalized vs provincial avg) -->
-	{#if petalLayers.length > 0 && petalLabels.length >= 3}
+	{#if petalLayers.length > 0 && petalLabels.length >= 3 && showPetals}
 		<PetalChart layers={petalLayers} labels={petalLabels} size={340} />
 		<div class="hc-ref-note">
 			<span class="hc-ref-dash"></span> 50 = {i18n.t('hex.provAvg') ?? 'prov. avg'}
