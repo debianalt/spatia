@@ -858,6 +858,18 @@
 		}
 	}
 
+	export function filterCatastroDept(deptCode: string | null) {
+		if (!map) return;
+		if (deptCode) {
+			const filter = ['==', ['get', 'departamento'], deptCode];
+			if (map.getLayer('catastro-fill')) map.setFilter('catastro-fill', filter);
+			if (map.getLayer('catastro-line')) map.setFilter('catastro-line', filter);
+		} else {
+			if (map.getLayer('catastro-fill')) map.setFilter('catastro-fill', null);
+			if (map.getLayer('catastro-line')) map.setFilter('catastro-line', null);
+		}
+	}
+
 	export function setCatastroFloodChoropleth(h3ScoreMap: Map<string, number>) {
 		if (!map) return;
 

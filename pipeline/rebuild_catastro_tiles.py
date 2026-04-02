@@ -97,8 +97,19 @@ def features_to_mvt(features, tile_bounds_wsen, layer_name, extent=4096):
 # ── Step 1: Load parcels ────────────────────────────────────────────────
 
 def load_parcels():
-    """Load urban + rural parcels from parquet, assign h3index."""
+    """Load urban + rural parcels from parquet, assign h3index + departamento."""
     print("Step 1: Loading parcels...")
+
+    # Build h3 -> departamento mapping from crosswalk
+    xw_path = os.path.join(OUTPUT_DIR, "h3_radio_crosswalk_areal.parquet")
+    h3_dept = {}
+    if os.path.exists(xw_path):
+        xw = pd.read_parquet(xw_path)
+        xw["dept"] = xw["redcode"].str[:5]
+        best = xw.sort_values("weight", ascending=False).drop_duplicates("h3index")
+        h3_dept = dict(zip(best["h3index"], best["dept"]))
+        print(f"  H3->dept mapping: {len(h3_dept):,} entries")
+
     features = []
     skipped = 0
     cutoff_90d = pd.Timestamp(date.today() - timedelta(days=90))
@@ -154,10 +165,10 @@ def load_parcels():
                 "area_m2": round(float(row.get("area_m2", 0)), 0),
                 "is_new": is_new,
             }
-            # Add departamento if available
-            dept = row.get("departamento")
-            if dept and pd.notna(dept):
-                props["departamento"] = str(dept)
+            # Assign departamento from h3->crosswalk mapping
+            dept = h3_dept.get(h3index)
+            if dept:
+                props["departamento"] = dept
 
             features.append({"geometry": geom, "properties": props})
             count += 1

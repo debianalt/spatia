@@ -26,7 +26,7 @@
 		onRemoveRadio: (redcode: string) => void;
 		onSelectFloodDpto: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
 		onSelectFloodCatastroDpto?: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
-		onSelectCatastroDpto?: (centroid: [number, number] | null) => void;
+		onSelectCatastroDpto?: (centroid: [number, number] | null, deptCode?: string | null) => void;
 		onSelectScoresCatastroDpto?: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
 		onSelectRadioAnalysisDpto?: (dpto: string, analysisId: string, centroid: [number, number]) => void;
 	} = $props();

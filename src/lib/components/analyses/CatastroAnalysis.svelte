@@ -17,7 +17,7 @@
 		lensStore: LensStore;
 		mapStore: MapStore;
 		onRemoveRadio: (redcode: string) => void;
-		onSelectCatastroDpto?: (centroid: [number, number] | null) => void;
+		onSelectCatastroDpto?: (centroid: [number, number] | null, deptCode?: string | null) => void;
 	} = $props();
 
 	let loading = $state(true);
@@ -178,12 +178,12 @@
 
 	function handleDptoClick(dept: any) {
 		selectedDpto = dept.code;
-		onSelectCatastroDpto?.(dept.centroid);
+		onSelectCatastroDpto?.(dept.centroid, dept.code);
 	}
 
 	function handleBackToDepts() {
 		selectedDpto = null;
-		onSelectCatastroDpto?.(null);
+		onSelectCatastroDpto?.(null, null);
 		for (const rc of [...mapStore.selectedRadios.keys()]) onRemoveRadio(rc);
 	}
 

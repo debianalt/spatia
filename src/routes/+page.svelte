@@ -530,11 +530,13 @@
 		mapComponent?.clearHexZoneHighlight();
 	}
 
-	function handleSelectCatastroDpto(centroid: [number, number] | null) {
-		if (centroid) {
+	function handleSelectCatastroDpto(centroid: [number, number] | null, deptCode?: string | null) {
+		if (centroid && deptCode) {
 			mapComponent?.showCatastroLayer();
+			mapComponent?.filterCatastroDept(deptCode);
 			mapComponent?.flyToCoords(centroid[0], centroid[1], 12);
 		} else {
+			mapComponent?.filterCatastroDept(null);
 			mapComponent?.flyToProvince();
 		}
 	}

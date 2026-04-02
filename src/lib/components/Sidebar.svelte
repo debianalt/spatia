@@ -49,7 +49,7 @@
 		onClearHexZones: () => void;
 		onSelectFloodDpto: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
 		onSelectFloodCatastroDpto?: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
-		onSelectCatastroDpto?: (centroid: [number, number] | null) => void;
+		onSelectCatastroDpto?: (centroid: [number, number] | null, deptCode?: string | null) => void;
 		onSelectScoresCatastroDpto?: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
 		onSelectRadioAnalysisDpto?: (dpto: string, analysisId: string, centroid: [number, number]) => void;
 	} = $props();
@@ -59,6 +59,7 @@
 	// Auto-open when there's content to show
 	$effect(() => {
 		const hasContent =
+			showAbout ||
 			hexStore.hexZones.length > 0 ||
 			lassoStore.zones.length > 0 ||
 			hexStore.selectedHexes.size > 0 ||
