@@ -5,8 +5,10 @@ Pipeline:
   1. Download previous state from Cloudflare R2
   2. Download WFS parcels + compute changes (GeoPandas)
   3. Spatial aggregation: catastro_by_radio
+  3b. Generate department summary JSON
+  3c. Rebuild catastro PMTiles (vector tiles for map visualization)
   4. Validate parquets
-  5. Upload to Cloudflare R2 (state + outputs)
+  5. Upload to Cloudflare R2 (state + outputs + PMTiles)
   6. Summary + log
 
 Usage:
@@ -177,6 +179,29 @@ def run(args):
         except Exception as e:
             print(f"  [warn] Could not generate dept summary JSON: {e}")
 
+    # ── Step 3c: Rebuild catastro PMTiles ────────────────────────
+    step("3c", "Rebuild catastro PMTiles (vector tiles for map)")
+    if args.dry_run:
+        print("  [dry-run] Would generate catastro.pmtiles from state parquets")
+    else:
+        from rebuild_catastro_tiles import load_parcels, generate_pmtiles
+        try:
+            features = load_parcels()
+            if features:
+                generate_pmtiles(features)
+                pmtiles_path = os.path.join(OUTPUT_DIR, "catastro.pmtiles")
+                if os.path.exists(pmtiles_path):
+                    size_mb = os.path.getsize(pmtiles_path) / (1024 * 1024)
+                    print(f"  [ok] catastro.pmtiles ({size_mb:.1f} MB)")
+                else:
+                    print("  [x] catastro.pmtiles not generated")
+            else:
+                print("  [x] No parcels loaded for PMTiles generation")
+        except Exception as e:
+            print(f"  [warn] PMTiles generation failed: {e}")
+            import traceback
+            traceback.print_exc()
+
     # ── Step 4: Upload to R2 ──────────────────────────────────────
     if not args.skip_upload:
         step(4, "Upload to Cloudflare R2")
@@ -197,6 +222,13 @@ def run(args):
                     upload_file(local, r2_key, versioned=True)
                 else:
                     print(f"  [warn] Skipping {local} (not found)")
+
+            # Upload PMTiles (for map visualization)
+            pmtiles_path = os.path.join(OUTPUT_DIR, "catastro.pmtiles")
+            if os.path.exists(pmtiles_path):
+                upload_file(pmtiles_path, "tiles/catastro.pmtiles", versioned=True)
+            else:
+                print("  [warn] catastro.pmtiles not found, skipping upload")
     else:
         step(4, "Upload to Cloudflare R2 [SKIPPED]")
 

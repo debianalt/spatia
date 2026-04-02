@@ -35,14 +35,15 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Upload parquets as artifact
+      - name: Upload outputs as artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: catastro-parquets
+          name: catastro-outputs
           path: |
             pipeline/output/catastro_by_radio.parquet
             pipeline/output/catastro_changes_summary.parquet
+            pipeline/output/catastro.pmtiles
           retention-days: 30
 
       - name: Notify on failure
