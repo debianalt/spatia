@@ -2,7 +2,8 @@
 Process multi-band GeoTIFF rasters to H3 res-9 parquets with pixel-level zonal stats.
 
 Each band becomes a component column. Percentile rank normalisation (0-100)
-is applied per band, then a weighted composite score is computed.
+is applied per band, then a PCA-validated geometric mean score is computed
+(OECD Handbook / UNDP HDI methodology, consistent with compute_satellite_scores.py).
 
 This REPLACES the radio-level crosswalk approach for analyses where
 GEE rasters are available — each hexagon gets its own pixel-averaged value.
@@ -26,6 +27,7 @@ from rasterio.windows import from_bounds
 from shapely.geometry import shape
 
 from config import OUTPUT_DIR, H3_RESOLUTION
+from scoring import run_full_diagnostics, geometric_mean_score
 
 HEXAGONS_PATH = os.path.join(OUTPUT_DIR, "hexagons-lite.geojson")
 
@@ -162,14 +164,32 @@ def process_analysis(analysis_id, raster_path, hexgrid_features, output_path):
             raw = -raw
         df[out_col] = percentile_rank(raw).round(1)
 
-    # Compute weighted composite score
-    score = pd.Series(0.0, index=df.index)
-    total_w = 0.0
-    for _, out_col, weight, _ in components:
-        valid = df[out_col].notna()
-        score[valid] += df.loc[valid, out_col] * weight
-        total_w += weight
-    df['score'] = (score / total_w).round(1)
+    # PCA-validated geometric mean score (OECD/HDI methodology)
+    comp_cols = [c[1] for c in components]
+
+    # Exclude 100% NaN columns (e.g. fire bands with no data)
+    valid_cols = [c for c in comp_cols if not df[c].isna().all()]
+    dropped_nan = set(comp_cols) - set(valid_cols)
+    if dropped_nan:
+        print(f"  Excluded (100% NaN): {dropped_nan}")
+
+    # Run diagnostics on non-NaN subset
+    valid_mask = df[valid_cols].notna().all(axis=1)
+    df_valid = df.loc[valid_mask]
+    print(f"  Valid hexagons for PCA: {len(df_valid):,} / {len(df):,}")
+
+    diagnostics = run_full_diagnostics(df_valid, valid_cols, corr_threshold=0.70)
+    retained = diagnostics["variable_selection"]["retained"]
+    dropped = diagnostics["variable_selection"]["dropped"]
+
+    kmo = diagnostics["kmo_bartlett"].get("kmo_overall")
+    if kmo is not None:
+        print(f"    KMO: {kmo:.3f} {'OK' if kmo >= 0.60 else 'WARNING < 0.60'}")
+    if dropped:
+        print(f"    Dropped (|r|>0.70): {dropped}")
+    print(f"    Retained ({len(retained)}): {retained}")
+
+    df['score'] = geometric_mean_score(df, retained, floor=1.0).round(1)
 
     # Output columns
     out_cols = ['h3index', 'score'] + [c[1] for c in components]

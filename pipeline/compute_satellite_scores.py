@@ -43,7 +43,7 @@ from scoring import (
     generate_report,
 )
 
-CROSSWALK_PATH = os.path.join(OUTPUT_DIR, "h3_radio_crosswalk_areal.parquet")
+CROSSWALK_PATH = os.path.join(OUTPUT_DIR, "h3_radio_crosswalk.parquet")
 RADIO_DATA_DIR = os.path.join(OUTPUT_DIR, "radio_data")
 
 # Tables used by analysis queries — loaded from parquets
@@ -424,14 +424,23 @@ def fetch_radio_data(conn, sql: str) -> pd.DataFrame:
 
 
 def join_to_h3(radio_df: pd.DataFrame, crosswalk: pd.DataFrame) -> pd.DataFrame:
-    """Project radio-level data onto H3 hexagons via areal crosswalk.
+    """Project radio-level data onto H3 hexagons via dasymetric crosswalk.
 
-    For each hex, keep the radio with highest weight (area overlap).
+    Weighted average using building-based weights: each hex value is the
+    weighted mean of overlapping radios, where weight = buildings_in_hex / buildings_in_radio.
     """
     merged = crosswalk.merge(radio_df, on="redcode", how="inner")
-    # Keep only the radio with highest areal weight per hex
-    idx = merged.groupby("h3index")["weight"].idxmax()
-    return merged.loc[idx].drop(columns=["redcode", "weight"]).reset_index(drop=True)
+    value_cols = [c for c in radio_df.columns if c != "redcode"]
+
+    def weighted_avg(g):
+        w = g["weight"].values
+        w_sum = w.sum()
+        if w_sum == 0:
+            return pd.Series({c: np.nan for c in value_cols})
+        return pd.Series({c: np.average(g[c].values, weights=w) for c in value_cols})
+
+    result = merged.groupby("h3index", group_keys=False).apply(weighted_avg, include_groups=False)
+    return result.reset_index()
 
 
 def normalize_percentile(series: pd.Series) -> pd.Series:
