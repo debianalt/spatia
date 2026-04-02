@@ -473,11 +473,12 @@ def fetch_radio_data(conn, sql: str) -> pd.DataFrame:
 
 def join_to_h3(radio_df: pd.DataFrame, crosswalk: pd.DataFrame,
                areal_crosswalk: pd.DataFrame | None = None) -> pd.DataFrame:
-    """Project radio-level data onto H3 hexagons via hybrid crosswalk.
+    """Project radio-level data onto H3 hexagons via dasymetric crosswalk.
 
-    1. Dasymetric (building-weighted) average where buildings exist (~69K hex)
-    2. Areal max-overlap fallback for remaining hexagons (~251K hex)
-    Full 320K coverage with building-weighted precision where available.
+    Building-weighted average where buildings exist (~69K hex).
+    If areal_crosswalk is provided, adds areal fallback for remaining hex
+    (used for satellite analyses measuring environmental conditions).
+    Census-based analyses should NOT pass areal_crosswalk — data only where people live.
     """
     value_cols = [c for c in radio_df.columns if c != "redcode"]
 
@@ -658,9 +659,13 @@ def main():
         print(f"\n[{i}/{len(analyses)}] Computing {aid}...")
 
         try:
+            # Census-based analyses: dasymetric only (data where people live)
+            # Satellite/spatial analyses: hybrid dasymetric + areal fallback
+            CENSUS_ANALYSES = {'service_deprivation', 'health_access', 'education_capital', 'education_flow'}
+            use_areal = None if aid in CENSUS_ANALYSES else areal_crosswalk
             result = compute_analysis(
                 conn, crosswalk, analysis_def,
-                areal_crosswalk=areal_crosswalk,
+                areal_crosswalk=use_areal,
                 emit_diagnostics=args.diagnostics,
                 emit_legacy=args.legacy,
                 output_dir=args.output_dir,
