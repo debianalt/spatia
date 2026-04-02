@@ -339,10 +339,10 @@ ANALYSIS_DEFS = [
                 COALESCE(ce.pct_nbi, 0) AS c_nbi,
                 100.0 - COALESCE(ce.pct_agua_red, 0) AS c_sin_agua,
                 100.0 - COALESCE(ce.pct_cloacas, 0) AS c_sin_cloacas,
-                COALESCE(ce.pct_sin_techo_adecuado, 0) AS c_techo,
                 COALESCE(ce.pct_sin_piso_adecuado, 0) AS c_piso,
-                COALESCE(ce.pct_combustible_precario, 0) AS c_combustible,
-                COALESCE(ce.pct_hacinamiento_critico, 0) AS c_hacinamiento
+                COALESCE(ce.pct_hacinamiento, 0) AS c_hacinamiento,
+                COALESCE(ce.pct_hacinamiento_critico, 0) AS c_hacinamiento_crit,
+                100.0 - COALESCE(ce.pct_computadora, 0) AS c_sin_computadora
             FROM radios_misiones r
             LEFT JOIN censo2022_variables ce ON r.redcode = ce.redcode
         """,
@@ -350,10 +350,10 @@ ANALYSIS_DEFS = [
             ("c_nbi", "c_nbi", 0.20, False),
             ("c_sin_agua", "c_sin_agua", 0.15, False),
             ("c_sin_cloacas", "c_sin_cloacas", 0.15, False),
-            ("c_techo", "c_techo", 0.15, False),
-            ("c_piso", "c_piso", 0.10, False),
-            ("c_combustible", "c_combustible", 0.10, False),
-            ("c_hacinamiento", "c_hacinamiento", 0.15, False),
+            ("c_piso", "c_piso", 0.15, False),
+            ("c_hacinamiento", "c_hacinamiento", 0.10, False),
+            ("c_hacinamiento_crit", "c_hacinamiento_crit", 0.10, False),
+            ("c_sin_computadora", "c_sin_computadora", 0.15, False),
         ],
     },
     {
