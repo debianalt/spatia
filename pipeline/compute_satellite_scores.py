@@ -32,9 +32,9 @@ import os
 import sys
 import time
 
+import duckdb
 import numpy as np
 import pandas as pd
-import psycopg2
 
 from config import OUTPUT_DIR
 from scoring import (
@@ -43,12 +43,18 @@ from scoring import (
     generate_report,
 )
 
-DB_URI = os.environ.get(
-    "DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5432/ndvi_misiones",
-)
-
 CROSSWALK_PATH = os.path.join(OUTPUT_DIR, "h3_radio_crosswalk_areal.parquet")
+RADIO_DATA_DIR = os.path.join(OUTPUT_DIR, "radio_data")
+
+# Tables used by analysis queries — loaded from parquets
+RADIO_TABLES = [
+    "radios_misiones", "fire_annual", "hansen_baseline", "lst_annual",
+    "fabdem_terrain", "merit_hydro", "chirps_annual", "era5_annual",
+    "et_annual", "ndvi_annual_mean", "npp_annual", "lai_annual", "vcf_annual",
+    "viirs_annual", "ghsl_built_surface", "gpp_annual", "soilgrids",
+    "nelson_accessibility", "oxford_accessibility", "road_access",
+    "censo2022_variables",
+]
 
 # ── Analysis definitions ─────────────────────────────────────────────────────
 # Each analysis: id, sql (returns redcode + component columns), components
@@ -396,9 +402,25 @@ ANALYSIS_DEFS = [
 ]
 
 
+def create_duckdb_conn() -> duckdb.DuckDBPyConnection:
+    """Create DuckDB connection with all radio tables loaded from parquets."""
+    conn = duckdb.connect()
+    loaded = 0
+    for table_name in RADIO_TABLES:
+        path = os.path.join(RADIO_DATA_DIR, f"{table_name}.parquet")
+        if os.path.exists(path):
+            conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_parquet('{path}')")
+            loaded += 1
+        else:
+            # Create empty table so queries don't fail
+            conn.execute(f"CREATE TABLE {table_name} (redcode VARCHAR)")
+    print(f"  Loaded {loaded}/{len(RADIO_TABLES)} radio tables from parquets")
+    return conn
+
+
 def fetch_radio_data(conn, sql: str) -> pd.DataFrame:
-    """Execute SQL query and return DataFrame with redcode + columns."""
-    return pd.read_sql(sql, conn)
+    """Execute SQL query on DuckDB and return DataFrame."""
+    return conn.execute(sql).fetchdf()
 
 
 def join_to_h3(radio_df: pd.DataFrame, crosswalk: pd.DataFrame) -> pd.DataFrame:
@@ -543,9 +565,9 @@ def main():
     crosswalk = pd.read_parquet(CROSSWALK_PATH)
     print(f"  {len(crosswalk):,} rows, {crosswalk['h3index'].nunique():,} unique hexagons")
 
-    # Connect to PostGIS
-    print("Connecting to PostGIS...")
-    conn = psycopg2.connect(DB_URI)
+    # Load radio data tables into DuckDB
+    print("Loading radio tables into DuckDB...")
+    conn = create_duckdb_conn()
 
     t0 = time.time()
     results = {}

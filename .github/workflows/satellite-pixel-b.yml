@@ -48,6 +48,36 @@ jobs:
           GEE_SERVICE_ACCOUNT_KEY: ${{ secrets.GEE_SERVICE_ACCOUNT_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
+      - name: Download radio data tables from R2
+        run: |
+          mkdir -p pipeline/output/radio_data
+          for table in radios_misiones hansen_baseline fabdem_terrain merit_hydro soilgrids nelson_accessibility oxford_accessibility road_access censo2022_variables fire_annual lst_annual chirps_annual era5_annual et_annual ndvi_annual_mean npp_annual lai_annual vcf_annual viirs_annual ghsl_built_surface gpp_annual; do
+            npx wrangler r2 object get "neahub/data/radio_data/${table}.parquet" --file "pipeline/output/radio_data/${table}.parquet" --remote 2>/dev/null || true
+          done
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Recompute composite scores (PCA + geometric mean)
+        working-directory: pipeline
+        run: |
+          ANALYSES="${{ github.event.inputs.analyses || 'change_pressure,agri_potential,forest_health' }}"
+          python compute_satellite_scores.py --only "$ANALYSES" --diagnostics
+          python compute_analysis_typologies.py --only "$ANALYSES"
+          python split_satellite_by_dpto.py --only "$ANALYSES"
+
+      - name: Upload recomputed scores to R2
+        run: |
+          for aid in $(echo "${{ github.event.inputs.analyses || 'change_pressure,agri_potential,forest_health' }}" | tr ',' ' '); do
+            npx wrangler r2 object put "neahub/data/sat_${aid}.parquet" --file "pipeline/output/sat_${aid}.parquet" --remote 2>/dev/null || true
+            for f in pipeline/output/sat_dpto/sat_${aid}_*.parquet; do
+              [ -f "$f" ] && npx wrangler r2 object put "neahub/data/sat_dpto/$(basename $f)" --file "$f" --remote 2>/dev/null || true
+            done
+          done
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4
