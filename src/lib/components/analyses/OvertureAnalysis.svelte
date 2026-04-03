@@ -471,6 +471,20 @@
 				</div>
 				<p class="petal-hint">{i18n.t('analysis.petalHint')}</p>
 			</div>
+		{:else if CENSUS_ANALYSES.has(analysis.id) && componentVars.length > 0}
+			<div class="census-detail">
+				{#each componentVars as v}
+					{@const val = selectedHex[v.col]}
+					{@const numVal = typeof val === 'number' ? val : 0}
+					<div class="cd-row">
+						<span class="cd-label">{i18n.t(v.labelKey)}</span>
+						<div class="cd-bar-track">
+							<div class="cd-bar-fill" style:width="{Math.min(100, Math.max(0, numVal))}%" style:background={numVal > 66 ? '#ef4444' : numVal > 33 ? '#eab308' : '#22c55e'}></div>
+						</div>
+						<span class="cd-val">{numVal.toFixed(0)}</span>
+					</div>
+				{/each}
+			</div>
 		{/if}
 
 		{#if crossProfile.length > 0}
@@ -724,6 +738,12 @@
 	.score-value { font-size: 13px; font-weight: 700; min-width: 32px; text-align: right; }
 	.petal-section { margin: 6px 0; }
 	.petal-hint { font-size: 8px; color: rgba(255,255,255,0.35); text-align: center; margin: 2px 0 0; line-height: 1.3; }
+	.census-detail { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+	.cd-row { display: flex; align-items: center; gap: 6px; }
+	.cd-label { font-size: 9px; color: #d4d4d4; flex: 0 0 auto; min-width: 100px; }
+	.cd-bar-track { flex: 1; height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; }
+	.cd-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; min-width: 2px; }
+	.cd-val { font-size: 9px; font-weight: 600; color: #cbd5e1; width: 28px; text-align: right; flex-shrink: 0; }
 	.petal-wrapper { display: flex; justify-content: center; margin: 0 auto; max-width: 260px; }
 
 	/* Cross-analysis profile + type distribution + diagnostic */
