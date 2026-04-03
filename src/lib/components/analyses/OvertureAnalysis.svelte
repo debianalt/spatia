@@ -3,6 +3,7 @@
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import CTADiagnostic from '$lib/components/CTADiagnostic.svelte';
 	import PetalChart from '$lib/components/PetalChart.svelte';
+	import TemporalToggle from '$lib/components/TemporalToggle.svelte';
 	import { HEX_LAYER_REGISTRY, DATA_FRESHNESS, getSatDptoUrl, getFloodDptoUrl, getScoresDptoUrl, getReportUrl, getTemporalCol, type AnalysisConfig, type TemporalMode } from '$lib/config';
 	import { initDuckDB, query } from '$lib/stores/duckdb';
 
@@ -55,6 +56,8 @@
 		sociodemographic: () => import('$lib/data/sat_sociodemographic_dept_summary.json'),
 		economic_activity: () => import('$lib/data/sat_economic_activity_dept_summary.json'),
 		accessibility: () => import('$lib/data/sat_accessibility_dept_summary.json'),
+		climate_vulnerability: () => import('$lib/data/sat_climate_vulnerability_dept_summary.json'),
+		carbon_stock: () => import('$lib/data/sat_carbon_stock_dept_summary.json'),
 	};
 
 	$effect(() => {
@@ -409,6 +412,16 @@
 			implications: 'Los tipos distinguen conectividad plena (cercania a servicios y rutas), accesibilidad parcial (cerca de ruta pero lejos de servicios especializados), y aislamiento funcional (lejos de todo). Cada configuracion requiere estrategias de inversion en infraestructura distintas.',
 			method: `${METHOD_COMMON} 5 variables: tiempo motorizado a Posadas y cabecera (Nelson et al. 2019, superficie de friccion Oxford MAP), distancia euclidiana a hospital, escuela secundaria y ruta primaria (OSM). Fuente: Nelson 2019 + Oxford MAP 2019 + OSM.`,
 		},
+		carbon_stock: {
+			howToRead: 'El mapa muestra el stock de carbono total por hexagono (biomasa aerea + subterranea + carbono del suelo) y el balance anual de emisiones/remociones. Colores mas intensos indican mayor stock. Los valores en unidades fisicas (tC/ha, MgCO2/ha, USD/ha) se muestran junto al score percentil.',
+			implications: 'Las zonas de alto stock con balance neto negativo (emisor) son prioridad para conservacion (REDD+). Las zonas de alto stock con balance positivo (sumidero) son candidatas para creditos de carbono por mantenimiento. Las zonas de bajo stock con alta productividad (NPP) tienen potencial de restauracion y secuestro futuro. El valor economico se calcula a precio de mercado voluntario de carbono.',
+			method: `${METHOD_COMMON} 10 variables: biomasa aerea ESA CCI Biomass v6 (100m, Santoro et al. 2024) + GEDI L4B lidar (1km, validacion). Biomasa subterranea via Cairns et al. (1997): BGB = 0.489 x AGB^0.89. Carbono organico del suelo: SoilGrids v2 (ISRIC, 0-30cm extrapolado). Flujo de carbono: Harris et al. 2021/GFW (emisiones brutas + remociones + balance neto, 30m, 2001-2024). Productividad: MODIS MOD17A3HGF NPP (500m, 2019-2024). Total carbon = AGB x 0.47 + BGB x 0.47 + SOC. Valor economico = total_carbon x 3.67 x precio_tCO2e.`,
+		},
+		climate_vulnerability: {
+			howToRead: 'El mapa clasifica cada hexagono segun su vulnerabilidad climatica integrada (framework IPCC AR5). Colores calidos indican mayor vulnerabilidad: alta exposicion a eventos extremos, alta sensibilidad ambiental, o baja capacidad adaptativa de la poblacion. Cada tipo representa una configuracion distinta de estos tres factores.',
+			implications: 'Las zonas de alta vulnerabilidad integral requieren atencion prioritaria en planes de adaptacion climatica. Las zonas con alta exposicion pero buena capacidad adaptativa pueden absorber shocks; las zonas con baja capacidad adaptativa son vulnerables incluso ante exposicion moderada. Este indice es el insumo estandar para fondos climaticos (GCF, GEF, Banco Mundial).',
+			method: `${METHOD_COMMON} 8 variables agrupadas en 3 dimensiones IPCC: Exposicion (estres termico MODIS LST, riesgo inundacion JRC/S1, estres hidrico ET/PET, frecuencia fuego MODIS MCD64A1), Sensibilidad (perdida forestal Hansen GFC, desproteccion vegetal Hansen treecover), Capacidad Adaptativa (aislamiento territorial Oxford MAP, privacion de servicios INDEC 2022). Sub-indices: media geometrica por dimension. Score final: media geometrica de las 3 dimensiones. PCA + k-means para tipologia.`,
+		},
 	};
 
 	// Dynamic World (land_use) — will be added when data is processed
@@ -464,6 +477,10 @@
 			{/if}
 		</div>
 
+		{#if isTemporal}
+			<TemporalToggle {hexStore} />
+		{/if}
+
 		{#if hexPetalLayers.length > 0 && !CENSUS_ANALYSES.has(analysis.id)}
 			<div class="petal-section">
 				<div class="petal-wrapper">
@@ -476,12 +493,12 @@
 				{#each componentVars as v}
 					{@const val = selectedHex[v.col]}
 					{@const numVal = typeof val === 'number' ? val : 0}
+					{@const rawVal = v.rawCol ? selectedHex[v.rawCol] : null}
+					{@const displayVal = (rawVal != null && typeof rawVal === 'number') ? rawVal : numVal}
+					{@const hasUnit = v.unit && rawVal != null}
 					<div class="cd-row">
 						<span class="cd-label">{i18n.t(v.labelKey)}</span>
-						<div class="cd-bar-track">
-							<div class="cd-bar-fill" style:width="{Math.min(100, Math.max(0, numVal))}%" style:background={numVal > 66 ? '#ef4444' : numVal > 33 ? '#eab308' : '#22c55e'}></div>
-						</div>
-						<span class="cd-val">{numVal.toFixed(0)}</span>
+						<span class="cd-val-data">{hasUnit ? displayVal.toFixed(1) : numVal.toFixed(0)}{hasUnit ? ` ${v.unit}` : ''}</span>
 					</div>
 				{/each}
 			</div>
@@ -513,6 +530,10 @@
 		<button class="back-btn" onclick={handleBackToDepts}>{i18n.t('analysis.flood.topDepts')}</button>
 
 		<div class="dept-active-title">{selectedDpto}</div>
+
+		{#if isTemporal}
+			<TemporalToggle {hexStore} />
+		{/if}
 
 		{#if loading}
 			<div class="loading">{i18n.t('analysis.loading')}</div>
@@ -744,6 +765,7 @@
 	.cd-bar-track { flex: 1; height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; }
 	.cd-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; min-width: 2px; }
 	.cd-val { font-size: 9px; font-weight: 600; color: #cbd5e1; width: 28px; text-align: right; flex-shrink: 0; }
+	.cd-val-data { font-size: 10px; font-weight: 600; color: #e2e8f0; text-align: right; margin-left: auto; white-space: nowrap; }
 	.petal-wrapper { display: flex; justify-content: center; margin: 0 auto; max-width: 260px; }
 
 	/* Cross-analysis profile + type distribution + diagnostic */

@@ -45,13 +45,13 @@ export const TERRAIN_CONFIG = {
 export function getParquetUrl(name: string): string {
 	const busts: Record<string, string> = {
 		hex_flood_risk: '?v=23',
-		sat_environmental_risk: '?v=24',
-		sat_climate_comfort: '?v=24',
-		sat_green_capital: '?v=24',
-		sat_change_pressure: '?v=24',
+		sat_environmental_risk: '?v=25',
+		sat_climate_comfort: '?v=25',
+		sat_green_capital: '?v=25',
+		sat_change_pressure: '?v=25',
 		sat_location_value: '?v=24',
-		sat_agri_potential: '?v=24',
-		sat_forest_health: '?v=24',
+		sat_agri_potential: '?v=25',
+		sat_forest_health: '?v=25',
 		sat_forestry_aptitude: '?v=24',
 		sat_service_deprivation: '?v=25',
 		sat_territorial_isolation: '?v=25',
@@ -61,7 +61,9 @@ export function getParquetUrl(name: string): string {
 		sat_territorial_types: '?v=23',
 		sat_sociodemographic: '?v=22',
 		sat_economic_activity: '?v=22',
-		sat_accessibility: '?v=22',
+		sat_accessibility: '?v=23',
+		sat_climate_vulnerability: '?v=1',
+		sat_carbon_stock: '?v=1',
 		overture_scores: '?v=23',
 		emsa_powerlines: '?v=20',
 	};
@@ -78,7 +80,7 @@ export function getScoresDptoUrl(parquetKey: string): string {
 }
 
 export function getSatDptoUrl(analysisId: string, parquetKey: string): string {
-	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet?v=24`;
+	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet?v=25`;
 }
 
 export function getReportUrl(analysisId: string, parquetKey: string): string {
@@ -121,6 +123,8 @@ export const PARQUETS = {
 	get sat_sociodemographic() { return getParquetUrl('sat_sociodemographic'); },
 	get sat_economic_activity() { return getParquetUrl('sat_economic_activity'); },
 	get sat_accessibility() { return getParquetUrl('sat_accessibility'); },
+	get sat_climate_vulnerability() { return getParquetUrl('sat_climate_vulnerability'); },
+	get sat_carbon_stock() { return getParquetUrl('sat_carbon_stock'); },
 	// Public infrastructure (datos.gob.ar)
 	get emsa_powerlines() { return getParquetUrl('emsa_powerlines'); },
 	// EUDR deforestation (H3 res-7, 10 provinces)
@@ -178,6 +182,8 @@ export interface HexVariable {
 	col: string;
 	labelKey: string;
 	aggregation: 'mean' | 'sum' | 'max';
+	rawCol?: string;
+	unit?: string;
 }
 
 export type TemporalMode = 'current' | 'baseline' | 'delta';
@@ -269,6 +275,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.envRisk.title',
 		perDepartment: true,
+		temporal: true,
 		legendLowKey: 'legend.envRisk.low',
 		legendHighKey: 'legend.envRisk.high',
 	},
@@ -289,6 +296,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.climate.title',
 		perDepartment: true,
+		temporal: true,
 		legendLowKey: 'legend.comfort.low',
 		legendHighKey: 'legend.comfort.high',
 	},
@@ -309,6 +317,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.green.title',
 		perDepartment: true,
+		temporal: true,
 		legendLowKey: 'legend.green.low',
 		legendHighKey: 'legend.green.high',
 	},
@@ -328,6 +337,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.change.title',
 		perDepartment: true,
+		temporal: true,
 		legendLowKey: 'legend.change.low',
 		legendHighKey: 'legend.change.high',
 	},
@@ -369,6 +379,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.agri.title',
 		perDepartment: true,
+		temporal: true,
 		legendLowKey: 'legend.agri.low',
 		legendHighKey: 'legend.agri.high',
 	},
@@ -388,8 +399,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.forestH.title',
 		perDepartment: true,
-		legendLowKey: 'legend.veryUnhealthy',
-		legendHighKey: 'legend.veryHealthy',
+		temporal: true,
 		legendLowKey: 'legend.forestH.low',
 		legendHighKey: 'legend.forestH.high',
 	},
@@ -610,17 +620,88 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'score', labelKey: 'analysis.accessibility.score', aggregation: 'mean' },
 			{ col: 'type', labelKey: 'analysis.accessibility.type', aggregation: 'mean' },
 			{ col: 'type_label', labelKey: 'analysis.accessibility.typeLabel', aggregation: 'mean' },
-			{ col: 'travel_min_posadas', labelKey: 'radio.travelPosadas', aggregation: 'mean' },
-			{ col: 'travel_min_cabecera', labelKey: 'radio.travelCabecera', aggregation: 'mean' },
-			{ col: 'dist_nearest_hospital_km', labelKey: 'radio.distHospital', aggregation: 'mean' },
-			{ col: 'dist_nearest_secundaria_km', labelKey: 'radio.distSecundaria', aggregation: 'mean' },
-			{ col: 'dist_primary_m', labelKey: 'radio.distPrimaria', aggregation: 'mean' },
+			{ col: 'travel_min_posadas', rawCol: 'travel_min_posadas_raw', unit: 'min', labelKey: 'radio.travelPosadas', aggregation: 'mean' },
+			{ col: 'travel_min_cabecera', rawCol: 'travel_min_cabecera_raw', unit: 'min', labelKey: 'radio.travelCabecera', aggregation: 'mean' },
+			{ col: 'dist_nearest_hospital_km', rawCol: 'dist_nearest_hospital_km_raw', unit: 'km', labelKey: 'radio.distHospital', aggregation: 'mean' },
+			{ col: 'dist_nearest_secundaria_km', rawCol: 'dist_nearest_secundaria_km_raw', unit: 'km', labelKey: 'radio.distSecundaria', aggregation: 'mean' },
+			{ col: 'dist_primary_m', rawCol: 'dist_primary_m_raw', unit: 'km', labelKey: 'radio.distPrimaria', aggregation: 'mean' },
 		],
 		primaryVariable: 'score',
 		colorScale: 'flood',
 		aggregation: 'mean',
 		titleKey: 'analysis.accessibility.title',
 		perDepartment: true,
+	},
+	// ── Carbon Stock & Balance ──
+	carbon_stock: {
+		id: 'carbon_stock',
+		parquet: 'sat_carbon_stock',
+		variables: [
+			{ col: 'type', labelKey: 'sat.carbon.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.carbon.typeLabel', aggregation: 'mean' },
+			{ col: 'c_agb_cci', rawCol: 'c_agb_raw', unit: 'Mg/ha', labelKey: 'sat.carbon.agbCci', aggregation: 'mean' },
+			{ col: 'c_agb_gedi', labelKey: 'sat.carbon.agbGedi', aggregation: 'mean' },
+			{ col: 'c_total_carbon', rawCol: 'c_total_carbon_raw', unit: 'tC/ha', labelKey: 'sat.carbon.totalCarbon', aggregation: 'mean' },
+			{ col: 'c_soc', rawCol: 'c_soc_tcha', unit: 'tC/ha', labelKey: 'sat.carbon.soc', aggregation: 'mean' },
+			{ col: 'c_gross_emissions', rawCol: 'c_emissions_raw', unit: 'MgCO₂/ha', labelKey: 'sat.carbon.emissions', aggregation: 'mean' },
+			{ col: 'c_gross_removals', rawCol: 'c_removals_raw', unit: 'MgCO₂/ha', labelKey: 'sat.carbon.removals', aggregation: 'mean' },
+			{ col: 'c_net_flux', rawCol: 'c_net_flux_raw', unit: 'MgCO₂/ha', labelKey: 'sat.carbon.netFlux', aggregation: 'mean' },
+			{ col: 'c_npp', rawCol: 'c_npp_raw', unit: 'gC/m²/yr', labelKey: 'sat.carbon.npp', aggregation: 'mean' },
+			{ col: 'c_economic_value', labelKey: 'sat.carbon.economicValue', aggregation: 'mean' },
+		],
+		primaryVariable: 'score',
+		colorScale: 'sequential',
+		aggregation: 'mean',
+		petalVars: [
+			{ col: 'c_agb_cci', labelKey: 'sat.carbon.agbCci', aggregation: 'mean' },
+			{ col: 'c_total_carbon', labelKey: 'sat.carbon.totalCarbon', aggregation: 'mean' },
+			{ col: 'c_soc', labelKey: 'sat.carbon.soc', aggregation: 'mean' },
+			{ col: 'c_gross_emissions', labelKey: 'sat.carbon.emissions', aggregation: 'mean' },
+			{ col: 'c_gross_removals', labelKey: 'sat.carbon.removals', aggregation: 'mean' },
+			{ col: 'c_net_flux', labelKey: 'sat.carbon.netFlux', aggregation: 'mean' },
+			{ col: 'c_npp', labelKey: 'sat.carbon.npp', aggregation: 'mean' },
+		],
+		titleKey: 'sat.carbon.title',
+		perDepartment: true,
+		legendLowKey: 'legend.carbon.low',
+		legendHighKey: 'legend.carbon.high',
+	},
+	// ── Climate Vulnerability (IPCC AR5 meta-analysis) ──
+	climate_vulnerability: {
+		id: 'climate_vulnerability',
+		parquet: 'sat_climate_vulnerability',
+		variables: [
+			{ col: 'type', labelKey: 'sat.climVuln.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.climVuln.typeLabel', aggregation: 'mean' },
+			{ col: 'c_exposure', labelKey: 'sat.climVuln.exposure', aggregation: 'mean' },
+			{ col: 'c_sensitivity', labelKey: 'sat.climVuln.sensitivity', aggregation: 'mean' },
+			{ col: 'c_adaptive_cap', labelKey: 'sat.climVuln.adaptiveCap', aggregation: 'mean' },
+			{ col: 'c_heat_stress', labelKey: 'sat.climVuln.heatStress', aggregation: 'mean' },
+			{ col: 'c_flood_risk', labelKey: 'sat.climVuln.floodRisk', aggregation: 'mean' },
+			{ col: 'c_water_stress', labelKey: 'sat.climVuln.waterStress', aggregation: 'mean' },
+			{ col: 'c_fire_freq', labelKey: 'sat.climVuln.fireFreq', aggregation: 'mean' },
+			{ col: 'c_forest_loss', labelKey: 'sat.climVuln.forestLoss', aggregation: 'mean' },
+			{ col: 'c_vegetation_inv', labelKey: 'sat.climVuln.vegetationInv', aggregation: 'mean' },
+			{ col: 'c_isolation', labelKey: 'sat.climVuln.isolation', aggregation: 'mean' },
+			{ col: 'c_deprivation', labelKey: 'sat.climVuln.deprivation', aggregation: 'mean' },
+		],
+		primaryVariable: 'score',
+		colorScale: 'flood',
+		aggregation: 'mean',
+		petalVars: [
+			{ col: 'c_exposure', labelKey: 'sat.climVuln.exposure', aggregation: 'mean' },
+			{ col: 'c_sensitivity', labelKey: 'sat.climVuln.sensitivity', aggregation: 'mean' },
+			{ col: 'c_adaptive_cap', labelKey: 'sat.climVuln.adaptiveCap', aggregation: 'mean' },
+			{ col: 'c_heat_stress', labelKey: 'sat.climVuln.heatStress', aggregation: 'mean' },
+			{ col: 'c_flood_risk', labelKey: 'sat.climVuln.floodRisk', aggregation: 'mean' },
+			{ col: 'c_water_stress', labelKey: 'sat.climVuln.waterStress', aggregation: 'mean' },
+			{ col: 'c_fire_freq', labelKey: 'sat.climVuln.fireFreq', aggregation: 'mean' },
+			{ col: 'c_forest_loss', labelKey: 'sat.climVuln.forestLoss', aggregation: 'mean' },
+		],
+		titleKey: 'sat.climVuln.title',
+		perDepartment: true,
+		legendLowKey: 'legend.climVuln.low',
+		legendHighKey: 'legend.climVuln.high',
 	},
 	// ── EUDR deforestation risk (H3 res-7, 10 provinces) ──
 	eudr: {
@@ -854,6 +935,26 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'sat.eduFlow.title',
 		descKey: 'sat.eduFlow.desc',
+
+		status: 'available',
+		spatialUnit: 'hexagon',
+	},
+	// ── Carbon Stock ──
+	{
+		id: 'carbon_stock',
+		lensId: 'producir',
+		titleKey: 'sat.carbon.title',
+		descKey: 'sat.carbon.desc',
+
+		status: 'available',
+		spatialUnit: 'hexagon',
+	},
+	// ── Climate Vulnerability ──
+	{
+		id: 'climate_vulnerability',
+		lensId: 'servir',
+		titleKey: 'sat.climVuln.title',
+		descKey: 'sat.climVuln.desc',
 
 		status: 'available',
 		spatialUnit: 'hexagon',
@@ -1137,7 +1238,7 @@ export const DATA_FRESHNESS: Record<string, { dataDate: string; processedDate: s
 	sat_territorial_types: { dataDate: 'PCA + k-means sobre 13 analisis satelitales 2019-2024', processedDate: '28/03/2026', sourceKey: 'data.source.satellite' },
 	sat_sociodemographic: { dataDate: 'Censo Nacional 2022 (INDEC)', processedDate: '29/03/2026', sourceKey: 'data.source.censo' },
 	sat_economic_activity: { dataDate: 'Censo 2022 + VIIRS 2022-2024 + GBA 2025', processedDate: '29/03/2026', sourceKey: 'data.source.satellite' },
-	sat_accessibility: { dataDate: 'Nelson 2019 / Oxford MAP 2019 / OSM', processedDate: '29/03/2026', sourceKey: 'data.source.satellite' },
+	sat_accessibility: { dataDate: 'Nelson 2019 / Oxford MAP 2019 / OSM', processedDate: '02/04/2026', sourceKey: 'data.source.satellite' },
 	eudr_deforestation: { dataDate: 'Hansen GFC v1.12 + MODIS MCD64A1 (cutoff 31/12/2020)', processedDate: '27/03/2026', sourceKey: 'data.source.satellite' },
 };
 

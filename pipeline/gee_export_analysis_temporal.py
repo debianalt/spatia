@@ -272,7 +272,7 @@ def main():
         builder = TEMPORAL_BUILDERS[aid]
 
         for window_name, ds, de in windows:
-            print(f"\n  Building {aid} [{window_name}] ({ds} → {de})...")
+            print(f"\n  Building {aid} [{window_name}] ({ds} -> {de})...")
             composite = builder(bbox, ds, de)
             file_name = f'sat_{aid}_{window_name}'
 

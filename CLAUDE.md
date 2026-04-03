@@ -42,7 +42,7 @@ db/                     # D1 schema + import scripts (seed.sql gitignored)
 - **Raster nodata**: rasterio nodata=0 en binarios S1 conflicta con dry land → usar `ignore_src_nodata=True`. JRC usa -128 (not water) y -32768 (nodata) → se maneja en `zonal_stats_rasterio`.
 - **Zonal stats**: SIEMPRE usar `zonal_stats_rasterio` (polygon masking), NUNCA `zonal_stats_sampling` (centroid, solo legacy).
 - **Bbox**: padded a [-56.10, -28.20, -53.55, -25.44] para cubrir hexágonos del borde.
-- **GCS bucket `spatia-satellite`**: NO existe. Exportar a Google Drive (`--drive` flag) y descargar via Drive API con credenciales EE.
+- **GCS bucket `spatia-satellite`**: EXISTE en proyecto `amiable-reducer-398015` (billing activo). Preferir GCS sobre Drive. Para forzar GCS localmente: `--gcs` flag. Descargar: `gcloud storage cp gs://spatia-satellite/satellite/*.tif pipeline/output/`.
 - **GEE auth**: credenciales en `~/.config/earthengine/credentials` (OAuth user, scopes: earthengine, cloud-platform, drive, devstorage).
 - **R2 uploads**: `npx wrangler r2 object put neahub/... --file ... --remote` — el pipeline usa `upload_to_r2.py` pero NO pasa `--remote`, hacer upload manual con `--remote` después.
 - **Parquet cache**: DuckDB-WASM en browser cachea parquets. Usar cache-buster `?v=N` en `getParquetUrl()` al cambiar schema (incrementar N en config.ts).

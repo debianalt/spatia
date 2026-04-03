@@ -60,12 +60,14 @@
 				{#each componentVars as v}
 					{@const val = hexData.data?.[v.col]}
 					{@const numVal = typeof val === 'number' ? val : 0}
+					{@const rawVal = v.rawCol ? hexData.data?.[v.rawCol] : null}
+					{@const displayVal = (rawVal != null && typeof rawVal === 'number') ? rawVal : numVal}
 					<div class="cd-row">
 						<span class="cd-label">{i18n.t(v.labelKey)}</span>
 						<div class="cd-bar-track">
 							<div class="cd-bar-fill" style:width="{Math.min(100, Math.max(0, numVal))}%" style:background={numVal > 66 ? '#ef4444' : numVal > 33 ? '#eab308' : '#22c55e'}></div>
 						</div>
-						<span class="cd-val">{numVal.toFixed(0)}</span>
+						<span class="cd-val">{displayVal.toFixed(0)}{v.unit ? ` ${v.unit}` : ''}</span>
 					</div>
 				{/each}
 			</div>

@@ -42,6 +42,8 @@ ALL_ANALYSES = [
     "health_access", "education_capital", "education_flow",
     "territorial_gap", "education_gap", "land_use",
     "territorial_types", "sociodemographic", "economic_activity", "accessibility",
+    "climate_vulnerability",
+    "carbon_stock",
 ]
 
 
