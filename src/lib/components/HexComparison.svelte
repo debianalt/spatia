@@ -12,8 +12,12 @@
 	const CENSUS_ANALYSES = new Set(['service_deprivation', 'health_access', 'education_capital', 'education_flow', 'sociodemographic', 'economic_activity', 'accessibility']);
 	const selected = $derived([...hexStore.selectedHexes.entries()]);
 	const layer = $derived(hexStore.activeLayer);
+	const isCensus = $derived(layer ? CENSUS_ANALYSES.has(layer.id) : false);
 	const showPetals = $derived(layer ? !CENSUS_ANALYSES.has(layer.id) : true);
 	const variables = $derived(layer?.variables ?? []);
+	const componentVars = $derived(
+		variables.filter(v => !['score', 'type', 'type_label', 'pca_1', 'pca_2'].includes(v.col))
+	);
 	const petalLayers = $derived(hexStore.selectionPetalLayers);
 	const petalLabels = $derived(hexStore.petalLabels);
 </script>
@@ -43,12 +47,43 @@
 		<div class="hc-ref-note">
 			<span class="hc-ref-dash"></span> 50 = {i18n.t('hex.provAvg') ?? 'prov. avg'}
 		</div>
+	{:else if isCensus && componentVars.length > 0}
+		{#each selected as [h3index, hexData]}
+			<div class="cd-hex-block">
+				<div class="cd-hex-id">
+					<span class="hc-dot" style:background={hexData.color}></span>
+					{h3index.slice(0, 4)}...{h3index.slice(-4)}
+					{#if hexData.data?.type_label}
+						<span class="cd-type">{hexData.data.type_label}</span>
+					{/if}
+				</div>
+				{#each componentVars as v}
+					{@const val = hexData.data?.[v.col]}
+					{@const numVal = typeof val === 'number' ? val : 0}
+					<div class="cd-row">
+						<span class="cd-label">{i18n.t(v.labelKey)}</span>
+						<div class="cd-bar-track">
+							<div class="cd-bar-fill" style:width="{Math.min(100, Math.max(0, numVal))}%" style:background={numVal > 66 ? '#ef4444' : numVal > 33 ? '#eab308' : '#22c55e'}></div>
+						</div>
+						<span class="cd-val">{numVal.toFixed(0)}</span>
+					</div>
+				{/each}
+			</div>
+		{/each}
 	{/if}
 
 </div>
 
 <style>
 	.hex-comparison { font-size: 11px; }
+	.cd-hex-block { margin: 8px 0; padding: 6px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+	.cd-hex-id { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #e2e8f0; font-family: monospace; margin-bottom: 5px; }
+	.cd-type { font-size: 8px; color: rgba(255,255,255,0.45); font-family: sans-serif; }
+	.cd-row { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+	.cd-label { font-size: 9px; color: #d4d4d4; flex: 0 0 auto; min-width: 100px; }
+	.cd-bar-track { flex: 1; height: 5px; background: #1e293b; border-radius: 3px; overflow: hidden; }
+	.cd-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; min-width: 2px; }
+	.cd-val { font-size: 8px; font-weight: 600; color: #cbd5e1; width: 24px; text-align: right; flex-shrink: 0; }
 	.hc-header {
 		display: flex;
 		justify-content: space-between;
