@@ -210,6 +210,74 @@ def main():
     vals = df[key_cols].clip(lower=1.0)
     df['score'] = np.exp(np.log(vals).mean(axis=1)).round(1)
 
+    # ── Temporal baseline ─────────────────────────────────────────────
+    temporal_raster = os.path.join(OUTPUT_DIR, 'sat_carbon_temporal_raster.tif')
+    green_parquet = os.path.join(OUTPUT_DIR, 'sat_green_capital.parquet')
+
+    if os.path.exists(temporal_raster):
+        print("\nComputing temporal baseline (ESA CCI 2018-2020 vs 2022)...")
+        # Read AGB baseline + current from temporal raster
+        import rasterio as rio_tmp
+        with rio_tmp.open(temporal_raster) as src_t:
+            print(f"  Temporal raster: {src_t.count} bands")
+            agb_bl_vals = []
+            agb_cur_vals = []
+            for i, feat in enumerate(json.load(open(HEXAGONS_PATH))['features']):
+                h3index = (feat.get("properties", {}).get("h3index")
+                           or feat.get("properties", {}).get("h3_index")
+                           or feat.get("id"))
+                geom = shape(feat["geometry"])
+                bl = zonal_stats_band(src_t, 1, geom, src_t.nodata, zero_is_nodata=True)
+                cur = zonal_stats_band(src_t, 2, geom, src_t.nodata, zero_is_nodata=True)
+                agb_bl_vals.append((h3index, bl, cur))
+                if i % 100000 == 0 and i > 0:
+                    print(f"    {i:,}...")
+
+        temporal_df = pd.DataFrame(agb_bl_vals, columns=['h3index', 'c_agb_bl', 'c_agb_cur'])
+        df = df.merge(temporal_df, on='h3index', how='left')
+
+        # Baseline total carbon
+        df['c_agb_raw_baseline'] = df['c_agb_bl']
+        bgb_bl = 0.489 * (df['c_agb_bl'].clip(lower=0.1) ** 0.89)
+        df['c_total_carbon_raw_baseline'] = (
+            df['c_agb_bl'] * CARBON_FRACTION + bgb_bl * CARBON_FRACTION + df['c_soc_tcha']
+        )
+
+        # NPP baseline from green_capital if available
+        if os.path.exists(green_parquet):
+            gc = pd.read_parquet(green_parquet)
+            if 'c_npp_baseline' in gc.columns:
+                npp_bl = gc[['h3index', 'c_npp_baseline']].rename(columns={'c_npp_baseline': 'c_npp_bl'})
+                df = df.merge(npp_bl, on='h3index', how='left')
+
+        # Baseline scores
+        df['c_agb_cci_baseline'] = percentile_rank(df['c_agb_bl']).round(1)
+        df['c_total_carbon_baseline'] = percentile_rank(df['c_total_carbon_raw_baseline']).round(1)
+        npp_bl_col = 'c_npp_bl' if 'c_npp_bl' in df.columns else 'c_npp_raw'
+        df['c_npp_baseline'] = percentile_rank(df[npp_bl_col].astype(float)).round(1)
+
+        # For other variables without temporal, baseline = current
+        for _, score_col, _ in score_vars:
+            bl = f'{score_col}_baseline'
+            if bl not in df.columns:
+                df[bl] = df[score_col]
+
+        # Baseline overall score
+        bl_key = ['c_total_carbon_baseline', 'c_npp_baseline', 'c_agb_cci_baseline']
+        vals_bl = df[bl_key].clip(lower=1.0)
+        df['score_baseline'] = np.exp(np.log(vals_bl).mean(axis=1)).round(1)
+        df['delta_score'] = (df['score'] - df['score_baseline']).round(1)
+
+        # Deltas for key variables
+        df['c_agb_cci_delta'] = (df['c_agb_cci'] - df['c_agb_cci_baseline']).round(1)
+        df['c_total_carbon_delta'] = (df['c_total_carbon'] - df['c_total_carbon_baseline']).round(1)
+        df['c_npp_delta'] = (df['c_npp'] - df['c_npp_baseline']).round(1)
+
+        print(f"  Baseline score: mean={df['score_baseline'].mean():.1f}")
+        print(f"  Delta score: mean={df['delta_score'].mean():.2f}, std={df['delta_score'].std():.2f}")
+    else:
+        print(f"\n  SKIP temporal: {temporal_raster} not found")
+
     # ── PCA + k-means typology ────────────────────────────────────────
     print("\nPCA + k-means clustering...")
 
@@ -278,20 +346,19 @@ def main():
 
     # ── Output ────────────────────────────────────────────────────────
     out_cols = [
-        'h3index', 'score', 'type', 'type_label', 'pca_1', 'pca_2',
+        'h3index', 'score', 'score_baseline', 'delta_score',
+        'type', 'type_label', 'pca_1', 'pca_2',
         # Scored (percentile rank 0-100)
-        'c_agb_cci', 'c_agb_gedi', 'c_total_carbon', 'c_soc',
-        'c_gross_emissions', 'c_gross_removals', 'c_net_flux', 'c_npp',
+        'c_agb_cci', 'c_agb_cci_baseline', 'c_agb_cci_delta',
+        'c_agb_gedi', 'c_total_carbon', 'c_total_carbon_baseline', 'c_total_carbon_delta',
+        'c_soc', 'c_gross_emissions', 'c_gross_removals', 'c_net_flux',
+        'c_npp', 'c_npp_baseline', 'c_npp_delta',
         # Raw physical units
-        'c_agb_raw', 'c_agb_gedi',  # Mg/ha (GEDI is already raw)
-        'c_total_carbon_raw',        # tC/ha
-        'c_soc_tcha',               # tC/ha
-        'c_emissions_raw',           # MgCO2/ha
-        'c_removals_raw',            # MgCO2/ha
-        'c_net_flux_raw',            # MgCO2/ha
-        'c_npp_raw',                 # gC/m2/yr
-        'c_economic_value',          # USD/ha
-        'c_gedi_se',                 # Mg/ha (uncertainty)
+        'c_agb_raw', 'c_agb_raw_baseline', 'c_agb_gedi',
+        'c_total_carbon_raw', 'c_total_carbon_raw_baseline',
+        'c_soc_tcha', 'c_emissions_raw', 'c_removals_raw',
+        'c_net_flux_raw', 'c_npp_raw',
+        'c_economic_value', 'c_gedi_se',
     ]
     # Deduplicate and filter to existing columns
     seen = set()
