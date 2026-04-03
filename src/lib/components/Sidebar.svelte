@@ -126,17 +126,6 @@
 
 			<p class="welcome-desc">{i18n.t('side.welcome.desc')}</p>
 
-			<div class="welcome-divider">{i18n.t('side.welcome.dataTitle')}</div>
-
-			<div class="welcome-stats">
-				<div>— {i18n.t('side.welcome.stat.hex')}</div>
-				<div>— {i18n.t('side.welcome.stat.radios')}</div>
-				<div>— {i18n.t('side.welcome.stat.parcels')}</div>
-				<div>— {i18n.t('side.welcome.stat.buildings')}</div>
-				<div>— {i18n.t('side.welcome.stat.history')}</div>
-				<div>— {i18n.t('side.welcome.stat.reports')}</div>
-			</div>
-
 			<div class="welcome-divider">{i18n.t('side.onboarding.title')}</div>
 
 			<div class="welcome-steps">

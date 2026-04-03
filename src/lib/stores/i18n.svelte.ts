@@ -776,9 +776,9 @@ const dict: Record<string, Record<Locale, string>> = {
 	'side.onboarding.step3': { es: 'Hacé click en un hexágono para ver el detalle geoespacial completo', en: 'Click a hexagon to see the full geospatial profile', gn: "Ehesakutu hexágono ehecha hag̃ua" },
 	'side.welcome.status': { es: 'En desarrollo', en: 'Under development', gn: 'Oñemoĩhína' },
 	'side.welcome.desc': {
-		es: 'Plataforma de análisis geoespacial que integra centenares de fuentes satelitales, censales y catastrales para los 30.000 km² de la provincia de Misiones, Argentina.',
-		en: 'Geospatial analysis platform integrating hundreds of satellite, census and cadastral sources for the 30,000 km² of Misiones province, Argentina.',
-		gn: "Yvy rekokatu plataforma Misiones-pe, 30.000 km² pegua, centenares moñe'ẽha satélite, censo ha catastro ndive."
+		es: 'Plataforma de análisis geoespacial que integra centenares de fuentes satelitales, censales y catastrales, en continua actualización automatizada, sobre la provincia de Misiones, Argentina.',
+		en: 'Geospatial analysis platform integrating hundreds of satellite, census and cadastral sources, continuously and automatically updated, for Misiones province, Argentina.',
+		gn: "Yvy rekokatu plataforma Misiones-pe, centenares moñe'ẽha satélite, censo ha catastro ndive, oñembohekopyahu hag̃uaitépe."
 	},
 	'side.welcome.pro': { es: 'Spatia Pro', en: 'Spatia Pro', gn: 'Spatia Pro' },
 	'side.welcome.pro.ia': { es: 'Asistente IA con contexto geoespacial completo', en: 'AI assistant with full geospatial context', gn: "IA pytyvõhára yvy rekokatu reheve" },
