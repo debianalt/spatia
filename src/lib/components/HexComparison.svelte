@@ -9,7 +9,7 @@
 		hexStore: HexStore;
 	} = $props();
 
-	const CENSUS_ANALYSES = new Set(['service_deprivation', 'health_access', 'education_capital', 'education_flow', 'sociodemographic', 'economic_activity', 'accessibility']);
+	const CENSUS_ANALYSES = new Set(['service_deprivation', 'health_access', 'education_capital', 'education_flow', 'sociodemographic', 'economic_activity', 'accessibility', 'carbon_stock']);
 	const selected = $derived([...hexStore.selectedHexes.entries()]);
 	const layer = $derived(hexStore.activeLayer);
 	const isCensus = $derived(layer ? CENSUS_ANALYSES.has(layer.id) : false);
@@ -62,12 +62,10 @@
 					{@const numVal = typeof val === 'number' ? val : 0}
 					{@const rawVal = v.rawCol ? hexData.data?.[v.rawCol] : null}
 					{@const displayVal = (rawVal != null && typeof rawVal === 'number') ? rawVal : numVal}
+					{@const hasUnit = v.unit && rawVal != null}
 					<div class="cd-row">
 						<span class="cd-label">{i18n.t(v.labelKey)}</span>
-						<div class="cd-bar-track">
-							<div class="cd-bar-fill" style:width="{Math.min(100, Math.max(0, numVal))}%" style:background={numVal > 66 ? '#ef4444' : numVal > 33 ? '#eab308' : '#22c55e'}></div>
-						</div>
-						<span class="cd-val">{displayVal.toFixed(0)}{v.unit ? ` ${v.unit}` : ''}</span>
+						<span class="cd-val-data">{hasUnit ? displayVal.toFixed(1) : numVal.toFixed(0)}{hasUnit ? ` ${v.unit}` : ''}</span>
 					</div>
 				{/each}
 			</div>
@@ -86,6 +84,7 @@
 	.cd-bar-track { flex: 1; height: 5px; background: #1e293b; border-radius: 3px; overflow: hidden; }
 	.cd-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; min-width: 2px; }
 	.cd-val { font-size: 8px; font-weight: 600; color: #cbd5e1; width: 24px; text-align: right; flex-shrink: 0; }
+	.cd-val-data { font-size: 10px; font-weight: 600; color: #e2e8f0; text-align: right; margin-left: auto; white-space: nowrap; }
 	.hc-header {
 		display: flex;
 		justify-content: space-between;

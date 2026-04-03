@@ -30,7 +30,7 @@
 	});
 
 	// Census-based analyses: hide petals (radio-level data → identical within radio, not informative)
-	const CENSUS_ANALYSES = new Set(['service_deprivation', 'health_access', 'education_capital', 'education_flow', 'sociodemographic', 'economic_activity', 'accessibility']);
+	const CENSUS_ANALYSES = new Set(['service_deprivation', 'health_access', 'education_capital', 'education_flow', 'sociodemographic', 'economic_activity', 'accessibility', 'carbon_stock']);
 
 	// Department summaries for perDepartment layers
 	let deptSummary = $state<any>(null);
@@ -413,9 +413,9 @@
 			method: `${METHOD_COMMON} 5 variables: tiempo motorizado a Posadas y cabecera (Nelson et al. 2019, superficie de friccion Oxford MAP), distancia euclidiana a hospital, escuela secundaria y ruta primaria (OSM). Fuente: Nelson 2019 + Oxford MAP 2019 + OSM.`,
 		},
 		carbon_stock: {
-			howToRead: 'El mapa muestra el stock de carbono total por hexagono (biomasa aerea + subterranea + carbono del suelo) y el balance anual de emisiones/remociones. Colores mas intensos indican mayor stock. Los valores en unidades fisicas (tC/ha, MgCO2/ha, USD/ha) se muestran junto al score percentil.',
-			implications: 'Las zonas de alto stock con balance neto negativo (emisor) son prioridad para conservacion (REDD+). Las zonas de alto stock con balance positivo (sumidero) son candidatas para creditos de carbono por mantenimiento. Las zonas de bajo stock con alta productividad (NPP) tienen potencial de restauracion y secuestro futuro. El valor economico se calcula a precio de mercado voluntario de carbono.',
-			method: `${METHOD_COMMON} 10 variables: biomasa aerea ESA CCI Biomass v6 (100m, Santoro et al. 2024) + GEDI L4B lidar (1km, validacion). Biomasa subterranea via Cairns et al. (1997): BGB = 0.489 x AGB^0.89. Carbono organico del suelo: SoilGrids v2 (ISRIC, 0-30cm extrapolado). Flujo de carbono: Harris et al. 2021/GFW (emisiones brutas + remociones + balance neto, 30m, 2001-2024). Productividad: MODIS MOD17A3HGF NPP (500m, 2019-2024). Total carbon = AGB x 0.47 + BGB x 0.47 + SOC. Valor economico = total_carbon x 3.67 x precio_tCO2e.`,
+			howToRead: 'El mapa muestra el stock de carbono total por hexagono (biomasa aerea + subterranea + carbono del suelo) y el balance anual de emisiones/remociones. Colores mas intensos indican mayor stock. Los valores se muestran en unidades fisicas (tC/ha, MgCO2/ha).',
+			implications: 'Las zonas de alto stock con balance neto negativo (sumidero) son candidatas para creditos de carbono por conservacion. Las zonas de alto stock con balance positivo (emisor) son prioridad para intervencion REDD+. Las zonas de bajo stock con alta productividad (NPP) tienen potencial de restauracion y secuestro futuro. *Valor teorico del carbono: estimacion de referencia calculada como stock total x 3.67 (conversion C a CO2) x USD 10/tCO2e (mediana del mercado voluntario 2024, Ecosystem Marketplace 2024). No representa un precio de venta ni el valor realizable de un predio. La monetizacion efectiva requiere un proyecto certificado (VCS, Gold Standard) con linea base, adicionalidad demostrada y costos de transaccion que reducen significativamente el valor neto.',
+			method: `${METHOD_COMMON} 10 variables: biomasa aerea ESA CCI Biomass v6 (100m, Santoro et al. 2024) + GEDI L4B lidar (1km, validacion). Biomasa subterranea via Cairns et al. (1997): BGB = 0.489 x AGB^0.89. Carbono organico del suelo: SoilGrids v2 (ISRIC, 0-30cm extrapolado). Flujo de carbono: Harris et al. (2021) Nature Climate Change / Global Forest Watch (emisiones brutas + remociones + balance neto, 30m, 2001-2024). Productividad: MODIS MOD17A3HGF NPP (500m, 2019-2024). Total carbon = AGB x 0.47 + BGB x 0.47 + SOC. Precio de referencia: Ecosystem Marketplace (2024) State of the Voluntary Carbon Markets.`,
 		},
 		climate_vulnerability: {
 			howToRead: 'El mapa clasifica cada hexagono segun su vulnerabilidad climatica integrada (framework IPCC AR5). Colores calidos indican mayor vulnerabilidad: alta exposicion a eventos extremos, alta sensibilidad ambiental, o baja capacidad adaptativa de la poblacion. Cada tipo representa una configuracion distinta de estos tres factores.',

@@ -487,7 +487,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'sat.carbon.removals': { es: 'Remociones brutas', en: 'Gross removals', gn: "Oñembo'y" },
 	'sat.carbon.netFlux': { es: 'Balance neto de carbono', en: 'Net carbon balance', gn: 'Carbono balance' },
 	'sat.carbon.npp': { es: 'Productividad primaria neta', en: 'Net primary productivity', gn: 'NPP' },
-	'sat.carbon.economicValue': { es: 'Valor economico (USD/ha)', en: 'Economic value (USD/ha)', gn: 'Valor USD/ha' },
+	'sat.carbon.economicValue': { es: 'Valor teorico del carbono (USD/ha)*', en: 'Theoretical carbon value (USD/ha)*', gn: 'Valor USD/ha*' },
 	'legend.carbon.low': { es: 'Bajo stock de carbono', en: 'Low carbon stock', gn: "Michĩ" },
 	'legend.carbon.high': { es: 'Alto stock de carbono', en: 'High carbon stock', gn: "Tuicha" },
 	// ── Climate Vulnerability (IPCC AR5) ──
