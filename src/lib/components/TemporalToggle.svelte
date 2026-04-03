@@ -11,6 +11,11 @@
 		baseline: 'temporal.baseline',
 		delta: 'temporal.delta',
 	};
+	const hintKeys: Record<TemporalMode, string> = {
+		current: 'temporal.hint.current',
+		baseline: 'temporal.hint.baseline',
+		delta: 'temporal.hint.delta',
+	};
 </script>
 
 <div class="temporal-toggle">
@@ -24,6 +29,7 @@
 		</button>
 	{/each}
 </div>
+<p class="temporal-hint">{i18n.t(hintKeys[hexStore.temporalMode])}</p>
 
 <style>
 	.temporal-toggle {
@@ -50,5 +56,11 @@
 	.toggle-btn.active {
 		background: rgba(255,255,255,0.10);
 		color: #e2e8f0;
+	}
+	.temporal-hint {
+		font-size: 8px;
+		color: rgba(255,255,255,0.40);
+		margin: -4px 0 6px;
+		line-height: 1.3;
 	}
 </style>
