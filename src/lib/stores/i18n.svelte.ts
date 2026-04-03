@@ -275,7 +275,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'data.source.buildings': { es: 'Fuente: Detección por IA sobre imágenes satelitales', en: 'Source: AI detection on satellite imagery', gn: "Moñe'ẽha: IA ohechaukáva satélite ra'ãnga rupi" },
 	'data.source.catastro': { es: 'Fuente: Dirección General de Catastro, Misiones', en: 'Source: Dirección General de Catastro, Misiones', gn: "Moñe'ẽha: Catastro, Misiones" },
 	'data.source.overture': { es: 'Fuente: Overture Maps Foundation via walkthru.earth (CC BY 4.0)', en: 'Source: Overture Maps Foundation via walkthru.earth (CC BY 4.0)', gn: "Moñe'ẽha: Overture Maps Foundation (CC BY 4.0)" },
-	'data.source.satellite': { es: 'Fuente: Google Earth Engine — MODIS, Landsat, ERA5, SoilGrids, VIIRS, Hansen GFC', en: 'Source: Google Earth Engine — MODIS, Landsat, ERA5, SoilGrids, VIIRS, Hansen GFC', gn: "Moñe'ẽha: Google Earth Engine" },
+	'data.source.satellite': { es: 'Fuente: MODIS, Landsat, ERA5, SoilGrids, VIIRS, Hansen GFC', en: 'Source: MODIS, Landsat, ERA5, SoilGrids, VIIRS, Hansen GFC', gn: "Moñe'ẽha: MODIS, Landsat, VIIRS" },
 	'data.source.emsa': { es: 'Fuente: EMSA — Secretaría de Energía, datos.energia.gob.ar', en: 'Source: EMSA — Secretaría de Energía, datos.energia.gob.ar', gn: "Moñe'ẽha: EMSA — Secretaría de Energía" },
 
 	// ── EMSA powerlines ──
@@ -800,7 +800,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'side.welcome.stat.reports': { es: 'Informes PDF por departamento · Diagnósticos por microzona bajo demanda', en: 'PDF reports by department · On-demand microzone diagnostics', gn: "PDF departamento rupi · Diagnóstico microzona" },
 	'side.welcome.footer.research': { es: 'Investigación aplicada en inteligencia geoespacial', en: 'Applied research in geospatial intelligence', gn: "Investigación yvy rekokatu rehegua" },
 	'side.welcome.footer.author': { es: 'Raimundo Elías Gómez · CONICET', en: 'Raimundo Elías Gómez · CONICET', gn: 'Raimundo Elías Gómez · CONICET' },
-	'side.welcome.footer.partner': { es: 'Google Earth Engine Partner', en: 'Google Earth Engine Partner', gn: 'Google Earth Engine Partner' },
+	'side.welcome.footer.partner': { es: 'Datos satelitales: NASA, ESA, Copernicus', en: 'Satellite data: NASA, ESA, Copernicus', gn: 'NASA, ESA, Copernicus' },
 	'side.welcome.hidePanel': { es: 'Ocultar panel', en: 'Hide panel', gn: 'Emokañy panel' },
 	'side.welcome.showPanel': { es: 'Mostrar panel', en: 'Show panel', gn: 'Ehechauka panel' },
 
@@ -824,7 +824,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'trade.risk.card_desc': { es: 'Evaluación de riesgo climático, hídrico y de incendios para inversiones y seguros en regiones específicas.', en: 'Climate, water, and fire risk assessment for investments and insurance in specific regions.', gn: 'Risk' },
 	'trade.trust.title': { es: 'Fuentes de datos', en: 'Data sources', gn: 'Data' },
 	'trade.footer.tagline': { es: 'Inteligencia geoespacial desde el borde', en: 'Geospatial intelligence from the edge', gn: 'Spatia' },
-	'trade.footer.data': { es: 'Datos satelitales procesados en Google Earth Engine, servidos desde Cloudflare', en: 'Satellite data processed in Google Earth Engine, served from Cloudflare', gn: 'Data' },
+	'trade.footer.data': { es: 'Datos satelitales: MODIS, Landsat, Sentinel, VIIRS — servidos desde Cloudflare', en: 'Satellite data: MODIS, Landsat, Sentinel, VIIRS — served from Cloudflare', gn: 'Data' },
 
 	// ── EUDR product page ─────────────────────────────────────────────────
 	'eudr.hero.title': { es: 'EUDR Compliance Check', en: 'EUDR Compliance Check', gn: 'EUDR' },

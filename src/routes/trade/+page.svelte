@@ -74,7 +74,7 @@
 			<span>Hansen/UMD Global Forest Change</span>
 			<span>NASA MODIS</span>
 			<span>ESA Sentinel-2</span>
-			<span>Google Earth Engine</span>
+			<span>NOAA VIIRS</span>
 			<span>Cloudflare Edge Network</span>
 		</div>
 	</section>
