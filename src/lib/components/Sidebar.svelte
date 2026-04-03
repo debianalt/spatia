@@ -148,6 +148,7 @@
 			<div class="welcome-footer">
 				<div>{i18n.t('side.welcome.footer.research')}</div>
 				<div>{i18n.t('side.welcome.footer.author')}</div>
+				<div>{i18n.t('side.welcome.footer.affiliation')}</div>
 				<div>{i18n.t('side.welcome.footer.partner')}</div>
 			</div>
 
