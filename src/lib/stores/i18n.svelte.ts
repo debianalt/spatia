@@ -797,7 +797,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'side.welcome.stat.parcels': { es: '445.000 parcelas catastrales', en: '445,000 cadastral parcels', gn: '445.000 parcela catastral' },
 	'side.welcome.stat.buildings': { es: '1.250.000 edificaciones detectadas por IA', en: '1,250,000 AI-detected buildings', gn: "1.250.000 óga IA ohechakuaáva" },
 	'side.welcome.stat.history': { es: 'Series históricas desde 1984 · Monitoreo SAR cada ~12 días', en: 'Historical series since 1984 · SAR monitoring every ~12 days', gn: "Historia 1984 guive · SAR 12 ára peteĩteĩ" },
-	'side.welcome.stat.reports': { es: 'Informes PDF por departamento · Diagnósticos por microzona bajo demanda', en: 'PDF reports by department · On-demand microzone diagnostics', gn: "PDF departamento rupi · Diagnóstico microzona" },
+	'side.welcome.stat.reports': { es: 'Informes PDF por departamento · Diagnósticos bajo demanda', en: 'PDF reports by department · On-demand diagnostics', gn: "PDF departamento rupi · Diagnóstico" },
 	'side.welcome.footer.research': { es: 'Investigación aplicada en inteligencia geoespacial', en: 'Applied research in geospatial intelligence', gn: "Investigación yvy rekokatu rehegua" },
 	'side.welcome.footer.author': { es: 'Raimundo Elías Gómez · CONICET', en: 'Raimundo Elías Gómez · CONICET', gn: 'Raimundo Elías Gómez · CONICET' },
 	'side.welcome.footer.partner': { es: 'Datos satelitales: NASA, ESA, Copernicus', en: 'Satellite data: NASA, ESA, Copernicus', gn: 'NASA, ESA, Copernicus' },
