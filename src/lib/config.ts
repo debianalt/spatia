@@ -64,6 +64,8 @@ export function getParquetUrl(name: string): string {
 		sat_accessibility: '?v=23',
 		sat_climate_vulnerability: '?v=1',
 		sat_carbon_stock: '?v=1',
+		sat_pm25_drivers: '?v=1',
+		sat_deforestation_dynamics: '?v=1',
 		overture_scores: '?v=23',
 		emsa_powerlines: '?v=20',
 	};
@@ -705,6 +707,53 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		legendLowKey: 'legend.climVuln.low',
 		legendHighKey: 'legend.climVuln.high',
 	},
+	// ── PM2.5 Drivers (25-year ML decomposition) ──
+	pm25_drivers: {
+		id: 'pm25_drivers',
+		parquet: 'sat_pm25_drivers',
+		variables: [
+			{ col: 'type', labelKey: 'sat.pm25.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.pm25.typeLabel', aggregation: 'mean' },
+			{ col: 'c_pm25_mean', unit: 'ug/m3', labelKey: 'sat.pm25.pm25Mean', aggregation: 'mean' },
+			{ col: 'c_fire', labelKey: 'sat.pm25.fire', aggregation: 'mean' },
+			{ col: 'c_climate', labelKey: 'sat.pm25.climate', aggregation: 'mean' },
+			{ col: 'c_terrain', labelKey: 'sat.pm25.terrain', aggregation: 'mean' },
+			{ col: 'c_vegetation', labelKey: 'sat.pm25.vegetation', aggregation: 'mean' },
+		],
+		primaryVariable: 'score',
+		colorScale: 'sequential',
+		aggregation: 'mean',
+		petalVars: [
+			{ col: 'c_fire', labelKey: 'sat.pm25.fire', aggregation: 'mean' },
+			{ col: 'c_climate', labelKey: 'sat.pm25.climate', aggregation: 'mean' },
+			{ col: 'c_terrain', labelKey: 'sat.pm25.terrain', aggregation: 'mean' },
+			{ col: 'c_vegetation', labelKey: 'sat.pm25.vegetation', aggregation: 'mean' },
+		],
+		titleKey: 'sat.pm25.title',
+		perDepartment: true,
+		temporal: true,
+		legendLowKey: 'legend.pm25.low',
+		legendHighKey: 'legend.pm25.high',
+	},
+	// ── Deforestation Dynamics (Hansen 2001-2024, observed) ──
+	deforestation_dynamics: {
+		id: 'deforestation_dynamics',
+		parquet: 'sat_deforestation_dynamics',
+		variables: [
+			{ col: 'type', labelKey: 'sat.deforest.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.deforest.typeLabel', aggregation: 'mean' },
+			{ col: 'c_loss_rate', unit: '%/yr', labelKey: 'sat.deforest.lossRate', aggregation: 'mean' },
+			{ col: 'c_cumulative', unit: '%', labelKey: 'sat.deforest.cumulative', aggregation: 'mean' },
+		],
+		primaryVariable: 'score',
+		colorScale: 'sequential',
+		aggregation: 'mean',
+		titleKey: 'sat.deforest.title',
+		perDepartment: true,
+		temporal: true,
+		legendLowKey: 'legend.deforest.low',
+		legendHighKey: 'legend.deforest.high',
+	},
 	// ── EUDR deforestation risk (H3 res-7, 10 provinces) ──
 	eudr: {
 		id: 'eudr',
@@ -957,6 +1006,26 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'sat.climVuln.title',
 		descKey: 'sat.climVuln.desc',
+
+		status: 'available',
+		spatialUnit: 'hexagon',
+	},
+	// ── Deforestation Dynamics ──
+	{
+		id: 'deforestation_dynamics',
+		lensId: 'vivir',
+		titleKey: 'sat.deforest.title',
+		descKey: 'sat.deforest.desc',
+
+		status: 'available',
+		spatialUnit: 'hexagon',
+	},
+	// ── PM2.5 Drivers ──
+	{
+		id: 'pm25_drivers',
+		lensId: 'vivir',
+		titleKey: 'sat.pm25.title',
+		descKey: 'sat.pm25.desc',
 
 		status: 'available',
 		spatialUnit: 'hexagon',

@@ -47,7 +47,10 @@
 		<div class="hc-ref-note">
 			<span class="hc-ref-dash"></span> 50 = {i18n.t('hex.provAvg') ?? 'prov. avg'}
 		</div>
-	{:else if isCensus && componentVars.length > 0}
+	{/if}
+
+	<!-- Data rows for ALL selected hexagons (always shown) -->
+	{#if componentVars.length > 0}
 		{#each selected as [h3index, hexData]}
 			<div class="cd-hex-block">
 				<div class="cd-hex-id">

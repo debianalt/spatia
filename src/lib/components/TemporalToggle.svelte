@@ -3,7 +3,7 @@
 	import type { HexStore } from '$lib/stores/hex.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
 
-	let { hexStore }: { hexStore: HexStore } = $props();
+	let { hexStore, layerId = '' }: { hexStore: HexStore; layerId?: string } = $props();
 
 	const modes: TemporalMode[] = ['current', 'baseline', 'delta'];
 	const labelKeys: Record<TemporalMode, string> = {
@@ -11,11 +11,16 @@
 		baseline: 'temporal.baseline',
 		delta: 'temporal.delta',
 	};
-	const hintKeys: Record<TemporalMode, string> = {
-		current: 'temporal.hint.current',
-		baseline: 'temporal.hint.baseline',
-		delta: 'temporal.hint.delta',
-	};
+
+	function getHint(mode: TemporalMode): string {
+		// Try layer-specific hint first, fall back to generic
+		if (layerId) {
+			const specific = `temporal.hint.${layerId}.${mode}`;
+			const val = i18n.t(specific);
+			if (val !== specific) return val; // found
+		}
+		return i18n.t(`temporal.hint.${mode}`);
+	}
 </script>
 
 <div class="temporal-toggle">
@@ -29,7 +34,7 @@
 		</button>
 	{/each}
 </div>
-<p class="temporal-hint">{i18n.t(hintKeys[hexStore.temporalMode])}</p>
+<p class="temporal-hint">{getHint(hexStore.temporalMode)}</p>
 
 <style>
 	.temporal-toggle {

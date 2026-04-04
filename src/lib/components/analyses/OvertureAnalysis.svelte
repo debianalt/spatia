@@ -59,6 +59,7 @@
 		climate_vulnerability: () => import('$lib/data/sat_climate_vulnerability_dept_summary.json'),
 		carbon_stock: () => import('$lib/data/sat_carbon_stock_dept_summary.json'),
 		pm25_drivers: () => import('$lib/data/sat_pm25_drivers_dept_summary.json'),
+		deforestation_dynamics: () => import('$lib/data/sat_deforestation_dynamics_dept_summary.json'),
 	};
 
 	$effect(() => {
@@ -484,7 +485,7 @@
 		</div>
 
 		{#if isTemporal}
-			<TemporalToggle {hexStore} />
+			<TemporalToggle {hexStore} layerId={layerCfg?.id ?? ''} />
 		{/if}
 
 		{#if hexPetalLayers.length > 0 && !CENSUS_ANALYSES.has(analysis.id)}
@@ -538,7 +539,7 @@
 		<div class="dept-active-title">{selectedDpto}</div>
 
 		{#if isTemporal}
-			<TemporalToggle {hexStore} />
+			<TemporalToggle {hexStore} layerId={layerCfg?.id ?? ''} />
 		{/if}
 
 		{#if loading}

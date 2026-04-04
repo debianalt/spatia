@@ -44,6 +44,9 @@ ALL_ANALYSES = [
     "territorial_types", "sociodemographic", "economic_activity", "accessibility",
     "climate_vulnerability",
     "carbon_stock",
+    "pm25_drivers",
+    "pm25_predicted",
+    "deforestation_dynamics",
 ]
 
 
