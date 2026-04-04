@@ -58,6 +58,7 @@
 		accessibility: () => import('$lib/data/sat_accessibility_dept_summary.json'),
 		climate_vulnerability: () => import('$lib/data/sat_climate_vulnerability_dept_summary.json'),
 		carbon_stock: () => import('$lib/data/sat_carbon_stock_dept_summary.json'),
+		pm25_drivers: () => import('$lib/data/sat_pm25_drivers_dept_summary.json'),
 	};
 
 	$effect(() => {
@@ -421,6 +422,11 @@
 			howToRead: 'El mapa clasifica cada hexagono segun su vulnerabilidad climatica integrada (framework IPCC AR5). Colores calidos indican mayor vulnerabilidad: alta exposicion a eventos extremos, alta sensibilidad ambiental, o baja capacidad adaptativa de la poblacion. Cada tipo representa una configuracion distinta de estos tres factores.',
 			implications: 'Las zonas de alta vulnerabilidad integral requieren atencion prioritaria en planes de adaptacion climatica. Las zonas con alta exposicion pero buena capacidad adaptativa pueden absorber shocks; las zonas con baja capacidad adaptativa son vulnerables incluso ante exposicion moderada. Este indice es el insumo estandar para fondos climaticos (GCF, GEF, Banco Mundial).',
 			method: `${METHOD_COMMON} 8 variables agrupadas en 3 dimensiones IPCC: Exposicion (estres termico MODIS LST, riesgo inundacion JRC/S1, estres hidrico ET/PET, frecuencia fuego MODIS MCD64A1), Sensibilidad (perdida forestal Hansen GFC, desproteccion vegetal Hansen treecover), Capacidad Adaptativa (aislamiento territorial Oxford MAP, privacion de servicios INDEC 2022). Sub-indices: media geometrica por dimension. Score final: media geometrica de las 3 dimensiones. PCA + k-means para tipologia.`,
+		},
+		pm25_drivers: {
+			howToRead: 'El mapa muestra la calidad del aire en cada hexagono, medida como concentracion media de PM2.5 (particulas finas < 2.5 µm) y descompuesta en cuatro drivers: fuego regional, clima, terreno y vegetacion. Score alto (colores frios) = mejor calidad del aire; score bajo (colores calidos) = mayor concentracion de PM2.5. Selecciona un departamento para ver la contribucion relativa de cada driver.',
+			implications: 'La intensidad de fuego regional es el driver dominante de PM2.5 en Misiones: las quemas agricolas y forestales en provincias vecinas y paises limitrofes elevan la concentracion de particulas finas incluso en zonas sin deforestacion local. Las zonas con alta contribucion climatica son sensibles a eventos de inversion termica que atrapan contaminantes. La vegetacion actua como filtro natural — la perdida de cobertura arborea reduce la capacidad de depuracion del aire.',
+			method: 'Descomposicion por machine learning (Random Forest feature importance) de la concentracion media anual de PM2.5. Fuente primaria: Atmospheric Composition Analysis Group (ACAG) V6.GL.02 (Dalhousie University, van Donkelaar et al. 2021), panel 1998–2022, resolucion 0.01° (~1 km). Drivers: intensidad de fuego regional (MODIS MCD64A1 + FIRMS), temperatura diurna/nocturna (MODIS LST), precipitacion (CHIRPS), cobertura arborea (Hansen GFC), indice de area foliar (MODIS LAI). Score compuesto 0–100: percentil invertido de concentracion media (mayor concentracion = menor score). Resolucion espacial: H3 resolucion 9.',
 		},
 	};
 

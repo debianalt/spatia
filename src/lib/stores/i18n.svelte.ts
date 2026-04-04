@@ -511,6 +511,18 @@ const dict: Record<string, Record<Locale, string>> = {
 	'sat.climVuln.deprivation': { es: 'Privacion de servicios', en: 'Service deprivation', gn: "Mba'e'ỹ" },
 	'legend.climVuln.low': { es: 'Baja vulnerabilidad', en: 'Low vulnerability', gn: "Michĩ" },
 	'legend.climVuln.high': { es: 'Alta vulnerabilidad', en: 'High vulnerability', gn: "Tuicha" },
+	// ── PM2.5 Drivers ──
+	'sat.pm25.title': { es: '¿Qué determina el PM2.5 en Misiones?', en: 'What drives PM2.5 in Misiones?', gn: "Mba'épa ojapo PM2.5 Misiones-pe?" },
+	'sat.pm25.desc': { es: 'Drivers de PM2.5 identificados por machine learning: intensidad de fuego regional, clima, terreno y vegetación. Panel de 25 años (ACAG V6, 1998-2022).', en: 'PM2.5 drivers identified by machine learning: regional fire intensity, climate, terrain and vegetation. 25-year panel (ACAG V6, 1998-2022).', gn: 'PM2.5 drivers' },
+	'sat.pm25.type': { es: 'Tipo', en: 'Type', gn: 'Laja' },
+	'sat.pm25.typeLabel': { es: 'Clasificación', en: 'Classification', gn: 'Clasificación' },
+	'sat.pm25.pm25Mean': { es: 'PM2.5 medio (µg/m³)', en: 'Mean PM2.5 (µg/m³)', gn: 'PM2.5' },
+	'sat.pm25.fire': { es: 'Contribución del fuego', en: 'Fire contribution', gn: 'Tata' },
+	'sat.pm25.climate': { es: 'Contribución del clima', en: 'Climate contribution', gn: 'Ára' },
+	'sat.pm25.terrain': { es: 'Contribución del terreno', en: 'Terrain contribution', gn: 'Yvy' },
+	'sat.pm25.vegetation': { es: 'Contribución de la vegetación', en: 'Vegetation contribution', gn: "Ka'a" },
+	'legend.pm25.low': { es: 'Baja exposición a PM2.5', en: 'Low PM2.5 exposure', gn: "Michĩ" },
+	'legend.pm25.high': { es: 'Alta exposición a PM2.5', en: 'High PM2.5 exposure', gn: "Tuicha" },
 	// ── Territorial types ──
 	'sat.types.title': { es: '¿Qué tipo de territorio es este? (Misiones)', en: 'What type of territory is this? (Misiones)', gn: "Mba'eichapa ko yvy?" },
 	'sat.types.desc': { es: 'Clasificacion metabolica: 5 tipos de cobertura basados en productividad ecosistemica, apropiacion humana y dinamica de cambio (PCA + k-means)', en: 'Metabolic classification: 5 land cover types based on ecosystem productivity, human appropriation and change dynamics (PCA + k-means)', gn: "5 yvy lája" },
