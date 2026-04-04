@@ -85,7 +85,32 @@
 		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 4 L18 12 L10 20"/></svg>
 	</button>
 
-	{#if hexStore.hexZones.length > 0}
+	{#if showAbout}
+		<!-- Welcome panel (triggered by header button) -->
+		<div class="chart-scroll welcome-panel">
+			<div class="welcome-brand">spatia.ar</div>
+			<div class="welcome-subtitle">{i18n.t('header.subtitle')}</div>
+
+			<p class="welcome-desc">{i18n.t('side.welcome.desc')}</p>
+
+			<div class="welcome-divider">{i18n.t('side.onboarding.title')}</div>
+
+			<div class="welcome-steps">
+				<div class="welcome-step"><span class="step-n">1</span> {i18n.t('side.onboarding.step1')}</div>
+				<div class="welcome-step"><span class="step-n">2</span> {i18n.t('side.onboarding.step2')}</div>
+				<div class="welcome-step"><span class="step-n">3</span> {i18n.t('side.onboarding.step3')}</div>
+			</div>
+
+			<div class="welcome-footer">
+				<div>{i18n.t('side.welcome.footer.research')}</div>
+				<div>{i18n.t('side.welcome.footer.author')}</div>
+				<div>{i18n.t('side.welcome.footer.affiliation')}</div>
+				<div>{i18n.t('side.welcome.footer.partner')}</div>
+			</div>
+
+			<CTADiagnostic />
+		</div>
+	{:else if hexStore.hexZones.length > 0}
 		<div class="chart-scroll">
 			<HexZoneComparison {hexStore} {onRemoveHexZone} {onClearHexZones} />
 		</div>
@@ -117,31 +142,6 @@
 		<!-- Lens active, no analysis, no radio: show analysis menu -->
 		<div class="chart-scroll">
 			<AnalysisMenu {lensStore} {onSelectAnalysis} />
-		</div>
-	{:else if showAbout}
-		<!-- Welcome panel (triggered by header button) -->
-		<div class="chart-scroll welcome-panel">
-			<div class="welcome-brand">spatia.ar</div>
-			<div class="welcome-subtitle">{i18n.t('header.subtitle')}</div>
-
-			<p class="welcome-desc">{i18n.t('side.welcome.desc')}</p>
-
-			<div class="welcome-divider">{i18n.t('side.onboarding.title')}</div>
-
-			<div class="welcome-steps">
-				<div class="welcome-step"><span class="step-n">1</span> {i18n.t('side.onboarding.step1')}</div>
-				<div class="welcome-step"><span class="step-n">2</span> {i18n.t('side.onboarding.step2')}</div>
-				<div class="welcome-step"><span class="step-n">3</span> {i18n.t('side.onboarding.step3')}</div>
-			</div>
-
-			<div class="welcome-footer">
-				<div>{i18n.t('side.welcome.footer.research')}</div>
-				<div>{i18n.t('side.welcome.footer.author')}</div>
-				<div>{i18n.t('side.welcome.footer.affiliation')}</div>
-				<div>{i18n.t('side.welcome.footer.partner')}</div>
-			</div>
-
-			<CTADiagnostic />
 		</div>
 	{/if}
 
