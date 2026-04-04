@@ -237,6 +237,13 @@
 	let analysisDataLoaded = $state(false);
 	let showAbout = $state(false);
 
+	// Dismiss welcome panel when user selects a lens
+	$effect(() => {
+		if (lensStore.activeLens) {
+			showAbout = false;
+		}
+	});
+
 	$effect(() => {
 		const analysis = lensStore.activeAnalysis;
 		const id = analysis?.id ?? null;
