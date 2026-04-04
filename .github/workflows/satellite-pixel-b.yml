@@ -51,6 +51,8 @@ jobs:
       - name: Download radio data tables from R2
         run: |
           mkdir -p pipeline/output/radio_data
+          npx wrangler r2 object get "neahub/data/h3_radio_crosswalk.parquet" --file "pipeline/output/h3_radio_crosswalk.parquet" --remote
+          npx wrangler r2 object get "neahub/data/h3_radio_crosswalk_areal.parquet" --file "pipeline/output/h3_radio_crosswalk_areal.parquet" --remote
           for table in radios_misiones hansen_baseline fabdem_terrain merit_hydro soilgrids nelson_accessibility oxford_accessibility road_access censo2022_variables fire_annual lst_annual chirps_annual era5_annual et_annual ndvi_annual_mean npp_annual lai_annual vcf_annual viirs_annual ghsl_built_surface gpp_annual; do
             npx wrangler r2 object get "neahub/data/radio_data/${table}.parquet" --file "pipeline/output/radio_data/${table}.parquet" --remote 2>/dev/null || true
           done
