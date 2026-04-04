@@ -315,6 +315,8 @@
 						</div>
 					</div>
 
+
+
 					<!-- Details -->
 					<div class="space-y-2 text-[11px] text-white/50">
 						<div class="flex justify-between">

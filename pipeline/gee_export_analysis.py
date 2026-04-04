@@ -252,6 +252,48 @@ def build_forest_health(bbox):
             .clip(bbox).toFloat())
 
 
+def build_air_quality(bbox):
+    """PM2.5 + NO2 + AOD — multi-pollutant air quality composite.
+
+    Sources:
+      - PM2.5: ACAG/Van Donkelaar V6 annual (0.01°, 2019-2021 mean)
+      - NO2: TROPOMI OFFL tropospheric column (2019-2021 mean)
+      - AOD: MODIS MAIAC MCD19A2 470nm (monthly composites, 2019-2021 mean)
+    """
+    # PM2.5 — satellite-derived annual surface concentration (µg/m³)
+    pm25 = (ee.ImageCollection('projects/sat-io/open-datasets/GLOBAL-SATELLITE-PM25/ANNUAL')
+            .filter(ee.Filter.calendarRange(2019, 2021, 'year'))
+            .mean())
+
+    # NO2 — tropospheric column (mol/m²)
+    no2 = (ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_NO2')
+           .filterDate(DATE_START, DATE_END)
+           .filterBounds(bbox)
+           .select('tropospheric_NO2_column_number_density')
+           .mean())
+
+    # AOD — monthly composites to reduce computation, then mean
+    aod_months = []
+    for year in [2019, 2020, 2021]:
+        for month in range(1, 13):
+            start = f'{year}-{month:02d}-01'
+            end_month = month + 1 if month < 12 else 1
+            end_year = year if month < 12 else year + 1
+            end = f'{end_year}-{end_month:02d}-01'
+            monthly = (ee.ImageCollection('MODIS/061/MCD19A2_GRANULES')
+                       .filterDate(start, end)
+                       .filterBounds(bbox)
+                       .select('Optical_Depth_047')
+                       .mean())
+            aod_months.append(monthly)
+    aod = ee.ImageCollection(aod_months).mean().multiply(0.001)
+
+    return (pm25.rename('c_pm25')
+            .addBands(no2.rename('c_no2'))
+            .addBands(aod.rename('c_aod'))
+            .clip(bbox).toFloat())
+
+
 ANALYSIS_BUILDERS = {
     'environmental_risk': build_environmental_risk,
     'climate_comfort': build_climate_comfort,
@@ -259,6 +301,7 @@ ANALYSIS_BUILDERS = {
     'change_pressure': build_change_pressure,
     'agri_potential': build_agri_potential,
     'forest_health': build_forest_health,
+    'air_quality': build_air_quality,
 }
 
 

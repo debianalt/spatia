@@ -168,6 +168,13 @@ def main():
         for col in cols:
             result[col] = df[col].values
 
+        # Save raw values before percentile transformation
+        for col in cols:
+            result[f'{col}_raw'] = result[col].copy()
+        # Convert dist_primary_m raw to km for display consistency
+        if 'dist_primary_m_raw' in result.columns:
+            result['dist_primary_m_raw'] = (result['dist_primary_m_raw'] / 1000.0).round(1)
+
         # Normalize component cols to 0-100 percentile for petal compatibility
         for col in cols:
             valid = result[col].notna()

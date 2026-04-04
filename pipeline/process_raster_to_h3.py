@@ -94,6 +94,11 @@ ANALYSIS_COMPONENTS = {
         ('c_gpp', 'c_gpp', 0.15, False),
         ('c_et', 'c_et', 0.15, False),
     ],
+    'air_quality': [
+        ('c_pm25', 'c_pm25', 0.40, False),    # PM2.5 µg/m³ — higher = worse
+        ('c_no2', 'c_no2', 0.35, False),       # NO2 mol/m² — higher = worse
+        ('c_aod', 'c_aod', 0.25, False),       # AOD 470nm — higher = worse
+    ],
 }
 
 PIXEL_ANALYSES = list(ANALYSIS_COMPONENTS.keys())
