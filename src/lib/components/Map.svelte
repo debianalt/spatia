@@ -78,40 +78,51 @@
 			});
 
 
-			// VIIRS nighttime glow — ambient light proportional to satellite-detected radiance
+			// VIIRS nighttime glow — smooth heatmap of satellite-detected city lights
 			fetch('/viirs-glow.geojson')
 				.then(r => r.json())
 				.then(data => {
 					if (!map.getSource('viirs-glow')) {
 						map.addSource('viirs-glow', { type: 'geojson', data });
 						map.addLayer({
-							id: 'viirs-glow-fill',
-							type: 'fill',
+							id: 'viirs-glow-heat',
+							type: 'heatmap',
 							source: 'viirs-glow',
 							paint: {
-								'fill-color': [
-									'interpolate', ['linear'], ['get', 'r'],
-									0.0, '#000000',   // no light = invisible
-									0.3, '#b86e00',   // first visible: warm amber
-									0.5, '#d4940a',   // amber-gold
-									0.7, '#e8b840',   // warm yellow
-									0.85, '#f0d070',  // bright yellow
-									1.0, '#fff4c0',   // near-white glow (Posadas)
+								'heatmap-weight': ['get', 'w'],
+								'heatmap-intensity': [
+									'interpolate', ['linear'], ['zoom'],
+									6, 1.5,
+									10, 2.0,
+									14, 2.5,
 								],
-								'fill-opacity': [
-									'interpolate', ['exponential', 2], ['get', 'r'],
-									0.0, 0.0,         // no radiance = fully transparent
-									0.15, 0.0,        // still transparent (forest)
-									0.3, 0.15,        // just visible (small towns)
-									0.5, 0.30,        // medium (Oberá, Eldorado)
-									0.8, 0.50,        // bright (Posadas periphery)
-									1.0, 0.60,        // max glow (Posadas core)
+								'heatmap-radius': [
+									'interpolate', ['linear'], ['zoom'],
+									6, 15,
+									8, 20,
+									10, 30,
+									13, 40,
+								],
+								'heatmap-color': [
+									'interpolate', ['linear'], ['heatmap-density'],
+									0.0, 'rgba(0,0,0,0)',
+									0.1, 'rgba(140,80,0,0.15)',
+									0.25, 'rgba(180,110,0,0.30)',
+									0.4, 'rgba(212,148,10,0.45)',
+									0.6, 'rgba(232,184,64,0.55)',
+									0.8, 'rgba(240,208,112,0.65)',
+									1.0, 'rgba(255,244,192,0.75)',
+								],
+								'heatmap-opacity': [
+									'interpolate', ['linear'], ['zoom'],
+									6, 0.85,
+									14, 0.60,
 								],
 							},
-						}, 'province-fill');  // insert below province-fill
+						}, 'province-fill');
 					}
 				})
-				.catch(() => {});  // silently skip if file not found
+				.catch(() => {});
 
 			// Province fill
 			map.addLayer({
