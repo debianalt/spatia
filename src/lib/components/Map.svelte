@@ -91,18 +91,21 @@
 							paint: {
 								'fill-color': [
 									'interpolate', ['linear'], ['get', 'r'],
-									0.0, '#4a2800',   // darkest: deep brown-orange (no light)
-									0.2, '#6b3500',   // dim ember
-									0.4, '#a85500',   // warm orange
-									0.6, '#d4880a',   // amber
-									0.8, '#e8b84a',   // warm yellow
-									1.0, '#f5e0a0',   // soft yellow-white (brightest)
+									0.0, '#000000',   // no light = invisible
+									0.3, '#b86e00',   // first visible: warm amber
+									0.5, '#d4940a',   // amber-gold
+									0.7, '#e8b840',   // warm yellow
+									0.85, '#f0d070',  // bright yellow
+									1.0, '#fff4c0',   // near-white glow (Posadas)
 								],
 								'fill-opacity': [
-									'interpolate', ['linear'], ['zoom'],
-									6, 0.45,
-									10, 0.35,
-									14, 0.25,
+									'interpolate', ['exponential', 2], ['get', 'r'],
+									0.0, 0.0,         // no radiance = fully transparent
+									0.15, 0.0,        // still transparent (forest)
+									0.3, 0.15,        // just visible (small towns)
+									0.5, 0.30,        // medium (Oberá, Eldorado)
+									0.8, 0.50,        // bright (Posadas periphery)
+									1.0, 0.60,        // max glow (Posadas core)
 								],
 							},
 						}, 'province-fill');  // insert below province-fill
