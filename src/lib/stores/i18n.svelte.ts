@@ -519,8 +519,8 @@ const dict: Record<string, Record<Locale, string>> = {
 	'legend.climVuln.low': { es: 'Baja vulnerabilidad', en: 'Low vulnerability', gn: "Michĩ" },
 	'legend.climVuln.high': { es: 'Alta vulnerabilidad', en: 'High vulnerability', gn: "Tuicha" },
 	// ── Productive Activity ──
-	'sat.prodAct.title': { es: '¿Cuanta actividad productiva hay aqui?', en: 'How much productive activity is here?', gn: "Mbovy tembiapo oime ko'ape?" },
-	'sat.prodAct.desc': { es: '6 indicadores de actividad productiva en valores reales: luces nocturnas, productividad vegetal, verdor, superficie construida, conversion forestal y temperatura superficial. Comparacion temporal con linea base.', en: '6 productive activity indicators in real values: nightlights, vegetation productivity, greenness, built surface, forest conversion and surface temperature. Temporal comparison with baseline.', gn: "6 tembiapo indicador" },
+	'sat.prodAct.title': { es: '¿Donde se concentra la actividad economica? (Misiones)', en: 'Where is economic activity concentrated? (Misiones)', gn: "Moope tembiapo economico oime? (Misiones)" },
+	'sat.prodAct.desc': { es: '6 indicadores satelitales de actividad economica en valores reales: luces nocturnas (VIIRS), productividad vegetal (NPP), verdor (NDVI), superficie construida (GHSL), conversion forestal (Hansen) y temperatura superficial (LST). Cada hexagono muestra el valor real del pixel satelital. Comparacion temporal con linea base.', en: '6 satellite economic activity indicators in real values: nightlights (VIIRS), vegetation productivity (NPP), greenness (NDVI), built surface (GHSL), forest conversion (Hansen) and surface temperature (LST). Each hexagon shows the real satellite pixel value. Temporal comparison with baseline.', gn: "6 tembiapo indicador" },
 	'sat.prodAct.type': { es: 'Nivel', en: 'Level', gn: 'Nivel' },
 	'sat.prodAct.typeLabel': { es: 'Nivel de actividad', en: 'Activity level', gn: 'Nivel' },
 	'sat.prodAct.viirs': { es: 'Luces nocturnas (nW/cm2/sr)', en: 'Nightlights (nW/cm2/sr)', gn: 'Tesa pyharekue' },

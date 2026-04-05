@@ -874,13 +874,14 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		spatialUnit: 'hexagon',
 	},
 	// forest_potential hidden — covered by forest_health + forestry_aptitude (H3)
+	// economic_activity hidden — replaced by productive_activity (real H3 values)
 	{
 		id: 'economic_activity',
 		lensId: 'invertir',
 		titleKey: 'analysis.economic.title',
 		descKey: 'analysis.economic.desc',
 
-		status: 'available',
+		status: 'coming_soon',
 		spatialUnit: 'hexagon',
 	},
 	// change_dynamics hidden — covered by change_pressure (H3)
