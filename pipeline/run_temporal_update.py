@@ -179,10 +179,8 @@ def main():
                     "--analysis", ",".join(analyses), "--mode", mode]):
             return 1
 
-        # Step 2: Download from GCS
-        suffixes = ['current']
-        if args.include_baseline:
-            suffixes.append('baseline')
+        # Step 2: Download from GCS (always fetch baseline too — cached if exists)
+        suffixes = ['current', 'baseline']
         print(f"\n{'─' * 50}\n  Step 2: Download from GCS\n{'─' * 50}")
         if not download_from_gcs(analyses, suffixes):
             return 1
