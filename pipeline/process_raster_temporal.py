@@ -27,6 +27,7 @@ from rasterio.windows import from_bounds
 from shapely.geometry import shape
 
 from config import OUTPUT_DIR, H3_RESOLUTION
+from validate import validate_raster
 
 HEXAGONS_PATH = os.path.join(OUTPUT_DIR, "hexagons-lite.geojson")
 
@@ -298,11 +299,11 @@ def main():
         original_parquet = os.path.join(args.input_dir, f"sat_{aid}.parquet")
         output_path = os.path.join(OUTPUT_DIR, f"sat_{aid}.parquet")
 
-        if not os.path.exists(baseline_path):
-            print(f"  SKIP {aid}: baseline raster not found at {baseline_path}")
+        if not validate_raster(baseline_path):
+            print(f"  SKIP {aid}: baseline raster invalid or not found")
             continue
-        if not os.path.exists(current_path):
-            print(f"  SKIP {aid}: current raster not found at {current_path}")
+        if not validate_raster(current_path):
+            print(f"  SKIP {aid}: current raster invalid or not found")
             continue
 
         n = process_temporal(aid, baseline_path, current_path, original_parquet, features, output_path)

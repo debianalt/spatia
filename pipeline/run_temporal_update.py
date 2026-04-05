@@ -83,7 +83,7 @@ def download_baseline_from_r2(analyses):
     """Download baseline rasters from R2 if not locally cached."""
     for aid in analyses:
         local_path = os.path.join(OUTPUT_DIR, f"sat_{aid}_baseline.tif")
-        if os.path.exists(local_path):
+        if os.path.exists(local_path) and os.path.getsize(local_path) > 0:
             continue
         r2_key = f"{BASELINE_R2_PREFIX}/sat_{aid}_baseline.tif"
         print(f"  Downloading baseline from R2: {r2_key}...")
@@ -93,6 +93,11 @@ def download_baseline_from_r2(analyses):
             capture_output=True, text=True)
         if result.returncode != 0:
             print(f"    WARN: baseline not in R2 — will need --include-baseline on first run")
+            if os.path.exists(local_path):
+                os.remove(local_path)
+        elif os.path.exists(local_path) and os.path.getsize(local_path) == 0:
+            print(f"    WARN: downloaded baseline is 0 bytes, removing")
+            os.remove(local_path)
 
 
 def upload_baseline_to_r2(analyses):
