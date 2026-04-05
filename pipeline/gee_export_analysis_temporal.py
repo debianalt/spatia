@@ -74,8 +74,8 @@ def dynamic_environmental_risk(bbox, date_start, date_end):
 
     lst_col = (ee.ImageCollection('MODIS/061/MOD11A2')
                .filterDate(date_start, date_end).filterBounds(bbox))
-    lst_day = lst_col.select('LST_Day_1km').mean().multiply(0.02).subtract(273.15)
-    lst_night = lst_col.select('LST_Night_1km').mean().multiply(0.02).subtract(273.15)
+    lst_day = lst_col.select('LST_Day_1km').mean().multiply(0.02).subtract(273.15).unmask(0)
+    lst_night = lst_col.select('LST_Night_1km').mean().multiply(0.02).subtract(273.15).unmask(0)
     thermal_amp = lst_day.subtract(lst_night).max(0)
 
     return (fire.rename('c_fire')
