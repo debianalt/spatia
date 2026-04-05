@@ -78,53 +78,7 @@
 			});
 
 
-			// VIIRS nighttime glow — smooth heatmap of satellite-detected city lights
-			fetch('/viirs-glow.geojson')
-				.then(r => r.json())
-				.then(data => {
-					if (!map.getSource('viirs-glow')) {
-						map.addSource('viirs-glow', { type: 'geojson', data });
-						map.addLayer({
-							id: 'viirs-glow-heat',
-							type: 'heatmap',
-							source: 'viirs-glow',
-							paint: {
-								'heatmap-weight': ['get', 'w'],
-								'heatmap-intensity': [
-									'interpolate', ['linear'], ['zoom'],
-									6, 1.5,
-									10, 2.0,
-									14, 2.5,
-								],
-								'heatmap-radius': [
-									'interpolate', ['linear'], ['zoom'],
-									6, 15,
-									8, 20,
-									10, 30,
-									13, 40,
-								],
-								'heatmap-color': [
-									'interpolate', ['linear'], ['heatmap-density'],
-									0.0, 'rgba(0,0,0,0)',
-									0.1, 'rgba(140,80,0,0.15)',
-									0.25, 'rgba(180,110,0,0.30)',
-									0.4, 'rgba(212,148,10,0.45)',
-									0.6, 'rgba(232,184,64,0.55)',
-									0.8, 'rgba(240,208,112,0.65)',
-									1.0, 'rgba(255,244,192,0.75)',
-								],
-								'heatmap-opacity': [
-									'interpolate', ['linear'], ['zoom'],
-									6, 0.85,
-									14, 0.60,
-								],
-							},
-						}, 'province-fill');
-					}
-				})
-				.catch(() => {});
-
-			// Province fill
+				// Province fill
 			map.addLayer({
 				id: 'province-fill',
 				type: 'fill',
@@ -194,15 +148,15 @@
 					'fill-extrusion-height': ['max', ['coalesce', ['get', 'best_height_m'], 5], 5],
 					'fill-extrusion-base': 0,
 					'fill-extrusion-color': mapStore.getColorExpr() as any,
-					'fill-extrusion-opacity': 0.85
+					'fill-extrusion-opacity': 0.92
 				}
 			});
 
 			// Lighting (adjusted for terrain + buildings interaction)
 			map.setLight({
 				anchor: 'viewport',
-				color: '#ffffff',
-				intensity: 0.4,
+				color: '#e0f0ff',
+				intensity: 0.55,
 				position: [1.5, 210, 35]
 			});
 

@@ -154,13 +154,13 @@ export const MAP_PROVINCE = {
 export const COLOR_RAMPS = {
 	population: {
 		property: 'est_personas',
-		stops: [0, '#0d1b2a', 1, '#1b3a4b', 3, '#2a6f97', 5, '#468faf', 10, '#61a5c2', 20, '#89c2d9', 50, '#a9d6e5'],
+		stops: [0, '#0f1e30', 1, '#1e4060', 3, '#3080c0', 5, '#50a0e0', 10, '#70c0ff', 20, '#a0dfff', 50, '#d0f0ff'],
 		legendTitleKey: 'legend.estPersons',
 		legendLabels: ['0', '1', '3', '5', '10', '50+']
 	}
 } as const;
 
-export const GRADIENT_CSS = 'linear-gradient(to right, #0d1b2a, #1b3a4b, #2a6f97, #468faf, #61a5c2, #89c2d9, #a9d6e5)';
+export const GRADIENT_CSS = 'linear-gradient(to right, #0f1e30, #1e4060, #3080c0, #50a0e0, #70c0ff, #a0dfff, #d0f0ff)';
 
 // ── Lens system ──────────────────────────────────────────────────────────────
 
