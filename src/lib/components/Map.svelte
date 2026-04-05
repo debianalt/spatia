@@ -78,6 +78,38 @@
 			});
 
 
+			// VIIRS nighttime glow — ambient light proportional to satellite-detected radiance
+			fetch('/viirs-glow.geojson')
+				.then(r => r.json())
+				.then(data => {
+					if (!map.getSource('viirs-glow')) {
+						map.addSource('viirs-glow', { type: 'geojson', data });
+						map.addLayer({
+							id: 'viirs-glow-fill',
+							type: 'fill',
+							source: 'viirs-glow',
+							paint: {
+								'fill-color': [
+									'interpolate', ['linear'], ['get', 'r'],
+									0.0, '#4a2800',   // darkest: deep brown-orange (no light)
+									0.2, '#6b3500',   // dim ember
+									0.4, '#a85500',   // warm orange
+									0.6, '#d4880a',   // amber
+									0.8, '#e8b84a',   // warm yellow
+									1.0, '#f5e0a0',   // soft yellow-white (brightest)
+								],
+								'fill-opacity': [
+									'interpolate', ['linear'], ['zoom'],
+									6, 0.22,
+									10, 0.18,
+									14, 0.12,
+								],
+							},
+						}, 'province-fill');  // insert below province-fill
+					}
+				})
+				.catch(() => {});  // silently skip if file not found
+
 			// Province fill
 			map.addLayer({
 				id: 'province-fill',
