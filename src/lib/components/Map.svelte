@@ -100,9 +100,9 @@
 								],
 								'fill-opacity': [
 									'interpolate', ['linear'], ['zoom'],
-									6, 0.22,
-									10, 0.18,
-									14, 0.12,
+									6, 0.45,
+									10, 0.35,
+									14, 0.25,
 								],
 							},
 						}, 'province-fill');  // insert below province-fill
