@@ -66,6 +66,7 @@ export function getParquetUrl(name: string): string {
 		sat_carbon_stock: '?v=1',
 		sat_pm25_drivers: '?v=1',
 		sat_deforestation_dynamics: '?v=1',
+		sat_productive_activity: '?v=1',
 		overture_scores: '?v=23',
 		emsa_powerlines: '?v=20',
 	};
@@ -735,6 +736,37 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		legendLowKey: 'legend.pm25.low',
 		legendHighKey: 'legend.pm25.high',
 	},
+	// ── Productive Activity (raw values, VIIRS + NPP + NDVI + GHSL + Hansen + LST) ──
+	productive_activity: {
+		id: 'productive_activity',
+		parquet: 'sat_productive_activity',
+		variables: [
+			{ col: 'type', labelKey: 'sat.prodAct.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.prodAct.typeLabel', aggregation: 'mean' },
+			{ col: 'c_viirs', rawCol: 'c_viirs', unit: 'nW/cm2/sr', labelKey: 'sat.prodAct.viirs', aggregation: 'mean' },
+			{ col: 'c_npp', rawCol: 'c_npp', unit: 'gC/m2/yr', labelKey: 'sat.prodAct.npp', aggregation: 'mean' },
+			{ col: 'c_ndvi', rawCol: 'c_ndvi', labelKey: 'sat.prodAct.ndvi', aggregation: 'mean' },
+			{ col: 'c_built', rawCol: 'c_built', labelKey: 'sat.prodAct.built', aggregation: 'mean' },
+			{ col: 'c_forest_loss', rawCol: 'c_forest_loss', labelKey: 'sat.prodAct.loss', aggregation: 'mean' },
+			{ col: 'c_lst', rawCol: 'c_lst', unit: 'C', labelKey: 'sat.prodAct.lst', aggregation: 'mean' },
+		],
+		primaryVariable: 'score',
+		colorScale: 'sequential',
+		aggregation: 'mean',
+		petalVars: [
+			{ col: 'c_viirs', labelKey: 'sat.prodAct.viirs', aggregation: 'mean' },
+			{ col: 'c_npp', labelKey: 'sat.prodAct.npp', aggregation: 'mean' },
+			{ col: 'c_ndvi', labelKey: 'sat.prodAct.ndvi', aggregation: 'mean' },
+			{ col: 'c_built', labelKey: 'sat.prodAct.built', aggregation: 'mean' },
+			{ col: 'c_forest_loss', labelKey: 'sat.prodAct.loss', aggregation: 'mean' },
+			{ col: 'c_lst', labelKey: 'sat.prodAct.lst', aggregation: 'mean' },
+		],
+		titleKey: 'sat.prodAct.title',
+		perDepartment: true,
+		temporal: true,
+		legendLowKey: 'legend.prodAct.low',
+		legendHighKey: 'legend.prodAct.high',
+	},
 	// ── Deforestation Dynamics (Hansen 2001-2024, observed) ──
 	deforestation_dynamics: {
 		id: 'deforestation_dynamics',
@@ -1006,6 +1038,16 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'sat.climVuln.title',
 		descKey: 'sat.climVuln.desc',
+
+		status: 'available',
+		spatialUnit: 'hexagon',
+	},
+	// ── Productive Activity ──
+	{
+		id: 'productive_activity',
+		lensId: 'invertir',
+		titleKey: 'sat.prodAct.title',
+		descKey: 'sat.prodAct.desc',
 
 		status: 'available',
 		spatialUnit: 'hexagon',

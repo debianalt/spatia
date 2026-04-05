@@ -47,6 +47,7 @@ ALL_ANALYSES = [
     "pm25_drivers",
     "pm25_predicted",
     "deforestation_dynamics",
+    "productive_activity",
 ]
 
 
