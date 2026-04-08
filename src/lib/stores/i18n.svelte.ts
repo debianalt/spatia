@@ -485,7 +485,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'sat.eduFlow.type': { es: 'Tipo', en: 'Type', gn: 'Laja' },
 	'sat.eduFlow.typeLabel': { es: 'Clasificación', en: 'Classification', gn: 'Clasificación' },
 	// ── Carbon Stock & Balance ──
-	'sat.carbon.title': { es: '¿Cuanto carbono almacena este territorio?', en: 'How much carbon does this territory store?', gn: "Mbovy carbono oguereko ko yvy?" },
+	'sat.carbon.title': { es: '¿Cuánto carbono almacenan estas zonas?', en: 'How much carbon do these areas store?', gn: "Mbovy carbono oguereko ko yvy?" },
 	'sat.carbon.desc': { es: 'Stock y balance de carbono: biomasa aerea (ESA CCI + GEDI), carbono del suelo, flujo de emisiones y remociones (Harris et al. 2021), valor economico a precio de mercado voluntario.', en: 'Carbon stock and balance: above-ground biomass (ESA CCI + GEDI), soil carbon, emission and removal flux (Harris et al. 2021), economic value at voluntary market price.', gn: "Carbono stock ha balance" },
 	'sat.carbon.type': { es: 'Tipo', en: 'Type', gn: 'Laja' },
 	'sat.carbon.typeLabel': { es: 'Clasificacion', en: 'Classification', gn: 'Clasificacion' },
@@ -501,7 +501,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'legend.carbon.low': { es: 'Bajo stock de carbono', en: 'Low carbon stock', gn: "Michĩ" },
 	'legend.carbon.high': { es: 'Alto stock de carbono', en: 'High carbon stock', gn: "Tuicha" },
 	// ── Climate Vulnerability (IPCC AR5) ──
-	'sat.climVuln.title': { es: '¿Cuán vulnerable es este territorio al cambio climatico?', en: 'How vulnerable is this territory to climate change?', gn: "Mba'eichapa ko yvy oñembyai ára moambuépe?" },
+	'sat.climVuln.title': { es: '¿Cuán vulnerables son estas zonas al cambio climático?', en: 'How vulnerable are these areas to climate change?', gn: "Mba'eichapa ko yvy oñembyai ára moambuépe?" },
 	'sat.climVuln.desc': { es: 'Indice de vulnerabilidad climatica IPCC AR5: exposicion + sensibilidad + capacidad adaptativa. Combina 8 indicadores satelitales y censales.', en: 'IPCC AR5 climate vulnerability index: exposure + sensitivity + adaptive capacity. Combines 8 satellite and census indicators.', gn: "IPCC AR5 vulnerabilidad" },
 	'sat.climVuln.type': { es: 'Tipo', en: 'Type', gn: 'Laja' },
 	'sat.climVuln.typeLabel': { es: 'Clasificacion', en: 'Classification', gn: 'Clasificacion' },
@@ -563,7 +563,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'legend.pm25.low': { es: 'Baja exposición a PM2.5', en: 'Low PM2.5 exposure', gn: "Michĩ" },
 	'legend.pm25.high': { es: 'Alta exposición a PM2.5', en: 'High PM2.5 exposure', gn: "Tuicha" },
 	// ── Territorial types ──
-	'sat.types.title': { es: '¿Qué tipo de territorio es este? (Misiones)', en: 'What type of territory is this? (Misiones)', gn: "Mba'eichapa ko yvy?" },
+	'sat.types.title': { es: '¿Qué tipo de zona es esta? (Misiones)', en: 'What type of area is this? (Misiones)', gn: "Mba'eichapa ko yvy?" },
 	'sat.types.desc': { es: 'Clasificacion metabolica: 5 tipos de cobertura basados en productividad ecosistemica, apropiacion humana y dinamica de cambio (PCA + k-means)', en: 'Metabolic classification: 5 land cover types based on ecosystem productivity, human appropriation and change dynamics (PCA + k-means)', gn: "5 yvy lája" },
 	'sat.types.type': { es: 'Tipo de cobertura', en: 'Land cover type', gn: "Yvy lája" },
 	'sat.types.npp': { es: 'Productividad (NPP)', en: 'Productivity (NPP)', gn: 'NPP' },
