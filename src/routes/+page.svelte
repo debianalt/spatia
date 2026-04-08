@@ -235,7 +235,7 @@
 	// ── Analysis choropleth reactivity ──────────────────────────────────────
 	let prevAnalysisId: string | null = null;
 	let analysisDataLoaded = $state(false);
-	let showAbout = $state(false);
+	let showAbout = $state(true);
 
 	// Dismiss welcome panel when user selects a lens
 	$effect(() => {
