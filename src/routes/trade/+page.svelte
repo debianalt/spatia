@@ -20,10 +20,10 @@
 	</section>
 
 	<!-- Product Cards -->
-	<section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+	<section class="max-w-md mx-auto mb-20">
 		<!-- EUDR -->
 		<a href="/trade/eudr"
-			class="group border border-border rounded-lg p-6 hover:border-white/20 transition-all bg-white/[0.02] hover:bg-white/[0.04]">
+			class="group block border border-border rounded-lg p-6 hover:border-white/20 transition-all bg-white/[0.02] hover:bg-white/[0.04]">
 			<div class="mb-3">
 				<span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/10 text-white/70">
 					{i18n.t('trade.status.available')}
@@ -37,32 +37,6 @@
 				{i18n.t('trade.eudr.card_cta')} &rarr;
 			</span>
 		</a>
-
-		<!-- ARCA Radar (coming soon) -->
-		<div class="border border-border/50 rounded-lg p-6 opacity-50 bg-white/[0.01]">
-			<div class="mb-3">
-				<span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/5 text-white/40">
-					{i18n.t('trade.status.coming_soon')}
-				</span>
-			</div>
-			<h3 class="text-lg font-bold text-white/60 mb-2">{i18n.t('trade.radar.card_title')}</h3>
-			<p class="text-[13px] text-white/35 leading-relaxed">
-				{i18n.t('trade.radar.card_desc')}
-			</p>
-		</div>
-
-		<!-- Risk Assessment (coming soon) -->
-		<div class="border border-border/50 rounded-lg p-6 opacity-50 bg-white/[0.01]">
-			<div class="mb-3">
-				<span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/5 text-white/40">
-					{i18n.t('trade.status.coming_soon')}
-				</span>
-			</div>
-			<h3 class="text-lg font-bold text-white/60 mb-2">{i18n.t('trade.risk.card_title')}</h3>
-			<p class="text-[13px] text-white/35 leading-relaxed">
-				{i18n.t('trade.risk.card_desc')}
-			</p>
-		</div>
 	</section>
 
 	<!-- Trust Section -->
