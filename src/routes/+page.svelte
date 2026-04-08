@@ -747,7 +747,7 @@
 					{i18n.t('header.title')}
 				</h1>
 				<button
-					class="text-[11px] text-white/50 hover:text-white/80 cursor-pointer transition-colors"
+					class="text-[12px] text-white/70 hover:text-white cursor-pointer transition-colors border border-white/20 rounded px-2 py-0.5"
 					onclick={() => { showAbout = !showAbout; }}
 					title={i18n.t('header.whatIsThis')}>
 					{i18n.t('header.whatIsThis')}
@@ -760,7 +760,7 @@
 			<div class="flex items-center gap-0.5">
 				{#each (['es', 'en', 'gn'] as Locale[]) as lang}
 					<button
-						class="px-2 py-0.5 text-[11px] font-semibold rounded-full cursor-pointer border transition-all {i18n.locale === lang ? 'bg-white/10 text-white border-white/30' : 'bg-transparent text-white/50 border-transparent hover:text-white'}"
+						class="px-2.5 py-1 text-[11px] font-semibold rounded-full cursor-pointer border transition-all {i18n.locale === lang ? 'bg-white/10 text-white border-white/30' : 'bg-transparent text-white/50 border-transparent hover:text-white'}"
 						onclick={() => i18n.setLocale(lang)}>
 						{lang.toUpperCase()}
 					</button>
