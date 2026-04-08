@@ -72,13 +72,25 @@ jobs:
 
       - name: Download static reference data
         run: |
-          npx wrangler r2 object get "neahub/data/radios_misiones.parquet" \
-            --file "pipeline/output/radios_misiones.parquet" --remote
-          npx wrangler r2 object get "neahub/data/radio_stats_master.parquet" \
-            --file "pipeline/output/radio_stats_master.parquet" --remote
+          python -c "
+          import json, os
+          from google.cloud import storage
+          from google.oauth2 import service_account
+
+          key = json.loads(os.environ['GEE_SERVICE_ACCOUNT_KEY'])
+          creds = service_account.Credentials.from_service_account_info(key)
+          client = storage.Client(credentials=creds, project=key.get('project_id'))
+          bucket = client.bucket('spatia-satellite')
+
+          for fname in ['radios_misiones.parquet', 'radio_stats_master.parquet']:
+              local = f'pipeline/output/{fname}'
+              print(f'Downloading gs://spatia-satellite/static/{fname}...')
+              bucket.blob(f'static/{fname}').download_to_filename(local)
+              size_mb = os.path.getsize(local) / (1024 * 1024)
+              print(f'  OK: {size_mb:.1f} MB')
+          "
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GEE_SERVICE_ACCOUNT_KEY: ${{ secrets.GEE_SERVICE_ACCOUNT_KEY }}
 
       - name: Split by department
         run: python pipeline/split_satellite_by_dpto.py --only land_use
