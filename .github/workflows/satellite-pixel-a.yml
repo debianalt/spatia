@@ -33,14 +33,7 @@ jobs:
           pip install -r pipeline/requirements.txt
           npm install -g wrangler
 
-      - name: Generate H3 grid (if needed)
-        run: |
-          if [ ! -f pipeline/output/hexagons-lite.geojson ]; then
-            python pipeline/generate_h3_grid.py
-            python pipeline/simplify_geojson.py
-          fi
-
-      - name: Run pixel update pipeline
+      - name: Run pixel update pipeline (direct reduceRegions)
         run: |
           python pipeline/run_pixel_update.py \
             --analyses ${{ github.event.inputs.analyses || 'environmental_risk,climate_comfort,green_capital' }}

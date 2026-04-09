@@ -139,6 +139,8 @@ def main():
     parser.add_argument("--analyses", required=True, help="Comma-separated or 'all'")
     parser.add_argument("--skip-gee", action="store_true", help="Skip GEE export, use local rasters")
     parser.add_argument("--skip-upload", action="store_true", help="Skip R2 upload")
+    parser.add_argument("--raster", action="store_true",
+                        help="Legacy mode: GeoTIFF export → download → rasterio H3 (default: direct reduceRegions)")
     args = parser.parse_args()
 
     if args.analyses == "all":
@@ -146,29 +148,40 @@ def main():
     else:
         analyses = [a.strip() for a in args.analyses.split(",")]
 
+    use_direct = not args.raster
+
     t0 = time.time()
     print(f"{'=' * 60}")
     print(f"  Pixel-Level Satellite Update")
     print(f"  Analyses: {', '.join(analyses)}")
+    print(f"  Mode: {'direct reduceRegions' if use_direct else 'legacy raster'}")
     print(f"{'=' * 60}")
 
-    # Step 1: GEE Export
-    if not args.skip_gee:
-        if not run("Step 1: Export from GEE",
-                   [sys.executable, os.path.join(SCRIPT_DIR, "gee_export_analysis.py"),
+    if use_direct:
+        # Direct mode: Steps 1+2+3 in one script (reduceRegions → H3 parquet)
+        if not args.skip_gee:
+            if not run("Steps 1-3: GEE reduceRegions → H3 parquet (direct)",
+                       [sys.executable, os.path.join(SCRIPT_DIR, "gee_reduce_analysis.py"),
+                        "--analysis", ",".join(analyses)]):
+                return 1
+    else:
+        # Legacy mode: GeoTIFF export → download → rasterio H3
+        if not args.skip_gee:
+            if not run("Step 1: Export from GEE",
+                       [sys.executable, os.path.join(SCRIPT_DIR, "gee_export_analysis.py"),
+                        "--analysis", ",".join(analyses)]):
+                return 1
+
+            # Step 2: Download from GCS
+            print(f"\n{'─' * 50}\n  Step 2: Download from GCS\n{'─' * 50}")
+            if not download_from_gcs(analyses):
+                return 1
+
+        # Step 3: H3 zonal stats
+        if not run("Step 3: Process rasters to H3",
+                   [sys.executable, os.path.join(SCRIPT_DIR, "process_raster_to_h3.py"),
                     "--analysis", ",".join(analyses)]):
             return 1
-
-        # Step 2: Download from GCS
-        print(f"\n{'─' * 50}\n  Step 2: Download from GCS\n{'─' * 50}")
-        if not download_from_gcs(analyses):
-            return 1
-
-    # Step 3: H3 zonal stats
-    if not run("Step 3: Process rasters to H3",
-               [sys.executable, os.path.join(SCRIPT_DIR, "process_raster_to_h3.py"),
-                "--analysis", ",".join(analyses)]):
-        return 1
 
     # Step 3b: Download static reference files (if in CI)
     if not download_static_from_gcs():
