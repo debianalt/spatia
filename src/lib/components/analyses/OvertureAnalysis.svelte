@@ -582,11 +582,6 @@
 			<button class="action-btn" onclick={copyReportEmail} style="text-align:center;cursor:pointer;">
 				{reportCopied ? 'contacto@spatia.ar ✓' : i18n.t('section.requestReport')}
 			</button>
-			{#if analysis.id === 'eudr'}
-				<a class="action-btn" href="/eudr/check" style="text-align:center;text-decoration:none;display:block;margin-top:4px;">
-					{i18n.t('eudr.check.open_checker')} →
-				</a>
-			{/if}
 		</div>
 
 		{#if content}
