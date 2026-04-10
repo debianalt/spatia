@@ -39,6 +39,11 @@
 	});
 
 	onMount(() => {
+		// Auto-collapse sidebar on mobile so map is visible first
+		if (window.innerWidth < 768) {
+			showAbout = false;
+		}
+
 		// Restore state from URL params
 		const params = new URLSearchParams(window.location.search);
 		const lens = params.get('lens') as LensId | null;

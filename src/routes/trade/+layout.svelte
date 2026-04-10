@@ -4,6 +4,13 @@
 	import type { Locale } from '$lib/stores/i18n.svelte';
 
 	let { children } = $props();
+
+	let footerCopied = $state(false);
+	async function copyFooterEmail() {
+		await navigator.clipboard.writeText('contacto@spatia.ar');
+		footerCopied = true;
+		setTimeout(() => { footerCopied = false; }, 2000);
+	}
 </script>
 
 <div class="min-h-screen bg-bg text-text font-mono">
@@ -18,6 +25,8 @@
 					<a href="/" class="text-white/40 hover:text-white transition-colors">{i18n.t('header.nav.map')}</a>
 					<span class="text-white/20">&middot;</span>
 					<span class="text-white font-semibold">{i18n.t('header.nav.dashboards')}</span>
+					<span class="text-white/20">&middot;</span>
+					<a href="/about" class="text-white/40 hover:text-white transition-colors">Acerca</a>
 				</nav>
 			</div>
 
@@ -44,8 +53,11 @@
 			<p>Spatia &mdash; {i18n.t('trade.footer.tagline')}</p>
 			<p class="mt-2">
 				{i18n.t('trade.footer.data')} &middot;
-				<a href="mailto:contacto@spatia.ar" class="text-white/50 hover:text-white">contacto@spatia.ar</a>
+				<button onclick={copyFooterEmail} class="text-white/50 hover:text-white bg-transparent border-0 p-0 cursor-pointer font-inherit text-[11px]">
+					{footerCopied ? 'contacto@spatia.ar ✓' : 'contacto@spatia.ar'}
+				</button>
 			</p>
+			<p class="mt-1">CONICET · FHyCS-UNaM · Google Earth Engine Research Partner</p>
 		</div>
 	</footer>
 </div>

@@ -6,7 +6,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'header.whatIsThis': { es: '¿Qué es esto?', en: 'What is this?', gn: "Mba'épa ko?" },
 	'header.subtitle': { es: 'Inteligencia Geoespacial', en: 'Geospatial Intelligence', gn: "Yvy Rekokatu" },
 	'header.nav.map': { es: 'Mapa', en: 'Map', gn: 'Mapa' },
-	'header.nav.dashboards': { es: 'Dashboards', en: 'Dashboards', gn: 'Dashboards' },
+	'header.nav.dashboards': { es: 'Trade', en: 'Trade', gn: 'Trade' },
 
 	// Controls
 	'ctrl.tilt': { es: 'Inclinación', en: 'Tilt', gn: "Je'apy" },
