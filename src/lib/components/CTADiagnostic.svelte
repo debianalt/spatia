@@ -9,7 +9,7 @@
 		department?: string;
 	} = $props();
 
-	const EMAIL = 'spatia.unused740@passinbox.com';
+	const EMAIL = 'contacto@spatia.ar';
 
 	const mailtoUrl = $derived.by(() => {
 		const subject = encodeURIComponent('Consulta diagnóstico territorial — Spatia');

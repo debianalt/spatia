@@ -4,14 +4,13 @@ function getBase(): string {
 	return R2_PROD;
 }
 
-export function getTilesUrl(name: 'buildings' | 'radios' | 'radios-chm' | 'terrain' | 'hexagons' | 'catastro'): string {
+export function getTilesUrl(name: 'buildings' | 'radios' | 'terrain' | 'hexagons' | 'catastro'): string {
 	if (name === 'terrain') {
 		return '/api/terrain/{z}/{x}/{y}.png';
 	}
 	const files = {
 		buildings: 'tiles/buildings-v5.pmtiles',
 		radios: 'tiles/radios-v2.pmtiles',
-		'radios-chm': 'tiles/radios-chm.pmtiles',
 		hexagons: 'tiles/hexagons-v2.pmtiles',
 		catastro: 'tiles/catastro.pmtiles'
 	};
@@ -1340,7 +1339,7 @@ export const DATA_FRESHNESS: Record<string, { dataDate: string; processedDate: s
 	sat_education_capital: { dataDate: 'Censo Nacional 2022 (INDEC)', processedDate: '02/04/2026', sourceKey: 'data.source.censo' },
 	sat_education_flow: { dataDate: 'Censo Nacional 2022 (INDEC)', processedDate: '02/04/2026', sourceKey: 'data.source.censo' },
 	emsa_powerlines: { dataDate: 'EMSA abril 2024', processedDate: '27/03/2026', sourceKey: 'data.source.emsa' },
-	sat_territorial_types: { dataDate: 'PCA + k-means sobre 13 analisis satelitales 2019-2024', processedDate: '28/03/2026', sourceKey: 'data.source.satellite' },
+	sat_territorial_types: { dataDate: 'PCA + k-means sobre 13 análisis satelitales 2019-2024', processedDate: '28/03/2026', sourceKey: 'data.source.satellite' },
 	sat_sociodemographic: { dataDate: 'Censo Nacional 2022 (INDEC)', processedDate: '29/03/2026', sourceKey: 'data.source.censo' },
 	sat_economic_activity: { dataDate: 'Censo 2022 + VIIRS 2022-2024 + GBA 2025', processedDate: '29/03/2026', sourceKey: 'data.source.satellite' },
 	sat_accessibility: { dataDate: 'Nelson 2019 / Oxford MAP 2019 / OSM', processedDate: '02/04/2026', sourceKey: 'data.source.satellite' },
