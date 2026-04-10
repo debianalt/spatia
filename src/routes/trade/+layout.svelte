@@ -57,7 +57,7 @@
 					{footerCopied ? 'contacto@spatia.ar ✓' : 'contacto@spatia.ar'}
 				</button>
 			</p>
-			<p class="mt-1">CONICET · FHyCS-UNaM · Google Earth Engine Research Partner</p>
+			<p class="mt-1">CONICET / FHyCS-UNaM / GEE Partner</p>
 		</div>
 	</footer>
 </div>

@@ -41,11 +41,7 @@
 			<div class="border border-border rounded-lg p-6 bg-white/[0.02]">
 				<p class="text-white font-semibold mb-1">Raimundo Elías Gómez</p>
 				<p class="text-[13px] text-white/50 mb-3">Investigador · Economía Ecológica · Geomática aplicada</p>
-				<div class="flex flex-col gap-1 text-[12px] text-white/40">
-					<span>CONICET — Consejo Nacional de Investigaciones Científicas y Técnicas</span>
-					<span>FHyCS · Universidad Nacional de Misiones</span>
-					<span>Google Earth Engine Research Partner</span>
-				</div>
+				<p class="text-[13px] text-white/50">CONICET / FHyCS-UNaM / GEE Partner</p>
 			</div>
 		</section>
 

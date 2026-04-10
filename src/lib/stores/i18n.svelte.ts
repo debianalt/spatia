@@ -904,8 +904,8 @@ const dict: Record<string, Record<Locale, string>> = {
 	'side.welcome.stat.reports': { es: 'Diagnósticos bajo demanda', en: 'On-demand diagnostics', gn: "Diagnóstico" },
 	'side.welcome.footer.research': { es: 'Investigación aplicada en inteligencia geoespacial', en: 'Applied research in geospatial intelligence', gn: "Investigación yvy rekokatu rehegua" },
 	'side.welcome.footer.author': { es: 'Raimundo Elías Gómez', en: 'Raimundo Elías Gómez', gn: 'Raimundo Elías Gómez' },
-	'side.welcome.footer.affiliation': { es: 'FHyCS · Universidad Nacional de Misiones', en: 'FHyCS · Universidad Nacional de Misiones', gn: 'FHyCS · UNaM' },
-	'side.welcome.footer.partner': { es: 'CONICET · Google Earth Engine Research Partner', en: 'CONICET · Google Earth Engine Research Partner', gn: 'CONICET · GEE Partner' },
+	'side.welcome.footer.affiliation': { es: 'CONICET / FHyCS-UNaM / GEE Partner', en: 'CONICET / FHyCS-UNaM / GEE Partner', gn: 'CONICET / FHyCS-UNaM / GEE Partner' },
+	'side.welcome.footer.partner': { es: '', en: '', gn: '' },
 	'side.welcome.hidePanel': { es: 'Ocultar panel', en: 'Hide panel', gn: 'Emokañy panel' },
 	'side.welcome.showPanel': { es: 'Mostrar panel', en: 'Show panel', gn: 'Ehechauka panel' },
 
