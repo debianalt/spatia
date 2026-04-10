@@ -975,6 +975,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'eudr.check.input_title': { es: 'Coordenadas', en: 'Coordinates', gn: 'Coordinates' },
 	'eudr.check.check_btn': { es: 'Verificar', en: 'Check', gn: 'Check' },
 	'eudr.check.try_example': { es: 'Probar con un ejemplo real (Misiones)', en: 'Try a real example (Misiones)', gn: 'Probar' },
+	'eudr.check.open_checker': { es: 'Verificar coordenadas EUDR', en: 'EUDR coordinate check', gn: 'EUDR check' },
 	'eudr.check.checking': { es: 'Verificando...', en: 'Checking...', gn: 'Checking...' },
 	'eudr.check.click_map': { es: 'Click en el mapa para seleccionar ubicación', en: 'Click on the map to select location', gn: 'Click' },
 	'eudr.check.error_invalid': { es: 'Coordenadas inválidas', en: 'Invalid coordinates', gn: 'Error' },

@@ -161,16 +161,11 @@
 	<meta property="og:title" content="EUDR Check — Spatia" />
 	<meta property="og:description" content={i18n.t('eudr.check.empty_desc')} />
 	<meta property="og:image" content="https://spatia.ar/og-image.png" />
-	<meta property="og:url" content="https://spatia.ar/trade/eudr/check" />
+	<meta property="og:url" content="https://spatia.ar/eudr/check" />
 	<meta property="og:type" content="website" />
 </svelte:head>
 
 <div class="py-6">
-	<!-- Back link -->
-	<div class="mb-4">
-		<a href="/trade/eudr" class="text-[12px] text-white/40 hover:text-white">&larr; EUDR Compliance</a>
-	</div>
-
 	<h1 class="text-xl font-bold text-white mb-6">{i18n.t('eudr.check.title')}</h1>
 
 	<div class="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 lg:h-[calc(100vh-200px)]" style="min-height: 500px;">
@@ -319,8 +314,6 @@
 							</div>
 						</div>
 					</div>
-
-
 
 					<!-- Details -->
 					<div class="space-y-2 text-[11px] text-white/50">
