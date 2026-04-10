@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import MapComponent from '$lib/components/Map.svelte';
 	import MapLegend from '$lib/components/MapLegend.svelte';
+	import StatsBar from '$lib/components/StatsBar.svelte';
 	import Controls from '$lib/components/Controls.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import LensSelector from '$lib/components/LensSelector.svelte';
@@ -777,6 +778,7 @@
 		<div bind:this={mapContainer} class="flex-1 relative min-h-0">
 			<MapComponent bind:this={mapComponent} {mapStore} />
 			<MapLegend {hexStore} />
+			<StatsBar {hexStore} />
 
 			{#if hexStore.loading}
 				<div class="loading-overlay">

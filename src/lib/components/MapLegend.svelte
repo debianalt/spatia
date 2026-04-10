@@ -92,7 +92,7 @@
 <style>
 	.legend {
 		position: absolute;
-		bottom: 24px;
+		bottom: 68px;
 		left: 12px;
 		background: rgba(10, 12, 18, 0.85);
 		backdrop-filter: blur(6px);
@@ -170,7 +170,7 @@
 
 	@media (max-width: 768px) {
 		.legend {
-			bottom: 12px;
+			bottom: 50px;
 			left: 8px;
 			max-width: 160px;
 			padding: 6px 8px;

@@ -22,6 +22,10 @@ const dict: Record<string, Record<Locale, string>> = {
 	'stats.socioeconomic': { es: 'Socioeconómico', en: 'Socioeconomic', gn: "Teko porã" },
 	'stats.comparison': { es: 'Comparación', en: 'Comparison', gn: "Jojaha" },
 	'stats.selection': { es: 'Selección', en: 'Selection', gn: 'Jeporavo' },
+	'stats.hexagons': { es: 'hexágonos', en: 'hexagons', gn: 'hexágonos' },
+	'stats.avg': { es: 'prom', en: 'avg', gn: 'prom' },
+	'stats.max': { es: 'máx', en: 'max', gn: 'máx' },
+	'stats.dominant': { es: 'dominante', en: 'dominant', gn: 'dominante' },
 
 	// Stat labels
 	'label.population': { es: 'Población', en: 'Population', gn: 'Yvypóra' },
