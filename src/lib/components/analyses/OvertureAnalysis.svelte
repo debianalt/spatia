@@ -302,13 +302,13 @@
 	});
 
 	// ── Explanatory content per analysis ──
-	const METHOD_COMMON = 'Clasificación por PCA (análisis de componentes principales) seguido de k-means clustering sobre las variables estandarizadas. Cada hexágono se asigna al tipo cuyo centroide multivariado es más cercano. La validación se realiza mediante coeficiente de silueta.';
+	const METHOD_COMMON = 'Clasificación por PCA (análisis de componentes principales) seguido de k-means clustering sobre las variables estandarizadas. Cada hexágono se asigna al tipo cuyo centroide multivariado es más cercano. La validación se realiza mediante coeficiente de silueta. Los valores por variable van de 0 a 100 y representan el percentil provincial: 50 = mediana de Misiones, 100 = valor más alto de la provincia. Los tipos (clusters) agrupan hexágonos con perfiles similares — no son un ranking lineal.';
 
 	const ANALYSIS_CONTENT: Record<string, { howToRead: string; implications: string; method: string }> = {
 		flood_risk: {
 			howToRead: 'Los colores representan el riesgo hídrico de cada hexágono, combinando la presencia histórica de agua (JRC, 1984–2021) y la detección actual de inundación (Sentinel-1 SAR). Azul oscuro = riesgo bajo; amarillo = riesgo medio; rojo = riesgo alto. Selecciona un departamento para ver el detalle.',
 			implications: 'Las zonas de riesgo alto pueden enfrentar anegamientos recurrentes, afectando el valor inmobiliario, la habitabilidad y la infraestructura de servicios básicos (agua, cloacas). La recurrencia interanual distingue inundaciones estacionales predecibles de eventos extremos esporádicos.',
-			method: 'Índice compuesto 0–100: 50% presencia histórica de agua (JRC Global Surface Water, Landsat 1984–2021) + 20% recurrencia interanual (JRC) + 30% extensión actual (Sentinel-1 SAR, última imagen procesada). Fuentes: JRC v1.4 + Copernicus Sentinel-1. Resolución: H3 resolución 9.',
+			method: 'Índice compuesto 0–100 (donde 0 = sin riesgo y 100 = máximo riesgo provincial): 50% presencia histórica de agua (JRC Global Surface Water, Landsat 1984–2021) + 20% recurrencia interanual (JRC) + 30% extensión actual (Sentinel-1 SAR, última imagen procesada). Fuentes: JRC v1.4 + Copernicus Sentinel-1. Resolución: H3 resolución 9.',
 		},
 		territorial_scores: {
 			howToRead: 'El mapa clasifica cada hexágono en tipos de consolidación urbana según 8 indicadores derivados de Overture Maps: pavimentación, consolidación, acceso a servicios, vitalidad comercial, conectividad vial, mezcla edilicia, urbanización y exposición hídrica. Cada color representa un perfil urbano distinto.',
@@ -473,6 +473,13 @@
 	);
 
 	const displayScore = $derived(selectedHex ? (getDisplayVal(selectedHex, layerCfg?.primaryVariable ?? 'score') ?? 0) : 0);
+
+	let reportCopied = $state(false);
+	async function copyReportEmail() {
+		await navigator.clipboard.writeText('contacto@spatia.ar');
+		reportCopied = true;
+		setTimeout(() => { reportCopied = false; }, 2000);
+	}
 </script>
 
 {#if selectedHex && selectedDpto && isPerDept}
@@ -572,7 +579,9 @@
 		{/if}
 
 		<div class="action-row">
-			<a class="action-btn" href="mailto:contacto@spatia.ar?subject=Solicitud%20de%20informe%20{selectedDpto}%20-%20{analysis.id}&body=Solicito%20informe%20territorial%20para%20el%20departamento%20{selectedDpto}%20en%20el%20análisis%20{analysis.id}." style="text-align:center;text-decoration:none;">{i18n.t('section.requestReport')}</a>
+			<button class="action-btn" onclick={copyReportEmail} style="text-align:center;cursor:pointer;">
+				{reportCopied ? 'contacto@spatia.ar ✓' : i18n.t('section.requestReport')}
+			</button>
 		</div>
 
 		{#if content}

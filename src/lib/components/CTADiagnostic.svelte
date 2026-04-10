@@ -11,27 +11,31 @@
 
 	const EMAIL = 'contacto@spatia.ar';
 
-	const mailtoUrl = $derived.by(() => {
-		const subject = encodeURIComponent('Consulta diagnóstico territorial — Spatia');
-		let body = 'Hola, estoy usando Spatia (spatia.ar) y me interesa un diagnóstico territorial.';
-		if (analysisName || department) {
-			body += '\n\n';
-			if (analysisName) body += `Estaba viendo: ${analysisName}\n`;
-			if (department) body += `Departamento: ${department}\n`;
-		}
-		body += '\n¿Podrían enviarme más información sobre el servicio?';
-		return `mailto:${EMAIL}?subject=${subject}&body=${encodeURIComponent(body)}`;
-	});
+	let copied = $state(false);
+
+	async function copyEmail() {
+		await navigator.clipboard.writeText(EMAIL);
+		copied = true;
+		setTimeout(() => { copied = false; }, 2000);
+	}
 </script>
 
 <div class="cta-box">
 	<div class="cta-label">{i18n.t('cta.diagnostic.label')}</div>
-	<a href={mailtoUrl} class="cta-btn">
-		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-			<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4 12 13 2 4"/>
-		</svg>
-		{i18n.t('cta.diagnostic.button')}
-	</a>
+	<button class="cta-btn" onclick={copyEmail}>
+		{#if copied}
+			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<polyline points="20 6 9 17 4 12"/>
+			</svg>
+			Copiado
+		{:else}
+			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4 12 13 2 4"/>
+			</svg>
+			{i18n.t('cta.diagnostic.button')}
+		{/if}
+	</button>
+	<div class="cta-email">{EMAIL}</div>
 </div>
 
 <style>
@@ -68,5 +72,10 @@
 		background: rgba(59, 130, 246, 0.25);
 		border-color: rgba(59, 130, 246, 0.4);
 		color: #bfdbfe;
+	}
+	.cta-email {
+		font-size: 9px;
+		color: rgba(255, 255, 255, 0.35);
+		margin-top: 6px;
 	}
 </style>
