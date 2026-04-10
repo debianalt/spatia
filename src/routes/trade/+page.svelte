@@ -7,13 +7,15 @@
 	<meta name="description" content={i18n.t('trade.hero.subtitle')} />
 	<meta property="og:title" content="Dashboards — Spatia" />
 	<meta property="og:description" content={i18n.t('trade.hero.subtitle')} />
+	<meta property="og:image" content="https://spatia.ar/og-image.png" />
+	<meta property="og:url" content="https://spatia.ar/trade" />
 	<meta property="og:type" content="website" />
 </svelte:head>
 
 <div class="py-16">
 	<!-- Hero -->
 	<section class="text-center mb-20">
-		<h1 class="text-3xl font-bold text-white mb-3">Dashboards</h1>
+		<h1 class="text-3xl font-bold text-white mb-3">Spatia Trade</h1>
 		<p class="text-lg text-white/60 max-w-2xl mx-auto">
 			{i18n.t('trade.hero.subtitle')}
 		</p>
@@ -37,6 +39,19 @@
 				{i18n.t('trade.eudr.card_cta')} &rarr;
 			</span>
 		</a>
+
+		<!-- Coming soon -->
+		<div class="border border-border/40 rounded-lg p-6 opacity-40 mt-4 cursor-not-allowed select-none">
+			<div class="mb-3">
+				<span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/5 text-white/40">
+					Próximamente
+				</span>
+			</div>
+			<h3 class="text-lg font-bold text-white/60 mb-2">Diagnóstico geoespacial</h3>
+			<p class="text-[13px] text-white/30 leading-relaxed">
+				Informes por departamento — NOA y NEA
+			</p>
+		</div>
 	</section>
 
 	<!-- Trust Section -->

@@ -1,5 +1,12 @@
 <script lang="ts">
 	import { i18n } from '$lib/stores/i18n.svelte';
+
+	let contactCopied = $state(false);
+	async function copyContact() {
+		await navigator.clipboard.writeText('contacto@spatia.ar');
+		contactCopied = true;
+		setTimeout(() => { contactCopied = false; }, 2000);
+	}
 </script>
 
 <svelte:head>
@@ -7,6 +14,8 @@
 	<meta name="description" content={i18n.t('eudr.hero.subtitle')} />
 	<meta property="og:title" content="EUDR — Spatia" />
 	<meta property="og:description" content={i18n.t('eudr.hero.subtitle')} />
+	<meta property="og:image" content="https://spatia.ar/og-image.png" />
+	<meta property="og:url" content="https://spatia.ar/trade/eudr" />
 	<meta property="og:type" content="website" />
 </svelte:head>
 
@@ -25,10 +34,10 @@
 				class="px-5 py-2.5 bg-white text-black font-bold text-[13px] rounded-lg hover:bg-white/80 transition-colors">
 				{i18n.t('eudr.cta.try_demo')}
 			</a>
-			<a href="mailto:contacto@spatia.ar"
-				class="px-5 py-2.5 border border-white/20 text-white/70 font-semibold text-[13px] rounded-lg hover:border-white/40 transition-colors">
-				{i18n.t('eudr.cta.contact')}
-			</a>
+			<button onclick={copyContact}
+				class="px-5 py-2.5 border border-white/20 text-white/70 font-semibold text-[13px] rounded-lg hover:border-white/40 transition-colors cursor-pointer">
+				{contactCopied ? 'contacto@spatia.ar ✓' : i18n.t('eudr.cta.contact')}
+			</button>
 		</div>
 	</section>
 

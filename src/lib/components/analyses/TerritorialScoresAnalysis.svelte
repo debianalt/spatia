@@ -120,8 +120,8 @@
 
 		<!-- 8-axis Petal Chart -->
 		<div class="petal-section">
-			<div class="section-title">Perfil territorial</div>
-			<p class="petal-note">Cada eje muestra un indicador de 0 a 100. Mayor extensión = mejor dotación territorial.</p>
+			<div class="section-title">Perfil geoespacial</div>
+			<p class="petal-note">Cada eje muestra un indicador de 0 a 100. Mayor extensión = mejor dotación geoespacial.</p>
 			<div class="petal-wrapper">
 				<PetalChart layers={parcelPetalLayers} labels={petalLabels} size={280} />
 			</div>
@@ -192,7 +192,7 @@
 		<details class="method-details">
 			<summary class="method-summary">Cómo leer este análisis</summary>
 			<div class="method-body">
-				<p class="explain-text">Cada hexagono recibe un perfil de 8 indicadores territoriales clasificados por PCA + k-means. Al seleccionar un departamento, los hexagonos se colorean por tipo. Al hacer click, un grafico de petalos muestra los 8 indicadores simultaneamente.</p>
+				<p class="explain-text">Cada hexagono recibe un perfil de 8 indicadores geoespaciales clasificados por PCA + k-means. Al seleccionar un departamento, los hexagonos se colorean por tipo. Al hacer click, un grafico de petalos muestra los 8 indicadores simultaneamente.</p>
 				</div>
 		</details>
 
@@ -248,7 +248,7 @@
 			<div><strong>Fuente:</strong> Overture Maps Foundation via walkthru.earth (CC BY 4.0)</div>
 		</div>
 
-		<CTADiagnostic analysisName="Perfil territorial" />
+		<CTADiagnostic analysisName="Perfil geoespacial" />
 	</div>
 {/if}
 

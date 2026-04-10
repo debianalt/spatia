@@ -160,6 +160,8 @@
 	<meta name="description" content={i18n.t('eudr.check.empty_desc')} />
 	<meta property="og:title" content="EUDR Check — Spatia" />
 	<meta property="og:description" content={i18n.t('eudr.check.empty_desc')} />
+	<meta property="og:image" content="https://spatia.ar/og-image.png" />
+	<meta property="og:url" content="https://spatia.ar/trade/eudr/check" />
 	<meta property="og:type" content="website" />
 </svelte:head>
 
@@ -209,6 +211,9 @@
 					{/if}
 					{loading ? i18n.t('eudr.check.checking') : i18n.t('eudr.check.check_btn')}
 				</button>
+				<button onclick={tryExample} class="mt-1 w-full text-[11px] text-white/30 hover:text-white/60 transition-colors py-1 bg-transparent border-0 cursor-pointer">
+					{i18n.t('eudr.check.try_example')} →
+				</button>
 
 				{#if error}
 					<p class="mt-2 text-[12px] text-red-400">{error}</p>
@@ -218,7 +223,7 @@
 					<div class="mt-2 text-[11px] text-center {remainingChecks === 0 ? 'text-red-400' : 'text-white/40'}">
 						{#if remainingChecks === 0}
 							{i18n.t('eudr.check.limit_reached')} &mdash;
-							<a href="mailto:contacto@spatia.ar" class="text-accent hover:text-white underline">{i18n.t('eudr.check.limit_cta')}</a>
+							<button onclick={() => navigator.clipboard.writeText('contacto@spatia.ar')} class="text-accent hover:text-white underline cursor-pointer bg-transparent border-0 p-0 font-inherit text-[11px]">{i18n.t('eudr.check.limit_cta')}</button>
 						{:else}
 							{remainingChecks} {i18n.t('eudr.check.remaining')}
 						{/if}
