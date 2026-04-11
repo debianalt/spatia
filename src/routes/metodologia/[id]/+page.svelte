@@ -80,7 +80,7 @@
 
 	<footer class="footer">
 		<p>
-			Citación sugerida: Quenardelle, R. (2026). nealab — inteligencia geoespacial abierta para el NEA argentino. <a href="https://spatia.ar/metodologia/{data.id}">spatia.ar/metodologia/{data.id}</a>
+			Citación sugerida: Gomez, R. E. (2026). nealab — inteligencia geoespacial abierta para el NEA argentino. <a href="https://spatia.ar/metodologia/{data.id}">spatia.ar/metodologia/{data.id}</a>
 		</p>
 		<p class="affil">CONICET · FHyCS-UNaM · Google Earth Engine R&amp;I Program</p>
 		<p class="print-only generated">Documento generado el {today} desde spatia.ar/metodologia/{data.id}</p>

@@ -134,7 +134,7 @@
 	</section>
 
 	<section class="section">
-		<h2>Para quién</h2>
+		<h2>Para quienes</h2>
 		<ul class="list">
 			<li>
 				<strong>Organismos multilaterales</strong> (PNUD, BID, Banco Mundial, FAO, CEPAL) que
@@ -168,11 +168,10 @@
 	</section>
 
 	<section class="section">
-		<h2>Servicios de transferencia disponibles</h2>
+		<h2>Servicios disponibles</h2>
 		<p>
-			A través de la figura de <strong>Servicios Tecnológicos de Alto Nivel (STAN)</strong> del
-			CONICET, los siguientes servicios pueden contratarse formalmente con facturación
-			institucional a través del CCT Nordeste:
+			Para consultorías, extensiones, informes o capacitaciones, escribir a
+			<a href="mailto:nealab@spatia.ar">nealab@spatia.ar</a>. Los servicios que se ofrecen son:
 		</p>
 		<ul class="list">
 			<li>
@@ -205,11 +204,6 @@
 				academia y sociedad civil.
 			</li>
 		</ul>
-		<p class="note">
-			La formalización se realiza vía contrato de transferencia del CONICET, con tasa institucional
-			estándar. La productividad generada se distribuye entre investigador/a, unidad ejecutora y
-			CONICET según normativa vigente.
-		</p>
 	</section>
 
 	<section class="section">
@@ -249,8 +243,7 @@
 		</p>
 		<p class="note">
 			Quien utilice nealab en un contexto de gestión, inversión, investigación o política pública
-			asume la responsabilidad de ese uso. La plataforma se ofrece de buena fe como insumo y
-			herramienta; no como autoridad.
+			asume la responsabilidad de ese uso.
 		</p>
 	</section>
 
@@ -294,21 +287,19 @@
 	<section class="section">
 		<h2>Contacto</h2>
 		<p>
-			<strong>Raimundo Quenardelle</strong><br />
-			Investigador CONICET · Facultad de Humanidades y Ciencias Sociales, UNaM<br />
-			<a href="mailto:nealab@spatia.ar">nealab@spatia.ar</a> ·
-			<a href="https://spatia.ar">spatia.ar</a>
+			<strong>Raimundo Elias Gomez</strong><br />
+			Investigador CONICET · Facultad de Humanidades y Ciencias Sociales, Universidad Nacional de
+			Misiones (Argentina)<br />
+			<a href="mailto:nealab@spatia.ar">nealab@spatia.ar</a>
 		</p>
 		<p class="note">
-			Para consultas de transferencia formal (contratos STAN, facturación institucional,
-			capacitaciones), se gestionan a través de la Oficina de Vinculación Tecnológica del CCT
-			Nordeste del CONICET.
+			Para consultorías, comunicarse al email <a href="mailto:nealab@spatia.ar">nealab@spatia.ar</a>.
 		</p>
 	</section>
 
 	<footer class="footer">
 		<p>
-			Citación sugerida: Quenardelle, R. (2026). nealab — inteligencia geoespacial abierta para el
+			Citación sugerida: Gomez, R. E. (2026). nealab — inteligencia geoespacial abierta para el
 			NEA argentino. <a href="https://spatia.ar">spatia.ar</a>
 		</p>
 		<p class="affil">CONICET · FHyCS-UNaM · Google Earth Engine R&amp;I Program</p>
