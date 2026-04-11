@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+
 	const today = new Date().toLocaleDateString('es-AR', {
 		year: 'numeric',
 		month: 'long',
@@ -8,6 +10,21 @@
 	function handlePrint() {
 		if (typeof window !== 'undefined') window.print();
 	}
+
+	// Main app locks overflow on html/body for the map view — restore it here
+	// and revert on navigation away so other routes are not affected.
+	onMount(() => {
+		const html = document.documentElement;
+		const body = document.body;
+		const prevHtml = html.style.overflow;
+		const prevBody = body.style.overflow;
+		html.style.overflow = 'auto';
+		body.style.overflow = 'auto';
+		return () => {
+			html.style.overflow = prevHtml;
+			body.style.overflow = prevBody;
+		};
+	});
 </script>
 
 <svelte:head>
@@ -19,13 +36,13 @@
 	<meta property="og:title" content="Spatia — Servicios de inteligencia geoespacial" />
 	<meta
 		property="og:description"
-		content="Plataforma pública de inteligencia geoespacial abierta. Análisis territorial reproducible, acceso abierto, ciencia ciudadana."
+		content="Plataforma pública de inteligencia geoespacial abierta. Análisis reproducible, acceso abierto, ciencia ciudadana."
 	/>
 </svelte:head>
 
 <div class="page">
 	<div class="print-brand">
-		<strong>Spatia</strong> · Inteligencia geoespacial abierta · spatia.ar
+		SPATIA · INTELIGENCIA GEOESPACIAL ABIERTA · spatia.ar
 	</div>
 
 	<header class="hdr">
@@ -63,7 +80,7 @@
 
 	<section class="section">
 		<h2>Principios</h2>
-		<ul class="principles">
+		<ul class="list">
 			<li>
 				<strong>Acceso abierto.</strong> Todos los datos, algoritmos y metodologías son públicos.
 				Los parquets están disponibles en Cloudflare R2 con CORS abierto; cualquier persona puede
@@ -98,26 +115,26 @@
 			Spatia organiza sus análisis en cuatro grandes preguntas o "lentes", que pueden combinarse
 			entre sí:
 		</p>
-		<ul class="lenses">
+		<ul class="list">
 			<li>
-				<span class="lens-name">Habitar.</span>
+				<strong>Habitar.</strong>
 				Riesgo de inundación (JRC Global Surface Water + Sentinel-1 SAR), carencia de servicios
 				básicos (censo 2022), calidad edilicia, accesibilidad a salud y educación, catastro
 				parcelario.
 			</li>
 			<li>
-				<span class="lens-name">Producir.</span>
+				<strong>Producir.</strong>
 				Aptitud edafoclimática agrícola, aptitud forestal comercial, salud de la vegetación, stock
 				de carbono y balance de emisiones, dinámica de deforestación, aire (PM2.5) y cumplimiento
 				EUDR para commodities.
 			</li>
 			<li>
-				<span class="lens-name">Servir.</span>
+				<strong>Servir.</strong>
 				Capital educativo, flujo del sistema educativo, acceso a salud, aislamiento geoespacial y
 				perfil sociodemográfico, con crosswalk dasimétrico a hexágonos H3.
 			</li>
 			<li>
-				<span class="lens-name">Invertir.</span>
+				<strong>Invertir.</strong>
 				Valor posicional, presión de cambio urbano, confort climático, infraestructura eléctrica
 				y clasificación de tipos geoespaciales para informar decisiones de localización.
 			</li>
@@ -131,7 +148,7 @@
 
 	<section class="section">
 		<h2>Para quién</h2>
-		<ul class="audiences">
+		<ul class="list">
 			<li>
 				<strong>Organismos multilaterales</strong> (PNUD, BID, Banco Mundial, FAO, CEPAL) que
 				necesiten diagnósticos geoespaciales rápidos y reproducibles sobre el NEA argentino, con
@@ -170,7 +187,7 @@
 			CONICET, los siguientes servicios pueden contratarse formalmente con facturación
 			institucional a través del CCT Nordeste:
 		</p>
-		<ul class="services">
+		<ul class="list">
 			<li>
 				<strong>Asesoría geoespacial aplicada.</strong> Acompañamiento técnico a proyectos
 				específicos de diagnóstico, planificación, evaluación de impacto o diseño de políticas.
@@ -208,7 +225,7 @@
 		</p>
 	</section>
 
-	<section class="section disclaimer">
+	<section class="section">
 		<h2>Sobre los límites de este análisis</h2>
 		<p>
 			Esta sección es importante y pedimos que se lea con atención antes de utilizar Spatia en
@@ -252,7 +269,7 @@
 
 	<section class="section">
 		<h2>Stack técnico y abierto</h2>
-		<ul class="stack">
+		<ul class="list">
 			<li><strong>Frontend:</strong> SvelteKit 5 + MapLibre GL 5 + TailwindCSS 4.</li>
 			<li><strong>Datos:</strong> DuckDB-WASM sobre Parquet en Cloudflare R2 (CORS abierto).</li>
 			<li>
@@ -315,147 +332,148 @@
 
 <style>
 	.page {
-		max-width: 780px;
+		max-width: 740px;
 		margin: 0 auto;
-		padding: 32px 24px 64px;
-		color: #e2e8f0;
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-		font-size: 15px;
-		line-height: 1.65;
+		padding: 48px 28px 80px;
+		color: #ffffff;
+		font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+		font-size: 13px;
+		line-height: 1.7;
 	}
 	.print-brand { display: none; }
 	.print-only { display: none; }
-	.hdr { margin-bottom: 36px; }
+
+	.hdr { margin-bottom: 40px; }
 	.hdr-actions {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		gap: 12px;
-		margin-bottom: 20px;
+		margin-bottom: 24px;
 	}
 	.back-link {
 		display: inline-block;
-		color: #60a5fa;
-		font-size: 12px;
+		color: rgba(255,255,255,0.55);
+		font-size: 11px;
 		text-decoration: none;
+		letter-spacing: 0.02em;
 	}
-	.back-link:hover { text-decoration: underline; }
+	.back-link:hover { color: #ffffff; }
 	.print-btn {
-		background: rgba(59,130,246,0.15);
-		border: 1px solid rgba(59,130,246,0.3);
-		border-radius: 6px;
-		color: #60a5fa;
-		font-size: 12px;
-		font-weight: 600;
+		background: transparent;
+		border: 1px solid rgba(255,255,255,0.25);
+		border-radius: 0;
+		color: rgba(255,255,255,0.7);
+		font-size: 11px;
+		font-weight: 500;
 		padding: 6px 12px;
 		cursor: pointer;
 		font-family: inherit;
+		letter-spacing: 0.02em;
 		transition: all 0.15s;
 	}
 	.print-btn:hover {
-		background: rgba(59,130,246,0.25);
-		border-color: rgba(59,130,246,0.5);
+		border-color: #ffffff;
+		color: #ffffff;
 	}
+
 	.kicker {
-		font-size: 11px;
-		color: #64748b;
+		font-size: 10px;
+		color: rgba(255,255,255,0.45);
 		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		margin-bottom: 6px;
+		letter-spacing: 0.12em;
+		margin-bottom: 10px;
 	}
 	.title {
-		font-size: 44px;
-		font-weight: 800;
-		color: #f8fafc;
-		margin: 0 0 8px;
+		font-size: 40px;
+		font-weight: 700;
+		color: #ffffff;
+		margin: 0 0 14px;
 		line-height: 1.05;
-		letter-spacing: -0.02em;
+		letter-spacing: -0.01em;
 	}
 	.subtitle {
-		color: #cbd5e1;
-		font-size: 16px;
-		margin: 0;
-		max-width: 680px;
-	}
-	.section { margin: 36px 0; }
-	.section h2 {
+		color: rgba(255,255,255,0.75);
 		font-size: 14px;
+		margin: 0;
+		max-width: 640px;
+	}
+
+	.section { margin: 40px 0; }
+	.section h2 {
+		font-size: 11px;
 		font-weight: 700;
-		color: #f8fafc;
+		color: #ffffff;
 		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		margin: 0 0 14px;
-		padding-bottom: 6px;
-		border-bottom: 1px solid #1e293b;
+		letter-spacing: 0.12em;
+		margin: 0 0 16px;
+		padding-bottom: 8px;
+		border-bottom: 1px solid rgba(255,255,255,0.15);
 	}
 	.section p {
-		color: #cbd5e1;
-		margin: 0 0 12px;
+		color: rgba(255,255,255,0.8);
+		margin: 0 0 14px;
 	}
-	.section p strong { color: #f8fafc; }
-	.section a { color: #60a5fa; }
-	.principles, .lenses, .audiences, .services, .stack {
+	.section p strong { color: #ffffff; font-weight: 700; }
+	.section a {
+		color: #ffffff;
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 3px;
+	}
+	.section a:hover { text-decoration-thickness: 2px; }
+
+	.list {
 		list-style: none;
 		padding: 0;
 		margin: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 10px;
+		gap: 12px;
 	}
-	.principles li, .audiences li, .services li, .stack li {
-		color: #cbd5e1;
-		padding: 10px 12px;
-		background: rgba(255,255,255,0.02);
-		border-left: 2px solid rgba(96,165,250,0.3);
-		border-radius: 0 4px 4px 0;
+	.list li {
+		color: rgba(255,255,255,0.8);
+		padding-left: 16px;
+		position: relative;
 	}
-	.principles li strong, .audiences li strong, .services li strong, .stack li strong {
-		color: #f8fafc;
+	.list li::before {
+		content: '—';
+		position: absolute;
+		left: 0;
+		color: rgba(255,255,255,0.4);
 	}
-	.lenses li {
-		color: #cbd5e1;
-		padding: 8px 12px;
-		background: rgba(255,255,255,0.02);
-		border-radius: 4px;
-	}
-	.lens-name {
-		color: #93c5fd;
-		font-weight: 700;
-		margin-right: 6px;
-	}
+	.list li strong { color: #ffffff; font-weight: 700; }
+
 	.note {
-		font-size: 13px;
-		color: #94a3b8;
+		font-size: 12px;
+		color: rgba(255,255,255,0.55);
 		font-style: italic;
 	}
-	.disclaimer {
-		margin-top: 44px;
-		padding: 20px 24px;
-		background: rgba(251, 191, 36, 0.04);
-		border-left: 3px solid rgba(251, 191, 36, 0.4);
-		border-radius: 0 6px 6px 0;
-	}
-	.disclaimer h2 { border-bottom-color: rgba(251, 191, 36, 0.25); }
-	.disclaimer p strong { color: #fde68a; }
 
 	.footer {
-		margin-top: 56px;
-		padding-top: 20px;
-		border-top: 1px solid #1e293b;
-		font-size: 12px;
-		color: #64748b;
+		margin-top: 64px;
+		padding-top: 24px;
+		border-top: 1px solid rgba(255,255,255,0.15);
+		font-size: 11px;
+		color: rgba(255,255,255,0.55);
 	}
 	.footer p { margin: 6px 0; }
-	.footer a { color: #60a5fa; }
+	.footer a {
+		color: rgba(255,255,255,0.75);
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 3px;
+	}
+	.footer a:hover { color: #ffffff; }
 	.affil { font-style: italic; }
 
-	:global(body) { background: #0a0e1a; }
+	:global(body) { background: #0a0a0a; }
 
 	/* ═════ Print ═════ */
 	@media print {
 		:global(html), :global(body) {
 			background: #ffffff !important;
-			color: #1a1a1a !important;
+			color: #000000 !important;
 		}
 		@page {
 			size: A4;
@@ -465,81 +483,67 @@
 		.print-only { display: block !important; }
 		.print-brand {
 			display: block !important;
-			font-size: 9pt;
-			color: #6b7280;
-			letter-spacing: 0.02em;
+			font-family: 'JetBrains Mono', ui-monospace, monospace;
+			font-size: 8pt;
+			color: #000000;
+			letter-spacing: 0.05em;
 			padding-bottom: 6pt;
-			margin-bottom: 14pt;
-			border-bottom: 0.5pt solid #cbd5e1;
+			margin-bottom: 16pt;
+			border-bottom: 0.5pt solid #000000;
 		}
-		.print-brand strong { color: #0f172a; font-weight: 700; }
 		.page {
 			max-width: none;
 			margin: 0;
 			padding: 0;
-			color: #1a1a1a;
-			font-size: 10pt;
-			line-height: 1.45;
+			color: #000000;
+			font-family: 'JetBrains Mono', ui-monospace, monospace;
+			font-size: 9.5pt;
+			line-height: 1.55;
 		}
 		.hdr { margin-bottom: 18pt; }
-		.kicker { color: #64748b; font-size: 8pt; letter-spacing: 0.08em; margin-bottom: 4pt; }
-		.title {
-			color: #0f172a;
-			font-size: 26pt;
-			line-height: 1.1;
-			margin-bottom: 6pt;
+		.kicker {
+			color: #000000;
+			font-size: 7.5pt;
+			letter-spacing: 0.12em;
+			margin-bottom: 4pt;
 		}
-		.subtitle { color: #334155; font-size: 11pt; }
+		.title {
+			color: #000000;
+			font-size: 26pt;
+			line-height: 1.05;
+			margin-bottom: 8pt;
+		}
+		.subtitle { color: #000000; font-size: 10pt; }
 		.section { margin: 14pt 0; page-break-inside: avoid; }
 		.section h2 {
-			color: #0f172a;
-			font-size: 11pt;
-			border-bottom: 0.5pt solid #cbd5e1;
+			color: #000000;
+			font-size: 10pt;
+			border-bottom: 0.5pt solid #000000;
 			padding-bottom: 3pt;
-			margin-bottom: 6pt;
+			margin-bottom: 8pt;
+			letter-spacing: 0.1em;
 		}
-		.section p { color: #1a1a1a; }
-		.section p strong { color: #0f172a; }
-		.section a { color: #1d4ed8; }
-		.principles li, .audiences li, .services li, .stack li {
-			background: #f9fafb;
-			color: #1a1a1a;
-			border-left: 1pt solid #cbd5e1;
-			padding: 5pt 8pt;
-			font-size: 9pt;
-		}
-		.principles li strong, .audiences li strong, .services li strong, .stack li strong {
-			color: #0f172a;
-		}
-		.lenses li {
-			background: #f9fafb;
-			color: #1a1a1a;
-			font-size: 9pt;
-			padding: 4pt 8pt;
-		}
-		.lens-name { color: #1d4ed8; }
-		.disclaimer {
-			background: #fffbeb;
-			border-left: 2pt solid #f59e0b;
-			padding: 10pt 12pt;
-			page-break-inside: avoid;
-		}
-		.disclaimer p strong { color: #92400e; }
-		.note { color: #475569; font-size: 9pt; }
+		.section p { color: #000000; }
+		.section p strong { color: #000000; }
+		.section a { color: #000000; }
+		.list li { color: #000000; }
+		.list li::before { color: #000000; }
+		.list li strong { color: #000000; }
+		.note { color: #000000; font-size: 8.5pt; }
 		.section a[href^="http"]::after,
 		.footer a[href^="http"]::after {
 			content: " (" attr(href) ")";
-			font-size: 8pt;
-			color: #64748b;
+			font-size: 7.5pt;
+			color: #000000;
 		}
 		.footer {
-			border-top: 0.5pt solid #cbd5e1;
-			color: #475569;
-			font-size: 8pt;
+			border-top: 0.5pt solid #000000;
+			color: #000000;
+			font-size: 7.5pt;
 			margin-top: 24pt;
 			padding-top: 8pt;
 		}
-		.footer a { color: #1d4ed8; }
-		.footer .generated { margin-top: 6pt; font-style: italic; color: #64748b; }
+		.footer a { color: #000000; }
+		.footer .generated { margin-top: 6pt; font-style: italic; color: #000000; }
 	}
 </style>
