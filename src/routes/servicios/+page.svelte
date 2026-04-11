@@ -84,6 +84,13 @@
 				box. Sin dependencias propietarias.
 			</li>
 			<li>
+				<strong>Actualización continua.</strong> Las capas actualizables —dinámica de
+				deforestación, riesgo hídrico, actividad productiva, confort climático, entre otras—
+				se regeneran de forma automatizada a partir de las fuentes originales. Los pipelines
+				corren programados sin intervención manual, de modo que los datos visualizados
+				reflejan el estado más reciente disponible en cada momento.
+			</li>
+			<li>
 				<strong>Ciencia ciudadana.</strong> La plataforma es un insumo para que comunidades,
 				organizaciones y municipios puedan interrogar su propia geografía con las mismas
 				herramientas que usan los organismos técnicos internacionales, ya sea para disentir,
@@ -247,10 +254,6 @@
 			Canopy Height, Dalhousie University ACAG PM2.5, EMSA (Secretaría de Energía) y Oxford MAP,
 			entre otras. El procesamiento se realiza sobre Google Earth Engine como plataforma de
 			cómputo, con acceso académico al Research &amp; Innovation Program.
-		</p>
-		<p>
-			El desarrollo es parte del programa de investigación del CONICET en economía ecológica y
-			análisis geoespacial aplicado al Noreste Argentino.
 		</p>
 	</section>
 
