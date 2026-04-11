@@ -67,6 +67,9 @@
 			if (lensStore.activeAnalysis?.spatialUnit === 'catastro') return; // flood mode uses parcel clicks
 			const { redcode, selected, census } = e.detail;
 
+			// Dismiss welcome panel so ComparisonChart (petals) can render
+			showAbout = false;
+
 			mapStore.addRadio(redcode, {
 				census,
 				enriched: null,
