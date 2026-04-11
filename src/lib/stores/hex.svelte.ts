@@ -339,12 +339,33 @@ export class HexStore {
 
 		const numVars = this.numericVariables;
 		if (numVars.length === 0) return [];
-		const aggExprs = numVars.map(v => `AVG(${v.col}) as avg_${v.col}`).join(', ');
-		const sql = `SELECT ${aggExprs} FROM '${dataUrl}' WHERE ${layer.primaryVariable} IS NOT NULL`;
-		const result = await query(sql);
-		const row = result.get(0)!.toJSON() as Record<string, any>;
 
-		this.provincialAvg = numVars.map(v => Number(row[`avg_${v.col}`]) || 1);
+		try {
+			// Inspect actual parquet schema first to avoid Binder errors when config
+			// and parquet columns are out of sync (stale config / new pipeline output).
+			const schemaResult = await query(`SELECT * FROM '${dataUrl}' LIMIT 0`);
+			const actualCols = new Set(schemaResult.schema.fields.map((f: any) => f.name as string));
+			const availableVars = numVars.filter(v => actualCols.has(v.col));
+
+			if (availableVars.length === 0) {
+				this.provincialAvg = numVars.map(() => 1);
+			} else {
+				const aggExprs = availableVars.map(v => `AVG(${v.col}) as avg_${v.col}`).join(', ');
+				const whereClause = actualCols.has(layer.primaryVariable)
+					? `WHERE ${layer.primaryVariable} IS NOT NULL`
+					: '';
+				const sql = `SELECT ${aggExprs} FROM '${dataUrl}' ${whereClause}`;
+				const result = await query(sql);
+				const row = result.get(0)!.toJSON() as Record<string, any>;
+				this.provincialAvg = numVars.map(v =>
+					actualCols.has(v.col) ? (Number(row[`avg_${v.col}`]) || 1) : 1
+				);
+			}
+		} catch (e) {
+			console.warn('ensureProvincialAvg failed (schema mismatch?), using defaults:', e);
+			this.provincialAvg = numVars.map(() => 1);
+		}
+
 		// Update persistent cache with provincial avg
 		const cached = layerDataCache.get(layer.id);
 		if (cached) cached.provincialAvg = this.provincialAvg;

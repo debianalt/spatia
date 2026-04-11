@@ -263,6 +263,10 @@
 		const dpto = selectedDpto;
 		if (!dpto || !dataUrl) { typeDistribution = []; return; }
 
+		// Only categorical analyses (clustered with type labels) have the type/type_label columns.
+		// For continuous analyses the query would fail with a Binder Error.
+		if (!isCategorical) { typeDistribution = []; return; }
+
 		const pv = layerCfg?.primaryVariable ?? 'score';
 		const scoreCol = pv === 'type' || pv === 'territorial_type' ? '' : `, AVG(${pv}) as avg_score`;
 		query(`SELECT type, type_label, COUNT(*) as n${scoreCol} FROM '${dataUrl}' GROUP BY type, type_label ORDER BY n DESC`)
