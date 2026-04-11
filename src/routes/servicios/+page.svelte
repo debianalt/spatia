@@ -24,6 +24,7 @@
 </svelte:head>
 
 <div class="page">
+	<div class="content">
 	<div class="print-brand">
 		SPATIA · INTELIGENCIA GEOESPACIAL ABIERTA · spatia.ar
 	</div>
@@ -35,23 +36,24 @@
 				↓ Imprimir / Guardar PDF
 			</button>
 		</div>
-		<div class="kicker">Inteligencia geoespacial abierta · Misiones, Argentina</div>
+		<div class="kicker">Inteligencia geoespacial abierta · NEA Argentino</div>
 		<h1 class="title">Spatia</h1>
 		<p class="subtitle">
-			Plataforma pública de análisis geoespacial para la selva paranaense. Datos, métodos y código
-			abiertos; pensada para investigación, gestión pública, cooperación internacional y ciencia
-			ciudadana.
+			Plataforma pública de análisis geoespacial centrada especialmente en el NEA argentino.
+			Datos, métodos y código abiertos; pensada para investigación, gestión pública, cooperación
+			internacional y ciencia ciudadana.
 		</p>
 	</header>
 
 	<section class="section">
 		<h2>Qué es Spatia</h2>
 		<p>
-			Spatia es una plataforma de <strong>inteligencia geoespacial abierta</strong> desarrollada en
-			el marco del <strong>CONICET</strong> y la <strong>UNaM (FHyCS)</strong>. Reúne más de veinte
-			capas de análisis sobre la provincia de Misiones —y parcialmente sobre el NEA argentino— para
-			explorar de forma interactiva el estado ecológico, social, productivo y de infraestructura de
-			la ecorregión.
+			<strong>Spatia.ar</strong> es una plataforma de <strong>inteligencia geoespacial abierta</strong>
+			desarrollada en el marco del <strong>CONICET</strong>, la <strong>UNaM (FHyCS)</strong> y el
+			partenariado académico con el <strong>Google Earth Engine Research &amp; Innovation Program</strong>.
+			Reúne más de veinte capas de análisis sobre la provincia de Misiones —y parcialmente sobre el
+			NEA argentino— para explorar de forma interactiva el estado ecológico, social, productivo y de
+			infraestructura de la ecorregión.
 		</p>
 		<p>
 			No es un sistema de recomendación, ni un rankeador automático, ni un sustituto del juicio de
@@ -65,9 +67,10 @@
 		<h2>Principios</h2>
 		<ul class="list">
 			<li>
-				<strong>Acceso abierto.</strong> Todos los datos, algoritmos y metodologías son públicos.
-				Los parquets están disponibles en Cloudflare R2 con CORS abierto; cualquier persona puede
-				leerlos con QGIS, Python, R o DuckDB sin registración.
+				<strong>Acceso abierto.</strong> Todos los datos que integra la plataforma provienen de
+				fuentes públicas declaradas en la ficha metodológica de cada capa (INDEC, Google Earth
+				Engine, OSM, IGN, MapBiomas, Catastro, entre otras). Cualquier persona puede consultar
+				esas fuentes originales y reproducir los análisis siguiendo el pipeline documentado.
 			</li>
 			<li>
 				<strong>Trazabilidad metodológica.</strong> Cada capa tiene su ficha técnica con fuentes,
@@ -85,8 +88,8 @@
 				herramientas que usan los organismos técnicos internacionales.
 			</li>
 			<li>
-				<strong>Interoperabilidad.</strong> Cualquier vista o zona puede exportarse a CSV, GeoJSON
-				o Parquet. Se integra sin fricción con flujos de trabajo existentes en gobierno, academia
+				<strong>Interoperabilidad.</strong> Cualquier vista o zona puede exportarse a CSV o
+				GeoJSON. Se integra sin fricción con flujos de trabajo existentes en gobierno, academia
 				y consultoría.
 			</li>
 		</ul>
@@ -303,20 +306,20 @@
 
 	<footer class="footer">
 		<p>
-			Citación sugerida: Quenardelle, R. (2026). Spatia — Inteligencia geoespacial abierta para
-			Misiones. <a href="https://spatia.ar">spatia.ar</a>
+			Citación sugerida: Quenardelle, R. (2026). Spatia — Inteligencia geoespacial abierta para el
+			NEA argentino. <a href="https://spatia.ar">spatia.ar</a>
 		</p>
-		<p class="affil">CONICET / FHyCS-UNaM · Plataforma de análisis geoespacial abierto</p>
+		<p class="affil">CONICET · FHyCS-UNaM · Google Earth Engine R&amp;I Program</p>
 		<p class="print-only generated">
 			Documento generado el {today} desde spatia.ar/servicios
 		</p>
 	</footer>
+	</div>
 </div>
 
 <style>
-	/* Make /servicios its own scroll container — the global app locks
-	   overflow on html/body for the map, so we fill the viewport here
-	   and scroll inside this wrapper. */
+	/* /servicios fills the viewport with its own scroll container —
+	   the global app locks overflow on html/body for the map view. */
 	.page {
 		position: fixed;
 		inset: 0;
@@ -327,13 +330,13 @@
 		font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 		font-size: 13px;
 		line-height: 1.7;
-		padding: 48px 28px 80px;
 		z-index: 50;
 	}
-	.page > * {
-		max-width: 740px;
-		margin-left: auto;
-		margin-right: auto;
+	.content {
+		max-width: 720px;
+		margin: 0 auto;
+		padding: 56px 32px 96px;
+		text-align: left;
 	}
 	.print-brand { display: none; }
 	.print-only { display: none; }
@@ -391,7 +394,6 @@
 		color: rgba(255,255,255,0.75);
 		font-size: 14px;
 		margin: 0;
-		max-width: 640px;
 	}
 
 	.section { margin: 40px 0; }
@@ -477,7 +479,11 @@
 		}
 		.no-print { display: none !important; }
 		.print-only { display: block !important; }
-		.page > * { max-width: none !important; }
+		.content {
+			max-width: none;
+			margin: 0;
+			padding: 0;
+		}
 		.print-brand {
 			display: block !important;
 			font-family: 'JetBrains Mono', ui-monospace, monospace;
