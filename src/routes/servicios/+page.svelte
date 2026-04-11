@@ -86,7 +86,8 @@
 			<li>
 				<strong>Ciencia ciudadana.</strong> La plataforma es un insumo para que comunidades,
 				organizaciones y municipios puedan interrogar su propia geografía con las mismas
-				herramientas que usan los organismos técnicos internacionales.
+				herramientas que usan los organismos técnicos internacionales, ya sea para disentir,
+				corregir, mejorar, o participar más activamente en la gestión de sus localidades.
 			</li>
 			<li>
 				<strong>Interoperabilidad.</strong> Cualquier vista o zona puede exportarse a CSV o
@@ -179,11 +180,6 @@
 				específicos de diagnóstico, planificación, evaluación de impacto o diseño de políticas.
 			</li>
 			<li>
-				<strong>Extensión del pipeline a otras jurisdicciones.</strong> Replicación del stack
-				completo sobre nuevas provincias, regiones o países del cono sur, con las mismas
-				garantías metodológicas.
-			</li>
-			<li>
 				<strong>Informes temáticos por departamento o zona.</strong> Fichas sintéticas que integran
 				todas las capas relevantes sobre un recorte espacial solicitado, con interpretación
 				contextualizada.
@@ -198,11 +194,6 @@
 				institucionales, tableros BI, APIs de terceros y flujos internos mediante DuckDB, Parquet
 				o GeoJSON.
 			</li>
-			<li>
-				<strong>Capacitación técnica.</strong> Talleres sobre el stack abierto que usa nealab
-				(Google Earth Engine, H3, DuckDB, MapLibre) orientados a equipos técnicos de gobierno,
-				academia y sociedad civil.
-			</li>
 		</ul>
 	</section>
 
@@ -215,7 +206,7 @@
 		<p>
 			<strong>nealab es una herramienta analítica, no prescriptiva.</strong> Ningún análisis en
 			esta plataforma constituye una recomendación de acción. Los scores, tipologías y rankings
-			son síntesis cuantitativas de variables observables desde percepción remota, censo y fuentes
+			son síntesis cuantitativas de variables observables desde percepción remota, censos y fuentes
 			administrativas. No sustituyen el juicio experto, la deliberación democrática ni la
 			responsabilidad política de quien decide.
 		</p>
@@ -248,27 +239,6 @@
 	</section>
 
 	<section class="section">
-		<h2>Stack técnico y abierto</h2>
-		<ul class="list">
-			<li><strong>Frontend:</strong> SvelteKit 5 + MapLibre GL 5 + TailwindCSS 4.</li>
-			<li><strong>Datos:</strong> DuckDB-WASM sobre Parquet en Cloudflare R2 (CORS abierto).</li>
-			<li>
-				<strong>Grid:</strong> H3 resolución 9 (uniforme, ~0.1 km² por hexágono). Crosswalks a
-				radios censales (dasimétricos) y parcelas catastrales.
-			</li>
-			<li>
-				<strong>Pipeline:</strong> Google Earth Engine (Partner Tier académico) + rasterio +
-				scoring PCA + k-means. Python como única dependencia.
-			</li>
-			<li><strong>Despliegue:</strong> Cloudflare Pages (static + edge), sin servidor propietario.</li>
-			<li>
-				<strong>Licencias:</strong> Código abierto (MIT). Datos sujetos a las licencias de sus
-				fuentes originales (mayoritariamente CC BY 4.0 o de dominio público).
-			</li>
-		</ul>
-	</section>
-
-	<section class="section">
 		<h2>Fuentes y colaboraciones</h2>
 		<p>
 			nealab integra datos públicos de INDEC (Censo 2022), IGN, Dirección General de Catastro de
@@ -293,7 +263,7 @@
 			<a href="mailto:nealab@spatia.ar">nealab@spatia.ar</a>
 		</p>
 		<p class="note">
-			Para consultorías, comunicarse al email <a href="mailto:nealab@spatia.ar">nealab@spatia.ar</a>.
+			Para consultorías, comunicarse al email <a href="mailto:nealab@spatia.ar">nealab@spatia.ar</a>
 		</p>
 	</section>
 
@@ -403,8 +373,12 @@
 	.section p {
 		color: rgba(255,255,255,0.8);
 		margin: 0 0 14px;
+		text-align: justify;
+		text-justify: inter-word;
+		hyphens: auto;
 	}
 	.section p strong { color: #ffffff; font-weight: 700; }
+	.subtitle { text-align: justify; hyphens: auto; }
 	.section a {
 		color: #ffffff;
 		text-decoration: underline;
@@ -425,6 +399,9 @@
 		color: rgba(255,255,255,0.8);
 		padding-left: 16px;
 		position: relative;
+		text-align: justify;
+		text-justify: inter-word;
+		hyphens: auto;
 	}
 	.list li::before {
 		content: '—';
