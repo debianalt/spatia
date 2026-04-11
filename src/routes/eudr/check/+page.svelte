@@ -218,7 +218,7 @@
 					<div class="mt-2 text-[11px] text-center {remainingChecks === 0 ? 'text-red-400' : 'text-white/40'}">
 						{#if remainingChecks === 0}
 							{i18n.t('eudr.check.limit_reached')} &mdash;
-							<button onclick={() => navigator.clipboard.writeText('contacto@spatia.ar')} class="text-accent hover:text-white underline cursor-pointer bg-transparent border-0 p-0 font-inherit text-[11px]">{i18n.t('eudr.check.limit_cta')}</button>
+							<button onclick={() => navigator.clipboard.writeText('nealab@spatia.ar')} class="text-accent hover:text-white underline cursor-pointer bg-transparent border-0 p-0 font-inherit text-[11px]">{i18n.t('eudr.check.limit_cta')}</button>
 						{:else}
 							{remainingChecks} {i18n.t('eudr.check.remaining')}
 						{/if}

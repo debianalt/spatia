@@ -296,7 +296,7 @@
 		<p>
 			<strong>Raimundo Quenardelle</strong><br />
 			Investigador CONICET · Facultad de Humanidades y Ciencias Sociales, UNaM<br />
-			<a href="mailto:contacto@spatia.ar">contacto@spatia.ar</a> ·
+			<a href="mailto:nealab@spatia.ar">nealab@spatia.ar</a> ·
 			<a href="https://spatia.ar">spatia.ar</a>
 		</p>
 		<p class="note">

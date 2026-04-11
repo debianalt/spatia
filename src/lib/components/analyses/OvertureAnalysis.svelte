@@ -501,7 +501,7 @@
 
 	let reportCopied = $state(false);
 	async function copyReportEmail() {
-		await navigator.clipboard.writeText('contacto@spatia.ar');
+		await navigator.clipboard.writeText('nealab@spatia.ar');
 		reportCopied = true;
 		setTimeout(() => { reportCopied = false; }, 2000);
 	}
@@ -643,7 +643,7 @@
 
 		<div class="action-row">
 			<button class="action-btn" onclick={copyReportEmail} style="text-align:center;cursor:pointer;">
-				{reportCopied ? 'contacto@spatia.ar ✓' : i18n.t('section.requestReport')}
+				{reportCopied ? 'nealab@spatia.ar ✓' : i18n.t('section.requestReport')}
 			</button>
 		</div>
 

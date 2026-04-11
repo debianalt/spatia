@@ -9,7 +9,7 @@
 		department?: string;
 	} = $props();
 
-	const EMAIL = 'contacto@spatia.ar';
+	const EMAIL = 'nealab@spatia.ar';
 
 	let copied = $state(false);
 
