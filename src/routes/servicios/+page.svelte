@@ -11,22 +11,22 @@
 </script>
 
 <svelte:head>
-	<title>Servicios · Spatia — Inteligencia geoespacial abierta</title>
+	<title>nealab — inteligencia geoespacial abierta para el NEA argentino</title>
 	<meta
 		name="description"
-		content="Spatia es una plataforma pública de inteligencia geoespacial abierta para la provincia de Misiones, Argentina. Reúne más de veinte capas de análisis sobre la selva paranaense para gestión pública, investigación, cooperación y participación ciudadana."
+		content="nealab es una plataforma pública de inteligencia geoespacial abierta centrada especialmente en el Noreste Argentino. Reúne más de veinte capas de análisis para gestión pública, investigación, cooperación internacional y ciencia ciudadana."
 	/>
-	<meta property="og:title" content="Spatia — Servicios de inteligencia geoespacial" />
+	<meta property="og:title" content="nealab — servicios de inteligencia geoespacial" />
 	<meta
 		property="og:description"
-		content="Plataforma pública de inteligencia geoespacial abierta. Análisis reproducible, acceso abierto, ciencia ciudadana."
+		content="Plataforma pública de inteligencia geoespacial abierta. Análisis reproducible, acceso abierto, ciencia ciudadana. Hospedado en spatia.ar."
 	/>
 </svelte:head>
 
 <div class="page">
 	<div class="content">
 	<div class="print-brand">
-		SPATIA · INTELIGENCIA GEOESPACIAL ABIERTA · spatia.ar
+		nealab · inteligencia geoespacial abierta · spatia.ar
 	</div>
 
 	<header class="hdr">
@@ -37,18 +37,18 @@
 			</button>
 		</div>
 		<div class="kicker">Inteligencia geoespacial abierta · NEA Argentino</div>
-		<h1 class="title">Spatia</h1>
+		<h1 class="title">nealab</h1>
 		<p class="subtitle">
 			Plataforma pública de análisis geoespacial centrada especialmente en el NEA argentino.
 			Datos, métodos y código abiertos; pensada para investigación, gestión pública, cooperación
-			internacional y ciencia ciudadana.
+			internacional y ciencia ciudadana. Hospedado en <a href="/">spatia.ar</a>.
 		</p>
 	</header>
 
 	<section class="section">
-		<h2>Qué es Spatia</h2>
+		<h2>Qué es nealab</h2>
 		<p>
-			<strong>Spatia.ar</strong> es una plataforma de <strong>inteligencia geoespacial abierta</strong>
+			<strong>nealab</strong> es una plataforma de <strong>inteligencia geoespacial abierta</strong>
 			desarrollada en el marco del <strong>CONICET</strong>, la <strong>UNaM (FHyCS)</strong> y el
 			partenariado académico con el <strong>Google Earth Engine Research &amp; Innovation Program</strong>.
 			Reúne más de veinte capas de análisis sobre la provincia de Misiones —y parcialmente sobre el
@@ -68,9 +68,10 @@
 		<ul class="list">
 			<li>
 				<strong>Acceso abierto.</strong> Todos los datos que integra la plataforma provienen de
-				fuentes públicas declaradas en la ficha metodológica de cada capa (INDEC, Google Earth
-				Engine, OSM, IGN, MapBiomas, Catastro, entre otras). Cualquier persona puede consultar
-				esas fuentes originales y reproducir los análisis siguiendo el pipeline documentado.
+				fuentes públicas declaradas en la ficha metodológica de cada capa (INDEC, OSM, IGN,
+				MapBiomas, Catastro, JRC, Hansen GFC, MODIS, entre otras). Cualquier persona puede
+				consultar esas fuentes originales y reproducir los análisis siguiendo el pipeline
+				documentado.
 			</li>
 			<li>
 				<strong>Trazabilidad metodológica.</strong> Cada capa tiene su ficha técnica con fuentes,
@@ -98,7 +99,7 @@
 	<section class="section">
 		<h2>Qué ofrece</h2>
 		<p>
-			Spatia organiza sus análisis en cuatro grandes preguntas o "lentes", que pueden combinarse
+			nealab organiza sus análisis en cuatro grandes preguntas o "lentes", que pueden combinarse
 			entre sí:
 		</p>
 		<ul class="list">
@@ -194,12 +195,12 @@
 				Regulación UE 2023/1115, combinando Hansen GFC, MODIS MCD64A1 y geometrías parcelarias.
 			</li>
 			<li>
-				<strong>Integración con sistemas existentes.</strong> Conexión de Spatia con SIGs
+				<strong>Integración con sistemas existentes.</strong> Conexión de nealab con SIGs
 				institucionales, tableros BI, APIs de terceros y flujos internos mediante DuckDB, Parquet
 				o GeoJSON.
 			</li>
 			<li>
-				<strong>Capacitación técnica.</strong> Talleres sobre el stack abierto que usa Spatia
+				<strong>Capacitación técnica.</strong> Talleres sobre el stack abierto que usa nealab
 				(Google Earth Engine, H3, DuckDB, MapLibre) orientados a equipos técnicos de gobierno,
 				academia y sociedad civil.
 			</li>
@@ -214,11 +215,11 @@
 	<section class="section">
 		<h2>Sobre los límites de este análisis</h2>
 		<p>
-			Esta sección es importante y pedimos que se lea con atención antes de utilizar Spatia en
+			Esta sección es importante y pedimos que se lea con atención antes de utilizar nealab en
 			cualquier decisión con consecuencias reales.
 		</p>
 		<p>
-			<strong>Spatia es una herramienta analítica, no prescriptiva.</strong> Ningún análisis en
+			<strong>nealab es una herramienta analítica, no prescriptiva.</strong> Ningún análisis en
 			esta plataforma constituye una recomendación de acción. Los scores, tipologías y rankings
 			son síntesis cuantitativas de variables observables desde percepción remota, censo y fuentes
 			administrativas. No sustituyen el juicio experto, la deliberación democrática ni la
@@ -227,7 +228,7 @@
 		<p>
 			<strong>Ningún análisis geoespacial puede considerarse completo sin trabajo de campo en
 			terreno.</strong> La mirada satelital capta estructura y promedios; rara vez capta
-			significado, historia o proceso. Las capas de Spatia necesitan ser contrastadas con las
+			significado, historia o proceso. Las capas de nealab necesitan ser contrastadas con las
 			fuentes primarias que sólo pueden aportar <strong>quienes habitan el lugar</strong>:
 			residentes, comunidades originarias, pobladores rurales, productores familiares, técnicos
 			locales, organizaciones sociales, funcionarios de territorio.
@@ -241,13 +242,13 @@
 			son la información que el modelo no puede ver.
 		</p>
 		<p>
-			Por eso <strong>cada una de las clasificaciones disponibles en Spatia debe entenderse como
+			Por eso <strong>cada una de las clasificaciones disponibles en nealab debe entenderse como
 			una hipótesis a contrastar, nunca como una verdad a aplicar.</strong> Usar esta plataforma
 			con responsabilidad implica leer la ficha metodológica de cada capa, reconocer sus
 			limitaciones, y completarla siempre con trabajo situado y escucha activa.
 		</p>
 		<p class="note">
-			Quien utilice Spatia en un contexto de gestión, inversión, investigación o política pública
+			Quien utilice nealab en un contexto de gestión, inversión, investigación o política pública
 			asume la responsabilidad de ese uso. La plataforma se ofrece de buena fe como insumo y
 			herramienta; no como autoridad.
 		</p>
@@ -277,15 +278,16 @@
 	<section class="section">
 		<h2>Fuentes y colaboraciones</h2>
 		<p>
-			Spatia integra datos públicos de INDEC (Censo 2022), IGN, Dirección General de Catastro de
-			Misiones, Google Earth Engine (JRC, Hansen GFC, MODIS, MapBiomas, CHIRPS, ERA5, VIIRS, GHSL,
-			SoilGrids, Sentinel), Overture Maps Foundation, OpenStreetMap, Meta/WRI Canopy Height,
-			Dalhousie University ACAG PM2.5, EMSA (Secretaría de Energía) y Oxford MAP, entre otras.
+			nealab integra datos públicos de INDEC (Censo 2022), IGN, Dirección General de Catastro de
+			Misiones, JRC Global Surface Water, Hansen Global Forest Change, MODIS, MapBiomas, CHIRPS,
+			ERA5, VIIRS, GHSL, SoilGrids, Sentinel, Overture Maps Foundation, OpenStreetMap, Meta/WRI
+			Canopy Height, Dalhousie University ACAG PM2.5, EMSA (Secretaría de Energía) y Oxford MAP,
+			entre otras. El procesamiento se realiza sobre Google Earth Engine como plataforma de
+			cómputo, con acceso académico al Research &amp; Innovation Program.
 		</p>
 		<p>
-			El desarrollo es parte del programa de investigación de CONICET en economía ecológica y
-			análisis geoespacial aplicado a la selva paranaense, con acceso académico al Google Earth
-			Engine Research &amp; Innovation Program.
+			El desarrollo es parte del programa de investigación del CONICET en economía ecológica y
+			análisis geoespacial aplicado al Noreste Argentino.
 		</p>
 	</section>
 
@@ -306,7 +308,7 @@
 
 	<footer class="footer">
 		<p>
-			Citación sugerida: Quenardelle, R. (2026). Spatia — Inteligencia geoespacial abierta para el
+			Citación sugerida: Quenardelle, R. (2026). nealab — inteligencia geoespacial abierta para el
 			NEA argentino. <a href="https://spatia.ar">spatia.ar</a>
 		</p>
 		<p class="affil">CONICET · FHyCS-UNaM · Google Earth Engine R&amp;I Program</p>
