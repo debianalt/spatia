@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-
 	const today = new Date().toLocaleDateString('es-AR', {
 		year: 'numeric',
 		month: 'long',
@@ -10,21 +8,6 @@
 	function handlePrint() {
 		if (typeof window !== 'undefined') window.print();
 	}
-
-	// Main app locks overflow on html/body for the map view — restore it here
-	// and revert on navigation away so other routes are not affected.
-	onMount(() => {
-		const html = document.documentElement;
-		const body = document.body;
-		const prevHtml = html.style.overflow;
-		const prevBody = body.style.overflow;
-		html.style.overflow = 'auto';
-		body.style.overflow = 'auto';
-		return () => {
-			html.style.overflow = prevHtml;
-			body.style.overflow = prevBody;
-		};
-	});
 </script>
 
 <svelte:head>
@@ -331,14 +314,26 @@
 </div>
 
 <style>
+	/* Make /servicios its own scroll container — the global app locks
+	   overflow on html/body for the map, so we fill the viewport here
+	   and scroll inside this wrapper. */
 	.page {
-		max-width: 740px;
-		margin: 0 auto;
-		padding: 48px 28px 80px;
+		position: fixed;
+		inset: 0;
+		overflow-y: auto;
+		overflow-x: hidden;
+		background: #0a0a0a;
 		color: #ffffff;
 		font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 		font-size: 13px;
 		line-height: 1.7;
+		padding: 48px 28px 80px;
+		z-index: 50;
+	}
+	.page > * {
+		max-width: 740px;
+		margin-left: auto;
+		margin-right: auto;
 	}
 	.print-brand { display: none; }
 	.print-only { display: none; }
@@ -474,6 +469,7 @@
 		:global(html), :global(body) {
 			background: #ffffff !important;
 			color: #000000 !important;
+			overflow: visible !important;
 		}
 		@page {
 			size: A4;
@@ -481,6 +477,7 @@
 		}
 		.no-print { display: none !important; }
 		.print-only { display: block !important; }
+		.page > * { max-width: none !important; }
 		.print-brand {
 			display: block !important;
 			font-family: 'JetBrains Mono', ui-monospace, monospace;
@@ -492,13 +489,18 @@
 			border-bottom: 0.5pt solid #000000;
 		}
 		.page {
+			position: static;
+			inset: auto;
+			overflow: visible;
 			max-width: none;
 			margin: 0;
 			padding: 0;
 			color: #000000;
+			background: #ffffff;
 			font-family: 'JetBrains Mono', ui-monospace, monospace;
 			font-size: 9.5pt;
 			line-height: 1.55;
+			z-index: auto;
 		}
 		.hdr { margin-bottom: 18pt; }
 		.kicker {
