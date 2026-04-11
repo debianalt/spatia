@@ -1,0 +1,679 @@
+[
+  {
+    "analysis": "environmental_risk",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_environmental_risk.parquet?v=25",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "c_fire_baseline",
+      "c_fire_delta",
+      "c_thermal_amp_baseline",
+      "c_thermal_amp_delta",
+      "delta_score",
+      "score_baseline"
+    ],
+    "actual_columns": [
+      "h3index",
+      "score",
+      "score_baseline",
+      "delta_score",
+      "c_fire",
+      "c_fire_baseline",
+      "c_fire_delta",
+      "c_thermal_amp",
+      "c_thermal_amp_baseline",
+      "c_thermal_amp_delta",
+      "c_deforest",
+      "c_slope",
+      "c_hand"
+    ]
+  },
+  {
+    "analysis": "climate_comfort",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_climate_comfort.parquet?v=25",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "c_frost_baseline",
+      "c_frost_delta",
+      "c_heat_day_baseline",
+      "c_heat_day_delta",
+      "c_heat_night_baseline",
+      "c_heat_night_delta",
+      "c_precipitation_baseline",
+      "c_precipitation_delta",
+      "c_water_stress_baseline",
+      "c_water_stress_delta",
+      "delta_score",
+      "score_baseline"
+    ],
+    "actual_columns": [
+      "h3index",
+      "score",
+      "score_baseline",
+      "delta_score",
+      "c_heat_day",
+      "c_heat_day_baseline",
+      "c_heat_day_delta",
+      "c_heat_night",
+      "c_heat_night_baseline",
+      "c_heat_night_delta",
+      "c_precipitation",
+      "c_precipitation_baseline",
+      "c_precipitation_delta",
+      "c_frost",
+      "c_frost_baseline",
+      "c_frost_delta",
+      "c_water_stress",
+      "c_water_stress_baseline",
+      "c_water_stress_delta"
+    ]
+  },
+  {
+    "analysis": "green_capital",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_green_capital.parquet?v=25",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "c_lai_baseline",
+      "c_lai_delta",
+      "c_ndvi_baseline",
+      "c_ndvi_delta",
+      "c_npp_baseline",
+      "c_npp_delta",
+      "c_vcf_baseline",
+      "c_vcf_delta",
+      "delta_score",
+      "score_baseline"
+    ],
+    "actual_columns": [
+      "h3index",
+      "score",
+      "score_baseline",
+      "delta_score",
+      "c_ndvi",
+      "c_ndvi_baseline",
+      "c_ndvi_delta",
+      "c_npp",
+      "c_npp_baseline",
+      "c_npp_delta",
+      "c_lai",
+      "c_lai_baseline",
+      "c_lai_delta",
+      "c_vcf",
+      "c_vcf_baseline",
+      "c_vcf_delta",
+      "c_treecover"
+    ]
+  },
+  {
+    "analysis": "change_pressure",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_change_pressure.parquet?v=25",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "c_fire_annual_baseline",
+      "c_fire_annual_delta",
+      "c_ndvi_level_baseline",
+      "c_ndvi_level_delta",
+      "c_viirs_level_baseline",
+      "c_viirs_level_delta",
+      "delta_score",
+      "score_baseline"
+    ],
+    "actual_columns": [
+      "h3index",
+      "score",
+      "score_baseline",
+      "delta_score",
+      "c_viirs_level",
+      "c_viirs_level_baseline",
+      "c_viirs_level_delta",
+      "c_ndvi_level",
+      "c_ndvi_level_baseline",
+      "c_ndvi_level_delta",
+      "c_fire_annual",
+      "c_fire_annual_baseline",
+      "c_fire_annual_delta",
+      "c_ghsl_change",
+      "c_hansen_loss"
+    ]
+  },
+  {
+    "analysis": "location_value",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_location_value.parquet?v=24",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "pca_1",
+      "pca_2"
+    ],
+    "actual_columns": [
+      "h3index",
+      "score",
+      "type",
+      "type_label",
+      "pca_1",
+      "pca_2",
+      "c_access_20k",
+      "c_healthcare",
+      "c_nightlights",
+      "c_slope",
+      "c_road_dist"
+    ]
+  },
+  {
+    "analysis": "agri_potential",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_agri_potential.parquet?v=25",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "c_gdd_baseline",
+      "c_gdd_delta",
+      "c_precipitation_baseline",
+      "c_precipitation_delta",
+      "delta_score",
+      "score_baseline"
+    ],
+    "actual_columns": [
+      "h3index",
+      "score",
+      "score_baseline",
+      "delta_score",
+      "c_precipitation",
+      "c_precipitation_baseline",
+      "c_precipitation_delta",
+      "c_gdd",
+      "c_gdd_baseline",
+      "c_gdd_delta",
+      "c_soc",
+      "c_ph_optimal",
+      "c_clay",
+      "c_slope"
+    ]
+  },
+  {
+    "analysis": "forest_health",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_forest_health.parquet?v=25",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "c_et_baseline",
+      "c_et_delta",
+      "c_fire_baseline",
+      "c_fire_delta",
+      "c_gpp_baseline",
+      "c_gpp_delta",
+      "c_ndvi_mean_baseline",
+      "c_ndvi_mean_delta",
+      "delta_score",
+      "score_baseline"
+    ],
+    "actual_columns": [
+      "h3index",
+      "score",
+      "score_baseline",
+      "delta_score",
+      "c_ndvi_mean",
+      "c_ndvi_mean_baseline",
+      "c_ndvi_mean_delta",
+      "c_fire",
+      "c_fire_baseline",
+      "c_fire_delta",
+      "c_gpp",
+      "c_gpp_baseline",
+      "c_gpp_delta",
+      "c_et",
+      "c_et_baseline",
+      "c_et_delta",
+      "c_loss_ratio"
+    ]
+  },
+  {
+    "analysis": "forestry_aptitude",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_forestry_aptitude.parquet?v=24",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "pca_1",
+      "pca_2"
+    ],
+    "actual_columns": [
+      "h3index",
+      "score",
+      "type",
+      "type_label",
+      "pca_1",
+      "pca_2",
+      "c_ph",
+      "c_clay",
+      "c_precipitation",
+      "c_slope",
+      "c_road_dist",
+      "c_access_50k"
+    ]
+  },
+  {
+    "analysis": "service_deprivation",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_service_deprivation.parquet?v=25",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "pca_1",
+      "pca_2"
+    ],
+    "actual_columns": [
+      "h3index",
+      "score",
+      "type",
+      "type_label",
+      "pca_1",
+      "pca_2",
+      "c_nbi",
+      "c_sin_cloacas",
+      "c_piso",
+      "c_hacinamiento",
+      "c_hacinamiento_crit",
+      "c_sin_computadora"
+    ]
+  },
+  {
+    "analysis": "territorial_isolation",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_territorial_isolation.parquet?v=25",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "pca_1",
+      "pca_2"
+    ],
+    "actual_columns": [
+      "h3index",
+      "score",
+      "type",
+      "type_label",
+      "pca_1",
+      "pca_2",
+      "c_access_cities",
+      "c_access_health",
+      "c_road_dist",
+      "c_road_density",
+      "c_nightlights",
+      "c_pop_density"
+    ]
+  },
+  {
+    "analysis": "health_access",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_health_access.parquet?v=25",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "pca_1",
+      "pca_2"
+    ],
+    "actual_columns": [
+      "h3index",
+      "score",
+      "type",
+      "type_label",
+      "pca_1",
+      "pca_2",
+      "c_healthcare_time",
+      "c_health_coverage",
+      "c_nbi",
+      "c_elderly",
+      "c_children",
+      "c_pop_density"
+    ]
+  },
+  {
+    "analysis": "education_capital",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_education_capital.parquet?v=25",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "pca_1",
+      "pca_2"
+    ],
+    "actual_columns": [
+      "h3index",
+      "score",
+      "type",
+      "type_label",
+      "pca_1",
+      "pca_2",
+      "c_no_schooling",
+      "c_secondary_plus",
+      "c_higher_edu",
+      "c_university"
+    ]
+  },
+  {
+    "analysis": "education_flow",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_education_flow.parquet?v=25",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "pca_1",
+      "pca_2"
+    ],
+    "actual_columns": [
+      "h3index",
+      "score",
+      "type",
+      "type_label",
+      "pca_1",
+      "pca_2",
+      "c_dropout_primary",
+      "c_dropout_secondary",
+      "c_teen_pregnancy"
+    ]
+  },
+  {
+    "analysis": "territorial_types",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_territorial_types.parquet?v=23",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "pca_1",
+      "pca_2",
+      "pca_3"
+    ],
+    "actual_columns": [
+      "h3index",
+      "territorial_type",
+      "pca_1",
+      "pca_2",
+      "pca_3",
+      "m_npp",
+      "m_ndvi",
+      "m_treecover",
+      "m_deforest",
+      "m_hansen_loss",
+      "m_thermal_amp",
+      "m_viirs_trend",
+      "m_ghsl_change",
+      "m_nightlights",
+      "m_gdd",
+      "m_precipitation"
+    ]
+  },
+  {
+    "analysis": "sociodemographic",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_sociodemographic.parquet?v=22",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "pca_1",
+      "pca_2"
+    ],
+    "actual_columns": [
+      "h3index",
+      "type",
+      "type_label",
+      "pca_1",
+      "pca_2",
+      "densidad_hab_km2",
+      "pct_nbi",
+      "pct_hacinamiento",
+      "pct_propietario",
+      "tamano_medio_hogar",
+      "pct_computadora",
+      "score"
+    ]
+  },
+  {
+    "analysis": "economic_activity",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_economic_activity.parquet?v=22",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "pca_1",
+      "pca_2"
+    ],
+    "actual_columns": [
+      "h3index",
+      "type",
+      "type_label",
+      "pca_1",
+      "pca_2",
+      "tasa_empleo",
+      "tasa_actividad",
+      "pct_universitario",
+      "viirs_mean_radiance",
+      "building_density_per_km2",
+      "score"
+    ]
+  },
+  {
+    "analysis": "accessibility",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_accessibility.parquet?v=23",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "pca_1",
+      "pca_2"
+    ],
+    "actual_columns": [
+      "h3index",
+      "type",
+      "type_label",
+      "pca_1",
+      "pca_2",
+      "travel_min_posadas",
+      "travel_min_cabecera",
+      "dist_nearest_hospital_km",
+      "dist_nearest_secundaria_km",
+      "dist_primary_m",
+      "score"
+    ]
+  },
+  {
+    "analysis": "carbon_stock",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_carbon_stock.parquet?v=1",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "c_agb_cci_baseline",
+      "c_agb_cci_delta",
+      "c_agb_raw",
+      "c_agb_raw_baseline",
+      "c_emissions_raw",
+      "c_gedi_se",
+      "c_net_flux_raw",
+      "c_npp_baseline",
+      "c_npp_delta",
+      "c_npp_raw",
+      "c_removals_raw",
+      "c_soc_tcha",
+      "c_total_carbon_baseline",
+      "c_total_carbon_delta",
+      "c_total_carbon_raw",
+      "c_total_carbon_raw_baseline",
+      "delta_score",
+      "pca_1",
+      "pca_2",
+      "score_baseline"
+    ],
+    "actual_columns": [
+      "h3index",
+      "score",
+      "score_baseline",
+      "delta_score",
+      "type",
+      "type_label",
+      "pca_1",
+      "pca_2",
+      "c_agb_cci",
+      "c_agb_cci_baseline",
+      "c_agb_cci_delta",
+      "c_agb_gedi",
+      "c_total_carbon",
+      "c_total_carbon_baseline",
+      "c_total_carbon_delta",
+      "c_soc",
+      "c_gross_emissions",
+      "c_gross_removals",
+      "c_net_flux",
+      "c_npp",
+      "c_npp_baseline",
+      "c_npp_delta",
+      "c_agb_raw",
+      "c_agb_raw_baseline",
+      "c_total_carbon_raw",
+      "c_total_carbon_raw_baseline",
+      "c_soc_tcha",
+      "c_emissions_raw",
+      "c_removals_raw",
+      "c_net_flux_raw",
+      "c_npp_raw",
+      "c_economic_value",
+      "c_gedi_se"
+    ]
+  },
+  {
+    "analysis": "climate_vulnerability",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_climate_vulnerability.parquet?v=1",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "c_adaptive_cap_baseline",
+      "c_adaptive_cap_delta",
+      "c_exposure_baseline",
+      "c_exposure_delta",
+      "c_sensitivity_baseline",
+      "c_sensitivity_delta",
+      "delta_score",
+      "pca_1",
+      "pca_2",
+      "score_baseline"
+    ],
+    "actual_columns": [
+      "h3index",
+      "score",
+      "score_baseline",
+      "delta_score",
+      "type",
+      "type_label",
+      "pca_1",
+      "pca_2",
+      "c_exposure",
+      "c_exposure_baseline",
+      "c_exposure_delta",
+      "c_sensitivity",
+      "c_sensitivity_baseline",
+      "c_sensitivity_delta",
+      "c_adaptive_cap",
+      "c_adaptive_cap_baseline",
+      "c_adaptive_cap_delta",
+      "c_heat_stress",
+      "c_flood_risk",
+      "c_water_stress",
+      "c_fire_freq",
+      "c_forest_loss",
+      "c_vegetation_inv",
+      "c_isolation",
+      "c_deprivation"
+    ]
+  },
+  {
+    "analysis": "pm25_drivers",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_pm25_drivers.parquet?v=1",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "c_pm25_mean_baseline",
+      "c_pm25_mean_delta",
+      "delta_score",
+      "score_baseline"
+    ],
+    "actual_columns": [
+      "h3index",
+      "score",
+      "score_baseline",
+      "delta_score",
+      "c_pm25_mean",
+      "c_pm25_mean_baseline",
+      "c_pm25_mean_delta",
+      "c_fire",
+      "c_climate",
+      "c_terrain",
+      "c_vegetation",
+      "type",
+      "type_label"
+    ]
+  },
+  {
+    "analysis": "productive_activity",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_productive_activity.parquet?v=1",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "c_built_baseline",
+      "c_built_delta",
+      "c_forest_loss_baseline",
+      "c_forest_loss_delta",
+      "c_lst_baseline",
+      "c_lst_delta",
+      "c_ndvi_baseline",
+      "c_ndvi_delta",
+      "c_npp_baseline",
+      "c_npp_delta",
+      "c_viirs_baseline",
+      "c_viirs_delta",
+      "delta_score",
+      "score_baseline"
+    ],
+    "actual_columns": [
+      "h3index",
+      "c_viirs",
+      "c_viirs_baseline",
+      "c_npp",
+      "c_npp_baseline",
+      "c_ndvi",
+      "c_ndvi_baseline",
+      "c_lst",
+      "c_lst_baseline",
+      "c_built",
+      "c_built_baseline",
+      "c_forest_loss_baseline",
+      "c_forest_loss",
+      "c_viirs_delta",
+      "c_npp_delta",
+      "c_ndvi_delta",
+      "c_built_delta",
+      "c_lst_delta",
+      "c_forest_loss_delta",
+      "score",
+      "score_baseline",
+      "delta_score",
+      "type",
+      "type_label"
+    ]
+  },
+  {
+    "analysis": "deforestation_dynamics",
+    "parquet": "https://pub-580c676bec7f4eeb96d7d30559a3cab7.r2.dev/data/sat_deforestation_dynamics.parquet?v=1",
+    "status": "ok",
+    "missing": [],
+    "extra": [
+      "c_loss_rate_baseline",
+      "c_loss_rate_delta",
+      "c_treecover",
+      "delta_score",
+      "score_baseline"
+    ],
+    "actual_columns": [
+      "h3index",
+      "score",
+      "score_baseline",
+      "delta_score",
+      "c_loss_rate",
+      "c_loss_rate_baseline",
+      "c_loss_rate_delta",
+      "c_cumulative",
+      "c_treecover",
+      "type",
+      "type_label"
+    ]
+  }
+]
