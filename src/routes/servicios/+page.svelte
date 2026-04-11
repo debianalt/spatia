@@ -64,6 +64,26 @@
 	</section>
 
 	<section class="section">
+		<h2>Marco institucional</h2>
+		<p>
+			El desarrollo de nealab se enmarca en el proyecto de investigación <em>Evolución de las
+			desigualdades sociales en torno a las Áreas Naturales Protegidas Transfronterizas de
+			Argentina, Brasil y Paraguay</em> (código 16/H1710-FE), radicado en la Facultad de
+			Humanidades y Ciencias Sociales de la Universidad Nacional de Misiones y financiado por el
+			Consejo Nacional de Investigaciones Científicas y Técnicas (CONICET).
+		</p>
+		<p>
+			Este proyecto forma parte del <strong>Programa de Investigaciones Interdisciplinarias sobre
+			Regiones de Frontera (INREFRO)</strong>, uno de los espacios académicos de mayor trayectoria
+			y reconocimiento en el estudio de las dinámicas fronterizas del Noreste Argentino. Radicado
+			en la FHyCS-UNaM, INREFRO articula desde hace décadas investigación comparada en
+			antropología, sociología, historia y geografía sobre los procesos socioambientales,
+			culturales y políticos de la triple frontera argentino-brasileño-paraguaya, bajo la
+			dirección del Dr. Roberto Abínzano junto a la Mag. Diana Arellano y la Mag. Norma Oviedo.
+		</p>
+	</section>
+
+	<section class="section">
 		<h2>Principios</h2>
 		<ul class="list">
 			<li>
