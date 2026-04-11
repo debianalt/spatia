@@ -3,7 +3,7 @@
 </script>
 
 <svelte:head>
-	<title>{page.status} — spatia.ar</title>
+	<title>{page.status} — nealab</title>
 </svelte:head>
 
 <div class="min-h-screen bg-[#0a0c12] flex items-center justify-center font-mono">

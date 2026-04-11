@@ -2,9 +2,9 @@ export type Locale = 'es' | 'en' | 'gn';
 
 const dict: Record<string, Record<Locale, string>> = {
 	// Header
-	'header.title': { es: 'spatia.ar', en: 'spatia.ar', gn: 'spatia.ar' },
+	'header.title': { es: 'nealab', en: 'nealab', gn: 'nealab' },
 	'header.whatIsThis': { es: '¿Qué es esto?', en: 'What is this?', gn: "Mba'épa ko?" },
-	'header.subtitle': { es: 'Inteligencia Geoespacial', en: 'Geospatial Intelligence', gn: "Yvy Rekokatu" },
+	'header.subtitle': { es: 'Inteligencia geoespacial', en: 'Geospatial intelligence', gn: "Yvy Rekokatu" },
 	'header.nav.map': { es: 'Mapa', en: 'Map', gn: 'Mapa' },
 	'header.nav.dashboards': { es: 'Trade', en: 'Trade', gn: 'Trade' },
 
@@ -890,7 +890,7 @@ const dict: Record<string, Record<Locale, string>> = {
 		en: 'Geospatial analysis platform integrating hundreds of satellite, census and cadastral sources, continuously and automatically updated, for Misiones province, Argentina.',
 		gn: "Yvy rekokatu plataforma Misiones-pe, centenares moñe'ẽha satélite, censo ha catastro ndive, oñembohekopyahu hag̃uaitépe."
 	},
-	'side.welcome.pro': { es: 'Spatia Pro', en: 'Spatia Pro', gn: 'Spatia Pro' },
+	'side.welcome.pro': { es: 'nealab Pro', en: 'nealab Pro', gn: 'nealab Pro' },
 	'side.welcome.pro.ia': { es: 'Asistente IA con contexto geoespacial completo', en: 'AI assistant with full geospatial context', gn: "IA pytyvõhára yvy rekokatu reheve" },
 	'side.welcome.pro.pdf': { es: 'Reportes PDF automáticos por zona o radio', en: 'Automatic PDF reports by zone or tract', gn: "PDF reporte zona térã radio rupi" },
 	'side.welcome.pro.method': { es: 'Metodología y fuentes documentadas en cada reporte', en: 'Documented methodology and sources in every report', gn: "Mba'eichapa ha moñe'ẽha reporte pepápe" },
@@ -934,7 +934,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'trade.risk.card_title': { es: 'Riesgo Ambiental', en: 'Environmental Risk', gn: 'Risk' },
 	'trade.risk.card_desc': { es: 'Evaluación de riesgo climático, hídrico y de incendios para inversiones y seguros en regiones específicas.', en: 'Climate, water, and fire risk assessment for investments and insurance in specific regions.', gn: 'Risk' },
 	'trade.trust.title': { es: 'Fuentes de datos', en: 'Data sources', gn: 'Data' },
-	'trade.footer.tagline': { es: 'Inteligencia geoespacial desde el borde', en: 'Geospatial intelligence from the edge', gn: 'Spatia' },
+	'trade.footer.tagline': { es: 'Inteligencia geoespacial desde el borde', en: 'Geospatial intelligence from the edge', gn: 'nealab' },
 	'trade.footer.data': { es: 'Datos satelitales: MODIS, Landsat, Sentinel, VIIRS — servidos desde Cloudflare', en: 'Satellite data: MODIS, Landsat, Sentinel, VIIRS — served from Cloudflare', gn: 'Data' },
 
 	// ── EUDR product page ─────────────────────────────────────────────────

@@ -156,9 +156,9 @@
 </script>
 
 <svelte:head>
-	<title>EUDR Check &mdash; Spatia</title>
+	<title>EUDR Check &mdash; nealab</title>
 	<meta name="description" content={i18n.t('eudr.check.empty_desc')} />
-	<meta property="og:title" content="EUDR Check — Spatia" />
+	<meta property="og:title" content="EUDR Check — nealab" />
 	<meta property="og:description" content={i18n.t('eudr.check.empty_desc')} />
 	<meta property="og:image" content="https://spatia.ar/og-image.png" />
 	<meta property="og:url" content="https://spatia.ar/eudr/check" />

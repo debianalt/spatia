@@ -17,14 +17,14 @@
 </script>
 
 <svelte:head>
-	<title>{title} · Metodología · Spatia</title>
-	<meta name="description" content="Metodología del análisis {title} en Spatia" />
+	<title>{title} · Metodología · nealab</title>
+	<meta name="description" content="Metodología del análisis {title} en nealab" />
 </svelte:head>
 
 <div class="page">
 	<!-- Print-only brand header -->
 	<div class="print-brand">
-		<strong>Spatia</strong> · Inteligencia Territorial para Misiones · spatia.ar
+		<strong>nealab</strong> · inteligencia geoespacial abierta · spatia.ar
 	</div>
 
 	<header class="hdr">
@@ -35,7 +35,7 @@
 			</button>
 		</div>
 		<h1 class="title">{title}</h1>
-		<div class="kicker">Metodología · Spatia · Inteligencia Territorial para Misiones</div>
+		<div class="kicker">Metodología · nealab · inteligencia geoespacial abierta</div>
 		{#if description}
 			<p class="desc">{description}</p>
 		{/if}
@@ -80,9 +80,9 @@
 
 	<footer class="footer">
 		<p>
-			Citación sugerida: Quenardelle, R. (2026). Spatia — Inteligencia Territorial para Misiones. <a href="https://spatia.ar/metodologia/{data.id}">spatia.ar/metodologia/{data.id}</a>
+			Citación sugerida: Quenardelle, R. (2026). nealab — inteligencia geoespacial abierta para el NEA argentino. <a href="https://spatia.ar/metodologia/{data.id}">spatia.ar/metodologia/{data.id}</a>
 		</p>
-		<p class="affil">CONICET / FHyCS-UNaM · Plataforma de análisis geoespacial abierto</p>
+		<p class="affil">CONICET · FHyCS-UNaM · Google Earth Engine R&amp;I Program</p>
 		<p class="print-only generated">Documento generado el {today} desde spatia.ar/metodologia/{data.id}</p>
 	</footer>
 </div>

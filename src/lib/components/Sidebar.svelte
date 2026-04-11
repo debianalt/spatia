@@ -88,7 +88,7 @@
 	{#if showAbout}
 		<!-- Welcome panel (triggered by header button) -->
 		<div class="chart-scroll welcome-panel">
-			<div class="welcome-brand">spatia.ar</div>
+			<div class="welcome-brand">nealab</div>
 			<div class="welcome-subtitle">{i18n.t('header.subtitle')}</div>
 
 			<p class="welcome-desc">{i18n.t('side.welcome.desc')}</p>
