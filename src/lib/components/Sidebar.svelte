@@ -33,6 +33,9 @@
 		onSelectCatastroDpto,
 		onSelectScoresCatastroDpto,
 		onSelectRadioAnalysisDpto,
+		onDownloadRadioCsv,
+		onDownloadRadioGeoJson,
+		onDownloadRadiosSummary,
 	}: {
 		mapStore: MapStore;
 		lensStore: LensStore;
@@ -51,6 +54,9 @@
 		onSelectCatastroDpto?: (centroid: [number, number] | null, deptCode?: string | null) => void;
 		onSelectScoresCatastroDpto?: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
 		onSelectRadioAnalysisDpto?: (dpto: string, analysisId: string, centroid: [number, number]) => void;
+		onDownloadRadioCsv?: (redcode: string) => void;
+		onDownloadRadioGeoJson?: (redcode: string, properties: Record<string, any>) => void;
+		onDownloadRadiosSummary?: () => void;
 	} = $props();
 
 	let collapsed = $state(true);
@@ -140,7 +146,14 @@
 	{:else if mapStore.selectedRadios.size > 0}
 		<!-- No lens, radios selected: comparison chart -->
 		<div class="chart-scroll">
-			<ComparisonChart radios={mapStore.selectedRadios} {onRemoveRadio} {onClearRadios} />
+			<ComparisonChart
+				radios={mapStore.selectedRadios}
+				{onRemoveRadio}
+				{onClearRadios}
+				{onDownloadRadioCsv}
+				{onDownloadRadioGeoJson}
+				{onDownloadRadiosSummary}
+			/>
 		</div>
 	{:else if lensStore.activeLens}
 		<!-- Lens active, no analysis, no radio: show analysis menu -->

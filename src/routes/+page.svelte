@@ -460,7 +460,7 @@
 		await initDuckDB();
 		if (!/^\d{9}$/.test(redcode)) return;
 		try {
-			const ENRICHMENT_COLS = 'redcode, total_personas, tasa_actividad, tasa_empleo, pct_universitario, pct_nbi, pct_hacinamiento, pct_agua_red';
+			const ENRICHMENT_COLS = 'redcode, total_personas, area_km2, tasa_actividad, tasa_empleo, pct_universitario, pct_nbi, pct_hacinamiento, pct_agua_red';
 			const result = await query(
 				`SELECT ${ENRICHMENT_COLS} FROM '${PARQUETS.radio_stats_master}' WHERE redcode = '${redcode}' LIMIT 1`
 			);
@@ -470,6 +470,58 @@
 		} catch (e) {
 			console.warn('DuckDB enrichment failed:', e);
 		}
+	}
+
+	// ── Radio export handlers (CSV / GeoJSON / summary) ─────────────────────
+	async function downloadRadioCsv(redcode: string): Promise<void> {
+		const { downloadCsvFromQuery } = await import('$lib/utils/data-export');
+		await downloadCsvFromQuery(
+			`SELECT * FROM '${PARQUETS.radio_stats_master}' WHERE redcode = '${redcode}' LIMIT 1`,
+			`spatia_radio_${redcode}.csv`
+		);
+	}
+
+	function downloadRadioGeoJson(redcode: string, properties: Record<string, any>): void {
+		const geometry = mapComponent?.getRadioGeometry(redcode);
+		if (!geometry) {
+			console.warn('Radio geometry not available for', redcode);
+			return;
+		}
+		const fc = {
+			type: 'FeatureCollection',
+			features: [{ type: 'Feature', geometry, properties: { redcode, ...properties } }]
+		};
+		const blob = new Blob([JSON.stringify(fc)], { type: 'application/geo+json' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `spatia_radio_${redcode}.geojson`;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+	}
+
+	async function downloadRadiosSummary(): Promise<void> {
+		const { downloadCsvFromRows } = await import('$lib/utils/data-export');
+		const rows: Array<Record<string, unknown>> = [];
+		for (const [rc, d] of mapStore.selectedRadios.entries()) {
+			const e = d.enriched ?? {};
+			rows.push({
+				redcode: rc,
+				total_personas: e.total_personas,
+				area_km2: e.area_km2,
+				tasa_actividad: e.tasa_actividad,
+				tasa_empleo: e.tasa_empleo,
+				pct_universitario: e.pct_universitario,
+				pct_nbi: e.pct_nbi,
+				pct_hacinamiento: e.pct_hacinamiento,
+				pct_agua_red: e.pct_agua_red
+			});
+		}
+		if (rows.length === 0) return;
+		const cols = Object.keys(rows[0]);
+		downloadCsvFromRows(rows, cols, 'spatia_radios_summary.csv');
 	}
 
 	async function fetchRadioCensus(redcode: string): Promise<Record<string, any>> {
@@ -824,6 +876,9 @@
 			onSelectCatastroDpto={handleSelectCatastroDpto}
 			onSelectScoresCatastroDpto={handleSelectScoresCatastroDpto}
 			onSelectRadioAnalysisDpto={handleSelectRadioAnalysisDpto}
+			onDownloadRadioCsv={downloadRadioCsv}
+			onDownloadRadioGeoJson={downloadRadioGeoJson}
+			onDownloadRadiosSummary={downloadRadiosSummary}
 			/>
 		</div>
 	</div>

@@ -450,6 +450,16 @@
 		map?.flyTo({ ...MAP_PROVINCE, duration: 1200 });
 	}
 
+	export function getRadioGeometry(redcode: string): any | null {
+		if (!map) return null;
+		const features = map.querySourceFeatures('radios', {
+			sourceLayer: 'radios',
+			filter: ['==', ['get', 'redcode'], redcode] as any
+		});
+		if (features.length === 0) return null;
+		return features[0].geometry;
+	}
+
 	export function setPitch(p: number) {
 		map?.easeTo({ pitch: p, duration: 200 });
 	}

@@ -37,7 +37,7 @@
 			</button>
 		</div>
 		<div class="kicker">Inteligencia geoespacial abierta · NEA Argentino</div>
-		<h1 class="title">nealab</h1>
+		<h1 class="title"><a class="title-link" href="/">nealab</a></h1>
 		<p class="subtitle">
 			Plataforma pública de análisis geoespacial centrada especialmente en el NEA argentino.
 			Datos, métodos y código abiertos; pensada para investigación, gestión pública, cooperación
@@ -376,6 +376,12 @@
 		line-height: 1.05;
 		letter-spacing: -0.01em;
 	}
+	.title-link {
+		color: inherit;
+		text-decoration: none;
+		transition: opacity 0.15s;
+	}
+	.title-link:hover { opacity: 0.7; }
 	.subtitle {
 		color: rgba(255,255,255,0.75);
 		font-size: 14px;

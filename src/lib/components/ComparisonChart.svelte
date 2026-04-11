@@ -7,14 +7,21 @@
 	let {
 		radios,
 		onRemoveRadio,
-		onClearRadios
+		onClearRadios,
+		onDownloadRadioCsv,
+		onDownloadRadioGeoJson,
+		onDownloadRadiosSummary
 	}: {
 		radios: Map<string, RadioData>;
 		onRemoveRadio: (redcode: string) => void;
 		onClearRadios: () => void;
+		onDownloadRadioCsv?: (redcode: string) => void;
+		onDownloadRadioGeoJson?: (redcode: string, properties: Record<string, any>) => void;
+		onDownloadRadiosSummary?: () => void;
 	} = $props();
 
 	const fmt = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+	const fmt1 = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 1 });
 
 	let provAvg: number[] | null = $state(null);
 
@@ -26,7 +33,7 @@
 		}
 	});
 
-	type RadioEntry = { redcode: string; color: string; data: RadioData; rawValues: number[]; normalizedValues: number[]; population: number };
+	type RadioEntry = { redcode: string; color: string; data: RadioData; rawValues: number[]; normalizedValues: number[]; population: number; areaKm2: number };
 
 	const entries = $derived.by((): RadioEntry[] => {
 		if (!provAvg) return [];
@@ -40,7 +47,8 @@
 				});
 				const normalizedValues = normalizeValues(rawValues, provAvg!);
 				const population = parseInt(e.total_personas ?? d.census?.total_personas ?? '0') || 0;
-				return { redcode: rc, color: d.color, data: d, rawValues, normalizedValues, population };
+				const areaKm2 = parseFloat(e.area_km2 ?? d.census?.area_km2 ?? '0') || 0;
+				return { redcode: rc, color: d.color, data: d, rawValues, normalizedValues, population, areaKm2 };
 			});
 	});
 
@@ -75,21 +83,55 @@
 		{/each}
 	</div>
 
-	<!-- Population summary -->
-	{#each entries as entry}
-		<div class="pop-row">
-			<span class="pop-dot" style="background: {entry.color};"></span>
-			<span class="pop-code">{shortCode(entry.redcode)}:</span>
-			<span class="pop-val">{fmt(entry.population)} hab</span>
-		</div>
-	{/each}
-
 	<!-- Petal chart (normalized: 50 = provincial avg) -->
 	{#if petalLayers.length > 0}
 		<p class="ref-note">{i18n.t('zone.petalNote')}</p>
 		<PetalChart layers={petalLayers} labels={petalLabels} size={300} />
 	{/if}
 
+	<!-- Summary table -->
+	{#if entries.length > 0}
+		<div class="r-table">
+			<div class="r-table-header">
+				<span class="rt-col rt-zone">Radio</span>
+				<span class="rt-col rt-num">Población</span>
+				<span class="rt-col rt-num">km²</span>
+				<span class="rt-col rt-actions"></span>
+			</div>
+			{#each entries as entry}
+				<div class="r-table-row">
+					<span class="rt-col rt-zone">
+						<span class="r-dot-sm" style:background={entry.color}></span>
+						{shortCode(entry.redcode)}
+					</span>
+					<span class="rt-col rt-num">{fmt(entry.population)}</span>
+					<span class="rt-col rt-num">{fmt1(entry.areaKm2)}</span>
+					<span class="rt-col rt-actions">
+						<button
+							class="r-dl-btn"
+							title="Datos del radio (CSV)"
+							onclick={() => onDownloadRadioCsv?.(entry.redcode)}
+							disabled={!onDownloadRadioCsv}
+						>csv</button>
+						<button
+							class="r-dl-btn"
+							title="Polígono del radio (GeoJSON)"
+							onclick={() => onDownloadRadioGeoJson?.(entry.redcode, entry.data.enriched ?? {})}
+							disabled={!onDownloadRadioGeoJson}
+						>geo</button>
+					</span>
+				</div>
+			{/each}
+		</div>
+
+		{#if onDownloadRadiosSummary}
+			<div class="r-download-row">
+				<button class="r-download-btn" onclick={() => onDownloadRadiosSummary?.()}>
+					↓ Resumen comparativo (CSV)
+				</button>
+			</div>
+		{/if}
+	{/if}
 
 	<div class="sources">
 		<span class="sources-title">{i18n.t('source.title')}</span>
@@ -134,6 +176,59 @@
 	.ref-note {
 		font-size: 8px; color: rgba(255,255,255,0.45);
 		text-align: center; margin: 4px 0 0;
+	}
+
+	.r-table { margin: 8px 0; }
+	.r-table-header {
+		display: flex; gap: 4px;
+		padding-bottom: 3px;
+		border-bottom: 1px solid #1e293b;
+		margin-bottom: 3px;
+	}
+	.r-table-header .rt-col {
+		font-size: 9px; font-weight: 600;
+		color: #a3a3a3; text-transform: uppercase;
+	}
+	.r-table-row {
+		display: flex; gap: 4px; padding: 2px 0;
+	}
+	.rt-col { flex: 1; }
+	.rt-zone { flex: 0.9; display: flex; align-items: center; gap: 4px; font-family: monospace; font-size: 10px; color: #d4d4d4; }
+	.rt-num { text-align: right; color: #cbd5e1; font-size: 10px; font-variant-numeric: tabular-nums; }
+	.rt-actions { flex: 0.8; display: flex; gap: 3px; justify-content: flex-end; }
+	.r-dot-sm {
+		display: inline-block; width: 6px; height: 6px;
+		border-radius: 50%; flex-shrink: 0;
+	}
+	.r-dl-btn {
+		background: rgba(255,255,255,0.04);
+		border: 1px solid rgba(255,255,255,0.1);
+		color: #94a3b8; font-size: 8px;
+		padding: 1px 4px; border-radius: 3px;
+		cursor: pointer; font-family: inherit;
+		transition: all 0.15s;
+	}
+	.r-dl-btn:hover:not(:disabled) {
+		background: rgba(96,165,250,0.15);
+		border-color: rgba(96,165,250,0.4);
+		color: #60a5fa;
+	}
+	.r-dl-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+	.r-download-row { margin-top: 6px; }
+	.r-download-btn {
+		display: block; width: 100%; text-align: center;
+		padding: 6px 10px;
+		background: rgba(59,130,246,0.15);
+		border: 1px solid rgba(59,130,246,0.3);
+		border-radius: 4px;
+		color: #60a5fa; font-size: 9px; font-weight: 600;
+		cursor: pointer; font-family: inherit;
+		transition: all 0.15s;
+	}
+	.r-download-btn:hover {
+		background: rgba(59,130,246,0.25);
+		border-color: rgba(59,130,246,0.5);
 	}
 
 	.dim-section { margin: 8px 0; }
