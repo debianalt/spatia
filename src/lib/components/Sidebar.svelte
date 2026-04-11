@@ -101,6 +101,10 @@
 				<div class="welcome-step"><span class="step-n">3</span> {i18n.t('side.onboarding.step3')}</div>
 			</div>
 
+			<a href="/servicios" class="welcome-services-link">
+				Ver servicios de inteligencia geoespacial →
+			</a>
+
 			<div class="welcome-footer">
 				<div>{i18n.t('side.welcome.footer.research')}</div>
 				<div>{i18n.t('side.welcome.footer.author')}</div>
@@ -228,6 +232,8 @@
 	.welcome-step { font-size: 13px; color: rgba(255,255,255,0.75); line-height: 1.5; font-weight: 300; }
 	.step-n { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); font-size: 11px; font-weight: 700; margin-right: 6px; }
 	.welcome-footer { font-size: 12px; color: rgba(255,255,255,0.45); line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; font-weight: 400; }
+	.welcome-services-link { display: block; text-align: center; padding: 8px 12px; margin: 14px 0 4px; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.3); border-radius: 6px; color: #60a5fa; font-size: 12px; font-weight: 600; text-decoration: none; transition: all 0.15s; }
+	.welcome-services-link:hover { background: rgba(96,165,250,0.2); border-color: rgba(96,165,250,0.5); }
 	.dashboard-link { display: block; font-size: 12px; color: rgba(255,255,255,0.55); line-height: 1.6; text-decoration: none; font-weight: 300; }
 	.dashboard-link:hover { color: rgba(255,255,255,0.8); }
 	.expand-btn {
