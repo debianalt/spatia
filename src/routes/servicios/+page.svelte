@@ -77,7 +77,7 @@
 			Regiones de Frontera (INREFRO)</strong>, uno de los espacios académicos de mayor trayectoria
 			y reconocimiento en el estudio de las dinámicas fronterizas del Noreste Argentino. Radicado
 			en la FHyCS-UNaM, INREFRO articula desde hace décadas investigación comparada en
-			antropología, sociología, historia y geografía sobre los procesos socioambientales,
+			antropología, sociología, historia, economía y geografía sobre los procesos socioambientales,
 			culturales y políticos de la triple frontera argentino-brasileño-paraguaya, bajo la
 			dirección del Dr. Roberto Abínzano junto a la Mag. Diana Arellano y la Mag. Norma Oviedo.
 		</p>
