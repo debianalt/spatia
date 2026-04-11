@@ -13,6 +13,7 @@
 	import { PARQUETS, MAP_INIT, HEX_LAYER_REGISTRY, getAnalysisById, getAnalysesForLens, type AnalysisConfig, type LensId } from '$lib/config';
 	import { i18n, type Locale } from '$lib/stores/i18n.svelte';
 	import { page } from '$app/stores';
+	import { readUrlState, writeUrlState, flushUrlState, encodeZones, decodeZones } from '$lib/utils/url-state';
 
 	const mapStore = new MapStore();
 	const lensStore = new LensStore();
@@ -21,21 +22,35 @@
 
 	let mapComponent: ReturnType<typeof MapComponent>;
 	let mapContainer: HTMLDivElement;
+
 	// ── URL state: read params on mount, write on change ──
-	function updateUrlState() {
-		const params = new URLSearchParams();
-		if (lensStore.activeLens) params.set('lens', lensStore.activeLens);
-		if (lensStore.activeAnalysis) params.set('a', lensStore.activeAnalysis.id);
-		if (hexStore.selectedDpto) params.set('dept', hexStore.selectedDpto);
-		const qs = params.toString();
-		window.history.replaceState({}, '', qs ? `?${qs}` : window.location.pathname);
+	let mapCamera = $state<{ zoom: number; lng: number; lat: number; bearing: number; pitch: number } | null>(null);
+
+	function syncUrlState() {
+		if (typeof window === 'undefined') return;
+		const polygons = lassoStore.zones.map((z) => z.polygon);
+		writeUrlState({
+			lens: lensStore.activeLens ?? undefined,
+			analysis: lensStore.activeAnalysis?.id,
+			dept: hexStore.selectedDpto ?? undefined,
+			lang: i18n.locale,
+			zoom: mapCamera?.zoom,
+			lng: mapCamera?.lng,
+			lat: mapCamera?.lat,
+			bearing: mapCamera?.bearing,
+			pitch: mapCamera?.pitch,
+			zones: polygons.length > 0 ? encodeZones(polygons) : undefined,
+		});
 	}
 
 	$effect(() => {
 		const _lens = lensStore.activeLens;
 		const _analysis = lensStore.activeAnalysis;
 		const _dept = hexStore.selectedDpto;
-		if (typeof window !== 'undefined') updateUrlState();
+		const _lang = i18n.locale;
+		const _cam = mapCamera;
+		const _zones = lassoStore.zones;
+		syncUrlState();
 	});
 
 	onMount(() => {
@@ -45,20 +60,33 @@
 		}
 
 		// Restore state from URL params
-		const params = new URLSearchParams(window.location.search);
-		const lens = params.get('lens') as LensId | null;
-		const analysisId = params.get('a');
-		if (lens) {
-			lensStore.setLens(lens);
-			if (analysisId) {
-				const a = getAnalysisById(analysisId);
+		const initial = readUrlState();
+		if (initial.lang) i18n.setLocale(initial.lang);
+		if (initial.lens) {
+			lensStore.setLens(initial.lens);
+			if (initial.analysis) {
+				const a = getAnalysisById(initial.analysis);
 				if (a) lensStore.setAnalysis(a);
 			}
+		}
+		if (
+			initial.zoom != null &&
+			initial.lng != null &&
+			initial.lat != null
+		) {
+			mapCamera = {
+				zoom: initial.zoom,
+				lng: initial.lng,
+				lat: initial.lat,
+				bearing: initial.bearing ?? MAP_INIT.bearing ?? 0,
+				pitch: initial.pitch ?? MAP_INIT.pitch ?? 0,
+			};
 		}
 
 		initDuckDB()
 			.then(() => {
 				warmupRadioStats();
+				restoreZonesFromUrl(initial.zones);
 			})
 			.catch(e => console.warn('DuckDB init failed:', e));
 
@@ -197,7 +225,67 @@
 				updateZoneHighlights();
 			}
 		}, { capture: true });
+
+		// ── Map camera: restore from URL + subscribe to moveend ──
+		attachCameraSync();
+
+		// ── Flush pending URL writes on page unload ──
+		window.addEventListener('beforeunload', flushUrlState);
 	});
+
+	async function restoreZonesFromUrl(encoded: string | undefined) {
+		if (!encoded) return;
+		const polygons = decodeZones(encoded);
+		if (polygons.length === 0) return;
+		for (const polygon of polygons) {
+			if (hexStore.activeLayer) {
+				const h3indices = hexStore.findHexesInPolygon(polygon);
+				if (h3indices.length > 0) {
+					await hexStore.createHexZone(h3indices, polygon);
+				}
+			} else {
+				const redcodes = lassoStore.findRadiosInPolygon(polygon);
+				if (redcodes.length > 0) {
+					await lassoStore.createZone(redcodes, polygon);
+				}
+			}
+		}
+		updateZoneHighlights();
+		updateHexZoneHighlights();
+	}
+
+	function attachCameraSync() {
+		const tryAttach = () => {
+			const m = mapComponent?.getMap();
+			if (!m) {
+				setTimeout(tryAttach, 100);
+				return;
+			}
+
+			// Apply initial camera from URL (if set before map loaded)
+			if (mapCamera) {
+				m.jumpTo({
+					center: [mapCamera.lng, mapCamera.lat],
+					zoom: mapCamera.zoom,
+					bearing: mapCamera.bearing,
+					pitch: mapCamera.pitch,
+				});
+			}
+
+			// Subscribe to camera changes
+			m.on('moveend', () => {
+				const c = m.getCenter();
+				mapCamera = {
+					zoom: m.getZoom(),
+					lng: c.lng,
+					lat: c.lat,
+					bearing: m.getBearing(),
+					pitch: m.getPitch(),
+				};
+			});
+		};
+		tryAttach();
+	}
 
 	// ── Lens reactivity ──────────────────────────────────────────────────────
 	let prevLensId: string | null = null;

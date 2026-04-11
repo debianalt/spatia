@@ -5,7 +5,9 @@
 	import PetalChart from '$lib/components/PetalChart.svelte';
 	import TemporalToggle from '$lib/components/TemporalToggle.svelte';
 	import { HEX_LAYER_REGISTRY, DATA_FRESHNESS, getSatDptoUrl, getFloodDptoUrl, getScoresDptoUrl, getReportUrl, getTemporalCol, type AnalysisConfig, type TemporalMode } from '$lib/config';
-	import { initDuckDB, query } from '$lib/stores/duckdb';
+	import { query } from '$lib/stores/duckdb';
+	import { downloadCsvFromQuery, downloadGeoJsonFromHexQuery } from '$lib/utils/data-export';
+	import { ANALYSIS_CONTENT } from '$lib/content/methodology';
 
 	let {
 		analysis,
@@ -143,28 +145,47 @@
 		hexStore.setLayer(analysis.id);
 	}
 
-	async function downloadCsv() {
-		if (!dataUrl) return;
+	let downloadState = $state<'idle' | 'csv' | 'geojson'>('idle');
+
+	function currentParquetKey(): string {
+		const dept = deptList.find((d: any) => d.dpto === selectedDpto);
+		return dept?.parquetKey || 'data';
+	}
+
+	async function handleDownloadCsv() {
+		if (!dataUrl || downloadState !== 'idle') return;
+		downloadState = 'csv';
 		try {
-			await initDuckDB();
-			const result = await query(`SELECT * FROM '${dataUrl}'`);
-			const cols = result.schema.fields.map((f: any) => f.name);
-			let csv = cols.join(',') + '\n';
-			for (let i = 0; i < result.numRows; i++) {
-				const row = result.get(i)!.toJSON() as Record<string, any>;
-				csv += cols.map(c => row[c] ?? '').join(',') + '\n';
-			}
-			const blob = new Blob([csv], { type: 'text/csv' });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			const dept = deptList.find((d: any) => d.dpto === selectedDpto);
-			a.href = url;
-			a.download = `spatia_${layerCfg?.id}_${dept?.parquetKey || 'data'}.csv`;
-			a.click();
-			URL.revokeObjectURL(url);
+			await downloadCsvFromQuery(
+				`SELECT * FROM '${dataUrl}'`,
+				`spatia_${layerCfg?.id}_${currentParquetKey()}.csv`
+			);
 		} catch (e) {
 			console.warn('CSV download failed:', e);
+		} finally {
+			downloadState = 'idle';
 		}
+	}
+
+	async function handleDownloadGeoJson() {
+		if (!dataUrl || downloadState !== 'idle') return;
+		downloadState = 'geojson';
+		try {
+			await downloadGeoJsonFromHexQuery(
+				`SELECT * FROM '${dataUrl}'`,
+				`spatia_${layerCfg?.id}_${currentParquetKey()}.geojson`
+			);
+		} catch (e) {
+			console.warn('GeoJSON download failed:', e);
+		} finally {
+			downloadState = 'idle';
+		}
+	}
+
+	function urlForAnalysis(id: string, parquetKey: string): string {
+		if (id === 'flood_risk') return getFloodDptoUrl(parquetKey);
+		if (id === 'territorial_scores') return getScoresDptoUrl(parquetKey);
+		return getSatDptoUrl(id, parquetKey);
 	}
 
 	// Data download URL for selected department
@@ -172,7 +193,7 @@
 		if (!selectedDpto || !layerCfg || !deptList.length) return null;
 		const dept = deptList.find((d: any) => d.dpto === selectedDpto);
 		if (!dept) return null;
-		return getSatDptoUrl(layerCfg.id, dept.parquetKey);
+		return urlForAnalysis(layerCfg.id, dept.parquetKey);
 	});
 
 	// Component variables (skip score, type, type_label, pca)
@@ -301,10 +322,10 @@
 		return getReportUrl(layerCfg.id, dept.parquetKey);
 	});
 
-	// ── Explanatory content per analysis ──
+	// ── Explanatory content per analysis (legacy inline dict, replaced by import) ──
 	const METHOD_COMMON = 'Clasificación por PCA (análisis de componentes principales) seguido de k-means clustering sobre las variables estandarizadas. Cada hexágono se asigna al tipo cuyo centroide multivariado es más cercano. La validación se realiza mediante coeficiente de silueta. Los valores por variable van de 0 a 100 y representan el percentil provincial: 50 = mediana de Misiones, 100 = valor más alto de la provincia. Los tipos (clusters) agrupan hexágonos con perfiles similares — no son un ranking lineal.';
 
-	const ANALYSIS_CONTENT: Record<string, { howToRead: string; implications: string; method: string }> = {
+	const ANALYSIS_CONTENT_LEGACY: Record<string, { howToRead: string; implications: string; method: string }> = {
 		flood_risk: {
 			howToRead: 'Los colores representan el riesgo hídrico de cada hexágono, combinando la presencia histórica de agua (JRC, 1984–2021) y la detección actual de inundación (Sentinel-1 SAR). Azul oscuro = riesgo bajo; amarillo = riesgo medio; rojo = riesgo alto. Selecciona un departamento para ver el detalle.',
 			implications: 'Las zonas de riesgo alto pueden enfrentar anegamientos recurrentes, afectando el valor inmobiliario, la habitabilidad y la infraestructura de servicios básicos (agua, cloacas). La recurrencia interanual distingue inundaciones estacionales predecibles de eventos extremos esporádicos.',
@@ -541,6 +562,17 @@
 			</div>
 		{/if}
 
+		{#if dataUrl}
+			<div class="download-row">
+				<button class="download-btn" onclick={handleDownloadCsv} disabled={downloadState !== 'idle'} title="CSV del departamento (todos los hexágonos)">
+					{downloadState === 'csv' ? '…' : 'CSV'}
+				</button>
+				<button class="download-btn download-secondary" onclick={handleDownloadGeoJson} disabled={downloadState !== 'idle'} title="GeoJSON del departamento (polígonos H3)">
+					{downloadState === 'geojson' ? '…' : 'GeoJSON'}
+				</button>
+			</div>
+		{/if}
+
 		{#if freshness}
 			<div class="source-note-box">
 				<div><strong>{i18n.t('section.source')}:</strong> {i18n.t(freshness.sourceKey)}</div>
@@ -555,6 +587,33 @@
 		<button class="back-btn" onclick={handleBackToDepts}>{i18n.t('analysis.flood.topDepts')}</button>
 
 		<div class="dept-active-title">{selectedDpto}</div>
+
+		{#if dataUrl}
+			<div class="download-row">
+				<button
+					class="download-btn"
+					onclick={handleDownloadCsv}
+					disabled={downloadState !== 'idle'}
+					title="CSV · todas las variables por hexágono H3"
+				>
+					{downloadState === 'csv' ? '…' : '↓ CSV'}
+				</button>
+				<button
+					class="download-btn download-secondary"
+					onclick={handleDownloadGeoJson}
+					disabled={downloadState !== 'idle'}
+					title="GeoJSON · polígonos H3 para QGIS / ArcGIS"
+				>
+					{downloadState === 'geojson' ? '…' : '↓ GeoJSON'}
+				</button>
+			</div>
+		{/if}
+
+		{#if content}
+			<a class="methodology-link" href="/metodologia/{analysis.id}" target="_blank" rel="noopener">
+				¿Cómo se calcula? →
+			</a>
+		{/if}
 
 		{#if isTemporal}
 			<TemporalToggle {hexStore} layerId={layerCfg?.id ?? ''} />
@@ -828,13 +887,18 @@
 	.mini-legend { margin-top: 6px; }
 	.method-components { margin-top: 6px; }
 
+	/* ── Methodology link ── */
+	.methodology-link { display: inline-block; font-size: 9px; color: #94a3b8; text-decoration: none; padding: 4px 0; margin: 4px 0 10px; transition: color 0.15s; }
+	.methodology-link:hover { color: #60a5fa; text-decoration: underline; }
+
 	/* ── Download button ── */
-	.download-btn { display: block; text-align: center; padding: 8px 12px; margin: 10px 0; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); border-radius: 6px; color: #60a5fa; font-size: 10px; font-weight: 600; text-decoration: none; transition: all 0.15s; cursor: pointer; }
-	.download-btn:hover { background: rgba(59,130,246,0.25); border-color: rgba(59,130,246,0.5); }
+	.download-btn { display: block; text-align: center; padding: 6px 10px; margin: 0; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); border-radius: 4px; color: #60a5fa; font-size: 9px; font-weight: 600; text-decoration: none; transition: all 0.15s; cursor: pointer; font-family: inherit; }
+	.download-btn:hover:not(:disabled) { background: rgba(59,130,246,0.25); border-color: rgba(59,130,246,0.5); }
+	.download-btn:disabled { cursor: wait; opacity: 0.6; }
 	.download-row { display: flex; gap: 6px; margin: 10px 0; }
 	.download-row .download-btn { flex: 1; }
 	.download-secondary { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); color: #a3a3a3; }
-	.download-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); color: #d4d4d4; }
+	.download-secondary:hover:not(:disabled) { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); color: #d4d4d4; }
 	.download-date { font-weight: 400; font-size: 8px; opacity: 0.7; }
 
 	/* ── Source box ── */

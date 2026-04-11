@@ -7,6 +7,7 @@
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import PetalChart from '$lib/components/PetalChart.svelte';
 	import CTADiagnostic from '$lib/components/CTADiagnostic.svelte';
+	import { downloadCsvFromRows } from '$lib/utils/data-export';
 
 	let {
 		lensStore,
@@ -193,6 +194,22 @@
 		return n.toLocaleString('es-AR', { maximumFractionDigits: 0 });
 	}
 
+	let downloadingCsv = $state(false);
+	async function handleDownloadCsv() {
+		if (!selectedDpto || downloadingCsv) return;
+		downloadingCsv = true;
+		try {
+			const rows = deptRadios.map(({ redcode, data }) => ({ redcode, ...data }));
+			if (rows.length === 0) return;
+			const columns = ['redcode', ...Object.keys(rows[0]).filter((k) => k !== 'redcode')];
+			downloadCsvFromRows(rows, columns, `spatia_catastro_${selectedDpto}.csv`);
+		} catch (e) {
+			console.warn('Catastro CSV download failed:', e);
+		} finally {
+			downloadingCsv = false;
+		}
+	}
+
 	function trendIcon(trend: string): string {
 		if (trend === 'up') return '\u25B2';
 		if (trend === 'down') return '\u25BC';
@@ -335,6 +352,19 @@
 		{/if}
 
 		<div class="hint">{i18n.t('analysis.catastro.clickDept')}</div>
+
+		{#if deptRadios.length > 0}
+			<div class="download-row">
+				<button
+					class="download-btn"
+					onclick={handleDownloadCsv}
+					disabled={downloadingCsv}
+					title="CSV · radios del departamento con variables catastro"
+				>
+					{downloadingCsv ? '…' : 'CSV'}
+				</button>
+			</div>
+		{/if}
 
 		<div class="map-legend">
 			<span class="legend-swatch" style:background="#06b6d4"></span> {i18n.t('analysis.catastro.legendUrban')}
@@ -493,4 +523,10 @@
 	.method-summary::-webkit-details-marker { display: none; }
 	.method-body { padding: 4px 8px 8px; }
 	.explain-text { font-size: 9px; color: #a3a3a3; line-height: 1.5; margin: 2px 0 0; }
+
+	/* Download buttons */
+	.download-row { display: flex; gap: 6px; margin: 10px 0; }
+	.download-btn { flex: 1; display: block; text-align: center; padding: 6px 10px; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); border-radius: 4px; color: #60a5fa; font-size: 9px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+	.download-btn:hover:not(:disabled) { background: rgba(59,130,246,0.25); border-color: rgba(59,130,246,0.5); }
+	.download-btn:disabled { cursor: wait; opacity: 0.6; }
 </style>

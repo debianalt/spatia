@@ -1,7 +1,8 @@
 <script lang="ts">
 	import PetalChart from './PetalChart.svelte';
-	import { PETAL_VARS, type LassoStore } from '$lib/stores/lasso.svelte';
+	import { PETAL_VARS, type LassoStore, type Zone } from '$lib/stores/lasso.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
+	import { downloadCsvFromRows, downloadGeoJsonFromPolygon } from '$lib/utils/data-export';
 
 	let {
 		lassoStore,
@@ -16,6 +17,46 @@
 	const zones = $derived(lassoStore.zones);
 	const layers = $derived(lassoStore.petalLayers);
 	const labels = $derived(lassoStore.petalLabels);
+
+	function downloadZoneSummary() {
+		if (zones.length === 0) return;
+		const rows = zones.map((z: Zone) => {
+			const row: Record<string, unknown> = {
+				zone: z.id,
+				population: z.stats.population,
+				area_km2: z.stats.area_km2,
+				radio_count: z.stats.radioCount,
+			};
+			PETAL_VARS.forEach((v, i) => {
+				row[v.col] = z.stats.rawValues[i];
+				row[`${v.col}_norm`] = z.stats.normalizedValues[i];
+			});
+			return row;
+		});
+		const columns = Object.keys(rows[0]);
+		downloadCsvFromRows(rows, columns, 'spatia_zones_summary.csv');
+	}
+
+	function downloadZoneRadios(zone: Zone) {
+		if (zone.redcodes.length === 0) return;
+		const rows = zone.redcodes.map((redcode) => ({ zone: zone.id, redcode }));
+		downloadCsvFromRows(rows, ['zone', 'redcode'], `spatia_zone_${zone.id}_radios.csv`);
+	}
+
+	function downloadZoneGeoJson(zone: Zone) {
+		const props: Record<string, unknown> = {
+			zone: zone.id,
+			color: zone.color,
+			population: zone.stats.population,
+			area_km2: zone.stats.area_km2,
+			radio_count: zone.stats.radioCount,
+		};
+		PETAL_VARS.forEach((v, i) => {
+			props[v.col] = zone.stats.rawValues[i];
+			props[`${v.col}_norm`] = zone.stats.normalizedValues[i];
+		});
+		downloadGeoJsonFromPolygon(zone.polygon, props, `spatia_zone_${zone.id}.geojson`);
+	}
 </script>
 
 <div class="zone-comparison">
@@ -50,6 +91,7 @@
 			<span class="zt-col zt-num">{i18n.t('zone.population')}</span>
 			<span class="zt-col zt-num">{i18n.t('zone.area')}</span>
 			<span class="zt-col zt-num">{i18n.t('zone.radios')}</span>
+			<span class="zt-col zt-actions"></span>
 		</div>
 		{#each zones as zone}
 			<div class="zone-table-row">
@@ -60,9 +102,21 @@
 				<span class="zt-col zt-num">{zone.stats.population.toLocaleString()}</span>
 				<span class="zt-col zt-num">{zone.stats.area_km2.toFixed(1)}</span>
 				<span class="zt-col zt-num">{zone.stats.radioCount}</span>
+				<span class="zt-col zt-actions">
+					<button class="zone-dl-btn" title="Radios CSV" onclick={() => downloadZoneRadios(zone)}>csv</button>
+					<button class="zone-dl-btn" title="Polígono GeoJSON" onclick={() => downloadZoneGeoJson(zone)}>geo</button>
+				</span>
 			</div>
 		{/each}
 	</div>
+
+	{#if zones.length > 0}
+		<div class="zone-download-row">
+			<button class="zone-download-btn" onclick={downloadZoneSummary}>
+				↓ Resumen comparativo (CSV)
+			</button>
+		</div>
+	{/if}
 
 </div>
 
@@ -155,6 +209,13 @@
 	.zt-col { flex: 1; }
 	.zt-zone { flex: 0.6; display: flex; align-items: center; gap: 4px; }
 	.zt-num { text-align: right; color: #cbd5e1; font-size: 10px; }
+	.zt-actions { flex: 0.8; display: flex; gap: 3px; justify-content: flex-end; }
+	.zone-dl-btn { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; font-size: 8px; padding: 1px 4px; border-radius: 3px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+	.zone-dl-btn:hover { background: rgba(96,165,250,0.15); border-color: rgba(96,165,250,0.4); color: #60a5fa; }
+
+	.zone-download-row { margin-top: 6px; }
+	.zone-download-btn { display: block; width: 100%; text-align: center; padding: 6px 10px; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); border-radius: 4px; color: #60a5fa; font-size: 9px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+	.zone-download-btn:hover { background: rgba(59,130,246,0.25); border-color: rgba(59,130,246,0.5); }
 
 	.dim-section { margin: 8px 0; }
 	.dim-row {
