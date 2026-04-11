@@ -102,6 +102,32 @@ export async function downloadGeoJsonFromHexQuery(
 	triggerDownload(blob, filename);
 }
 
+export function downloadGeoJsonFromHexList(
+	h3indices: string[],
+	dataByHex: Map<string, Record<string, unknown>>,
+	filename: string
+): void {
+	const features: Array<Record<string, unknown>> = [];
+	for (const h3 of h3indices) {
+		const boundary = cellToBoundary(h3, true) as Array<[number, number]>;
+		if (boundary.length < 3) continue;
+		const ring: Array<[number, number]> = [...boundary, boundary[0]];
+		const row = dataByHex.get(h3) ?? {};
+		const properties: Record<string, unknown> = { h3index: h3 };
+		for (const [k, v] of Object.entries(row)) {
+			properties[k] = toJsonSafe(v);
+		}
+		features.push({
+			type: 'Feature',
+			geometry: { type: 'Polygon', coordinates: [ring] },
+			properties,
+		});
+	}
+	const geojson = { type: 'FeatureCollection', features };
+	const blob = new Blob([JSON.stringify(geojson)], { type: 'application/geo+json' });
+	triggerDownload(blob, filename);
+}
+
 export function downloadGeoJsonFromPolygon(
 	coordinates: Array<[number, number]>,
 	properties: Record<string, unknown>,
