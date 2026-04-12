@@ -792,6 +792,7 @@
 			lassoStore.toggle();
 			mapComponent?.setLassoMode(false);
 		}
+		showAbout = true;
 	}
 
 </script>
