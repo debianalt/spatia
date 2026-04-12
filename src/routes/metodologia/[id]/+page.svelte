@@ -79,7 +79,7 @@
 
 	<footer class="footer">
 		<p>
-			Citación sugerida: Gomez, R. E. (2026). Spatia: A Zero-Cost Platform for Subnational Territorial Intelligence. <a href="https://doi.org/10.5281/zenodo.19483041">doi:10.5281/zenodo.19483041</a>
+			Citación sugerida: Gomez, R. E. (2026). nealab: A Zero-Cost Platform for Subnational Territorial Intelligence (Version v2). Zenodo. <a href="https://doi.org/10.5281/zenodo.19543818">https://doi.org/10.5281/zenodo.19543818</a>
 		</p>
 		<p class="affil">CONICET · FHyCS-UNaM · Google Earth Engine R&amp;I Program</p>
 		<p class="print-only generated">Documento generado el {today} desde spatia.ar/metodologia/{data.id}</p>
