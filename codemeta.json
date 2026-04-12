@@ -3,7 +3,7 @@
   "@type": "SoftwareSourceCode",
   "name": "Spatia",
   "description": "A zero-cost, reproducible platform for subnational territorial intelligence. Combines satellite imagery, census data, and open geospatial datasets into PCA-validated composite indicators on an H3 hexagonal grid.",
-  "identifier": "https://doi.org/10.5281/zenodo.19483041",
+  "identifier": "https://doi.org/10.5281/zenodo.19543818",
   "codeRepository": "https://github.com/debianalt/nealab",
   "url": "https://www.spatia.ar",
   "license": "https://spdx.org/licenses/AGPL-3.0-only",
@@ -57,7 +57,7 @@
   "developmentStatus": "active",
   "referencePublication": {
     "@type": "ScholarlyArticle",
-    "name": "Spatia: A Zero-Cost Platform for Subnational Territorial Intelligence",
+    "name": "nealab: A Zero-Cost Platform for Subnational Territorial Intelligence",
     "author": "Gomez, R.E.",
     "isPartOf": {
       "@type": "PublicationIssue",
