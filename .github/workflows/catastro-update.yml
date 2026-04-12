@@ -1,8 +1,8 @@
 name: Update Catastro Layer
-# Runs weekly: every Monday at 08:00 UTC
+# Runs monthly: 1st of every month at 08:00 UTC (~05:00 ART)
 on:
   schedule:
-    - cron: '0 8 * * 1'  # Every Monday 08:00 UTC
+    - cron: '0 8 1 * *'  # First day of each month, 08:00 UTC
   workflow_dispatch:       # manual trigger
 
 jobs:
