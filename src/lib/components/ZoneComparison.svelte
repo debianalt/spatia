@@ -1,5 +1,4 @@
 <script lang="ts">
-	import PetalChart from './PetalChart.svelte';
 	import { PETAL_VARS, type LassoStore, type Zone } from '$lib/stores/lasso.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import { downloadCsvFromRows, downloadGeoJsonFromPolygon } from '$lib/utils/data-export';
@@ -15,8 +14,6 @@
 	} = $props();
 
 	const zones = $derived(lassoStore.zones);
-	const layers = $derived(lassoStore.petalLayers);
-	const labels = $derived(lassoStore.petalLabels);
 
 	function downloadZoneSummary() {
 		if (zones.length === 0) return;
@@ -77,12 +74,6 @@
 			</span>
 		{/each}
 	</div>
-
-	<!-- Petal chart (normalized: 50 = provincial avg) -->
-	{#if layers.length > 0}
-		<p class="text-[8px] text-text-dim text-center m-0 mb-0.5">{i18n.t('zone.petalNote')}</p>
-		<PetalChart {layers} {labels} size={340} />
-	{/if}
 
 	<!-- Summary table -->
 	<div class="zone-table">

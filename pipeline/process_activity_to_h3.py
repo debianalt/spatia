@@ -1,12 +1,13 @@
 """
-Process activity rasters to H3 res-9 via centroid sampling.
+Process activity rasters to H3 res-9 via bilinear interpolation at centroids.
 
-Samples 10 GeoTIFFs (5 variables x 2 periods) at H3 centroids,
-producing sat_productive_activity.parquet with true per-hexagon values.
+For each hexagon, samples the raster at its centroid using bilinear
+interpolation (scipy map_coordinates).  This avoids grid artifacts from
+polygon masking at coarse resolution (250m pixels vs 350m hex diameter).
 
 Input:
   pipeline/output/act_{var}_{period}.tif  (10 files)
-  pipeline/output/hexagons-lite.geojson   (H3 grid)
+  pipeline/output/hexagons-lite.geojson   (H3 grid, 320K polygons)
   pipeline/output/hansen_h3_annual.parquet (Hansen at H3, already computed)
 
 Output:
@@ -18,12 +19,16 @@ Usage:
 
 import json
 import os
+import sys
 import time
 
 import numpy as np
 import pandas as pd
 import rasterio
-from shapely.geometry import shape
+from scipy.ndimage import map_coordinates
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, SCRIPT_DIR)
 
 from config import OUTPUT_DIR
 
@@ -44,21 +49,37 @@ RASTERS = [
 ]
 
 
-def sample_raster(raster_path, features):
-    values = []
+def sample_raster_bilinear(raster_path, lngs, lats):
+    """Sample raster at (lng, lat) points using bilinear interpolation.
+
+    Reads the entire raster once, converts coordinates to fractional
+    pixel positions, then uses scipy map_coordinates (order=1) for
+    bilinear interpolation.  Vectorised — handles all points at once.
+    """
     with rasterio.open(raster_path) as src:
-        for feat in features:
-            geom = shape(feat["geometry"])
-            cx, cy = geom.centroid.x, geom.centroid.y
-            try:
-                r, c = src.index(cx, cy)
-                if 0 <= r < src.height and 0 <= c < src.width:
-                    val = float(src.read(1, window=((r, r + 1), (c, c + 1)))[0, 0])
-                    values.append(val if not np.isnan(val) and val > -9999 else np.nan)
-                else:
-                    values.append(np.nan)
-            except Exception:
-                values.append(np.nan)
+        data = src.read(1).astype(np.float64)
+        # Replace nodata with NaN
+        if src.nodata is not None:
+            data[data == src.nodata] = np.nan
+
+        # Convert geographic coords to fractional pixel coords
+        inv_transform = ~src.transform
+        cols, rows = inv_transform * (np.array(lngs), np.array(lats))
+
+        # Mask points outside raster bounds
+        rows = np.asarray(rows, dtype=np.float64)
+        cols = np.asarray(cols, dtype=np.float64)
+        outside = (rows < 0) | (rows >= src.height) | (cols < 0) | (cols >= src.width)
+
+        # Bilinear interpolation (order=1), NaN-safe via prefilter=False
+        values = map_coordinates(data, [rows, cols], order=1,
+                                 mode='constant', cval=np.nan,
+                                 prefilter=False)
+        values[outside] = np.nan
+
+    valid = np.count_nonzero(~np.isnan(values))
+    print(f"  Bilinear sample: {valid:,}/{len(values):,} valid "
+          f"({valid/len(values)*100:.1f}%)")
     return values
 
 
@@ -73,16 +94,29 @@ def pctile(s):
 def main():
     t0 = time.time()
 
+    # Load hexagon centroids from geojson
     print("Loading hexagon grid...")
     with open(HEXAGONS_PATH) as f:
         gj = json.load(f)
     features = gj["features"]
-    h3_ids = [feat["properties"]["h3index"] for feat in features]
-    print(f"  {len(features):,} hexagons")
+
+    from shapely.geometry import shape
+    h3_ids = []
+    lngs = []
+    lats = []
+    for feat in features:
+        h3_ids.append(feat["properties"]["h3index"])
+        centroid = shape(feat["geometry"]).centroid
+        lngs.append(centroid.x)
+        lats.append(centroid.y)
+
+    lngs = np.array(lngs, dtype=np.float64)
+    lats = np.array(lats, dtype=np.float64)
+    print(f"  {len(h3_ids):,} hexagons")
 
     result = pd.DataFrame({'h3index': h3_ids})
 
-    # Sample each raster
+    # Bilinear sample each raster at hex centroids
     for fname, col in RASTERS:
         path = os.path.join(OUTPUT_DIR, fname)
         if not os.path.exists(path):
@@ -91,27 +125,35 @@ def main():
             continue
         print(f"  Sampling {fname} -> {col}...")
         t1 = time.time()
-        vals = sample_raster(path, features)
-        valid = sum(1 for v in vals if not np.isnan(v))
+        vals = sample_raster_bilinear(path, lngs, lats)
         result[col] = vals
         mean = np.nanmean(vals)
-        print(f"    {valid:,}/{len(vals):,} valid, mean={mean:.4f}, {time.time()-t1:.1f}s")
+        print(f"    mean={mean:.4f}, {time.time()-t1:.1f}s")
 
     # Add Hansen (already at H3 from process_hansen_to_h3.py)
     hansen_path = os.path.join(OUTPUT_DIR, "hansen_h3_annual.parquet")
     if os.path.exists(hansen_path):
         print("  Loading Hansen H3 annual...")
         ha = pd.read_parquet(hansen_path)
-        loss_bl = ha[ha.year.between(2001, 2012)].groupby('h3index')['lost'].sum()
-        loss_cur = ha[ha.year.between(2013, 2024)].groupby('h3index')['lost'].sum()
-        result = result.merge(loss_bl.rename('c_forest_loss').reset_index(), on='h3index', how='left')
-        result = result.merge(loss_cur.rename('c_forest_loss_baseline').reset_index(), on='h3index', how='left')
-        # Swap: baseline = 2001-2012, current = 2013-2024
-        result.rename(columns={
-            'c_forest_loss': 'c_forest_loss_temp',
-            'c_forest_loss_baseline': 'c_forest_loss',
-        }, inplace=True)
-        result.rename(columns={'c_forest_loss_temp': 'c_forest_loss_baseline'}, inplace=True)
+        bl_px = ha[ha.year.between(2001, 2012)].groupby('h3index')['lost'].sum()
+        cur_px = ha[ha.year.between(2013, 2024)].groupby('h3index')['lost'].sum()
+        hex_px = ha.drop_duplicates('h3index').set_index('h3index')['hex_pixel_count']
+        hansen = pd.DataFrame({
+            'loss_bl_px': bl_px, 'loss_cur_px': cur_px, 'hex_pixel_count': hex_px,
+        }).reset_index()
+        hansen['c_forest_loss'] = (
+            hansen['loss_cur_px'] / hansen['hex_pixel_count'].replace(0, np.nan) * 100
+        ).fillna(0).round(3)
+        hansen['c_forest_loss_baseline'] = (
+            hansen['loss_bl_px'] / hansen['hex_pixel_count'].replace(0, np.nan) * 100
+        ).fillna(0).round(3)
+        result = result.merge(
+            hansen[['h3index', 'c_forest_loss', 'c_forest_loss_baseline']],
+            on='h3index', how='left',
+        )
+    else:
+        result['c_forest_loss'] = 0
+        result['c_forest_loss_baseline'] = 0
 
     # Compute deltas
     for var in ['c_viirs', 'c_npp', 'c_ndvi', 'c_built', 'c_lst', 'c_forest_loss']:
@@ -130,12 +172,16 @@ def main():
             result[c] = result[c].round(4)
 
     # Type quintiles
-    result['type'] = pd.cut(result['score'].fillna(0),
-                             bins=[0, 20, 40, 60, 80, 100],
-                             labels=[1, 2, 3, 4, 5],
-                             include_lowest=True).astype(float).fillna(1).astype(int)
-    labels = {1: 'Muy baja actividad', 2: 'Baja actividad',
-              3: 'Actividad moderada', 4: 'Alta actividad', 5: 'Muy alta actividad'}
+    result['type'] = pd.cut(
+        result['score'].fillna(0),
+        bins=[0, 20, 40, 60, 80, 100],
+        labels=[1, 2, 3, 4, 5],
+        include_lowest=True,
+    ).astype(float).fillna(1).astype(int)
+    labels = {
+        1: 'Muy baja actividad', 2: 'Baja actividad',
+        3: 'Actividad moderada', 4: 'Alta actividad', 5: 'Muy alta actividad',
+    }
     result['type_label'] = result['type'].map(labels)
 
     result = result.dropna(subset=['score'])
@@ -150,6 +196,7 @@ def main():
             d = f'{var}_delta'
             dm = result[d].mean() if d in result.columns else 0
             print(f"    {var:20s} mean={result[var].mean():.4f}  delta={dm:+.4f}")
+    print(f"  Types: {result.type.value_counts().sort_index().to_dict()}")
     print(f"  Built in {elapsed:.0f}s")
 
     result.to_parquet(OUTPUT_PATH, index=False)

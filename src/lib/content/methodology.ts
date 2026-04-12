@@ -5,7 +5,7 @@ export interface MethodologyContent {
 }
 
 export const METHOD_COMMON =
-	'Clasificación por PCA (análisis de componentes principales) seguido de k-means clustering sobre las variables estandarizadas. Cada hexágono se asigna al tipo cuyo centroide multivariado es más cercano. La validación se realiza mediante coeficiente de silueta. Los valores por variable van de 0 a 100 y representan el percentil provincial: 50 = mediana de Misiones, 100 = valor más alto de la provincia. Los tipos (clusters) agrupan hexágonos con perfiles similares — no son un ranking lineal.';
+	'Valores por variable (0–100): cada variable se convierte a percentil provincial. 50 = mediana de Misiones, 100 = valor más alto de la provincia.\n\nTipos (clusters): las variables estandarizadas se procesan con PCA para validar independencia (se descartan variables con |r| > 0.70). Luego k-means agrupa hexágonos con perfiles multivariados similares. Cada hexágono se asigna al tipo cuyo centroide es más cercano. La calidad se valida con coeficiente de silueta. Los tipos no son un ranking — son perfiles cualitativos distintos.';
 
 export const ANALYSIS_CONTENT: Record<string, MethodologyContent> = {
 	flood_risk: {

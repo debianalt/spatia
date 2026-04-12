@@ -9,7 +9,7 @@
 		hexStore: HexStore;
 	} = $props();
 
-	const CENSUS_ANALYSES = new Set(['service_deprivation', 'health_access', 'education_capital', 'education_flow', 'sociodemographic', 'economic_activity', 'accessibility', 'carbon_stock']);
+	const CENSUS_ANALYSES = new Set(['service_deprivation', 'health_access', 'education_capital', 'education_flow', 'sociodemographic', 'economic_activity', 'accessibility', 'carbon_stock', 'productive_activity']);
 	const selected = $derived([...hexStore.selectedHexes.entries()]);
 	const layer = $derived(hexStore.activeLayer);
 	const isCensus = $derived(layer ? CENSUS_ANALYSES.has(layer.id) : false);
@@ -82,7 +82,7 @@
 					{@const displayVal = (rawVal != null && typeof rawVal === 'number') ? rawVal : numVal}
 					<div class="cd-row">
 						<span class="cd-label">{i18n.t(v.labelKey)}</span>
-						<span class="cd-val-data">{fmtSmart(displayVal)}{v.unit ? ` ${v.unit}` : ''}</span>
+						<span class="cd-val-data">{fmtSmart(displayVal)}{v.unit ? ` ${v.unit}` : ' (0–100)'}</span>
 					</div>
 				{/each}
 			</div>
@@ -95,7 +95,7 @@
 	.hex-comparison { font-size: 11px; }
 	.cd-hex-block { margin: 8px 0; padding: 6px 0; border-top: 1px solid rgba(255,255,255,0.06); }
 	.cd-hex-id { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #e2e8f0; font-family: monospace; margin-bottom: 5px; }
-	.cd-type { font-size: 8px; color: rgba(255,255,255,0.45); font-family: sans-serif; }
+	.cd-type { font-size: 10px; color: #e2e8f0; font-weight: 500; background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 3px; font-family: sans-serif; }
 	.cd-row { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
 	.cd-label { font-size: 9px; color: #d4d4d4; flex: 0 0 auto; min-width: 100px; }
 	.cd-bar-track { flex: 1; height: 5px; background: #1e293b; border-radius: 3px; overflow: hidden; }

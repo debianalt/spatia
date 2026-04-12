@@ -19,6 +19,9 @@
 <svelte:head>
 	<title>{title} · Metodología · nealab</title>
 	<meta name="description" content="Metodología del análisis {title} en nealab" />
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+	<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 </svelte:head>
 
 <div class="page">
@@ -70,17 +73,13 @@
 	<section class="section">
 		<h2>Datos descargables</h2>
 		<p class="note">
-			Los datos crudos de este análisis están disponibles en formato Parquet en Cloudflare R2, y pueden
-			descargarse en CSV o GeoJSON desde el panel lateral del mapa una vez seleccionado un departamento.
-		</p>
-		<p class="note">
-			Pipeline reproducible: <a href="https://github.com/raimundoquenardelle/spatia-pipeline" rel="noopener">github.com/…/spatia-pipeline</a>
+			Los datos crudos de este análisis pueden descargarse en CSV o GeoJSON desde el panel lateral del mapa una vez seleccionado un departamento.
 		</p>
 	</section>
 
 	<footer class="footer">
 		<p>
-			Citación sugerida: Gomez, R. E. (2026). nealab — inteligencia geoespacial abierta para el NEA argentino. <a href="https://spatia.ar/metodologia/{data.id}">spatia.ar/metodologia/{data.id}</a>
+			Citación sugerida: Gomez, R. E. (2026). Spatia: A Zero-Cost Platform for Subnational Territorial Intelligence. <a href="https://doi.org/10.5281/zenodo.19483041">doi:10.5281/zenodo.19483041</a>
 		</p>
 		<p class="affil">CONICET · FHyCS-UNaM · Google Earth Engine R&amp;I Program</p>
 		<p class="print-only generated">Documento generado el {today} desde spatia.ar/metodologia/{data.id}</p>
@@ -93,9 +92,10 @@
 		margin: 0 auto;
 		padding: 32px 24px 64px;
 		color: #e2e8f0;
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-		font-size: 15px;
+		font-family: 'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', monospace;
+		font-size: 14px;
 		line-height: 1.6;
+		text-align: justify;
 	}
 	.print-brand { display: none; }
 	.print-only { display: none; }
@@ -109,16 +109,16 @@
 	}
 	.back-link {
 		display: inline-block;
-		color: #60a5fa;
+		color: #94a3b8;
 		font-size: 12px;
 		text-decoration: none;
 	}
-	.back-link:hover { text-decoration: underline; }
+	.back-link:hover { color: #e2e8f0; text-decoration: underline; }
 	.print-btn {
-		background: rgba(59,130,246,0.15);
-		border: 1px solid rgba(59,130,246,0.3);
+		background: rgba(255,255,255,0.06);
+		border: 1px solid #334155;
 		border-radius: 6px;
-		color: #60a5fa;
+		color: #94a3b8;
 		font-size: 12px;
 		font-weight: 600;
 		padding: 6px 12px;
@@ -127,8 +127,9 @@
 		transition: all 0.15s;
 	}
 	.print-btn:hover {
-		background: rgba(59,130,246,0.25);
-		border-color: rgba(59,130,246,0.5);
+		background: rgba(255,255,255,0.1);
+		border-color: #475569;
+		color: #e2e8f0;
 	}
 	.title {
 		font-size: 28px;
@@ -180,15 +181,15 @@
 		border-radius: 4px;
 	}
 	.vars code {
-		color: #93c5fd;
-		font-family: 'SF Mono', Monaco, monospace;
+		color: #cbd5e1;
+		font-family: inherit;
 		font-size: 12px;
 	}
 	.note {
 		font-size: 13px;
 		color: #94a3b8;
 	}
-	.note a { color: #60a5fa; }
+	.note a { color: #94a3b8; text-decoration: underline; }
 	.footer {
 		margin-top: 48px;
 		padding-top: 20px;
@@ -197,10 +198,10 @@
 		color: #64748b;
 	}
 	.footer p { margin: 4px 0; }
-	.footer a { color: #60a5fa; }
+	.footer a { color: #94a3b8; text-decoration: underline; }
 	.affil { font-style: italic; }
 
-	:global(body) { background: #0a0e1a; }
+	:global(html), :global(body) { overflow: auto !important; background: #0a0e1a; }
 
 	/* ═════ Print ═════ */
 	@media print {
@@ -258,7 +259,7 @@
 		}
 		.vars code { color: #0f172a; font-weight: 600; }
 		.note { color: #475569; font-size: 9pt; }
-		.note a { color: #1d4ed8; }
+		.note a { color: #1a1a1a; }
 		/* Show URL next to external links so print readers can find them */
 		.section a[href^="http"]::after {
 			content: " (" attr(href) ")";
@@ -272,7 +273,7 @@
 			margin-top: 28pt;
 			padding-top: 8pt;
 		}
-		.footer a { color: #1d4ed8; }
+		.footer a { color: #334155; }
 		.footer .generated { margin-top: 6pt; font-style: italic; color: #64748b; }
 	}
 </style>

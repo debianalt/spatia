@@ -327,7 +327,7 @@
 	});
 
 	// ── Explanatory content per analysis (legacy inline dict, replaced by import) ──
-	const METHOD_COMMON = 'Clasificación por PCA (análisis de componentes principales) seguido de k-means clustering sobre las variables estandarizadas. Cada hexágono se asigna al tipo cuyo centroide multivariado es más cercano. La validación se realiza mediante coeficiente de silueta. Los valores por variable van de 0 a 100 y representan el percentil provincial: 50 = mediana de Misiones, 100 = valor más alto de la provincia. Los tipos (clusters) agrupan hexágonos con perfiles similares — no son un ranking lineal.';
+	const METHOD_COMMON = 'Valores por variable (0–100): cada variable se convierte a percentil provincial. 50 = mediana de Misiones, 100 = valor más alto de la provincia.\n\nTipos (clusters): las variables estandarizadas se procesan con PCA para validar independencia (se descartan variables con |r| > 0.70). Luego k-means agrupa hexágonos con perfiles multivariados similares. Cada hexágono se asigna al tipo cuyo centroide es más cercano. La calidad se valida con coeficiente de silueta. Los tipos no son un ranking — son perfiles cualitativos distintos.';
 
 	const ANALYSIS_CONTENT_LEGACY: Record<string, { howToRead: string; implications: string; method: string }> = {
 		flood_risk: {
@@ -531,11 +531,11 @@
 			<div class="hex-id" title={selectedHex.h3index}>
 				{selectedHex.h3index.slice(0, 4)}...{selectedHex.h3index.slice(-4)}
 			</div>
-			{#if isCategorical}
+			{#if selectedHex.type_label}
 				<div class="risk-badge" style:background={getTypeColor(selectedHex.type ?? 1)}>
-					{selectedHex.type_label ?? `Tipo ${selectedHex.type ?? '?'}`}
+					{selectedHex.type_label}
 				</div>
-			{:else}
+			{:else if !isCategorical}
 				<div class="risk-badge" style:background={getScoreColor(displayScore)}>
 					{getScoreLevel(displayScore)}
 				</div>
@@ -562,7 +562,7 @@
 					{@const displayVal = (rawVal != null && typeof rawVal === 'number') ? rawVal : numVal}
 					<div class="cd-row">
 						<span class="cd-label">{i18n.t(v.labelKey)}</span>
-						<span class="cd-val-data">{fmtSmart(displayVal)}{v.unit ? ` ${v.unit}` : ''}</span>
+						<span class="cd-val-data">{fmtSmart(displayVal)}{v.unit ? ` ${v.unit}` : ' (0–100)'}</span>
 					</div>
 				{/each}
 			</div>
