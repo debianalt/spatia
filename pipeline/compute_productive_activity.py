@@ -89,19 +89,30 @@ def main():
         columns={'built_fraction': 'built_cur'})
     built = ghsl_2000.merge(ghsl_2020, on='redcode', how='outer')
 
-    # --- 5. Hansen cumulative loss ----------------------------------------
-    print("5. Hansen forest loss...")
-    hansen = pd.read_parquet(os.path.join(RADIO_DATA, "fire_annual.parquet"))  # wrong, use hansen
-    # Actually use hansen_loss_year from parquet or PostgreSQL
-    # Check if hansen_h3_annual exists (from our earlier pipeline)
+    # --- 5. Hansen cumulative loss (now true zonal stats) -----------------
+    # process_hansen_to_h3.py now writes 'lost' as a *count* of Hansen 30 m
+    # pixels lost per year inside the hex polygon (not a 0/1 centroid sample),
+    # plus a 'hex_pixel_count' column. Convert to percentage of hex area lost.
+    print("5. Hansen forest loss (zonal % of hex area)...")
     hansen_path = os.path.join(OUTPUT_DIR, "hansen_h3_annual.parquet")
     if os.path.exists(hansen_path):
-        # We have H3 res-9 level hansen data — use directly later
-        print("  (using H3-level hansen data)")
         hansen_h3 = pd.read_parquet(hansen_path)
-        hl_bl = hansen_h3[hansen_h3.year.between(2001, 2012)].groupby('h3index')['lost'].sum().rename('loss_bl')
-        hl_cur = hansen_h3[hansen_h3.year.between(2013, 2024)].groupby('h3index')['lost'].sum().rename('loss_cur')
-        hansen_direct = pd.DataFrame({'loss_bl': hl_bl, 'loss_cur': hl_cur}).reset_index()
+        bl_px = hansen_h3[hansen_h3.year.between(2001, 2012)].groupby('h3index')['lost'].sum()
+        cur_px = hansen_h3[hansen_h3.year.between(2013, 2024)].groupby('h3index')['lost'].sum()
+        hex_px = hansen_h3.drop_duplicates('h3index').set_index('h3index')['hex_pixel_count']
+        hansen_direct = pd.DataFrame({
+            'loss_bl_px': bl_px,
+            'loss_cur_px': cur_px,
+            'hex_pixel_count': hex_px,
+        }).reset_index()
+        # % of hex area lost in each period (NaN-safe)
+        hansen_direct['loss_bl'] = (hansen_direct['loss_bl_px']
+                                     / hansen_direct['hex_pixel_count'].replace(0, np.nan)
+                                     * 100).fillna(0).round(3)
+        hansen_direct['loss_cur'] = (hansen_direct['loss_cur_px']
+                                      / hansen_direct['hex_pixel_count'].replace(0, np.nan)
+                                      * 100).fillna(0).round(3)
+        hansen_direct = hansen_direct[['h3index', 'loss_bl', 'loss_cur']]
     else:
         hansen_direct = None
 

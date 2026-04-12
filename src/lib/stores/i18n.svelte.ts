@@ -549,7 +549,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'sat.prodAct.npp': { es: 'Productividad vegetal (gC/m2/ano)', en: 'Vegetation productivity (gC/m2/yr)', gn: 'NPP' },
 	'sat.prodAct.ndvi': { es: 'Verdor (NDVI)', en: 'Greenness (NDVI)', gn: 'NDVI' },
 	'sat.prodAct.built': { es: 'Superficie construida', en: 'Built surface', gn: "Mba'e apopyra" },
-	'sat.prodAct.loss': { es: 'Pérdida forestal (centroide)', en: 'Forest loss (centroid)', gn: "Ka'aguy okañy" },
+	'sat.prodAct.loss': { es: 'Pérdida forestal', en: 'Forest loss', gn: "Ka'aguy okañy" },
 	'sat.prodAct.lst': { es: 'Temperatura superficial (C)', en: 'Surface temperature (C)', gn: 'Aku' },
 	'legend.prodAct.low': { es: 'Baja actividad', en: 'Low activity', gn: "Michimi" },
 	'legend.prodAct.high': { es: 'Alta actividad', en: 'High activity', gn: "Tuicha" },

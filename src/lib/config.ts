@@ -65,7 +65,7 @@ export function getParquetUrl(name: string): string {
 		sat_carbon_stock: '?v=1',
 		sat_pm25_drivers: '?v=1',
 		sat_deforestation_dynamics: '?v=1',
-		sat_productive_activity: '?v=1',
+		sat_productive_activity: '?v=2',
 		overture_scores: '?v=24',
 		emsa_powerlines: '?v=20',
 	};
@@ -82,7 +82,7 @@ export function getScoresDptoUrl(parquetKey: string): string {
 }
 
 export function getSatDptoUrl(analysisId: string, parquetKey: string): string {
-	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet?v=25`;
+	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet?v=26`;
 }
 
 export function getReportUrl(analysisId: string, parquetKey: string): string {
@@ -735,8 +735,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'c_viirs', rawCol: 'c_viirs', unit: 'nW/cm²/sr', labelKey: 'sat.prodAct.viirs', aggregation: 'mean' },
 			{ col: 'c_npp', rawCol: 'c_npp', unit: 'kgC/m²/año', labelKey: 'sat.prodAct.npp', aggregation: 'mean' },
 			{ col: 'c_ndvi', rawCol: 'c_ndvi', unit: '(−1 a 1)', labelKey: 'sat.prodAct.ndvi', aggregation: 'mean' },
-			{ col: 'c_built', rawCol: 'c_built', unit: 'm²', labelKey: 'sat.prodAct.built', aggregation: 'mean' },
-			{ col: 'c_forest_loss', rawCol: 'c_forest_loss', unit: '(0/1)', labelKey: 'sat.prodAct.loss', aggregation: 'mean' },
+			{ col: 'c_built', rawCol: 'c_built', unit: '(fracción 0–1)', labelKey: 'sat.prodAct.built', aggregation: 'mean' },
+			{ col: 'c_forest_loss', rawCol: 'c_forest_loss', unit: '% del hex', labelKey: 'sat.prodAct.loss', aggregation: 'mean' },
 			{ col: 'c_lst', rawCol: 'c_lst', unit: '°C', labelKey: 'sat.prodAct.lst', aggregation: 'mean' },
 		],
 		primaryVariable: 'score',
