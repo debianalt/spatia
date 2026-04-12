@@ -618,10 +618,21 @@ def main():
     )
     args = parser.parse_args()
 
+    # These analyses have direct raster pipelines in process_raster_to_h3.py
+    # (hex-level zonal stats over multi-band GEE exports). Keep their definitions
+    # here for documentation but do NOT re-run them via the radio-based pipeline —
+    # that would overwrite the hex-level parquets with radio-aggregated blobs.
+    RASTER_BASED = {"environmental_risk", "climate_comfort", "agri_potential", "forest_health"}
+
     # Filter analyses if --only specified
-    analyses = ANALYSIS_DEFS
+    analyses = [a for a in ANALYSIS_DEFS if a["id"] not in RASTER_BASED]
     if args.only:
         only_ids = set(args.only.split(","))
+        overlap = only_ids & RASTER_BASED
+        if overlap:
+            print(f"ERROR: {sorted(overlap)} are raster-based. Run via:")
+            print(f"  python pipeline/process_raster_to_h3.py --analysis {','.join(sorted(overlap))}")
+            return 1
         analyses = [a for a in analyses if a["id"] in only_ids]
         if not analyses:
             print(f"ERROR: No matching analyses for --only={args.only}")

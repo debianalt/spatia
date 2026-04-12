@@ -44,13 +44,13 @@ export const TERRAIN_CONFIG = {
 export function getParquetUrl(name: string): string {
 	const busts: Record<string, string> = {
 		hex_flood_risk: '?v=23',
-		sat_environmental_risk: '?v=26',
-		sat_climate_comfort: '?v=26',
+		sat_environmental_risk: '?v=27',
+		sat_climate_comfort: '?v=27',
 		sat_green_capital: '?v=25',
 		sat_change_pressure: '?v=25',
 		sat_location_value: '?v=24',
-		sat_agri_potential: '?v=26',
-		sat_forest_health: '?v=26',
+		sat_agri_potential: '?v=27',
+		sat_forest_health: '?v=27',
 		sat_forestry_aptitude: '?v=25',
 		sat_service_deprivation: '?v=25',
 		sat_territorial_isolation: '?v=25',
@@ -82,7 +82,7 @@ export function getScoresDptoUrl(parquetKey: string): string {
 }
 
 export function getSatDptoUrl(analysisId: string, parquetKey: string): string {
-	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet?v=30`;
+	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet?v=31`;
 }
 
 export function getReportUrl(analysisId: string, parquetKey: string): string {
