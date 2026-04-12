@@ -47,6 +47,21 @@ ALL_ANALYSES = [
 ]
 
 
+def h3_to_latlng(h3index: str) -> tuple[float, float]:
+    """Convert H3 index to (lat, lng)."""
+    try:
+        from h3 import cell_to_latlng
+        return cell_to_latlng(h3index)
+    except ImportError:
+        pass
+    try:
+        import h3
+        return h3.h3_to_geo(h3index)
+    except (ImportError, AttributeError):
+        pass
+    raise ImportError("h3 library required: pip install h3")
+
+
 def build_h3_dpto_lookup() -> dict[str, str]:
     """Assign each hex to a department via the areal crosswalk (hex -> radio -> dpto).
 
