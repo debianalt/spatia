@@ -592,7 +592,9 @@
 			map.on('mouseleave', 'buildings-flat', () => { map.getCanvas().style.cursor = ''; });
 		}
 
-		// Fill layer — bright solid colors ON TOP of everything
+		// Fill layer — bright solid colors ON TOP of everything.
+		// New parcels (is_new=1) are painted in amber so they stand out
+		// against the urbano/rural base palette.
 		if (!map.getLayer('catastro-fill')) {
 			map.addLayer({
 				id: 'catastro-fill',
@@ -602,23 +604,32 @@
 				minzoom: 9,
 				paint: {
 					'fill-color': [
-						'match', ['get', 'tipo'],
-						'urbano', '#22d3ee',
-						'rural', '#4ade80',
-						'#22d3ee'
+						'case',
+						['==', ['get', 'is_new'], 1], '#fbbf24',
+						[
+							'match', ['get', 'tipo'],
+							'urbano', '#22d3ee',
+							'rural', '#4ade80',
+							'#22d3ee'
+						]
 					],
 					'fill-opacity': 0.95,
 					'fill-outline-color': [
-						'match', ['get', 'tipo'],
-						'urbano', '#0e7490',
-						'rural', '#15803d',
-						'#0e7490'
+						'case',
+						['==', ['get', 'is_new'], 1], '#b45309',
+						[
+							'match', ['get', 'tipo'],
+							'urbano', '#0e7490',
+							'rural', '#15803d',
+							'#0e7490'
+						]
 					]
 				}
 			});
 		}
 
-		// Line layer at high zoom for definition — on top of fill
+		// Line layer at high zoom for definition — on top of fill.
+		// New parcels get a darker amber outline for visual emphasis.
 		if (!map.getLayer('catastro-line')) {
 			map.addLayer({
 				id: 'catastro-line',
@@ -628,12 +639,21 @@
 				minzoom: 13,
 				paint: {
 					'line-color': [
-						'match', ['get', 'tipo'],
-						'urbano', '#0e7490',
-						'rural', '#15803d',
-						'#0e7490'
+						'case',
+						['==', ['get', 'is_new'], 1], '#b45309',
+						[
+							'match', ['get', 'tipo'],
+							'urbano', '#0e7490',
+							'rural', '#15803d',
+							'#0e7490'
+						]
 					],
-					'line-width': ['interpolate', ['linear'], ['zoom'], 13, 0.5, 15, 1.0],
+					'line-width': [
+						'case',
+						['==', ['get', 'is_new'], 1],
+						['interpolate', ['linear'], ['zoom'], 13, 1.0, 15, 1.8],
+						['interpolate', ['linear'], ['zoom'], 13, 0.5, 15, 1.0]
+					],
 					'line-opacity': ['interpolate', ['linear'], ['zoom'], 13, 0.7, 15, 0.9]
 				}
 			});

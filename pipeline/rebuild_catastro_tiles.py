@@ -112,7 +112,7 @@ def load_parcels():
 
     features = []
     skipped = 0
-    cutoff_90d = pd.Timestamp(date.today() - timedelta(days=90))
+    today = pd.Timestamp(date.today())
 
     for tipo, filename in [("urbano", "catastro_urbano.parquet"), ("rural", "catastro_rural.parquet")]:
         path = os.path.join(STATE_DIR, filename)
@@ -122,15 +122,25 @@ def load_parcels():
 
         df = pd.read_parquet(path)
 
-        # Detect initial snapshot: if all first_seen are the same date,
-        # this is the initial load — no parcels are truly "new"
+        # "New" detection: parcels whose first_seen equals the most recent run
+        # date in the state. When everything has the same first_seen (initial
+        # snapshot), nothing is marked as new. This correctly handles:
+        #   - First run (all same date)        -> is_new=0 for all
+        #   - Second run (2 dates)              -> is_new=1 only for the new batch
+        #   - Subsequent runs (3+ dates)        -> is_new=1 only for the latest batch
+        # It does NOT treat "within 90 days" as new, which previously flooded
+        # the map after any manual bulk reload.
         has_first_seen = "first_seen" in df.columns and df["first_seen"].notna().any()
         is_initial_snapshot = False
+        latest_run_date = None
         if has_first_seen:
-            unique_dates = df["first_seen"].dropna().nunique()
-            is_initial_snapshot = unique_dates <= 1
+            unique_dates = sorted(df["first_seen"].dropna().unique())
+            is_initial_snapshot = len(unique_dates) <= 1
             if is_initial_snapshot:
-                print(f"  {tipo}: single snapshot date detected — no parcels marked as new")
+                print(f"  {tipo}: single first_seen date detected — treating as initial snapshot (is_new=0 for all)")
+            else:
+                latest_run_date = pd.Timestamp(unique_dates[-1])
+                print(f"  {tipo}: latest run date = {latest_run_date.date()} over {len(unique_dates)} distinct dates")
 
         count = 0
         n_new = 0
@@ -149,21 +159,23 @@ def load_parcels():
             centroid = geom.centroid
             h3index = h3.latlng_to_cell(centroid.y, centroid.x, H3_RES)
 
-            # Check if parcel is new (first_seen within 90 days)
-            # Skip if initial snapshot (all same date = first load, not incremental)
+            # is_new = 1 only for parcels added in the most recent run
             is_new = 0
-            if not is_initial_snapshot:
-                fs = row.get("first_seen")
-                if fs is not None and pd.notna(fs):
-                    if pd.Timestamp(fs) >= cutoff_90d:
-                        is_new = 1
-                        n_new += 1
+            days_since_added = -1
+            fs = row.get("first_seen")
+            if fs is not None and pd.notna(fs):
+                fs_ts = pd.Timestamp(fs)
+                days_since_added = max(0, (today - fs_ts).days)
+                if not is_initial_snapshot and latest_run_date is not None and fs_ts == latest_run_date:
+                    is_new = 1
+                    n_new += 1
 
             props = {
                 "tipo": tipo,
                 "h3index": h3index,
                 "area_m2": round(float(row.get("area_m2", 0)), 0),
                 "is_new": is_new,
+                "days_since_added": days_since_added,
             }
             # Assign departamento from h3->crosswalk mapping
             dept = h3_dept.get(h3index)
@@ -265,6 +277,7 @@ def generate_pmtiles(features):
                     "area_m2": "Number",
                     "departamento": "String",
                     "is_new": "Number",
+                    "days_since_added": "Number",
                 },
                 "minzoom": MIN_ZOOM,
                 "maxzoom": MAX_ZOOM,
