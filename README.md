@@ -4,7 +4,7 @@ Spatia is a zero-cost, reproducible platform for subnational territorial analysi
 
 **Live instance**: [spatia.ar](https://www.spatia.ar) (Misiones province, Argentina — 320,000 hexagons, 27 analyses)
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19483041.svg)](https://doi.org/10.5281/zenodo.19483041)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19543818.svg)](https://doi.org/10.5281/zenodo.19543818)
 
 ## Architecture
 
@@ -113,11 +113,11 @@ See [.env.example](.env.example) for a full template.
 If you use Spatia in your research, please cite:
 
 ```bibtex
-@software{gomez2026spatia,
-  title={Spatia: A Zero-Cost Platform for Subnational Territorial Intelligence},
+@software{gomez2026nealab,
+  title={nealab: A Zero-Cost Platform for Subnational Territorial Intelligence},
   author={Gomez, R.E.},
   year={2026},
-  doi={10.5281/zenodo.19483041},
+  doi={10.5281/zenodo.19543818},
   url={https://github.com/debianalt/nealab},
   license={AGPL-3.0}
 }
