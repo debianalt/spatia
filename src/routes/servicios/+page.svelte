@@ -197,10 +197,6 @@
 
 	<section class="section">
 		<h2>Servicios disponibles</h2>
-		<p>
-			Para consultorías, extensiones, informes o capacitaciones, escribir a
-			<a href="mailto:nealab@spatia.ar">nealab@spatia.ar</a>. Los servicios que se ofrecen son:
-		</p>
 		<ul class="list">
 			<li>
 				<strong>Asesoría geoespacial aplicada.</strong> Acompañamiento técnico a proyectos
@@ -284,9 +280,6 @@
 			Investigador CONICET · Facultad de Humanidades y Ciencias Sociales, Universidad Nacional de
 			Misiones (Argentina)<br />
 			<a href="mailto:nealab@spatia.ar">nealab@spatia.ar</a>
-		</p>
-		<p class="note">
-			Para consultorías, comunicarse al email <a href="mailto:nealab@spatia.ar">nealab@spatia.ar</a>
 		</p>
 	</section>
 
