@@ -82,7 +82,7 @@ export function getScoresDptoUrl(parquetKey: string): string {
 }
 
 export function getSatDptoUrl(analysisId: string, parquetKey: string): string {
-	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet?v=28`;
+	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet?v=29`;
 }
 
 export function getReportUrl(analysisId: string, parquetKey: string): string {
