@@ -651,12 +651,21 @@ def main():
         print(f"\n[{i}/{len(analyses)}] Computing {aid}...")
 
         try:
-            # All crosswalk-based analyses: dasymetric only (no areal fallback)
-            # Radio data projected to hex without buildings creates artifacts (rivers, forests)
-            # Pixel-level analyses (process_raster_to_h3.py) have their own full coverage
+            # Default: dasymetric only — radio data projected to hex without buildings
+            # creates artifacts for human/settlement analyses (rivers, forests).
+            # Exception: environmental analyses (soil/climate/terrain) are valid everywhere,
+            # so they use the areal crosswalk as fallback to cover all ~320K hexagons.
+            ENVIRONMENTAL_ANALYSES = {
+                "forestry_aptitude",
+                "agri_potential",
+                "environmental_risk",
+                "climate_comfort",
+                "forest_health",
+            }
+            use_areal_fallback = aid in ENVIRONMENTAL_ANALYSES
             result = compute_analysis(
                 conn, crosswalk, analysis_def,
-                areal_crosswalk=None,
+                areal_crosswalk=areal_crosswalk if use_areal_fallback else None,
                 emit_diagnostics=args.diagnostics,
                 emit_legacy=args.legacy,
                 output_dir=args.output_dir,
