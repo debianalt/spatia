@@ -1,0 +1,24 @@
+{
+  "title": "NeaLab: A Zero-Cost Platform for Subnational Territorial Intelligence",
+  "description": "Reproducible platform combining satellite imagery, census data, and geospatial datasets into composite indicators over an H3 hexagonal grid. Applied to Misiones and the NEA (Nordeste Argentino) with 320,000 hexagons across four analytical domains.",
+  "creators": [
+    {
+      "name": "Gomez, R. E.",
+      "affiliation": "CONICET / Universidad Nacional de Misiones",
+      "orcid": "0000-0002-4468-9618"
+    }
+  ],
+  "keywords": [
+    "territorial intelligence",
+    "geospatial",
+    "H3",
+    "DuckDB",
+    "SvelteKit",
+    "Cloudflare",
+    "Argentina",
+    "NEA",
+    "Misiones"
+  ],
+  "license": "MIT",
+  "upload_type": "software"
+}
