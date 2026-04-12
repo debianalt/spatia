@@ -20,10 +20,6 @@ import sys
 import time
 
 import pandas as pd
-from shapely import wkb
-from shapely.geometry import Point
-from shapely.ops import unary_union
-from shapely.prepared import prep
 
 from config import OUTPUT_DIR
 
@@ -31,8 +27,8 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DPTO_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "sat_dpto")
 SRC_DATA_DIR = os.path.join(SCRIPT_DIR, "..", "src", "lib", "data")
 
-RADIOS_PATH = os.path.join(OUTPUT_DIR, "radios_misiones.parquet")
 RADIO_STATS_PATH = os.path.join(OUTPUT_DIR, "radio_stats_master.parquet")
+AREAL_CROSSWALK_PATH = os.path.join(OUTPUT_DIR, "h3_radio_crosswalk_areal.parquet")
 
 ALL_ANALYSES = [
     "environmental_risk", "climate_comfort", "green_capital",
@@ -51,87 +47,28 @@ ALL_ANALYSES = [
 ]
 
 
-def h3_to_latlng(h3index: str) -> tuple[float, float]:
-    """Convert H3 index to (lat, lng)."""
-    try:
-        from h3 import cell_to_latlng
-        return cell_to_latlng(h3index)
-    except ImportError:
-        pass
-    try:
-        import h3
-        return h3.h3_to_geo(h3index)
-    except (ImportError, AttributeError):
-        pass
-    raise ImportError("h3 library required: pip install h3")
+def build_h3_dpto_lookup() -> dict[str, str]:
+    """Assign each hex to a department via the areal crosswalk (hex -> radio -> dpto).
 
-
-def build_dept_polygons() -> dict[str, any]:
-    """Build department polygons by dissolving radio geometries."""
-    print("Building department polygons from radio geometries...")
-    radios = pd.read_parquet(RADIOS_PATH)
+    For each hex, picks the dpto whose radios hold the majority area share of the hex.
+    Uses h3_radio_crosswalk_areal.parquet (full 319K coverage) rather than dissolving
+    radio polygons — avoids geometric slivers and point-in-polygon imprecision.
+    """
+    print("Building hex->dpto lookup from areal crosswalk...")
+    areal = pd.read_parquet(AREAL_CROSSWALK_PATH)
     radio_stats = pd.read_parquet(RADIO_STATS_PATH, columns=["redcode", "dpto"])
+    areal = areal.merge(radio_stats, on="redcode", how="inner")
 
-    radios["geom"] = radios["geometry"].apply(lambda b: wkb.loads(b))
-    radios = radios.merge(radio_stats, on="redcode", how="inner")
+    # Aggregate weight per (hex, dpto), pick dpto with max weight per hex
+    hex_dpto = (areal.groupby(["h3index", "dpto"])["weight"].sum()
+                     .reset_index()
+                     .sort_values(["h3index", "weight"], ascending=[True, False])
+                     .drop_duplicates("h3index", keep="first")
+                     .set_index("h3index")["dpto"]
+                     .to_dict())
 
-    dept_polys = {}
-    for dpto, group in radios.groupby("dpto"):
-        geoms = [g for g in group["geom"] if g is not None and g.is_valid]
-        if geoms:
-            dept_polys[dpto] = unary_union(geoms)
-
-    print(f"  Built {len(dept_polys)} department polygons")
-    return dept_polys
-
-
-def build_h3_dpto_lookup(h3_indices: list[str], dept_polys: dict) -> dict[str, str]:
-    """Assign each hex to a department. Returns {h3index: dpto}."""
-    print(f"Assigning {len(h3_indices):,} hexes to departments...")
-
-    prepared = {dpto: prep(poly) for dpto, poly in dept_polys.items()}
-    dpto_list = list(dept_polys.keys())
-
-    assignments = {}
-    unassigned_pts = {}
-
-    for i, h3index in enumerate(h3_indices):
-        if i % 50000 == 0 and i > 0:
-            print(f"  Phase 1: {i:,}/{len(h3_indices):,} ({len(assignments):,} assigned)...")
-
-        try:
-            lat, lng = h3_to_latlng(h3index)
-        except Exception:
-            continue
-
-        pt = Point(lng, lat)
-        found = False
-        for dpto in dpto_list:
-            if prepared[dpto].contains(pt):
-                assignments[h3index] = dpto
-                found = True
-                break
-        if not found:
-            unassigned_pts[h3index] = pt
-
-    print(f"  Phase 1 (exact): {len(assignments):,}/{len(h3_indices):,}, "
-          f"{len(unassigned_pts):,} unassigned")
-
-    if unassigned_pts:
-        print(f"  Phase 2: nearest for {len(unassigned_pts):,} hexes...")
-        for h3index, pt in unassigned_pts.items():
-            min_dist = float("inf")
-            best_dpto = None
-            for dpto, poly in dept_polys.items():
-                d = poly.distance(pt)
-                if d < min_dist:
-                    min_dist = d
-                    best_dpto = dpto
-            if best_dpto:
-                assignments[h3index] = best_dpto
-
-    print(f"  Total assigned: {len(assignments):,}/{len(h3_indices):,}")
-    return assignments
+    print(f"  {len(hex_dpto):,} hexes mapped across {len(set(hex_dpto.values()))} dptos")
+    return hex_dpto
 
 
 def safe_filename(dpto: str) -> str:
@@ -164,18 +101,8 @@ def main():
     os.makedirs(DPTO_OUTPUT_DIR, exist_ok=True)
     os.makedirs(SRC_DATA_DIR, exist_ok=True)
 
-    # Load first parquet to get H3 index list
-    first_path = os.path.join(OUTPUT_DIR, f"sat_{analyses[0]}.parquet")
-    if not os.path.exists(first_path):
-        print(f"ERROR: Missing {first_path}")
-        return 1
-
-    first_df = pd.read_parquet(first_path, columns=["h3index"])
-    h3_list = first_df["h3index"].tolist()
-
-    # Build department lookup once
-    dept_polys = build_dept_polygons()
-    h3_dpto = build_h3_dpto_lookup(h3_list, dept_polys)
+    # Build hex->dpto lookup once from areal crosswalk (full-coverage dasymetric assignment)
+    h3_dpto = build_h3_dpto_lookup()
 
     # Process each analysis
     for analysis_id in analyses:
