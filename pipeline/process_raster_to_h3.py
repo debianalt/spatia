@@ -94,6 +94,14 @@ ANALYSIS_COMPONENTS = {
         ('c_gpp', 'c_gpp', 0.15, False),
         ('c_et', 'c_et', 0.15, False),
     ],
+    'forestry_aptitude': [
+        ('c_ph', 'c_ph', 0.15, True),              # pines prefieren acidico -> invert
+        ('c_clay', 'c_clay', 0.10, True),          # pines prefieren arenoso -> invert
+        ('c_precipitation', 'c_precipitation', 0.25, False),
+        ('c_slope', 'c_slope', 0.20, True),        # <15° para mecanizar -> invert
+        ('c_road_dist', 'c_road_dist', 0.15, True),  # menos distancia = mejor -> invert
+        ('c_access_50k', 'c_access_50k', 0.15, True),  # menos tiempo = mejor -> invert
+    ],
     'air_quality': [
         ('c_pm25', 'c_pm25', 0.40, False),    # PM2.5 µg/m³ — higher = worse
         ('c_no2', 'c_no2', 0.35, False),       # NO2 mol/m² — higher = worse

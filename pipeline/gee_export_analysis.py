@@ -294,6 +294,48 @@ def build_air_quality(bbox):
             .clip(bbox).toFloat())
 
 
+def build_forestry_aptitude(bbox):
+    """Forestry aptitude for commercial pines (pH + clay + precip + slope + road + access).
+
+    Sources:
+      - pH & clay: SoilGrids 2.0 (ISRIC) 0-5cm, 250m
+      - Precipitation: CHIRPS daily sum 2019-2024 / 6 years
+      - Slope: SRTM 30m derived slope
+      - Road distance: Distance to any OSM road (primary/secondary/tertiary)
+      - Access 50k: Oxford Global Accessibility to Cities (50k pop, 2015, 1km)
+    """
+    ph_raw = ee.Image('projects/soilgrids-isric/phh2o_mean').select('phh2o_0-5cm_mean').unmask(50)
+    ph = ph_raw.divide(10)  # SoilGrids stores pH*10
+
+    clay = ee.Image('projects/soilgrids-isric/clay_mean').select('clay_0-5cm_mean').unmask(0)
+
+    precip = (ee.ImageCollection('UCSB-CHG/CHIRPS/DAILY')
+              .filterDate(DATE_START, DATE_END).filterBounds(bbox)
+              .select('precipitation').sum().divide(6))  # mm/year average
+
+    dem = ee.Image('USGS/SRTMGL1_003').select('elevation')
+    slope = ee.Terrain.slope(dem)  # degrees
+
+    # Road/infra distance: use GHSL built-up as proxy (villages + roads network).
+    # GHSL GHS_BUILT_C 2018 class >= 2 (open + low-density + dense built-up).
+    # fastDistanceTransform: squared distance in pixels -> sqrt * scale = metres.
+    built = (ee.Image('JRC/GHSL/P2023A/GHS_BUILT_C/2018').select('built_characteristics')
+             .gte(2).unmask(0))
+    road_dist = (built.fastDistanceTransform(256).sqrt()
+                 .multiply(100))  # metres at ~100m pixel scale
+
+    # Oxford Global Accessibility to Cities (50k+): travel time in minutes
+    access_50k = ee.Image('Oxford/MAP/accessibility_to_cities_2015_v1_0').select('accessibility')
+
+    return (ph.rename('c_ph')
+            .addBands(clay.rename('c_clay'))
+            .addBands(precip.rename('c_precipitation'))
+            .addBands(slope.rename('c_slope'))
+            .addBands(road_dist.rename('c_road_dist'))
+            .addBands(access_50k.rename('c_access_50k'))
+            .clip(bbox).toFloat())
+
+
 ANALYSIS_BUILDERS = {
     'environmental_risk': build_environmental_risk,
     'climate_comfort': build_climate_comfort,
@@ -301,6 +343,7 @@ ANALYSIS_BUILDERS = {
     'change_pressure': build_change_pressure,
     'agri_potential': build_agri_potential,
     'forest_health': build_forest_health,
+    'forestry_aptitude': build_forestry_aptitude,
     'air_quality': build_air_quality,
 }
 
