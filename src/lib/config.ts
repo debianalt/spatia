@@ -265,7 +265,6 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'environmental_risk',
 		parquet: 'sat_environmental_risk',
 		variables: [
-			{ col: 'c_fire', labelKey: 'sat.envRisk.fire', aggregation: 'mean' },
 			{ col: 'c_thermal_amp', labelKey: 'sat.envRisk.thermal', aggregation: 'mean' },
 			{ col: 'c_deforest', labelKey: 'sat.envRisk.deforest', aggregation: 'mean' },
 			{ col: 'c_slope', labelKey: 'sat.envRisk.slope', aggregation: 'mean' },
@@ -287,7 +286,6 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'c_heat_day', labelKey: 'sat.climate.heatDay', aggregation: 'mean' },
 			{ col: 'c_heat_night', labelKey: 'sat.climate.heatNight', aggregation: 'mean' },
 			{ col: 'c_precipitation', labelKey: 'sat.climate.precip', aggregation: 'mean' },
-			{ col: 'c_frost', labelKey: 'sat.climate.frost', aggregation: 'mean' },
 			{ col: 'c_water_stress', labelKey: 'sat.climate.waterStress', aggregation: 'mean' },
 		],
 		primaryVariable: 'score',
@@ -324,7 +322,6 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		variables: [
 			{ col: 'c_viirs_level', labelKey: 'sat.change.viirsLevel', aggregation: 'mean' },
 			{ col: 'c_ndvi_level', labelKey: 'sat.change.ndviLevel', aggregation: 'mean' },
-			{ col: 'c_fire_annual', labelKey: 'sat.change.fireAnnual', aggregation: 'mean' },
 			{ col: 'c_ghsl_change', labelKey: 'sat.change.ghslChange', aggregation: 'mean' },
 			{ col: 'c_hansen_loss', labelKey: 'sat.change.hansenLoss', aggregation: 'mean' },
 		],
