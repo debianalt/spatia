@@ -20,6 +20,21 @@
 	);
 	const petalLayers = $derived(hexStore.selectionPetalLayers);
 	const petalLabels = $derived(hexStore.petalLabels);
+
+	/**
+	 * Adaptive number formatter — picks precision based on magnitude so that
+	 * fractional values like NDVI (0.85) do not collapse to "1" via toFixed(0).
+	 */
+	function fmtSmart(v: unknown): string {
+		if (typeof v !== 'number' || !Number.isFinite(v)) return '—';
+		if (v === 0) return '0';
+		const abs = Math.abs(v);
+		if (abs < 0.01) return v.toExponential(1);
+		if (abs < 1) return v.toFixed(2);
+		if (abs < 10) return v.toFixed(2);
+		if (abs < 100) return v.toFixed(1);
+		return v.toFixed(0);
+	}
 </script>
 
 <div class="hex-comparison">
@@ -65,10 +80,9 @@
 					{@const numVal = typeof val === 'number' ? val : 0}
 					{@const rawVal = v.rawCol ? hexData.data?.[v.rawCol] : null}
 					{@const displayVal = (rawVal != null && typeof rawVal === 'number') ? rawVal : numVal}
-					{@const hasUnit = v.unit && rawVal != null}
 					<div class="cd-row">
 						<span class="cd-label">{i18n.t(v.labelKey)}</span>
-						<span class="cd-val-data">{hasUnit ? displayVal.toFixed(1) : numVal.toFixed(0)}{hasUnit ? ` ${v.unit}` : ''}</span>
+						<span class="cd-val-data">{fmtSmart(displayVal)}{v.unit ? ` ${v.unit}` : ''}</span>
 					</div>
 				{/each}
 			</div>
