@@ -214,13 +214,16 @@ def load_previous_state(state_dir, parcel_type):
 def track_changes(new_gdf, existing_gdf, parcel_type):
     """
     Compare new WFS data against previous state.
-    Returns (merged_gdf with first_seen/last_updated, changes_list).
+    Returns (merged_gdf with first_seen/last_updated, changes_list, removed_gdf).
+    removed_gdf contains parcels that were in existing but not in new — their
+    full geometry is preserved so the ghost layer can keep showing them for a
+    grace period.
     """
     today = pd.Timestamp(date.today())
     changes = []
 
     if existing_gdf is None or len(existing_gdf) == 0:
-        # First run: everything is new
+        # First run: everything is new, no removed
         new_gdf["first_seen"] = today
         new_gdf["last_updated"] = today
         for cca in new_gdf["cca"]:
@@ -231,7 +234,7 @@ def track_changes(new_gdf, existing_gdf, parcel_type):
                 "cca": cca,
             })
         print(f"  {parcel_type}: {len(new_gdf):,} new (first run)")
-        return new_gdf, changes
+        return new_gdf, changes, None
 
     existing_ccas = set(existing_gdf["cca"])
     new_ccas = set(new_gdf["cca"])
@@ -269,11 +272,22 @@ def track_changes(new_gdf, existing_gdf, parcel_type):
             "departamento": old_dpto.get(cca, ""),
         })
 
+    # Extract the removed parcels with their geometry so they can live in the
+    # ghost layer until pruned. Tag each with the removed_date and parcel_type.
+    removed_gdf = None
+    if removed:
+        removed_gdf = existing_gdf[existing_gdf["cca"].isin(removed)].copy()
+        removed_gdf["removed_date"] = today
+        if "parcel_type" not in removed_gdf.columns:
+            removed_gdf["parcel_type"] = parcel_type
+        else:
+            removed_gdf["parcel_type"] = parcel_type
+
     print(
         f"  {parcel_type}: {len(added):,} new, {len(continued):,} continued, "
         f"{len(removed):,} removed"
     )
-    return new_gdf, changes
+    return new_gdf, changes, removed_gdf
 
 
 def save_state(gdf, state_dir, parcel_type):
@@ -283,6 +297,76 @@ def save_state(gdf, state_dir, parcel_type):
     gdf.to_parquet(path, index=False, engine="pyarrow")
     size_kb = os.path.getsize(path) / 1024
     print(f"  Saved {parcel_type} state: {len(gdf):,} rows ({size_kb:.0f} KB)")
+
+
+# How many days a removed parcel keeps living in the ghost layer before
+# the pipeline prunes it. Keeps the PMTiles size bounded while giving the
+# frontend a visible window of "recently deleted" parcels to highlight.
+REMOVED_GRACE_DAYS = 120
+
+
+def update_removed_state(state_dir, removed_gdfs):
+    """
+    Accumulate the per-run removed parcels into catastro_removed.parquet.
+    Loads any previous removed state, appends the new removals, drops dupes
+    (by cca), and prunes anything older than REMOVED_GRACE_DAYS.
+    """
+    import pandas as _pd  # local alias to avoid global pollution
+
+    path = os.path.join(state_dir, "catastro_removed.parquet")
+    today = _pd.Timestamp(date.today())
+    cutoff = today - _pd.Timedelta(days=REMOVED_GRACE_DAYS)
+
+    pieces = []
+
+    # Load previous state if any
+    if os.path.exists(path) and os.path.getsize(path) > 0:
+        try:
+            prev = gpd.read_parquet(path)
+            if len(prev) > 0:
+                pieces.append(prev)
+                print(f"  Previous removed-state: {len(prev):,} parcels")
+        except Exception as e:
+            print(f"  [warn] Could not read previous removed state: {e}")
+
+    # Append new removals from this run
+    new_count = 0
+    for g in removed_gdfs:
+        if g is None or len(g) == 0:
+            continue
+        pieces.append(g)
+        new_count += len(g)
+    print(f"  New removals this run: {new_count:,}")
+
+    if not pieces:
+        # Nothing to save; keep previous file as-is (or create empty).
+        if not os.path.exists(path):
+            empty = gpd.GeoDataFrame(columns=["cca", "parcel_type", "removed_date", "geometry"], geometry="geometry", crs="EPSG:4326")
+            empty.to_parquet(path, index=False, engine="pyarrow")
+            print("  Created empty removed-state")
+        return
+
+    merged = gpd.GeoDataFrame(pd.concat(pieces, ignore_index=True), crs=pieces[0].crs)
+    merged["removed_date"] = pd.to_datetime(merged["removed_date"], errors="coerce")
+
+    # If the same parcel appears multiple times (removed, re-appeared, removed
+    # again), keep the most recent record so the ghost shows the latest removal.
+    merged = (
+        merged.sort_values("removed_date")
+        .drop_duplicates("cca", keep="last")
+        .reset_index(drop=True)
+    )
+
+    # Prune anything older than the grace window
+    before_prune = len(merged)
+    merged = merged[merged["removed_date"] >= cutoff].reset_index(drop=True)
+    pruned = before_prune - len(merged)
+    if pruned > 0:
+        print(f"  Pruned {pruned:,} removed-state entries older than {REMOVED_GRACE_DAYS}d")
+
+    merged.to_parquet(path, index=False, engine="pyarrow")
+    size_kb = os.path.getsize(path) / 1024
+    print(f"  Saved removed-state: {len(merged):,} parcels ({size_kb:.0f} KB)")
 
 
 # ── Spatial aggregation (GeoPandas) ──────────────────────────────────────────
@@ -551,14 +635,18 @@ def run_extraction(output_dir, radios_path, state_dir=None, skip_wfs=False):
         prev_rural = load_previous_state(state_dir, "rural")
         prev_urbano = load_previous_state(state_dir, "urbano")
 
-        # Track changes
-        rural_gdf, rural_changes = track_changes(gdf_rural, prev_rural, "rural")
-        urbano_gdf, urbano_changes = track_changes(gdf_urbano, prev_urbano, "urbano")
+        # Track changes (each returns the removed geometries too)
+        rural_gdf, rural_changes, rural_removed = track_changes(gdf_rural, prev_rural, "rural")
+        urbano_gdf, urbano_changes, urbano_removed = track_changes(gdf_urbano, prev_urbano, "urbano")
         all_changes = rural_changes + urbano_changes
 
         # Save updated state
         save_state(rural_gdf, state_dir, "rural")
         save_state(urbano_gdf, state_dir, "urbano")
+
+        # Update ghost layer: merge removed-in-this-run with the previous
+        # removed state, prune entries older than REMOVED_GRACE_DAYS.
+        update_removed_state(state_dir, [rural_removed, urbano_removed])
 
     # Load radios for spatial join
     print(f"  Loading radios from {radios_path}...")

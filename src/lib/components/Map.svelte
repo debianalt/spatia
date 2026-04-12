@@ -593,8 +593,8 @@
 		}
 
 		// Fill layer — bright solid colors ON TOP of everything.
-		// New parcels (is_new=1) are painted in amber so they stand out
-		// against the urbano/rural base palette.
+		// Highlight recently added parcels in amber and recently removed
+		// parcels (ghost layer) in red against the urbano/rural base palette.
 		if (!map.getLayer('catastro-fill')) {
 			map.addLayer({
 				id: 'catastro-fill',
@@ -605,6 +605,7 @@
 				paint: {
 					'fill-color': [
 						'case',
+						['==', ['get', 'is_removed'], 1], '#dc2626',
 						['==', ['get', 'is_new'], 1], '#fbbf24',
 						[
 							'match', ['get', 'tipo'],
@@ -613,9 +614,14 @@
 							'#22d3ee'
 						]
 					],
-					'fill-opacity': 0.95,
+					'fill-opacity': [
+						'case',
+						['==', ['get', 'is_removed'], 1], 0.55,
+						0.95
+					],
 					'fill-outline-color': [
 						'case',
+						['==', ['get', 'is_removed'], 1], '#7f1d1d',
 						['==', ['get', 'is_new'], 1], '#b45309',
 						[
 							'match', ['get', 'tipo'],
@@ -629,7 +635,7 @@
 		}
 
 		// Line layer at high zoom for definition — on top of fill.
-		// New parcels get a darker amber outline for visual emphasis.
+		// New parcels: darker amber outline. Removed parcels: thick dark red.
 		if (!map.getLayer('catastro-line')) {
 			map.addLayer({
 				id: 'catastro-line',
@@ -640,6 +646,7 @@
 				paint: {
 					'line-color': [
 						'case',
+						['==', ['get', 'is_removed'], 1], '#7f1d1d',
 						['==', ['get', 'is_new'], 1], '#b45309',
 						[
 							'match', ['get', 'tipo'],
@@ -650,6 +657,8 @@
 					],
 					'line-width': [
 						'case',
+						['==', ['get', 'is_removed'], 1],
+						['interpolate', ['linear'], ['zoom'], 13, 1.2, 15, 2.0],
 						['==', ['get', 'is_new'], 1],
 						['interpolate', ['linear'], ['zoom'], 13, 1.0, 15, 1.8],
 						['interpolate', ['linear'], ['zoom'], 13, 0.5, 15, 1.0]

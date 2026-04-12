@@ -34,7 +34,7 @@ STATE_DIR = os.path.join(OUTPUT_DIR, "catastro_state")
 CATASTRO_PARQUET = os.path.join(OUTPUT_DIR, "catastro_by_radio.parquet")
 CHANGES_PARQUET = os.path.join(OUTPUT_DIR, "catastro_changes_summary.parquet")
 DEPT_SUMMARY_JSON = os.path.join(
-    os.path.dirname(OUTPUT_DIR), "src", "lib", "data", "catastro_dept_summary.json"
+    os.path.dirname(os.path.dirname(OUTPUT_DIR)), "src", "lib", "data", "catastro_dept_summary.json"
 )
 RUN_LOG = os.path.join(OUTPUT_DIR, "catastro_run_log.jsonl")
 
@@ -43,6 +43,7 @@ R2_STATE_FILES = {
     "catastro_rural.parquet": "data/catastro_state/catastro_rural.parquet",
     "catastro_urbano.parquet": "data/catastro_state/catastro_urbano.parquet",
     "catastro_changes_history.parquet": "data/catastro_state/catastro_changes_history.parquet",
+    "catastro_removed.parquet": "data/catastro_state/catastro_removed.parquet",
 }
 R2_OUTPUT_FILES = {
     CATASTRO_PARQUET: "data/catastro_by_radio.parquet",

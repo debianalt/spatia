@@ -114,6 +114,7 @@ def load_parcels():
     skipped = 0
     today = pd.Timestamp(date.today())
 
+    # ── Active parcels (catastro_urbano / catastro_rural state files) ──
     for tipo, filename in [("urbano", "catastro_urbano.parquet"), ("rural", "catastro_rural.parquet")]:
         path = os.path.join(STATE_DIR, filename)
         if not os.path.exists(path):
@@ -175,7 +176,9 @@ def load_parcels():
                 "h3index": h3index,
                 "area_m2": round(float(row.get("area_m2", 0)), 0),
                 "is_new": is_new,
+                "is_removed": 0,
                 "days_since_added": days_since_added,
+                "days_since_removed": -1,
             }
             # Assign departamento from h3->crosswalk mapping
             dept = h3_dept.get(h3index)
@@ -186,6 +189,62 @@ def load_parcels():
             count += 1
 
         print(f"  {tipo}: {count:,} parcels loaded ({n_new:,} new)")
+
+    # ── Ghost layer: recently removed parcels (within grace window) ──
+    removed_path = os.path.join(STATE_DIR, "catastro_removed.parquet")
+    if os.path.exists(removed_path):
+        try:
+            import geopandas as gpd
+            from shapely import wkb as _wkb
+
+            df_rem = pd.read_parquet(removed_path)
+            if len(df_rem) > 0:
+                print(f"  Loading {len(df_rem):,} removed parcels from ghost state")
+                n_removed_loaded = 0
+                for _, row in df_rem.iterrows():
+                    geom_raw = row.get("geometry")
+                    if geom_raw is None:
+                        skipped += 1
+                        continue
+                    try:
+                        if hasattr(geom_raw, "geom_type"):
+                            geom = geom_raw  # already a Shapely object
+                        else:
+                            geom = _wkb.loads(geom_raw)
+                    except Exception:
+                        skipped += 1
+                        continue
+                    if geom.is_empty:
+                        skipped += 1
+                        continue
+                    centroid = geom.centroid
+                    h3index = h3.latlng_to_cell(centroid.y, centroid.x, H3_RES)
+                    tipo = row.get("parcel_type", "urbano")
+
+                    removed_ts = pd.Timestamp(row.get("removed_date", today))
+                    days_since_removed = max(0, (today - removed_ts).days)
+
+                    props = {
+                        "tipo": tipo,
+                        "h3index": h3index,
+                        "area_m2": round(float(row.get("area_m2", 0) or 0), 0),
+                        "is_new": 0,
+                        "is_removed": 1,
+                        "days_since_added": -1,
+                        "days_since_removed": days_since_removed,
+                    }
+                    dept = h3_dept.get(h3index)
+                    if dept:
+                        props["departamento"] = dept
+
+                    features.append({"geometry": geom, "properties": props})
+                    n_removed_loaded += 1
+
+                print(f"  removed: {n_removed_loaded:,} ghost parcels loaded")
+        except Exception as e:
+            print(f"  [warn] Could not load removed state: {e}")
+    else:
+        print("  No removed-state file (first run with ghost layer)")
 
     print(f"  Total: {len(features):,} parcels ({skipped} skipped)")
     return features
@@ -277,7 +336,9 @@ def generate_pmtiles(features):
                     "area_m2": "Number",
                     "departamento": "String",
                     "is_new": "Number",
+                    "is_removed": "Number",
                     "days_since_added": "Number",
+                    "days_since_removed": "Number",
                 },
                 "minzoom": MIN_ZOOM,
                 "maxzoom": MAX_ZOOM,

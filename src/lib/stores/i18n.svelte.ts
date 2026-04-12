@@ -782,7 +782,8 @@ const dict: Record<string, Record<Locale, string>> = {
 	'analysis.catastro.clearAll': { es: 'Limpiar', en: 'Clear all', gn: "Mopotĩ" },
 	'analysis.catastro.legendUrban': { es: 'Parcela urbana', en: 'Urban parcel', gn: "Yvy táva" },
 	'analysis.catastro.legendRural': { es: 'Parcela rural', en: 'Rural parcel', gn: "Yvy ka'aguy" },
-	'analysis.catastro.legendNew': { es: 'Nueva (90d)', en: 'New (90d)', gn: "Ipyahu (90 ára)" },
+	'analysis.catastro.legendNew': { es: 'Nueva', en: 'New', gn: "Ipyahu" },
+	'analysis.catastro.legendRemoved': { es: 'Eliminada', en: 'Removed', gn: "Okañy" },
 	'data.updatedAt': { es: 'Procesado al', en: 'Processed', gn: 'Oñembopyahu' },
 	'analysis.flood.methodTitle': { es: 'Metodologia', en: 'Methodology', gn: "Mba'eichapa" },
 	'analysis.flood.methodRecurrence': {

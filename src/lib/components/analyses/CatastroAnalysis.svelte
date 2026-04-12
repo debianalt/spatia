@@ -296,6 +296,7 @@
 			<span class="legend-swatch" style:background="#06b6d4"></span> {i18n.t('analysis.catastro.legendUrban')}
 			<span class="legend-swatch legend-gap" style:background="#4ade80"></span> {i18n.t('analysis.catastro.legendRural')}
 			<span class="legend-swatch legend-gap" style:background="#fbbf24"></span> {i18n.t('analysis.catastro.legendNew')}
+			<span class="legend-swatch legend-gap" style:background="#dc2626"></span> {i18n.t('analysis.catastro.legendRemoved')}
 		</div>
 	</div>
 {:else if selectedDpto && selectedDeptInfo}
@@ -370,6 +371,7 @@
 			<span class="legend-swatch" style:background="#06b6d4"></span> {i18n.t('analysis.catastro.legendUrban')}
 			<span class="legend-swatch legend-gap" style:background="#4ade80"></span> {i18n.t('analysis.catastro.legendRural')}
 			<span class="legend-swatch legend-gap" style:background="#fbbf24"></span> {i18n.t('analysis.catastro.legendNew')}
+			<span class="legend-swatch legend-gap" style:background="#dc2626"></span> {i18n.t('analysis.catastro.legendRemoved')}
 		</div>
 		<div class="source-note-box">
 			<div><strong>{i18n.t('data.source.catastro')}</strong></div>
