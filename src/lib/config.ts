@@ -736,7 +736,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'c_npp', rawCol: 'c_npp', unit: 'kgC/m²/año', labelKey: 'sat.prodAct.npp', aggregation: 'mean' },
 			{ col: 'c_ndvi', rawCol: 'c_ndvi', unit: '(−1 a 1)', labelKey: 'sat.prodAct.ndvi', aggregation: 'mean' },
 			{ col: 'c_built', rawCol: 'c_built', unit: 'm²', labelKey: 'sat.prodAct.built', aggregation: 'mean' },
-			{ col: 'c_forest_loss', rawCol: 'c_forest_loss', unit: 'píxeles', labelKey: 'sat.prodAct.loss', aggregation: 'mean' },
+			{ col: 'c_forest_loss', rawCol: 'c_forest_loss', unit: '(0/1)', labelKey: 'sat.prodAct.loss', aggregation: 'mean' },
 			{ col: 'c_lst', rawCol: 'c_lst', unit: '°C', labelKey: 'sat.prodAct.lst', aggregation: 'mean' },
 		],
 		primaryVariable: 'score',
