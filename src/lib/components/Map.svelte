@@ -556,7 +556,7 @@
 
 		// Add catastro source
 		if (!map.getSource('catastro')) {
-			map.addSource('catastro', { type: 'vector', url: getTilesUrl('catastro') });
+			map.addSource('catastro', { type: 'vector', url: getTilesUrl('catastro'), maxzoom: 14 });
 		}
 
 		// Hide 3D buildings — add flat 2D fill BELOW catastro
