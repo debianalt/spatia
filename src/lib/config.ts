@@ -68,6 +68,7 @@ export function getParquetUrl(name: string): string {
 		sat_productive_activity: '?v=4',
 		overture_scores: '?v=24',
 		emsa_powerlines: '?v=20',
+		catastro_by_h3: '?v=1',
 	};
 	const bust = busts[name] || '';
 	return `${getBase()}/data/${name}.parquet${bust}`;
@@ -101,6 +102,7 @@ export const PARQUETS = {
 	get h3_parent_crosswalk() { return getParquetUrl('h3_parent_crosswalk'); },
 	get catastro_by_radio() { return getParquetUrl('catastro_by_radio'); },
 	get catastro_changes() { return getParquetUrl('catastro_changes_summary'); },
+	get catastro_by_h3() { return getParquetUrl('catastro_by_h3'); },
 	get overture_buildings() { return getParquetUrl('overture_buildings'); },
 	get overture_transportation() { return getParquetUrl('overture_transportation'); },
 	get overture_places() { return getParquetUrl('overture_places'); },
@@ -356,6 +358,21 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.locValue.low',
 		legendHighKey: 'legend.locValue.high',
+	},
+	catastro_h3_changes: {
+		id: 'catastro_h3_changes',
+		parquet: 'catastro_by_h3',
+		variables: [
+			{ col: 'n_added',   labelKey: 'sat.catH3.added',   aggregation: 'sum' },
+			{ col: 'n_removed', labelKey: 'sat.catH3.removed',  aggregation: 'sum' },
+			{ col: 'n_total',   labelKey: 'sat.catH3.total',    aggregation: 'sum' },
+		],
+		primaryVariable: 'net_change_norm',
+		colorScale: 'diverging',
+		aggregation: 'mean',
+		titleKey: 'sat.catH3.title',
+		legendLowKey: 'legend.catH3.low',
+		legendHighKey: 'legend.catH3.high',
 	},
 	agri_potential: {
 		id: 'agri_potential',
@@ -835,6 +852,14 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		spatialUnit: 'catastro',
 	},
 	{
+		id: 'catastro_h3_changes',
+		lensId: 'vivir',
+		titleKey: 'sat.catH3.title',
+		descKey: 'sat.catH3.desc',
+		status: 'available',
+		spatialUnit: 'hexagon',
+	},
+	{
 		id: 'flood_risk',
 		lensId: 'vivir',
 		titleKey: 'analysis.floodRisk.title',
@@ -1285,6 +1310,11 @@ export const DATA_FRESHNESS: Record<string, { dataDate: string; processedDate: s
 	catastro_by_radio: {
 		dataDate: 'marzo 2026',
 		processedDate: '22/03/2026',
+		sourceKey: 'data.source.catastro',
+	},
+	catastro_by_h3: {
+		dataDate: 'Actualización mensual automática',
+		processedDate: 'GitHub Actions — 1ro de cada mes',
 		sourceKey: 'data.source.catastro',
 	},
 	buildings_stats: {

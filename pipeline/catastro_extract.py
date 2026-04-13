@@ -463,6 +463,95 @@ def export_catastro_by_radio(records, output_path):
     return len(df)
 
 
+def compute_catastro_by_h3(rural_gdf, urbano_gdf, state_dir, resolution=9):
+    """
+    H3-level parcel change aggregation.
+
+    Returns DataFrame with columns:
+      h3index, n_rural, n_urbano, n_total, n_added, n_removed,
+      net_change, net_change_norm, extraction_date
+    """
+    try:
+        import h3
+    except ImportError:
+        print("  [warn] h3 library not available — skipping catastro_by_h3")
+        return pd.DataFrame()
+
+    today = date.today()
+    cutoff = pd.Timestamp(today - timedelta(days=90))
+    h3_records = {}  # h3index -> {n_rural, n_urbano, n_added, n_removed}
+
+    def assign_h3(gdf):
+        """Add h3index column via centroid in EPSG:4326."""
+        centroids_utm = gdf.to_crs("EPSG:32721")
+        pts = centroids_utm.geometry.centroid.to_crs("EPSG:4326")
+        return [h3.latlng_to_cell(p.y, p.x, resolution) for p in pts]
+
+    for parcel_type, gdf in [("rural", rural_gdf), ("urbano", urbano_gdf)]:
+        if gdf is None or len(gdf) == 0:
+            continue
+        gdf = gdf.copy()
+        print(f"  H3 assign {parcel_type} ({len(gdf):,})...", end=" ", flush=True)
+        gdf["h3index"] = assign_h3(gdf)
+        for h3idx, grp in gdf.groupby("h3index"):
+            r = h3_records.setdefault(h3idx, {"n_rural": 0, "n_urbano": 0, "n_added": 0, "n_removed": 0})
+            r[f"n_{parcel_type}"] += len(grp)
+            if "first_seen" in gdf.columns:
+                r["n_added"] += int((grp["first_seen"] >= cutoff).sum())
+        print("done")
+
+    # Removed parcels (from persisted ghost state)
+    removed_path = os.path.join(state_dir, "catastro_removed.parquet")
+    if os.path.exists(removed_path):
+        try:
+            rem = gpd.read_parquet(removed_path)
+            if "removed_date" in rem.columns:
+                rem = rem[rem["removed_date"] >= cutoff]
+            else:
+                rem = rem.iloc[0:0]
+            if len(rem) > 0:
+                print(f"  H3 assign removed ({len(rem):,})...", end=" ", flush=True)
+                rem["h3index"] = assign_h3(rem)
+                for h3idx, grp in rem.groupby("h3index"):
+                    h3_records.setdefault(h3idx, {"n_rural": 0, "n_urbano": 0, "n_added": 0, "n_removed": 0})
+                    h3_records[h3idx]["n_removed"] += len(grp)
+                print("done")
+        except Exception as e:
+            print(f"  [warn] Could not process removed parcels for H3: {e}")
+
+    rows = []
+    for h3idx, r in h3_records.items():
+        n_total = r["n_rural"] + r["n_urbano"]
+        if n_total == 0:
+            continue
+        net = r["n_added"] - r["n_removed"]
+        rows.append({
+            "h3index": h3idx,
+            "n_rural": r["n_rural"],
+            "n_urbano": r["n_urbano"],
+            "n_total": n_total,
+            "n_added": r["n_added"],
+            "n_removed": r["n_removed"],
+            "net_change": net,
+            "extraction_date": today.isoformat(),
+        })
+
+    if not rows:
+        return pd.DataFrame()
+
+    df = pd.DataFrame(rows)
+    for col in ["n_rural", "n_urbano", "n_total", "n_added", "n_removed", "net_change"]:
+        df[col] = df[col].astype("int32")
+
+    # Normalize net_change to [-1, 1] for diverging color scale
+    max_abs = int(df["net_change"].abs().max())
+    df["net_change_norm"] = (
+        (df["net_change"] / max_abs).clip(-1.0, 1.0).astype("float32")
+        if max_abs > 0 else 0.0
+    )
+    return df
+
+
 def export_changes_summary(all_changes, existing_changes_path, output_path):
     """
     Aggregate change log and append to existing history.
@@ -663,6 +752,14 @@ def run_extraction(output_dir, radios_path, state_dir=None, skip_wfs=False):
     changes_state_path = os.path.join(state_dir, "catastro_changes_history.parquet")
     changes_output_path = os.path.join(output_dir, "catastro_changes_summary.parquet")
     export_changes_summary(all_changes, changes_state_path, changes_output_path)
+
+    # H3-level aggregation
+    h3_df = compute_catastro_by_h3(rural_gdf, urbano_gdf, state_dir)
+    if len(h3_df) > 0:
+        h3_path = os.path.join(output_dir, "catastro_by_h3.parquet")
+        h3_df.to_parquet(h3_path, index=False, engine="pyarrow")
+        size_kb = os.path.getsize(h3_path) / 1024
+        print(f"  Exported catastro_by_h3: {len(h3_df):,} hexagons ({size_kb:.0f} KB)")
     # Also save history to state dir for next run
     if os.path.exists(changes_output_path):
         import shutil

@@ -45,9 +45,12 @@ R2_STATE_FILES = {
     "catastro_changes_history.parquet": "data/catastro_state/catastro_changes_history.parquet",
     "catastro_removed.parquet": "data/catastro_state/catastro_removed.parquet",
 }
+H3_PARQUET = os.path.join(OUTPUT_DIR, "catastro_by_h3.parquet")
+
 R2_OUTPUT_FILES = {
     CATASTRO_PARQUET: "data/catastro_by_radio.parquet",
     CHANGES_PARQUET: "data/catastro_changes_summary.parquet",
+    H3_PARQUET: "data/catastro_by_h3.parquet",
 }
 
 
