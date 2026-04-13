@@ -47,7 +47,7 @@ export function getParquetUrl(name: string): string {
 		sat_environmental_risk: '?v=27',
 		sat_climate_comfort: '?v=27',
 		sat_green_capital: '?v=25',
-		sat_change_pressure: '?v=26',
+		sat_change_pressure: '?v=27',
 		sat_location_value: '?v=24',
 		sat_agri_potential: '?v=27',
 		sat_forest_health: '?v=27',
@@ -82,7 +82,7 @@ export function getScoresDptoUrl(parquetKey: string): string {
 }
 
 export function getSatDptoUrl(analysisId: string, parquetKey: string): string {
-	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet?v=34`;
+	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet?v=35`;
 }
 
 export function getReportUrl(analysisId: string, parquetKey: string): string {
@@ -322,10 +322,11 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		variables: [
 			{ col: 'type', labelKey: 'sat.change.type', aggregation: 'mean' },
 			{ col: 'type_label', labelKey: 'sat.change.typeLabel', aggregation: 'mean' },
-			{ col: 'c_viirs_level', labelKey: 'sat.change.viirsLevel', aggregation: 'mean' },
+			{ col: 'c_viirs_trend', labelKey: 'sat.change.viirsTrend', aggregation: 'mean' },
 			{ col: 'c_ndvi_trend', labelKey: 'sat.change.ndviTrend', aggregation: 'mean' },
 			{ col: 'c_ghsl_change', labelKey: 'sat.change.ghslChange', aggregation: 'mean' },
 			{ col: 'c_hansen_loss', labelKey: 'sat.change.hansenLoss', aggregation: 'mean' },
+			{ col: 'c_fire_count', labelKey: 'sat.change.fireCount', aggregation: 'mean' },
 		],
 		primaryVariable: 'score',
 		colorScale: 'warm',

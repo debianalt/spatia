@@ -622,7 +622,7 @@ def main():
     # (hex-level zonal stats over multi-band GEE exports). Keep their definitions
     # here for documentation but do NOT re-run them via the radio-based pipeline —
     # that would overwrite the hex-level parquets with radio-aggregated blobs.
-    RASTER_BASED = {"environmental_risk", "climate_comfort", "agri_potential", "forest_health", "forestry_aptitude"}
+    RASTER_BASED = {"environmental_risk", "climate_comfort", "agri_potential", "forest_health", "forestry_aptitude", "change_pressure"}
 
     # Filter analyses if --only specified
     analyses = [a for a in ANALYSIS_DEFS if a["id"] not in RASTER_BASED]
