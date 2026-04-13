@@ -211,58 +211,69 @@ def main():
     df['score'] = np.exp(np.log(vals).mean(axis=1)).round(1)
 
     # ── Temporal baseline ─────────────────────────────────────────────
+    # Reads 8-band sat_carbon_temporal_raster.tif:
+    #  1-2: c_agb_baseline, c_agb_current (ESA CCI 2018-2020 mean vs 2022)
+    #  3-4: c_npp_baseline, c_npp_current (MODIS NPP 2018-2020 vs 2022-2024 mean)
+    #  5-6: c_standing_tc_bl, c_standing_tc_cur (Hansen treecover2000 × (1 - cum loss by YYYY))
+    #  7-8: c_loss_rate_bl, c_loss_rate_cur (annual Hansen loss rate 2001-2020 vs 2021-2024)
     temporal_raster = os.path.join(OUTPUT_DIR, 'sat_carbon_temporal_raster.tif')
-    green_parquet = os.path.join(OUTPUT_DIR, 'sat_green_capital.parquet')
 
     if os.path.exists(temporal_raster):
-        print("\nComputing temporal baseline (ESA CCI 2018-2020 vs 2022)...")
-        # Read AGB baseline + current from temporal raster
+        print("\nComputing temporal baseline (8-band: AGB + NPP + standing tc + loss rate)...")
         import rasterio as rio_tmp
         with rio_tmp.open(temporal_raster) as src_t:
-            print(f"  Temporal raster: {src_t.count} bands")
-            agb_bl_vals = []
-            agb_cur_vals = []
+            n_bands = src_t.count
+            print(f"  Temporal raster: {n_bands} bands")
+            rows = []
             for i, feat in enumerate(json.load(open(HEXAGONS_PATH))['features']):
                 h3index = (feat.get("properties", {}).get("h3index")
                            or feat.get("properties", {}).get("h3_index")
                            or feat.get("id"))
                 geom = shape(feat["geometry"])
-                bl = zonal_stats_band(src_t, 1, geom, src_t.nodata, zero_is_nodata=True)
-                cur = zonal_stats_band(src_t, 2, geom, src_t.nodata, zero_is_nodata=True)
-                agb_bl_vals.append((h3index, bl, cur))
+                vals = [zonal_stats_band(src_t, b, geom, src_t.nodata,
+                                         zero_is_nodata=(b <= 4))  # AGB/NPP can be legit 0, but prefer NaN outside
+                        for b in range(1, min(n_bands, 8) + 1)]
+                rows.append((h3index, *vals))
                 if i % 100000 == 0 and i > 0:
                     print(f"    {i:,}...")
 
-        temporal_df = pd.DataFrame(agb_bl_vals, columns=['h3index', 'c_agb_bl', 'c_agb_cur'])
+        tmp_cols = ['h3index', 'c_agb_bl', 'c_agb_cur',
+                    'c_npp_bl_raw', 'c_npp_cur_raw',
+                    'c_standing_tc_bl_raw', 'c_standing_tc_cur_raw',
+                    'c_loss_rate_bl_raw', 'c_loss_rate_cur_raw'][:1 + n_bands]
+        temporal_df = pd.DataFrame(rows, columns=tmp_cols)
         df = df.merge(temporal_df, on='h3index', how='left')
 
-        # Baseline total carbon
-        df['c_agb_raw_baseline'] = df['c_agb_bl']
+        # Baseline total carbon (AGB_bl + BGB(AGB_bl) + static SOC)
         bgb_bl = 0.489 * (df['c_agb_bl'].clip(lower=0.1) ** 0.89)
         df['c_total_carbon_raw_baseline'] = (
             df['c_agb_bl'] * CARBON_FRACTION + bgb_bl * CARBON_FRACTION + df['c_soc_tcha']
         )
 
-        # NPP baseline from green_capital if available
-        if os.path.exists(green_parquet):
-            gc = pd.read_parquet(green_parquet)
-            if 'c_npp_baseline' in gc.columns:
-                npp_bl = gc[['h3index', 'c_npp_baseline']].rename(columns={'c_npp_baseline': 'c_npp_bl'})
-                df = df.merge(npp_bl, on='h3index', how='left')
-
-        # Baseline scores
+        # Baseline percentile ranks (per-component)
         df['c_agb_cci_baseline'] = percentile_rank(df['c_agb_bl']).round(1)
         df['c_total_carbon_baseline'] = percentile_rank(df['c_total_carbon_raw_baseline']).round(1)
-        npp_bl_col = 'c_npp_bl' if 'c_npp_bl' in df.columns else 'c_npp_raw'
-        df['c_npp_baseline'] = percentile_rank(df[npp_bl_col].astype(float)).round(1)
+        df['c_npp_baseline'] = percentile_rank(df['c_npp_bl_raw'].astype(float)).round(1)
 
-        # For other variables without temporal, baseline = current
+        # Standing tree cover (higher = better, direct rank)
+        if 'c_standing_tc_bl_raw' in df.columns:
+            df['c_standing_tc_baseline'] = percentile_rank(df['c_standing_tc_bl_raw'].astype(float)).round(1)
+            df['c_standing_tc_current'] = percentile_rank(df['c_standing_tc_cur_raw'].astype(float)).round(1)
+            df['c_standing_tc_delta'] = (df['c_standing_tc_current'] - df['c_standing_tc_baseline']).round(1)
+
+        # Loss rate (higher loss = worse, so invert before ranking for a "carbon health" view)
+        if 'c_loss_rate_bl_raw' in df.columns:
+            df['c_loss_rate_baseline'] = percentile_rank(-df['c_loss_rate_bl_raw'].astype(float)).round(1)
+            df['c_loss_rate_current'] = percentile_rank(-df['c_loss_rate_cur_raw'].astype(float)).round(1)
+            df['c_loss_rate_delta'] = (df['c_loss_rate_current'] - df['c_loss_rate_baseline']).round(1)
+
+        # For other variables without temporal data, baseline = current
         for _, score_col, _ in score_vars:
             bl = f'{score_col}_baseline'
             if bl not in df.columns:
                 df[bl] = df[score_col]
 
-        # Baseline overall score
+        # Baseline overall score — same 3 key cols as current score
         bl_key = ['c_total_carbon_baseline', 'c_npp_baseline', 'c_agb_cci_baseline']
         vals_bl = df[bl_key].clip(lower=1.0)
         df['score_baseline'] = np.exp(np.log(vals_bl).mean(axis=1)).round(1)
@@ -275,6 +286,9 @@ def main():
 
         print(f"  Baseline score: mean={df['score_baseline'].mean():.1f}")
         print(f"  Delta score: mean={df['delta_score'].mean():.2f}, std={df['delta_score'].std():.2f}")
+        for col in ['c_agb_cci_delta', 'c_npp_delta', 'c_standing_tc_delta', 'c_loss_rate_delta']:
+            if col in df.columns:
+                print(f"  {col}: mean={df[col].mean():.2f}, std={df[col].std():.2f}")
     else:
         print(f"\n  SKIP temporal: {temporal_raster} not found")
 
@@ -299,7 +313,7 @@ def main():
         for k in range(k_min, k_max + 1):
             km = KMeans(n_clusters=k, n_init=10, random_state=42)
             labels = km.fit_predict(X_pca)
-            sil = silhouette_score(X_pca, labels)
+            sil = silhouette_score(X_pca, labels, sample_size=min(10000, len(X_pca)), random_state=42)
             print(f"    k={k}: silhouette={sil:.3f}")
             if sil > best_sil:
                 best_sil = sil
@@ -353,6 +367,8 @@ def main():
         'c_agb_gedi', 'c_total_carbon', 'c_total_carbon_baseline', 'c_total_carbon_delta',
         'c_soc', 'c_gross_emissions', 'c_gross_removals', 'c_net_flux',
         'c_npp', 'c_npp_baseline', 'c_npp_delta',
+        'c_standing_tc_current', 'c_standing_tc_baseline', 'c_standing_tc_delta',
+        'c_loss_rate_current', 'c_loss_rate_baseline', 'c_loss_rate_delta',
         # Raw physical units
         'c_agb_raw', 'c_agb_raw_baseline', 'c_agb_gedi',
         'c_total_carbon_raw', 'c_total_carbon_raw_baseline',

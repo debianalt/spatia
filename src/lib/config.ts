@@ -62,7 +62,7 @@ export function getParquetUrl(name: string): string {
 		sat_economic_activity: '?v=22',
 		sat_accessibility: '?v=23',
 		sat_climate_vulnerability: '?v=1',
-		sat_carbon_stock: '?v=1',
+		sat_carbon_stock: '?v=2',
 		sat_pm25_drivers: '?v=1',
 		sat_deforestation_dynamics: '?v=1',
 		sat_productive_activity: '?v=4',
@@ -82,7 +82,7 @@ export function getScoresDptoUrl(parquetKey: string): string {
 }
 
 export function getSatDptoUrl(analysisId: string, parquetKey: string): string {
-	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet?v=32`;
+	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet?v=33`;
 }
 
 export function getReportUrl(analysisId: string, parquetKey: string): string {
