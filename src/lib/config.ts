@@ -49,7 +49,7 @@ export function getParquetUrl(name: string): string {
 		sat_green_capital: '?v=25',
 		sat_change_pressure: '?v=27',
 		sat_location_value: '?v=24',
-		sat_agri_potential: '?v=27',
+		sat_agri_potential: '?v=28',
 		sat_forest_health: '?v=27',
 		sat_forestry_aptitude: '?v=26',
 		sat_service_deprivation: '?v=25',
@@ -82,7 +82,7 @@ export function getScoresDptoUrl(parquetKey: string): string {
 }
 
 export function getSatDptoUrl(analysisId: string, parquetKey: string): string {
-	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet?v=35`;
+	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet?v=36`;
 }
 
 export function getReportUrl(analysisId: string, parquetKey: string): string {
@@ -361,6 +361,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'agri_potential',
 		parquet: 'sat_agri_potential',
 		variables: [
+			{ col: 'type', labelKey: 'sat.agri.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.agri.typeLabel', aggregation: 'mean' },
 			{ col: 'c_soc', labelKey: 'sat.agri.soc', aggregation: 'mean' },
 			{ col: 'c_ph_optimal', labelKey: 'sat.agri.phOptimal', aggregation: 'mean' },
 			{ col: 'c_clay', labelKey: 'sat.agri.clay', aggregation: 'mean' },
