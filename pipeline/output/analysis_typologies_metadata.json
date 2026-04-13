@@ -1,0 +1,39 @@
+[
+  {
+    "analysis": "change_pressure",
+    "k": 3,
+    "silhouette": 0.298,
+    "calinski_harabasz": 35441.0,
+    "n_hexagons": 68737,
+    "n_vars": 10,
+    "variables": [
+      "c_viirs_trend",
+      "c_ghsl_change",
+      "c_hansen_loss",
+      "c_ndvi_trend",
+      "c_fire_count",
+      "c_built_2020",
+      "c_treecover_base",
+      "c_pop_density",
+      "c_viirs_level",
+      "c_road_density"
+    ],
+    "pca_variance": [
+      0.4822,
+      0.1599,
+      0.1058,
+      0.0764,
+      0.057
+    ],
+    "type_labels": {
+      "1": "built_2020 alto",
+      "2": "fire_count alto",
+      "3": "pop_density bajo"
+    },
+    "type_distribution": {
+      "1": 26543,
+      "2": 14179,
+      "3": 28015
+    }
+  }
+]
