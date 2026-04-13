@@ -378,7 +378,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'forest_health',
 		parquet: 'sat_forest_health',
 		variables: [
-			{ col: 'c_ndvi_mean', labelKey: 'sat.forestH.ndviMean', aggregation: 'mean' },
+			{ col: 'c_ndvi_trend', labelKey: 'sat.forestH.ndviTrend', aggregation: 'mean' },
 			{ col: 'c_loss_ratio', labelKey: 'sat.forestH.lossRatio', aggregation: 'mean' },
 			{ col: 'c_fire', labelKey: 'sat.forestH.fire', aggregation: 'mean' },
 			{ col: 'c_gpp', labelKey: 'sat.forestH.gpp', aggregation: 'mean' },
