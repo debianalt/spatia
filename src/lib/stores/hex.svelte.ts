@@ -205,6 +205,7 @@ export class HexStore {
 	async loadVisibleData() {
 		const layer = this.activeLayer;
 		if (!layer || !isReady()) return;
+		if (layer.perDepartment) return;
 
 		this.loading = true;
 
@@ -242,7 +243,7 @@ export class HexStore {
 
 		const h3Vec = result.getChild('h3index');
 		const allColVecs = Object.fromEntries(
-			allCols.map((col: string) => [col, result.getChild(col)])
+			[...allCols].map((col: string) => [col, result.getChild(col)])
 		);
 
 		for (let i = 0; i < result.numRows; i++) {

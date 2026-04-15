@@ -99,6 +99,15 @@ export function getSatGlobalUrl(analysisId: string, territoryPrefix = ''): strin
 	return `${getBase()}/data/${territoryPrefix}sat_${analysisId}.parquet?cb=${_sessionBust}`;
 }
 
+export function getDeptSummaryUrl(analysisId: string, territoryPrefix = ''): string {
+	const nameMap: Record<string, string> = {
+		flood_risk: 'flood_dept_summary',
+		territorial_scores: 'scores_dept_summary',
+	};
+	const name = nameMap[analysisId] ?? `sat_${analysisId}_dept_summary`;
+	return `${getBase()}/data/${territoryPrefix}${name}.json`;
+}
+
 export const PARQUETS = {
 	get censo_radios() { return getParquetUrl('censo_radios'); },
 	get censo_departamentos() { return getParquetUrl('censo_departamentos'); },

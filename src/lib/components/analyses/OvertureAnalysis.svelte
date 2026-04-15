@@ -4,7 +4,7 @@
 	import CTADiagnostic from '$lib/components/CTADiagnostic.svelte';
 	import PetalChart from '$lib/components/PetalChart.svelte';
 	import TemporalToggle from '$lib/components/TemporalToggle.svelte';
-	import { HEX_LAYER_REGISTRY, DATA_FRESHNESS, getSatDptoUrl, getFloodDptoUrl, getScoresDptoUrl, getReportUrl, getTemporalCol, type AnalysisConfig, type TemporalMode } from '$lib/config';
+	import { HEX_LAYER_REGISTRY, DATA_FRESHNESS, getSatDptoUrl, getFloodDptoUrl, getScoresDptoUrl, getReportUrl, getTemporalCol, getDeptSummaryUrl, type AnalysisConfig, type TemporalMode } from '$lib/config';
 	import { query } from '$lib/stores/duckdb';
 	import { downloadCsvFromQuery, downloadGeoJsonFromHexQuery } from '$lib/utils/data-export';
 	import { ANALYSIS_CONTENT } from '$lib/content/methodology';
@@ -32,7 +32,7 @@
 	});
 
 	// Census-based analyses: hide petals (radio-level data → identical within radio, not informative)
-	const CENSUS_ANALYSES = new Set(['service_deprivation', 'health_access', 'education_capital', 'education_flow', 'sociodemographic', 'economic_activity', 'accessibility', 'carbon_stock']);
+	const CENSUS_ANALYSES = new Set(['service_deprivation', 'health_access', 'education_capital', 'education_flow', 'economic_activity', 'accessibility', 'carbon_stock']);
 
 	// Department summaries for perDepartment layers
 	let deptSummary = $state<any>(null);
@@ -67,9 +67,20 @@
 
 	$effect(() => {
 		if (!isPerDept || !layerCfg) return;
-		const loader = SAT_SUMMARIES[layerCfg.id];
-		if (loader) {
-			loader().then(mod => { deptSummary = mod.default; }).catch(() => {});
+		const prefix = hexStore.territoryPrefix;
+		deptSummary = null;
+		if (prefix) {
+			// Non-default territory: fetch from R2 dynamically
+			fetch(getDeptSummaryUrl(layerCfg.id, prefix))
+				.then(r => r.ok ? r.json() : null)
+				.then(data => { deptSummary = data; })
+				.catch(() => { deptSummary = null; });
+		} else {
+			// Default territory (Misiones): use bundled static JSON
+			const loader = SAT_SUMMARIES[layerCfg.id];
+			if (loader) {
+				loader().then(mod => { deptSummary = mod.default; }).catch(() => {});
+			}
 		}
 	});
 
@@ -546,14 +557,15 @@
 			<TemporalToggle {hexStore} layerId={layerCfg?.id ?? ''} />
 		{/if}
 
-		{#if hexPetalLayers.length > 0 && !CENSUS_ANALYSES.has(analysis.id)}
+		{#if hexPetalLayers.length > 0}
 			<div class="petal-section">
 				<div class="petal-wrapper">
 					<PetalChart layers={hexPetalLayers} labels={petalLabels} size={240} />
 				</div>
 				<p class="petal-hint">{i18n.t('analysis.petalHint')}</p>
 			</div>
-		{:else if CENSUS_ANALYSES.has(analysis.id) && componentVars.length > 0}
+		{/if}
+		{#if CENSUS_ANALYSES.has(analysis.id) && componentVars.length > 0}
 			<div class="census-detail">
 				{#each componentVars as v}
 					{@const val = selectedHex[v.col]}
@@ -717,14 +729,20 @@
 
 		<div class="dept-section">
 			<div class="section-title">{i18n.t('analysis.flood.topDepts')}</div>
-			{#each deptList as dept}
-				<button class="dept-row dept-clickable" onclick={() => handleDptoClick(dept)}>
-					<div class="dept-name">{dept.dpto}</div>
-					<div class="dept-score">
-						{dept.hex_count?.toLocaleString() ?? ''} hex
-					</div>
-				</button>
-			{/each}
+			{#if deptList.length === 0 && isPerDept}
+				<div class="dept-row" style="color: var(--text-secondary); font-style: italic; padding: 8px 0;">
+					{hexStore.territoryPrefix ? 'No hay datos departamentales para este territorio.' : 'Cargando…'}
+				</div>
+			{:else}
+				{#each deptList as dept}
+					<button class="dept-row dept-clickable" onclick={() => handleDptoClick(dept)}>
+						<div class="dept-name">{dept.dpto}</div>
+						<div class="dept-score">
+							{dept.hex_count?.toLocaleString() ?? ''} hex
+						</div>
+					</button>
+				{/each}
+			{/if}
 		</div>
 
 		{#if content}
@@ -796,10 +814,17 @@
 					{#each [...selectedHexes] as [h3index, sel]}
 						<div class="hex-card">
 							<div class="hex-id">{h3index.slice(0, 4)}...{h3index.slice(-4)}</div>
+							{#if analysis.id === 'sociodemographic' && componentVars.length > 0}
+								{@const cardPetalVals = componentVars.map(v => { const n = Number(sel.data[v.col]); return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 0; })}
+								{@const cardPetalColor = getTypeColor(Number(sel.data['type']) || 1)}
+								<div class="hex-petal">
+									<PetalChart layers={[{values: cardPetalVals, color: cardPetalColor}]} labels={petalLabels} size={160} />
+								</div>
+							{/if}
 							<div class="hex-values">
 								{#each layerCfg.variables as v}
 									{@const val = sel.data[v.col]}
-									{#if val != null}
+									{#if val != null && !(v.hideIfZero && val === 0)}
 										<div class="hex-val">
 											<span class="hex-val-label">{i18n.t(v.labelKey)}</span>
 											<span class="hex-val-num">{typeof val === 'number' ? (Number.isInteger(val) ? val.toLocaleString() : val.toFixed(1)) : val}</span>
@@ -928,6 +953,7 @@
 	.variable-tag { background: rgba(255,255,255,0.06); color: #d4d4d4; padding: 2px 6px; border-radius: 3px; font-size: 9px; }
 	.selected-hexes { display: flex; flex-direction: column; gap: 6px; }
 	.hex-card { background: rgba(255,255,255,0.04); border-radius: 6px; padding: 6px 8px; }
+	.hex-petal { margin: 4px 0 6px; }
 	.hex-values { display: flex; flex-direction: column; gap: 2px; }
 	.hex-val { display: flex; justify-content: space-between; align-items: baseline; }
 	.hex-val-label { color: #a3a3a3; }
