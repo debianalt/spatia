@@ -9,6 +9,7 @@
 	import { LensStore } from '$lib/stores/lens.svelte';
 	import { LassoStore } from '$lib/stores/lasso.svelte';
 	import { HexStore } from '$lib/stores/hex.svelte';
+	import { TerritoryStore } from '$lib/stores/territory.svelte';
 	import { initDuckDB, query, isReady } from '$lib/stores/duckdb';
 	import { PARQUETS, MAP_INIT, HEX_LAYER_REGISTRY, getAnalysisById, getAnalysesForLens, type AnalysisConfig, type LensId } from '$lib/config';
 	import { i18n, type Locale } from '$lib/stores/i18n.svelte';
@@ -18,12 +19,14 @@
 	const lensStore = new LensStore();
 	const lassoStore = new LassoStore();
 	const hexStore = new HexStore();
+	const territoryStore = new TerritoryStore();
 
 	let mapComponent: ReturnType<typeof MapComponent>;
 	let mapContainer: HTMLDivElement;
 	// ── URL state: read params on mount, write on change ──
 	function updateUrlState() {
 		const params = new URLSearchParams();
+		if (territoryStore.activeTerritory.id !== 'misiones') params.set('t', territoryStore.activeTerritory.id);
 		if (lensStore.activeLens) params.set('lens', lensStore.activeLens);
 		if (lensStore.activeAnalysis) params.set('a', lensStore.activeAnalysis.id);
 		if (hexStore.selectedDpto) params.set('dept', hexStore.selectedDpto);
@@ -32,10 +35,16 @@
 	}
 
 	$effect(() => {
+		const _territory = territoryStore.activeTerritory;
 		const _lens = lensStore.activeLens;
 		const _analysis = lensStore.activeAnalysis;
 		const _dept = hexStore.selectedDpto;
 		if (typeof window !== 'undefined') updateUrlState();
+	});
+
+	// Sync territory prefix to hexStore whenever territory changes
+	$effect(() => {
+		hexStore.setTerritoryPrefix(territoryStore.activeTerritory.parquetPrefix);
 	});
 
 	onMount(() => {
@@ -46,6 +55,8 @@
 
 		// Restore state from URL params
 		const params = new URLSearchParams(window.location.search);
+		const territory = params.get('t');
+		if (territory) territoryStore.setTerritory(territory);
 		const lens = params.get('lens') as LensId | null;
 		const analysisId = params.get('a');
 		if (lens) {
@@ -864,6 +875,7 @@
 				{lensStore}
 				{lassoStore}
 				{hexStore}
+				{territoryStore}
 				{showAbout}
 				onRemoveRadio={handleRemoveRadio}
 				onClearRadios={handleClearRadios}

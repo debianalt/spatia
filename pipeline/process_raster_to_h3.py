@@ -28,7 +28,7 @@ from shapely.geometry import shape
 
 import duckdb
 
-from config import OUTPUT_DIR, H3_RESOLUTION
+from config import OUTPUT_DIR, H3_RESOLUTION, get_territory
 from scoring import run_full_diagnostics, geometric_mean_score
 
 HEXAGONS_PATH = os.path.join(OUTPUT_DIR, "hexagons-lite.geojson")
@@ -94,14 +94,8 @@ ANALYSIS_COMPONENTS = {
         ('c_gpp', 'c_gpp', 0.15, False),
         ('c_et', 'c_et', 0.15, False),
     ],
-    'forestry_aptitude': [
-        ('c_ph', 'c_ph', 0.15, True),              # pines prefieren acidico -> invert
-        ('c_clay', 'c_clay', 0.10, True),          # pines prefieren arenoso -> invert
-        ('c_precipitation', 'c_precipitation', 0.25, False),
-        ('c_slope', 'c_slope', 0.20, True),        # <15° para mecanizar -> invert
-        ('c_road_dist', 'c_road_dist', 0.15, True),  # menos distancia = mejor -> invert
-        ('c_access_50k', 'c_access_50k', 0.15, True),  # menos tiempo = mejor -> invert
-    ],
+    # forestry_aptitude: DEPRECATED path. Replaced by compute_forestry_sdm.py
+    # (SDM entrenado sobre plantaciones existentes + mascara satelital).
     'air_quality': [
         ('c_pm25', 'c_pm25', 0.40, False),    # PM2.5 µg/m³ — higher = worse
         ('c_no2', 'c_no2', 0.35, False),       # NO2 mol/m² — higher = worse
@@ -191,7 +185,8 @@ def inject_radio_fallback(df: pd.DataFrame, nan_cols: list[str],
     return df
 
 
-def process_analysis(analysis_id, raster_path, hexgrid_features, output_path):
+def process_analysis(analysis_id, raster_path, hexgrid_features, output_path,
+                     territory_id='misiones'):
     """Process a single analysis raster to H3 parquet."""
     components = ANALYSIS_COMPONENTS[analysis_id]
     band_names = [c[0] for c in components]
@@ -246,11 +241,15 @@ def process_analysis(analysis_id, raster_path, hexgrid_features, output_path):
     # PCA-validated geometric mean score (OECD/HDI methodology)
     comp_cols = [c[1] for c in components]
 
-    # Inject radio-level fallback for 100% NaN columns (e.g. fire)
+    # Inject radio-level fallback for 100% NaN columns (e.g. fire) — Misiones only
     nan_cols = [c for c in comp_cols if df[c].isna().all()]
     if nan_cols:
-        print(f"  100% NaN columns: {nan_cols} — attempting radio fallback")
-        df = inject_radio_fallback(df, nan_cols, components)
+        print(f"  100% NaN columns: {nan_cols}")
+        if territory_id == 'misiones':
+            print(f"  Attempting radio fallback...")
+            df = inject_radio_fallback(df, nan_cols, components)
+        else:
+            print(f"  Skipping radio fallback (no radio data for {territory_id})")
 
     # Exclude remaining 100% NaN columns (no fallback available)
     valid_cols = [c for c in comp_cols if not df[c].isna().all()]
@@ -295,20 +294,42 @@ def process_analysis(analysis_id, raster_path, hexgrid_features, output_path):
 def main():
     parser = argparse.ArgumentParser(description="Process GEE rasters to H3 parquets")
     parser.add_argument("--analysis", required=True, help="Analysis ID or 'all'")
-    parser.add_argument("--input-dir", default=OUTPUT_DIR, help="Directory with GeoTIFFs")
+    parser.add_argument("--territory", default="misiones",
+                        help="Territory ID from config.py (default: misiones)")
+    parser.add_argument("--input-dir", default=None,
+                        help="Directory with GeoTIFFs (default: OUTPUT_DIR or territory subdir)")
     args = parser.parse_args()
+
+    territory = get_territory(args.territory)
+    t_prefix = territory['output_prefix']
+
+    # For non-misiones territories, input/output live in a subdirectory
+    if t_prefix:
+        t_dir = os.path.join(OUTPUT_DIR, t_prefix.rstrip('/'))
+        input_dir = args.input_dir or t_dir
+        out_dir = t_dir
+        hexgrid_path = os.path.join(t_dir, 'hexagons.geojson')
+    else:
+        input_dir = args.input_dir or OUTPUT_DIR
+        out_dir = OUTPUT_DIR
+        hexgrid_path = HEXAGONS_PATH  # legacy Misiones path
+
+    os.makedirs(out_dir, exist_ok=True)
 
     if args.analysis == 'all':
         analyses = PIXEL_ANALYSES
     else:
         analyses = [a.strip() for a in args.analysis.split(',')]
 
-    # Load hex grid once
-    print("Loading hexagon grid...")
-    with open(HEXAGONS_PATH, 'r') as f:
+    # Load hex grid
+    print(f"Loading hexagon grid from {hexgrid_path}...")
+    if not os.path.exists(hexgrid_path):
+        print(f"  ERROR: hex grid not found. Run build_admin_crosswalk.py --territory {args.territory} first")
+        return 1
+    with open(hexgrid_path, 'r') as f:
         hexgrid = json.load(f)
     features = hexgrid['features']
-    print(f"  {len(features):,} hexagons")
+    print(f"  {len(features):,} hexagons  [{territory['label']}]")
 
     t0 = time.time()
     results = {}
@@ -318,18 +339,19 @@ def main():
             print(f"  SKIP {aid}: no component definition")
             continue
 
-        raster_path = os.path.join(args.input_dir, f"sat_{aid}_raster.tif")
+        raster_path = os.path.join(input_dir, f"sat_{aid}_raster.tif")
         if not os.path.exists(raster_path):
             print(f"  SKIP {aid}: raster not found at {raster_path}")
             continue
 
-        output_path = os.path.join(OUTPUT_DIR, f"sat_{aid}.parquet")
-        n = process_analysis(aid, raster_path, features, output_path)
+        output_path = os.path.join(out_dir, f"sat_{aid}.parquet")
+        n = process_analysis(aid, raster_path, features, output_path,
+                             territory_id=args.territory)
         results[aid] = n
 
     elapsed = time.time() - t0
     print(f"\n{'=' * 60}")
-    print(f"  Processed {len(results)} analyses in {elapsed:.0f}s")
+    print(f"  Processed {len(results)} analyses in {elapsed:.0f}s  [{territory['label']}]")
     for aid, n in results.items():
         print(f"    {aid}: {n:,} hexagons")
     print(f"{'=' * 60}")

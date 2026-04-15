@@ -10,7 +10,47 @@ from datetime import date, timedelta
 
 # ── Spatial ───────────────────────────────────────────────────────────────
 MISIONES_BBOX = [-56.10, -28.20, -53.55, -25.44]  # [W, S, E, N] — padded to cover edge hexagons
+POSADAS_BBOX  = [-56.05, -27.55, -55.65, -27.15]  # Departamento Capital, Misiones
 H3_RESOLUTION = 9
+
+# ── Multi-territory configuration ────────────────────────────────────────
+# Each territory can run the full satellite pipeline independently.
+# 'output_prefix' maps to R2 path prefix ('' = root = Misiones legacy paths).
+TERRITORY_CONFIGS: dict[str, dict] = {
+    'misiones': {
+        'id': 'misiones',
+        'label': 'Misiones',
+        'country': 'ar',
+        'bbox': [-56.10, -28.20, -53.55, -25.44],   # padded
+        'admin_level': 'departamento',
+        'admin_col': 'dpto',                          # column name in crosswalk
+        'admin_collection': None,                     # uses AR radio crosswalk
+        'admin_filter': None,
+        'output_prefix': '',                          # R2: data/sat_*.parquet
+        'export_scale': 100,
+    },
+    'itapua_py': {
+        'id': 'itapua_py',
+        'label': 'Itapúa',
+        'country': 'py',
+        'bbox': [-57.40, -27.70, -55.00, -26.40],   # padded to cover edge hexagons
+        'admin_level': 'distrito',
+        'admin_col': 'distrito',
+        'admin_collection': 'FAO/GAUL/2015/level2',  # provisional; see explore_itapua_admin.py
+        'admin_filter': ('ADM1_NAME', 'Itapua'),
+        'output_prefix': 'itapua_py/',               # R2: data/itapua_py/sat_*.parquet
+        'export_scale': 100,
+    },
+}
+
+def get_territory(territory_id: str) -> dict:
+    """Return territory config, raising KeyError with helpful message if not found."""
+    if territory_id not in TERRITORY_CONFIGS:
+        raise KeyError(
+            f"Unknown territory '{territory_id}'. "
+            f"Available: {list(TERRITORY_CONFIGS.keys())}"
+        )
+    return TERRITORY_CONFIGS[territory_id]
 
 # ── Google Cloud Storage ──────────────────────────────────────────────────
 GCS_BUCKET = "spatia-satellite"

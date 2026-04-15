@@ -7,10 +7,13 @@
 	import FloodZoneComparison from './FloodZoneComparison.svelte';
 	import HexComparison from './HexComparison.svelte';
 	import HexZoneComparison from './HexZoneComparison.svelte';
+	import TerritorySelector from './TerritorySelector.svelte';
+	import ComparisonPanel from './ComparisonPanel.svelte';
 	import { MapStore } from '$lib/stores/map.svelte';
 	import type { LensStore } from '$lib/stores/lens.svelte';
 	import type { LassoStore } from '$lib/stores/lasso.svelte';
 	import type { HexStore } from '$lib/stores/hex.svelte';
+	import type { TerritoryStore } from '$lib/stores/territory.svelte';
 	import { LENS_CONFIG, type AnalysisConfig, type LensId } from '$lib/config';
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import CTADiagnostic from './CTADiagnostic.svelte';
@@ -20,6 +23,7 @@
 		lensStore,
 		lassoStore,
 		hexStore,
+		territoryStore,
 		showAbout = false,
 		onRemoveRadio,
 		onClearRadios,
@@ -41,6 +45,7 @@
 		lensStore: LensStore;
 		lassoStore: LassoStore;
 		hexStore: HexStore;
+		territoryStore: TerritoryStore;
 		showAbout?: boolean;
 		onRemoveRadio: (redcode: string) => void;
 		onClearRadios: () => void;
@@ -90,6 +95,9 @@
 	<button class="collapse-btn" onclick={() => collapsed = true} title={i18n.t('side.welcome.hidePanel')}>
 		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 4 L18 12 L10 20"/></svg>
 	</button>
+
+	<TerritorySelector {territoryStore} />
+	<ComparisonPanel {territoryStore} {lensStore} />
 
 	{#if showAbout}
 		<!-- Welcome panel (triggered by header button) -->
@@ -158,7 +166,7 @@
 	{:else if lensStore.activeLens}
 		<!-- Lens active, no analysis, no radio: show analysis menu -->
 		<div class="chart-scroll">
-			<AnalysisMenu {lensStore} {onSelectAnalysis} />
+			<AnalysisMenu {lensStore} activeTerritory={territoryStore.activeTerritory} {onSelectAnalysis} />
 		</div>
 	{/if}
 

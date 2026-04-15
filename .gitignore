@@ -13,6 +13,10 @@ __pycache__/
 *.pyc
 
 # Pipeline outputs (large rasters & generated data)
+pipeline/output/**/*.tif
+pipeline/output/**/*.geojson
+pipeline/output/**/*.pmtiles
+pipeline/output/**/*.parquet
 pipeline/output/*.tif
 pipeline/output/*.geojson
 pipeline/output/*.pmtiles

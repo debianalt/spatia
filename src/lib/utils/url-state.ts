@@ -1,7 +1,9 @@
 import type { Locale } from '$lib/stores/i18n.svelte';
 import type { LensId } from '$lib/config';
+import { TERRITORY_REGISTRY } from '$lib/config';
 
 export interface UrlState {
+	territory?: string;
 	lens?: LensId;
 	analysis?: string;
 	dept?: string;
@@ -27,6 +29,9 @@ export function readUrlState(): UrlState {
 	const params = new URLSearchParams(window.location.search);
 
 	const state: UrlState = {};
+	const territory = params.get('t');
+	if (territory && TERRITORY_REGISTRY[territory]) state.territory = territory;
+
 	const lens = params.get('lens');
 	if (lens) state.lens = lens as LensId;
 
@@ -55,6 +60,7 @@ export function readUrlState(): UrlState {
 
 function serialize(state: UrlState): string {
 	const params = new URLSearchParams();
+	if (state.territory && state.territory !== 'misiones') params.set('t', state.territory);
 	if (state.lens) params.set('lens', state.lens);
 	if (state.analysis) params.set('a', state.analysis);
 	if (state.dept) params.set('dept', state.dept);

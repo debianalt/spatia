@@ -108,6 +108,19 @@ export class HexStore {
 		this.loadVisibleData();
 	}
 
+	territoryPrefix: string = $state('');
+
+	setTerritoryPrefix(prefix: string) {
+		this.territoryPrefix = prefix;
+	}
+
+	/** Territory-aware URL for the global parquet of a layer. */
+	private layerGlobalUrl(layer: HexLayerConfig): string | undefined {
+		const url = PARQUETS[layer.parquet as keyof typeof PARQUETS];
+		if (!url) return undefined;
+		return this.territoryPrefix ? url.replace('/data/', `/data/${this.territoryPrefix}`) : url;
+	}
+
 	async loadDepartment(dpto: string, parquetKey: string) {
 		if (!this.activeLayer) return;
 		const layer = this.activeLayer;
@@ -123,11 +136,11 @@ export class HexStore {
 			// Dispatch URL based on layer type
 			let url: string;
 			if (layer.id === 'flood_risk') {
-				url = getFloodDptoUrl(parquetKey);
+				url = getFloodDptoUrl(parquetKey, this.territoryPrefix);
 			} else if (layer.parquet?.startsWith('sat_')) {
-				url = getSatDptoUrl(layer.id, parquetKey);
+				url = getSatDptoUrl(layer.id, parquetKey, this.territoryPrefix);
 			} else {
-				url = getScoresDptoUrl(parquetKey);
+				url = getScoresDptoUrl(parquetKey, this.territoryPrefix);
 			}
 			// Use SELECT * for robustness — temporal parquets may or may not have _baseline/_delta cols
 			const result = await query(
@@ -138,17 +151,22 @@ export class HexStore {
 			const centroids = new Map<string, [number, number]>();
 			const boundaries = new Map<string, number[][]>();
 
-			const resultCols = new Set(result.schema.fields.map((f: any) => f.name));
+			const resultCols = result.schema.fields
+				.map((f: any) => f.name)
+				.filter((name: string) => name !== 'h3index');
+			const h3indexVec = result.getChild('h3index');
+			const colVecs = Object.fromEntries(
+				resultCols.map((col: string) => [col, result.getChild(col)])
+			);
 
 			for (let i = 0; i < result.numRows; i++) {
-				const row = result.get(i)!.toJSON() as Record<string, any>;
-				const h3index = row.h3index as string;
+				const h3index = String(h3indexVec!.get(i));
 				const values: Record<string, any> = {};
 				for (const col of resultCols) {
-					if (col === 'h3index') continue;
-					const val = row[col];
-					if (val === undefined || val === null) continue;
-					values[col] = typeof val === 'string' ? val : (Number(val) || 0);
+					const val = colVecs[col]?.get(i);
+					if (val === null || val === undefined) continue;
+					const num = Number(val);
+					values[col] = Number.isFinite(num) && typeof val !== 'string' ? num : String(val);
 				}
 				data.set(h3index, values);
 
@@ -199,7 +217,7 @@ export class HexStore {
 	}
 
 	private async loadBaseResolution(layer: HexLayerConfig) {
-		const url = PARQUETS[layer.parquet as keyof typeof PARQUETS];
+		const url = this.layerGlobalUrl(layer);
 		if (!url) return;
 
 		const baseCols = layer.variables.map(v => v.col);
@@ -219,14 +237,19 @@ export class HexStore {
 		const centroids = new Map<string, [number, number]>();
 		const boundaries = new Map<string, number[][]>();
 
+		const h3Vec = result.getChild('h3index');
+		const allColVecs = Object.fromEntries(
+			allCols.map((col: string) => [col, result.getChild(col)])
+		);
+
 		for (let i = 0; i < result.numRows; i++) {
-			const row = result.get(i)!.toJSON() as Record<string, any>;
-			const h3index = row.h3index as string;
+			const h3index = String(h3Vec!.get(i));
 			const values: Record<string, any> = {};
 			for (const col of allCols) {
-				const val = row[col];
-				if (val === undefined || val === null) continue;
-				values[col] = typeof val === 'string' ? val : (Number(val) || 0);
+				const val = allColVecs[col]?.get(i);
+				if (val === null || val === undefined) continue;
+				const num = Number(val);
+				values[col] = Number.isFinite(num) && typeof val !== 'string' ? num : String(val);
 			}
 			data.set(h3index, values);
 
@@ -334,7 +357,7 @@ export class HexStore {
 		if (!this.activeLayer) return [];
 
 		const layer = this.activeLayer;
-		const dataUrl = PARQUETS[layer.parquet as keyof typeof PARQUETS];
+		const dataUrl = this.layerGlobalUrl(layer);
 		if (!dataUrl) return [];
 
 		const numVars = this.numericVariables;
@@ -377,7 +400,7 @@ export class HexStore {
 		if (!this.activeLayer) return null;
 
 		const layer = this.activeLayer;
-		const dataUrl = PARQUETS[layer.parquet as keyof typeof PARQUETS];
+		const dataUrl = this.layerGlobalUrl(layer);
 		if (!dataUrl) return null;
 
 		const pv = layer.primaryVariable;

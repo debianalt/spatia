@@ -12,7 +12,7 @@ export function getTilesUrl(name: 'buildings' | 'radios' | 'terrain' | 'hexagons
 		buildings: 'tiles/buildings-v5.pmtiles',
 		radios: 'tiles/radios-v2.pmtiles',
 		hexagons: 'tiles/hexagons-v2.pmtiles',
-		catastro: 'tiles/catastro.pmtiles'
+		catastro: 'tiles/catastro.pmtiles?v=3'
 	};
 	return `pmtiles://${getBase()}/${files[name]}`;
 }
@@ -46,18 +46,18 @@ export function getParquetUrl(name: string): string {
 		hex_flood_risk: '?v=23',
 		sat_environmental_risk: '?v=27',
 		sat_climate_comfort: '?v=27',
-		sat_green_capital: '?v=25',
+		sat_green_capital: '?v=26',
 		sat_change_pressure: '?v=27',
 		sat_location_value: '?v=24',
 		sat_agri_potential: '?v=28',
 		sat_forest_health: '?v=27',
-		sat_forestry_aptitude: '?v=26',
+		sat_forestry_aptitude: '?v=30',
 		sat_service_deprivation: '?v=25',
 		sat_territorial_isolation: '?v=25',
 		sat_health_access: '?v=25',
 		sat_education_capital: '?v=25',
 		sat_education_flow: '?v=25',
-		sat_territorial_types: '?v=23',
+		sat_territorial_types: '?v=25',
 		sat_sociodemographic: '?v=22',
 		sat_economic_activity: '?v=22',
 		sat_accessibility: '?v=23',
@@ -68,26 +68,34 @@ export function getParquetUrl(name: string): string {
 		sat_productive_activity: '?v=4',
 		overture_scores: '?v=24',
 		emsa_powerlines: '?v=20',
-		catastro_by_h3: '?v=1',
 	};
 	const bust = busts[name] || '';
 	return `${getBase()}/data/${name}.parquet${bust}`;
 }
 
-export function getFloodDptoUrl(parquetKey: string): string {
-	return `${getBase()}/data/flood_dpto/hex_flood_${parquetKey}.parquet?v=20`;
+// DuckDB-WASM caches HTTP files by path, ignoring query params.
+// Using Date.now() ensures each session gets a unique URL that bypasses
+// DuckDB's internal httpfs cache, preventing stale parquet data.
+const _sessionBust = Date.now();
+
+export function getFloodDptoUrl(parquetKey: string, territoryPrefix = ''): string {
+	return `${getBase()}/data/${territoryPrefix}flood_dpto/hex_flood_${parquetKey}.parquet?cb=${_sessionBust}`;
 }
 
-export function getScoresDptoUrl(parquetKey: string): string {
-	return `${getBase()}/data/scores_dpto/overture_scores_${parquetKey}.parquet?v=20`;
+export function getScoresDptoUrl(parquetKey: string, territoryPrefix = ''): string {
+	return `${getBase()}/data/${territoryPrefix}scores_dpto/overture_scores_${parquetKey}.parquet?cb=${_sessionBust}`;
 }
 
-export function getSatDptoUrl(analysisId: string, parquetKey: string): string {
-	return `${getBase()}/data/sat_dpto/sat_${analysisId}_${parquetKey}.parquet?v=36`;
+export function getSatDptoUrl(analysisId: string, parquetKey: string, territoryPrefix = ''): string {
+	return `${getBase()}/data/${territoryPrefix}sat_dpto/sat_${analysisId}_${parquetKey}.parquet?cb=${_sessionBust}`;
 }
 
-export function getReportUrl(analysisId: string, parquetKey: string): string {
-	return `${getBase()}/data/reports/sat_${analysisId}_${parquetKey}.pdf`;
+export function getReportUrl(analysisId: string, parquetKey: string, territoryPrefix = ''): string {
+	return `${getBase()}/data/${territoryPrefix}reports/sat_${analysisId}_${parquetKey}.pdf`;
+}
+
+export function getSatGlobalUrl(analysisId: string, territoryPrefix = ''): string {
+	return `${getBase()}/data/${territoryPrefix}sat_${analysisId}.parquet?cb=${_sessionBust}`;
 }
 
 export const PARQUETS = {
@@ -102,7 +110,6 @@ export const PARQUETS = {
 	get h3_parent_crosswalk() { return getParquetUrl('h3_parent_crosswalk'); },
 	get catastro_by_radio() { return getParquetUrl('catastro_by_radio'); },
 	get catastro_changes() { return getParquetUrl('catastro_changes_summary'); },
-	get catastro_by_h3() { return getParquetUrl('catastro_by_h3'); },
 	get overture_buildings() { return getParquetUrl('overture_buildings'); },
 	get overture_transportation() { return getParquetUrl('overture_transportation'); },
 	get overture_places() { return getParquetUrl('overture_places'); },
@@ -164,6 +171,51 @@ export const COLOR_RAMPS = {
 
 export const GRADIENT_CSS = 'linear-gradient(to right, #0f1e30, #1e4060, #3080c0, #50a0e0, #70c0ff, #a0dfff, #d0f0ff)';
 
+// ── Territory system ──────────────────────────────────────────────────────────
+
+export type CountryId = 'ar' | 'py' | 'br';
+
+export interface TerritoryConfig {
+	id: string;
+	label: string;
+	shortLabel: string;
+	country: CountryId;
+	bbox: [number, number, number, number]; // [W, S, E, N]
+	parquetPrefix: string; // '' for Misiones, 'itapua_py/' for Itapúa, etc.
+	flag: string;
+	available: boolean;
+}
+
+export const TERRITORY_REGISTRY: Record<string, TerritoryConfig> = {
+	misiones: {
+		id: 'misiones', label: 'Misiones', shortLabel: 'MIS', country: 'ar',
+		bbox: [-56.10, -28.20, -53.55, -25.44],
+		parquetPrefix: '', flag: '🇦🇷', available: true,
+	},
+	itapua_py: {
+		id: 'itapua_py', label: 'Itapúa', shortLabel: 'ITA', country: 'py',
+		bbox: [-57.40, -27.70, -55.00, -26.40],
+		parquetPrefix: 'itapua_py/', flag: '🇵🇾', available: true,
+	},
+	alto_parana_py: {
+		id: 'alto_parana_py', label: 'Alto Paraná', shortLabel: 'APY', country: 'py',
+		bbox: [-55.80, -26.20, -54.20, -25.20],
+		parquetPrefix: 'alto_parana_py/', flag: '🇵🇾', available: false,
+	},
+};
+
+export function getDefaultTerritory(): TerritoryConfig {
+	return TERRITORY_REGISTRY['misiones'];
+}
+
+export function getTerritoriesByCountry(): Record<CountryId, TerritoryConfig[]> {
+	const result: Record<CountryId, TerritoryConfig[]> = { ar: [], py: [], br: [] };
+	for (const t of Object.values(TERRITORY_REGISTRY)) {
+		result[t.country].push(t);
+	}
+	return result;
+}
+
 // ── Lens system ──────────────────────────────────────────────────────────────
 
 export type LensId = 'invertir' | 'producir' | 'servir' | 'vivir';
@@ -188,6 +240,7 @@ export interface HexVariable {
 	aggregation: 'mean' | 'sum' | 'max';
 	rawCol?: string;
 	unit?: string;
+	hideIfZero?: boolean;
 }
 
 export type TemporalMode = 'current' | 'baseline' | 'delta';
@@ -203,6 +256,8 @@ export interface HexLayerConfig {
 	titleKey: string;
 	perDepartment?: boolean;
 	temporal?: boolean;
+	temporalPeriods?: { current: string; baseline: string; source?: string };
+	coverage?: Record<string, 'available' | 'pending' | 'unavailable'>;
 	legendLowKey?: string;
 	legendHighKey?: string;
 }
@@ -277,9 +332,9 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.envRisk.title',
 		perDepartment: true,
-		temporal: true,
 		legendLowKey: 'legend.envRisk.low',
 		legendHighKey: 'legend.envRisk.high',
+		coverage: { itapua_py: 'available' },
 	},
 	climate_comfort: {
 		id: 'climate_comfort',
@@ -295,14 +350,17 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.climate.title',
 		perDepartment: true,
-		temporal: true,
 		legendLowKey: 'legend.comfort.low',
 		legendHighKey: 'legend.comfort.high',
+		coverage: { itapua_py: 'available' },
 	},
 	green_capital: {
 		id: 'green_capital',
 		parquet: 'sat_green_capital',
 		variables: [
+			{ col: 'score', labelKey: 'sat.green.score', aggregation: 'mean' },
+			{ col: 'type', labelKey: 'sat.green.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.green.typeLabel', aggregation: 'mean' },
 			{ col: 'c_ndvi', labelKey: 'sat.green.ndvi', aggregation: 'mean' },
 			{ col: 'c_treecover', labelKey: 'sat.green.treecover', aggregation: 'mean' },
 			{ col: 'c_npp', labelKey: 'sat.green.npp', aggregation: 'mean' },
@@ -314,9 +372,9 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.green.title',
 		perDepartment: true,
-		temporal: true,
 		legendLowKey: 'legend.green.low',
 		legendHighKey: 'legend.green.high',
+		coverage: { itapua_py: 'available' },
 	},
 	change_pressure: {
 		id: 'change_pressure',
@@ -335,9 +393,9 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.change.title',
 		perDepartment: true,
-		temporal: true,
 		legendLowKey: 'legend.change.low',
 		legendHighKey: 'legend.change.high',
+		coverage: { itapua_py: 'available' },
 	},
 	location_value: {
 		id: 'location_value',
@@ -359,21 +417,6 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		legendLowKey: 'legend.locValue.low',
 		legendHighKey: 'legend.locValue.high',
 	},
-	catastro_h3_changes: {
-		id: 'catastro_h3_changes',
-		parquet: 'catastro_by_h3',
-		variables: [
-			{ col: 'n_added',   labelKey: 'sat.catH3.added',   aggregation: 'sum' },
-			{ col: 'n_removed', labelKey: 'sat.catH3.removed',  aggregation: 'sum' },
-			{ col: 'n_total',   labelKey: 'sat.catH3.total',    aggregation: 'sum' },
-		],
-		primaryVariable: 'net_change_norm',
-		colorScale: 'diverging',
-		aggregation: 'mean',
-		titleKey: 'sat.catH3.title',
-		legendLowKey: 'legend.catH3.low',
-		legendHighKey: 'legend.catH3.high',
-	},
 	agri_potential: {
 		id: 'agri_potential',
 		parquet: 'sat_agri_potential',
@@ -392,7 +435,6 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.agri.title',
 		perDepartment: true,
-		temporal: true,
 		legendLowKey: 'legend.agri.low',
 		legendHighKey: 'legend.agri.high',
 	},
@@ -411,22 +453,21 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'sat.forestH.title',
 		perDepartment: true,
-		temporal: true,
 		legendLowKey: 'legend.forestH.low',
 		legendHighKey: 'legend.forestH.high',
+		coverage: { itapua_py: 'available' },
 	},
 	forestry_aptitude: {
 		id: 'forestry_aptitude',
 		parquet: 'sat_forestry_aptitude',
 		variables: [
-			{ col: 'type', labelKey: 'sat.forestry.type', aggregation: 'mean' },
 			{ col: 'type_label', labelKey: 'sat.forestry.typeLabel', aggregation: 'mean' },
-			{ col: 'c_ph', labelKey: 'sat.forestry.ph', aggregation: 'mean' },
-			{ col: 'c_clay', labelKey: 'sat.forestry.clay', aggregation: 'mean' },
-			{ col: 'c_precipitation', labelKey: 'sat.forestry.precip', aggregation: 'mean' },
-			{ col: 'c_slope', labelKey: 'sat.forestry.slope', aggregation: 'mean' },
-			{ col: 'c_access_50k', labelKey: 'sat.forestry.access50k', aggregation: 'mean' },
-			{ col: 'c_road_dist', labelKey: 'sat.forestry.roadDist', aggregation: 'mean' },
+			{ col: 'gdd', labelKey: 'sat.forestry.gdd', aggregation: 'mean' },
+			{ col: 'precip_total', labelKey: 'sat.forestry.precip', aggregation: 'mean' },
+			{ col: 'water_deficit', labelKey: 'sat.forestry.waterDeficit', aggregation: 'mean' },
+			{ col: 'slope_mean', labelKey: 'sat.forestry.slope', aggregation: 'mean' },
+			{ col: 'clay', labelKey: 'sat.forestry.clay', aggregation: 'mean' },
+			{ col: 'soc', labelKey: 'sat.forestry.soc', aggregation: 'mean' },
 		],
 		primaryVariable: 'score',
 		colorScale: 'green',
@@ -541,7 +582,9 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'territorial_types',
 		parquet: 'sat_territorial_types',
 		variables: [
-			{ col: 'territorial_type', labelKey: 'sat.types.type', aggregation: 'mean' },
+			{ col: 'score', labelKey: 'sat.types.score', aggregation: 'mean' },
+			{ col: 'type', labelKey: 'sat.types.type', aggregation: 'mean' },
+			{ col: 'type_label', labelKey: 'sat.types.typeLabel', aggregation: 'mean' },
 			{ col: 'm_npp', labelKey: 'sat.types.npp', aggregation: 'mean' },
 			{ col: 'm_ndvi', labelKey: 'sat.types.ndvi', aggregation: 'mean' },
 			{ col: 'm_treecover', labelKey: 'sat.types.treecover', aggregation: 'mean' },
@@ -554,11 +597,13 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'm_gdd', labelKey: 'sat.types.gdd', aggregation: 'mean' },
 			{ col: 'm_precipitation', labelKey: 'sat.types.precip', aggregation: 'mean' },
 		],
-		primaryVariable: 'territorial_type',
-		colorScale: 'categorical',
+		primaryVariable: 'score',
+		colorScale: 'sequential',
 		aggregation: 'mean',
 		titleKey: 'sat.types.title',
 		perDepartment: true,
+		legendLowKey: 'legend.types.low',
+		legendHighKey: 'legend.types.high',
 	},
 	// ── Migrated from radio/catastro to H3 ──
 	territorial_scores: {
@@ -592,12 +637,12 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'score', labelKey: 'analysis.socio.score', aggregation: 'mean' },
 			{ col: 'type', labelKey: 'analysis.socio.type', aggregation: 'mean' },
 			{ col: 'type_label', labelKey: 'analysis.socio.typeLabel', aggregation: 'mean' },
-			{ col: 'densidad_hab_km2', labelKey: 'radio.densidad', aggregation: 'mean', unit: 'hab/km²' },
-			{ col: 'pct_nbi', labelKey: 'radio.nbi', aggregation: 'mean', unit: '%' },
-			{ col: 'pct_hacinamiento', labelKey: 'radio.hacinamiento', aggregation: 'mean', unit: '%' },
-			{ col: 'pct_propietario', labelKey: 'radio.propietario', aggregation: 'mean', unit: '%' },
-			{ col: 'tamano_medio_hogar', labelKey: 'radio.tamHogar', aggregation: 'mean', unit: 'pers.' },
-			{ col: 'pct_computadora', labelKey: 'radio.computadora', aggregation: 'mean', unit: '%' },
+			{ col: 'densidad_hab_km2',   labelKey: 'radio.densidad.pctl',    aggregation: 'mean', unit: 'pctl' },
+			{ col: 'pct_nbi',            labelKey: 'radio.nbi.pctl',          aggregation: 'mean', unit: 'pctl' },
+			{ col: 'pct_hacinamiento',   labelKey: 'radio.hacinamiento.pctl', aggregation: 'mean', unit: 'pctl' },
+			{ col: 'pct_propietario',    labelKey: 'radio.propietario.pctl',  aggregation: 'mean', unit: 'pctl' },
+			{ col: 'tamano_medio_hogar', labelKey: 'radio.tamHogar.pctl',     aggregation: 'mean', unit: 'pctl' },
+			{ col: 'pct_computadora',    labelKey: 'radio.computadora.pctl',  aggregation: 'mean', unit: 'pctl' },
 		],
 		primaryVariable: 'score',
 		colorScale: 'flood',
@@ -675,6 +720,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		titleKey: 'sat.carbon.title',
 		perDepartment: true,
 		temporal: true,
+		temporalPeriods: { current: '2022–2024', baseline: '2018–2020', source: 'ESA CCI · MODIS · Hansen' },
 		legendLowKey: 'legend.carbon.low',
 		legendHighKey: 'legend.carbon.high',
 	},
@@ -712,7 +758,6 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		],
 		titleKey: 'sat.climVuln.title',
 		perDepartment: true,
-		temporal: true,
 		legendLowKey: 'legend.climVuln.low',
 		legendHighKey: 'legend.climVuln.high',
 	},
@@ -741,6 +786,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		titleKey: 'sat.pm25.title',
 		perDepartment: true,
 		temporal: true,
+		temporalPeriods: { current: '2013–2022', baseline: '2001–2010', source: 'ACAG V6' },
 		legendLowKey: 'legend.pm25.low',
 		legendHighKey: 'legend.pm25.high',
 	},
@@ -771,7 +817,6 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		],
 		titleKey: 'sat.prodAct.title',
 		perDepartment: true,
-		temporal: true,
 		legendLowKey: 'legend.prodAct.low',
 		legendHighKey: 'legend.prodAct.high',
 	},
@@ -791,6 +836,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		titleKey: 'sat.deforest.title',
 		perDepartment: true,
 		temporal: true,
+		temporalPeriods: { current: '2015–2024', baseline: '2001–2010', source: 'Hansen GFC v1.12' },
 		legendLowKey: 'legend.deforest.low',
 		legendHighKey: 'legend.deforest.high',
 	},
@@ -832,6 +878,7 @@ export interface AnalysisConfig {
 	status: 'available' | 'coming_soon';
 	spatialUnit?: 'radio' | 'hexagon' | 'catastro';
 	dashboard?: boolean;
+	coverage?: Record<string, 'available' | 'pending' | 'unavailable'>;
 	choropleth?: {
 		parquet: string;
 		column: string;
@@ -850,14 +897,6 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 
 		status: 'available',
 		spatialUnit: 'catastro',
-	},
-	{
-		id: 'catastro_h3_changes',
-		lensId: 'vivir',
-		titleKey: 'sat.catH3.title',
-		descKey: 'sat.catH3.desc',
-		status: 'available',
-		spatialUnit: 'hexagon',
 	},
 	{
 		id: 'flood_risk',
@@ -912,6 +951,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 
 		status: 'available',
 		spatialUnit: 'hexagon',
+		coverage: { itapua_py: 'available' },
 	},
 	{
 		id: 'climate_comfort',
@@ -921,6 +961,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 
 		status: 'available',
 		spatialUnit: 'hexagon',
+		coverage: { itapua_py: 'available' },
 	},
 	{
 		id: 'green_capital',
@@ -930,6 +971,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 
 		status: 'available',
 		spatialUnit: 'hexagon',
+		coverage: { itapua_py: 'available' },
 	},
 	{
 		id: 'change_pressure',
@@ -939,6 +981,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 
 		status: 'available',
 		spatialUnit: 'hexagon',
+		coverage: { itapua_py: 'available' },
 	},
 	{
 		id: 'location_value',
@@ -975,6 +1018,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 
 		status: 'available',
 		spatialUnit: 'hexagon',
+		coverage: { itapua_py: 'available' },
 	},
 	{
 		id: 'forestry_aptitude',
@@ -1310,11 +1354,6 @@ export const DATA_FRESHNESS: Record<string, { dataDate: string; processedDate: s
 	catastro_by_radio: {
 		dataDate: 'marzo 2026',
 		processedDate: '22/03/2026',
-		sourceKey: 'data.source.catastro',
-	},
-	catastro_by_h3: {
-		dataDate: 'Actualización mensual automática',
-		processedDate: 'GitHub Actions — 1ro de cada mes',
 		sourceKey: 'data.source.catastro',
 	},
 	buildings_stats: {

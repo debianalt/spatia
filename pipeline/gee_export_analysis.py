@@ -18,7 +18,7 @@ import os
 import sys
 import time
 
-from config import MISIONES_BBOX, OUTPUT_DIR
+from config import MISIONES_BBOX, OUTPUT_DIR, get_territory
 
 EXPORT_SCALE = 100  # metres — sweet spot for H3 res-9 (~174m hex side)
 DRIVE_FOLDER = 'spatia-satellite'
@@ -55,7 +55,8 @@ def build_environmental_risk(bbox):
             .filterBounds(bbox)
             .select('BurnDate')
             .map(lambda img: img.gt(0).unmask(0))
-            .mean())
+            .mean()
+            .unmask(0))  # fill any gaps if collection is sparse for this region
 
     hansen = ee.Image('UMD/hansen/global_forest_change_2024_v1_12')
     deforest = hansen.select('loss').unmask(0)
@@ -173,7 +174,8 @@ def build_change_pressure(bbox):
     fire = (ee.ImageCollection('MODIS/061/MCD64A1')
             .filterDate(DATE_START, DATE_END).filterBounds(bbox)
             .select('BurnDate').map(lambda img: img.gt(0).unmask(0))
-            .sum())
+            .sum()
+            .unmask(0))
 
     return (viirs_change.rename('c_viirs_trend')
             .addBands(ghsl_change.rename('c_ghsl_change'))
@@ -234,7 +236,8 @@ def build_forest_health(bbox):
     fire = (ee.ImageCollection('MODIS/061/MCD64A1')
             .filterDate(DATE_START, DATE_END).filterBounds(bbox)
             .select('BurnDate').map(lambda img: img.gt(0).unmask(0))
-            .mean())
+            .mean()
+            .unmask(0))
 
     gpp = (ee.ImageCollection('MODIS/061/MOD17A2HGF')
            .filterDate(DATE_START, DATE_END).filterBounds(bbox)
@@ -295,14 +298,12 @@ def build_air_quality(bbox):
 
 
 def build_forestry_aptitude(bbox):
-    """Forestry aptitude for commercial pines (pH + clay + precip + slope + road + access).
+    """DEPRECATED — reemplazado por pipeline/compute_forestry_sdm.py.
 
-    Sources:
-      - pH & clay: SoilGrids 2.0 (ISRIC) 0-5cm, 250m
-      - Precipitation: CHIRPS daily sum 2019-2024 / 6 years
-      - Slope: SRTM 30m derived slope
-      - Road distance: Distance to any OSM road (primary/secondary/tertiary)
-      - Access 50k: Oxford Global Accessibility to Cities (50k pop, 2015, 1km)
+    Este export ya no se ejecuta. El nuevo pipeline usa un SDM (Random Forest)
+    entrenado sobre MapBiomas silvicultura como presencia y covariables
+    biofisicas al nivel H3, con mascara satelital de agua/urbano/bosque nativo.
+    Ver compute_forestry_sdm.py.
     """
     ph_raw = ee.Image('projects/soilgrids-isric/phh2o_mean').select('phh2o_0-5cm_mean').unmask(50)
     ph = ph_raw.divide(10)  # SoilGrids stores pH*10
@@ -343,21 +344,29 @@ ANALYSIS_BUILDERS = {
     'change_pressure': build_change_pressure,
     'agri_potential': build_agri_potential,
     'forest_health': build_forest_health,
-    'forestry_aptitude': build_forestry_aptitude,
     'air_quality': build_air_quality,
 }
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Export GEE analysis composites to Drive")
+    parser = argparse.ArgumentParser(description="Export GEE analysis composites to Drive/GCS")
     parser.add_argument("--analysis", required=True, help="Analysis ID or 'all'")
-    parser.add_argument("--scale", type=int, default=EXPORT_SCALE, help=f"Export scale in metres (default: {EXPORT_SCALE})")
+    parser.add_argument("--territory", default="misiones",
+                        help="Territory ID from config.py (default: misiones)")
+    parser.add_argument("--scale", type=int, default=None,
+                        help="Export scale in metres (default: from territory config)")
     parser.add_argument("--gcs", action="store_true", help="Force export to GCS (default: auto-detect CI)")
+    parser.add_argument("--batch-size", type=int, default=6,
+                        help="Max concurrent GEE tasks (default: 6; GEE Partner limit ~25)")
     args = parser.parse_args()
+
+    territory = get_territory(args.territory)
+    scale = args.scale or territory['export_scale']
+    t_prefix = territory['output_prefix']  # '' for misiones, 'itapua_py/' for itapua
 
     is_ci = authenticate()
     use_gcs = args.gcs or is_ci
-    bbox = ee.Geometry.Rectangle(MISIONES_BBOX)
+    bbox = ee.Geometry.Rectangle(territory['bbox'])
 
     if args.analysis == 'all':
         analyses = list(ANALYSIS_BUILDERS.keys())
@@ -365,42 +374,68 @@ def main():
         analyses = [a.strip() for a in args.analysis.split(',')]
 
     dest = f"GCS ({GCS_BUCKET})" if use_gcs else f"Drive ({DRIVE_FOLDER})"
-    print(f"Exporting {len(analyses)} analyses at {args.scale}m scale -> {dest}")
+    print(f"Territory: {territory['label']} ({args.territory})")
+    print(f"Exporting {len(analyses)} analyses at {scale}m scale -> {dest}")
+    if t_prefix:
+        print(f"Output prefix: satellite/{t_prefix}")
     tasks = []
 
-    for aid in analyses:
-        if aid not in ANALYSIS_BUILDERS:
-            print(f"  SKIP {aid}: no builder defined")
-            continue
+    # Process in batches to stay within GEE concurrent task limits
+    for i in range(0, len(analyses), args.batch_size):
+        batch = analyses[i:i + args.batch_size]
+        batch_tasks = []
 
-        print(f"\n  Building {aid}...")
-        composite = ANALYSIS_BUILDERS[aid](bbox)
+        for aid in batch:
+            if aid not in ANALYSIS_BUILDERS:
+                print(f"  SKIP {aid}: no builder defined")
+                continue
 
-        if use_gcs:
-            task = ee.batch.Export.image.toCloudStorage(
-                image=composite,
-                description=f'sat_{aid}_raster',
-                bucket=GCS_BUCKET,
-                fileNamePrefix=f'satellite/sat_{aid}_raster',
-                region=bbox,
-                scale=args.scale,
-                crs='EPSG:4326',
-                maxPixels=1e9,
-            )
-        else:
-            task = ee.batch.Export.image.toDrive(
-                image=composite,
-                description=f'sat_{aid}_raster',
-                folder=DRIVE_FOLDER,
-                fileNamePrefix=f'sat_{aid}_raster',
-                region=bbox,
-                scale=args.scale,
-                crs='EPSG:4326',
-                maxPixels=1e9,
-            )
-        task.start()
-        tasks.append((aid, task))
-        print(f"    Export started: sat_{aid}_raster")
+            print(f"\n  Building {aid}...")
+            composite = ANALYSIS_BUILDERS[aid](bbox)
+
+            # GCS prefix: satellite/{t_prefix}sat_{aid}_raster
+            # e.g. satellite/sat_env_risk_raster  (misiones)
+            # e.g. satellite/itapua_py/sat_env_risk_raster  (itapua)
+            gcs_prefix = f'satellite/{t_prefix}sat_{aid}_raster'
+            description = f'{args.territory}_{aid}_raster' if args.territory != 'misiones' else f'sat_{aid}_raster'
+
+            if use_gcs:
+                task = ee.batch.Export.image.toCloudStorage(
+                    image=composite,
+                    description=description,
+                    bucket=GCS_BUCKET,
+                    fileNamePrefix=gcs_prefix,
+                    region=bbox,
+                    scale=scale,
+                    crs='EPSG:4326',
+                    maxPixels=1e9,
+                )
+            else:
+                task = ee.batch.Export.image.toDrive(
+                    image=composite,
+                    description=description,
+                    folder=DRIVE_FOLDER,
+                    fileNamePrefix=f'{t_prefix}sat_{aid}_raster' if t_prefix else f'sat_{aid}_raster',
+                    region=bbox,
+                    scale=scale,
+                    crs='EPSG:4326',
+                    maxPixels=1e9,
+                )
+            task.start()
+            batch_tasks.append((aid, task))
+            tasks.append((aid, task))
+            print(f"    Export started: {description}")
+
+        # Wait for this batch before starting the next (avoid overloading GEE queue)
+        if i + args.batch_size < len(analyses):
+            print(f"\n  Waiting for batch {i // args.batch_size + 1} ({len(batch_tasks)} tasks)...")
+            while True:
+                statuses = [(aid, t.status()['state']) for aid, t in batch_tasks]
+                running = sum(1 for _, s in statuses if s in ('READY', 'RUNNING'))
+                if running == 0:
+                    break
+                print(f"    [{running} running] " + ', '.join(f"{a}={s}" for a, s in statuses))
+                time.sleep(30)
 
     if not tasks:
         print("No tasks to run")

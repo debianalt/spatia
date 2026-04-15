@@ -1,19 +1,30 @@
 <script lang="ts">
-	import { getAnalysesForLens, LENS_CONFIG, type AnalysisConfig } from '$lib/config';
+	import { getAnalysesForLens, LENS_CONFIG, type AnalysisConfig, type TerritoryConfig } from '$lib/config';
 	import type { LensStore } from '$lib/stores/lens.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
 
 	let {
 		lensStore,
+		activeTerritory,
 		onSelectAnalysis,
 	}: {
 		lensStore: LensStore;
+		activeTerritory?: TerritoryConfig;
 		onSelectAnalysis: (analysis: AnalysisConfig) => void;
 	} = $props();
 
 	const lens = $derived(lensStore.activeLens);
 	const cfg = $derived(lens ? LENS_CONFIG[lens] : null);
 	const analyses = $derived(lens ? getAnalysesForLens(lens) : []);
+
+	function getCoverage(analysis: AnalysisConfig): 'available' | 'pending' | 'unavailable' {
+		if (!activeTerritory) return 'available';
+		if (!analysis.coverage) {
+			// No coverage map: available for Misiones (backwards compat), pending for new territories
+			return activeTerritory.id === 'misiones' ? 'available' : 'pending';
+		}
+		return analysis.coverage[activeTerritory.id] ?? 'pending';
+	}
 </script>
 
 {#if cfg && lens}
@@ -24,18 +35,24 @@
 
 		<div class="analysis-list">
 			{#each analyses as analysis}
-				<button
-					class="analysis-item"
-					class:available={analysis.status === 'available'}
-					class:coming-soon={analysis.status === 'coming_soon'}
-					onclick={() => onSelectAnalysis(analysis)}
-				>
-					<div class="item-title">{i18n.t(analysis.titleKey)}</div>
-					<div class="item-desc">{i18n.t(analysis.descKey)}</div>
-					{#if analysis.status === 'coming_soon'}
-						<span class="item-badge">{i18n.t('analysis.status.comingSoon')}</span>
-					{/if}
-				</button>
+				{@const coverage = getCoverage(analysis)}
+				{#if coverage !== 'unavailable'}
+					<button
+						class="analysis-item"
+						class:available={analysis.status === 'available' && coverage === 'available'}
+						class:coming-soon={analysis.status === 'coming_soon' || coverage === 'pending'}
+						disabled={analysis.status === 'coming_soon' || coverage === 'pending'}
+						onclick={() => onSelectAnalysis(analysis)}
+					>
+						<div class="item-title">{i18n.t(analysis.titleKey)}</div>
+						<div class="item-desc">{i18n.t(analysis.descKey)}</div>
+						{#if analysis.status === 'coming_soon'}
+							<span class="item-badge">{i18n.t('analysis.status.comingSoon')}</span>
+						{:else if coverage === 'pending'}
+							<span class="item-badge">⏳ próximamente</span>
+						{/if}
+					</button>
+				{/if}
 			{/each}
 		</div>
 	</div>
@@ -88,6 +105,7 @@
 	}
 	.analysis-item.coming-soon {
 		opacity: 0.45;
+		cursor: not-allowed;
 	}
 	.analysis-item.coming-soon:hover {
 		opacity: 0.6;
