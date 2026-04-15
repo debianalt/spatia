@@ -86,8 +86,10 @@ export class HexStore {
 		this.temporalMode = 'current';
 		this.selectedDpto = null;
 
-		// Per-department layers: don't load all data, wait for department selection
-		if (cfg.perDepartment) {
+		// Per-department layers: don't load all data, wait for department selection.
+		// Exception: non-default territories load the global parquet directly
+		// (dept summaries may not exist, and territory is small enough to load all hexes at once).
+		if (cfg.perDepartment && !this.territoryPrefix) {
 			this.loading = false;
 			return;
 		}
@@ -115,6 +117,10 @@ export class HexStore {
 		this.territoryPrefix = prefix;
 		layerDataCache.clear();
 		this.colorDomain = null;
+		// Clear hex data from previous territory so the old choropleth disappears immediately
+		this.visibleData = new Map();
+		this.selectedDpto = null;
+		this.dataVersion++;
 	}
 
 	/** Territory-aware URL for the global parquet of a layer. */
@@ -205,7 +211,8 @@ export class HexStore {
 	async loadVisibleData() {
 		const layer = this.activeLayer;
 		if (!layer || !isReady()) return;
-		if (layer.perDepartment) return;
+		// For non-default territories, always load global parquet even for perDepartment layers
+		if (layer.perDepartment && !this.territoryPrefix) return;
 
 		this.loading = true;
 
