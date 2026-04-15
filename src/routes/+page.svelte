@@ -42,9 +42,16 @@
 		if (typeof window !== 'undefined') updateUrlState();
 	});
 
-	// Sync territory prefix to hexStore whenever territory changes
+	// Sync territory prefix + fly map + reload data whenever territory changes
 	$effect(() => {
-		hexStore.setTerritoryPrefix(territoryStore.activeTerritory.parquetPrefix);
+		const t = territoryStore.activeTerritory;
+		hexStore.setTerritoryPrefix(t.parquetPrefix);
+		// Fly map to new territory bbox after a short delay (map may still be initialising)
+		setTimeout(() => mapComponent?.flyToBbox(t.bbox), 100);
+		// Reload hex choropleth for the new territory
+		hexStore.loadVisibleData();
+		// Reset selected dept since admin units differ per territory
+		hexStore.selectedDpto = null;
 	});
 
 	onMount(() => {

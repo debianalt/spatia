@@ -507,6 +507,16 @@
 		});
 	}
 
+	export function flyToBbox(bbox: [number, number, number, number]) {
+		// bbox: [W, S, E, N]
+		map?.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], {
+			padding: 40,
+			pitch: 50,
+			duration: 1500,
+			maxZoom: 10
+		});
+	}
+
 	// ── Lens opportunity glow layers ─────────────────────────────────────────
 
 	export function setOpportunityGlow(redcodes: string[], color: string) {
@@ -616,8 +626,8 @@
 					],
 					'fill-opacity': [
 						'case',
-						['==', ['get', 'is_removed'], 1], 0.55,
-						0.95
+						['==', ['get', 'is_removed'], 1], 0.45,
+						0.75
 					],
 					'fill-outline-color': [
 						'case',
@@ -642,28 +652,21 @@
 				type: 'line',
 				source: 'catastro',
 				'source-layer': 'catastro',
-				minzoom: 13,
+				minzoom: 12,
 				paint: {
 					'line-color': [
 						'case',
-						['==', ['get', 'is_removed'], 1], '#7f1d1d',
-						['==', ['get', 'is_new'], 1], '#b45309',
-						[
-							'match', ['get', 'tipo'],
-							'urbano', '#0e7490',
-							'rural', '#15803d',
-							'#0e7490'
-						]
+						['==', ['get', 'is_removed'], 1], '#fca5a5',
+						['==', ['get', 'is_new'], 1], '#fde68a',
+						'rgba(0,0,0,0.7)'
 					],
 					'line-width': [
-						'case',
-						['==', ['get', 'is_removed'], 1],
-						['interpolate', ['linear'], ['zoom'], 13, 1.2, 15, 2.0],
-						['==', ['get', 'is_new'], 1],
-						['interpolate', ['linear'], ['zoom'], 13, 1.0, 15, 1.8],
-						['interpolate', ['linear'], ['zoom'], 13, 0.5, 15, 1.0]
+						'interpolate', ['linear'], ['zoom'],
+						12, ['case', ['==', ['get', 'is_removed'], 1], 1.2, ['==', ['get', 'is_new'], 1], 1.0, 0.8],
+						14, ['case', ['==', ['get', 'is_removed'], 1], 2.0, ['==', ['get', 'is_new'], 1], 1.6, 1.2],
+						17, ['case', ['==', ['get', 'is_removed'], 1], 3.0, ['==', ['get', 'is_new'], 1], 2.5, 2.0]
 					],
-					'line-opacity': ['interpolate', ['linear'], ['zoom'], 13, 0.7, 15, 0.9]
+					'line-opacity': 1.0
 				}
 			});
 		}
