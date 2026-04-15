@@ -86,10 +86,8 @@ export class HexStore {
 		this.temporalMode = 'current';
 		this.selectedDpto = null;
 
-		// Per-department layers: don't load all data, wait for department selection.
-		// Exception: non-default territories load the global parquet directly
-		// (dept summaries may not exist, and territory is small enough to load all hexes at once).
-		if (cfg.perDepartment && !this.territoryPrefix) {
+		// Per-department layers: don't load all data, wait for department selection
+		if (cfg.perDepartment) {
 			this.loading = false;
 			return;
 		}
@@ -211,8 +209,7 @@ export class HexStore {
 	async loadVisibleData() {
 		const layer = this.activeLayer;
 		if (!layer || !isReady()) return;
-		// For non-default territories, always load global parquet even for perDepartment layers
-		if (layer.perDepartment && !this.territoryPrefix) return;
+		if (layer.perDepartment) return;
 
 		this.loading = true;
 
