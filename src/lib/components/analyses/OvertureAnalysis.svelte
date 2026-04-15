@@ -65,22 +65,29 @@
 		deforestation_dynamics: () => import('$lib/data/sat_deforestation_dynamics_dept_summary.json'),
 	};
 
+	// Bundled summaries for Itapúa (distritos, admin_col='distrito')
+	const ITAPUA_SUMMARIES: Record<string, () => Promise<any>> = {
+		environmental_risk: () => import('$lib/data/itapua_py_sat_environmental_risk_summary.json'),
+		climate_comfort: () => import('$lib/data/itapua_py_sat_climate_comfort_summary.json'),
+		green_capital: () => import('$lib/data/itapua_py_sat_green_capital_summary.json'),
+		change_pressure: () => import('$lib/data/itapua_py_sat_change_pressure_summary.json'),
+		forest_health: () => import('$lib/data/itapua_py_sat_forest_health_summary.json'),
+	};
+
+	// Lookup: territory prefix → summaries dict (add new territories here)
+	const TERRITORY_SUMMARIES: Record<string, Record<string, () => Promise<any>>> = {
+		'itapua_py/': ITAPUA_SUMMARIES,
+	};
+
 	$effect(() => {
 		if (!isPerDept || !layerCfg) return;
 		const prefix = hexStore.territoryPrefix;
 		deptSummary = null;
-		if (prefix) {
-			// Non-default territory: fetch from R2 dynamically
-			fetch(getDeptSummaryUrl(layerCfg.id, prefix))
-				.then(r => r.ok ? r.json() : null)
-				.then(data => { deptSummary = data; })
-				.catch(() => { deptSummary = null; });
-		} else {
-			// Default territory (Misiones): use bundled static JSON
-			const loader = SAT_SUMMARIES[layerCfg.id];
-			if (loader) {
-				loader().then(mod => { deptSummary = mod.default; }).catch(() => {});
-			}
+		const summaries = prefix ? TERRITORY_SUMMARIES[prefix] : SAT_SUMMARIES;
+		if (!summaries) return; // unknown territory, no dept summaries yet
+		const loader = summaries[layerCfg.id];
+		if (loader) {
+			loader().then(mod => { deptSummary = mod.default; }).catch(() => {});
 		}
 	});
 
@@ -148,7 +155,9 @@
 
 	function handleDptoClick(dept: any) {
 		if (onSelectDpto) {
-			onSelectDpto(dept.dpto, dept.parquetKey, dept.centroid as [number, number]);
+			// Support both 'dpto' (Misiones) and 'distrito' (Itapúa) admin column names
+			const name = dept.dpto ?? dept.distrito ?? '';
+			onSelectDpto(name, dept.parquetKey, dept.centroid as [number, number]);
 		}
 	}
 
@@ -159,7 +168,7 @@
 	let downloadState = $state<'idle' | 'csv' | 'geojson'>('idle');
 
 	function currentParquetKey(): string {
-		const dept = deptList.find((d: any) => d.dpto === selectedDpto);
+		const dept = deptList.find((d: any) => (d.dpto ?? d.distrito) === selectedDpto);
 		return dept?.parquetKey || 'data';
 	}
 
@@ -194,15 +203,16 @@
 	}
 
 	function urlForAnalysis(id: string, parquetKey: string): string {
-		if (id === 'flood_risk') return getFloodDptoUrl(parquetKey);
-		if (id === 'territorial_scores') return getScoresDptoUrl(parquetKey);
-		return getSatDptoUrl(id, parquetKey);
+		const tp = hexStore.territoryPrefix;
+		if (id === 'flood_risk') return getFloodDptoUrl(parquetKey, tp);
+		if (id === 'territorial_scores') return getScoresDptoUrl(parquetKey, tp);
+		return getSatDptoUrl(id, parquetKey, tp);
 	}
 
 	// Data download URL for selected department
 	const dataUrl = $derived.by(() => {
 		if (!selectedDpto || !layerCfg || !deptList.length) return null;
-		const dept = deptList.find((d: any) => d.dpto === selectedDpto);
+		const dept = deptList.find((d: any) => (d.dpto ?? d.distrito) === selectedDpto);
 		if (!dept) return null;
 		return urlForAnalysis(layerCfg.id, dept.parquetKey);
 	});
@@ -243,7 +253,7 @@
 		const dpto = selectedDpto;
 		if (!hex || !dpto || !deptList.length) { crossProfile = []; return; }
 
-		const dept = deptList.find((d: any) => d.dpto === dpto);
+		const dept = deptList.find((d: any) => (d.dpto ?? d.distrito) === dpto);
 		if (!dept) { crossProfile = []; return; }
 
 		const h3 = hex.h3index;
@@ -303,7 +313,7 @@
 
 	async function loadDiagnostic() {
 		if (!selectedDpto || !deptList.length) return;
-		const dept = deptList.find((d: any) => d.dpto === selectedDpto);
+		const dept = deptList.find((d: any) => (d.dpto ?? d.distrito) === selectedDpto);
 		if (!dept) return;
 
 		showDiagnostic = true;
@@ -332,7 +342,7 @@
 	// PDF report URL for selected department
 	const reportUrl = $derived.by(() => {
 		if (!selectedDpto || !layerCfg || !deptList.length) return null;
-		const dept = deptList.find((d: any) => d.dpto === selectedDpto);
+		const dept = deptList.find((d: any) => (d.dpto ?? d.distrito) === selectedDpto);
 		if (!dept) return null;
 		return getReportUrl(layerCfg.id, dept.parquetKey);
 	});
@@ -736,7 +746,7 @@
 			{:else}
 				{#each deptList as dept}
 					<button class="dept-row dept-clickable" onclick={() => handleDptoClick(dept)}>
-						<div class="dept-name">{dept.dpto}</div>
+						<div class="dept-name">{dept.dpto ?? dept.distrito}</div>
 						<div class="dept-score">
 							{dept.hex_count?.toLocaleString() ?? ''} hex
 						</div>
