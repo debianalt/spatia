@@ -48,6 +48,8 @@
 		hexStore.setTerritoryPrefix(t.parquetPrefix);
 		// Fly map to new territory bbox after a short delay (map may still be initialising)
 		setTimeout(() => mapComponent?.flyToBbox(t.bbox), 100);
+		// Toggle territory-specific layers (mask, province boundary, buildings)
+		mapComponent?.setActiveTerritory(t.id);
 		// Reload hex choropleth for the new territory
 		hexStore.loadVisibleData();
 		// Reset selected dept since admin units differ per territory

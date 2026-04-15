@@ -111,7 +111,10 @@ export class HexStore {
 	territoryPrefix: string = $state('');
 
 	setTerritoryPrefix(prefix: string) {
+		if (this.territoryPrefix === prefix) return;
 		this.territoryPrefix = prefix;
+		layerDataCache.clear();
+		this.colorDomain = null;
 	}
 
 	/** Territory-aware URL for the global parquet of a layer. */

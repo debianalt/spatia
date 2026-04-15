@@ -17,6 +17,7 @@
 	let map: maplibregl.Map;
 	let lassoActive = false;
 	let catastroActive = false;
+	let activeTerritoryId = 'misiones';
 
 	onMount(() => {
 		const protocol = new Protocol();
@@ -144,6 +145,22 @@
 				type: 'fill-extrusion',
 				source: 'buildings',
 				'source-layer': 'buildings',
+				paint: {
+					'fill-extrusion-height': ['max', ['coalesce', ['get', 'best_height_m'], 5], 5],
+					'fill-extrusion-base': 0,
+					'fill-extrusion-color': mapStore.getColorExpr() as any,
+					'fill-extrusion-opacity': 0.92
+				}
+			});
+
+			// Itapúa buildings (pre-created, hidden until territory switch)
+			map.addSource('itapua-buildings', { type: 'vector', url: getTilesUrl('itapua_buildings') });
+			map.addLayer({
+				id: 'itapua-buildings-3d',
+				type: 'fill-extrusion',
+				source: 'itapua-buildings',
+				'source-layer': 'buildings',
+				layout: { visibility: 'none' },
 				paint: {
 					'fill-extrusion-height': ['max', ['coalesce', ['get', 'best_height_m'], 5], 5],
 					'fill-extrusion-base': 0,
@@ -466,9 +483,21 @@
 
 
 
+	function showBuildingsForActiveTerritory() {
+		const layer = activeTerritoryId === 'itapua_py' ? 'itapua-buildings-3d' : 'buildings-3d';
+		const opacity = activeTerritoryId === 'itapua_py' ? 0.92 : 0.85;
+		if (map?.getLayer(layer)) {
+			map.setLayoutProperty(layer, 'visibility', 'visible');
+			map.setPaintProperty(layer, 'fill-extrusion-color', mapStore.getColorExpr() as any);
+			map.setPaintProperty(layer, 'fill-extrusion-opacity', opacity);
+		}
+	}
+
 	export function updateColorExpr() {
-		if (map?.getLayer('buildings-3d')) {
-			map.setPaintProperty('buildings-3d', 'fill-extrusion-color', mapStore.getColorExpr() as any);
+		for (const layer of ['buildings-3d', 'itapua-buildings-3d']) {
+			if (map?.getLayer(layer)) {
+				map.setPaintProperty(layer, 'fill-extrusion-color', mapStore.getColorExpr() as any);
+			}
 		}
 	}
 
@@ -515,6 +544,26 @@
 			duration: 1500,
 			maxZoom: 10
 		});
+	}
+
+	export function setActiveTerritory(territoryId: string) {
+		activeTerritoryId = territoryId;
+		if (!map?.isStyleLoaded()) return;
+		const isItapua = territoryId === 'itapua_py';
+		// Misiones-only layers: fog mask + census radios + province boundary
+		for (const layerId of ['mask-fill', 'province-fill', 'province-line', 'province-border']) {
+			if (map.getLayer(layerId)) {
+				map.setLayoutProperty(layerId, 'visibility', isItapua ? 'none' : 'visible');
+			}
+		}
+		// Buildings: swap visibility between territory layers
+		const hide = isItapua ? 'buildings-3d' : 'itapua-buildings-3d';
+		const show = isItapua ? 'itapua-buildings-3d' : 'buildings-3d';
+		if (map.getLayer(hide)) map.setLayoutProperty(hide, 'visibility', 'none');
+		if (map.getLayer(show)) {
+			map.setLayoutProperty(show, 'visibility', 'visible');
+			map.setPaintProperty(show, 'fill-extrusion-color', mapStore.getColorExpr() as any);
+		}
 	}
 
 	// ── Lens opportunity glow layers ─────────────────────────────────────────
@@ -570,8 +619,8 @@
 		}
 
 		// Hide 3D buildings — add flat 2D fill BELOW catastro
-		if (map.getLayer('buildings-3d')) {
-			map.setLayoutProperty('buildings-3d', 'visibility', 'none');
+		for (const layer of ['buildings-3d', 'itapua-buildings-3d']) {
+			if (map.getLayer(layer)) map.setLayoutProperty(layer, 'visibility', 'none');
 		}
 		if (!map.getLayer('buildings-flat') && map.getSource('buildings')) {
 			map.addLayer({
@@ -685,9 +734,7 @@
 		if (map.getLayer('catastro-fill')) map.removeLayer('catastro-fill');
 		if (map.getLayer('catastro-line')) map.removeLayer('catastro-line');
 		if (map.getLayer('buildings-flat')) map.removeLayer('buildings-flat');
-		if (map.getLayer('buildings-3d')) {
-			map.setLayoutProperty('buildings-3d', 'visibility', 'visible');
-		}
+		showBuildingsForActiveTerritory();
 		for (const layerId of CARTO_BUILDING_LAYERS) {
 			if (map.getLayer(layerId)) {
 				map.setLayoutProperty(layerId, 'visibility', 'visible');
@@ -992,12 +1039,8 @@
 		if (map.getLayer('analysis-line')) {
 			map.setFilter('analysis-line', ['==', ['get', 'redcode'], '']);
 		}
-		// Restore buildings
-		if (map.getLayer('buildings-3d')) {
-			map.setLayoutProperty('buildings-3d', 'visibility', 'visible');
-			map.setPaintProperty('buildings-3d', 'fill-extrusion-color', mapStore.getColorExpr() as any);
-			map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.85);
-		}
+		// Restore buildings (territory-aware)
+		showBuildingsForActiveTerritory();
 	}
 
 	export function highlightSingleOpportunity(redcode: string, color: string) {
