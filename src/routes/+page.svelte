@@ -380,8 +380,9 @@
 		if (version === prevDataVersion) return;
 		prevDataVersion = version;
 
-		// Skip for perDepartment layers — they render directly
-		if (layer?.perDepartment) return;
+		// Skip for perDepartment layers (Misiones only) — they render directly via dept selection.
+		// Non-Misiones territories load global parquet, so always render.
+		if (layer?.perDepartment && !hexStore.territoryPrefix) return;
 
 		if (entries.length === 0) {
 			mapComponent?.clearHexChoropleth();
