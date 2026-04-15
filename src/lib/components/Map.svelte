@@ -314,6 +314,10 @@
 			});
 
 			setupInteractions();
+
+			// Re-apply territory visibility in case territory was set before map loaded
+			// (e.g., territory restored from URL state before onMount completed)
+			applyTerritoryVisibility();
 		});
 
 		return () => {
@@ -546,17 +550,14 @@
 		});
 	}
 
-	export function setActiveTerritory(territoryId: string) {
-		activeTerritoryId = territoryId;
-		if (!map?.isStyleLoaded()) return;
-		const isItapua = territoryId === 'itapua_py';
-		// Misiones-only layers: fog mask + census radios + province boundary
+	function applyTerritoryVisibility() {
+		if (!map) return;
+		const isItapua = activeTerritoryId === 'itapua_py';
 		for (const layerId of ['mask-fill', 'province-fill', 'province-line', 'province-border']) {
 			if (map.getLayer(layerId)) {
 				map.setLayoutProperty(layerId, 'visibility', isItapua ? 'none' : 'visible');
 			}
 		}
-		// Buildings: swap visibility between territory layers
 		const hide = isItapua ? 'buildings-3d' : 'itapua-buildings-3d';
 		const show = isItapua ? 'itapua-buildings-3d' : 'buildings-3d';
 		if (map.getLayer(hide)) map.setLayoutProperty(hide, 'visibility', 'none');
@@ -564,6 +565,11 @@
 			map.setLayoutProperty(show, 'visibility', 'visible');
 			map.setPaintProperty(show, 'fill-extrusion-color', mapStore.getColorExpr() as any);
 		}
+	}
+
+	export function setActiveTerritory(territoryId: string) {
+		activeTerritoryId = territoryId;
+		applyTerritoryVisibility();
 	}
 
 	// ── Lens opportunity glow layers ─────────────────────────────────────────
