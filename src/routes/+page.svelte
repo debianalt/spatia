@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import MapComponent from '$lib/components/Map.svelte';
 	import MapLegend from '$lib/components/MapLegend.svelte';
 	import Controls from '$lib/components/Controls.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
+	import TerritorySelector from '$lib/components/TerritorySelector.svelte';
 	import LensSelector from '$lib/components/LensSelector.svelte';
 	import { MapStore } from '$lib/stores/map.svelte';
 	import { LensStore } from '$lib/stores/lens.svelte';
@@ -232,10 +233,12 @@
 
 		// Clear hex state on any lens change
 		mapComponent?.clearHexChoropleth();
+		mapComponent?.clearCompareHexChoropleth();
 		mapComponent?.clearHexZoneHighlight();
 		mapStore.clearHexState();
 		hexStore.clearAll();
 		prevDataVersion = hexStore.dataVersion;
+		prevCompareDataVersion = hexStore.compareDataVersion;
 
 		if (lens) {
 			mapStore.clearRadios();
@@ -263,7 +266,7 @@
 	// ── Analysis choropleth reactivity ──────────────────────────────────────
 	let prevAnalysisId: string | null = null;
 	let analysisDataLoaded = $state(false);
-	let showAbout = $state(true);
+	let showAbout = $state(false);
 
 	// Dismiss welcome panel when user selects a lens
 	$effect(() => {
@@ -371,6 +374,7 @@
 	// For perDepartment layers, rendering is handled directly by handleSelectFloodDpto.
 	// This $effect only handles non-perDepartment layers (legacy path).
 	let prevDataVersion = 0;
+	let prevCompareDataVersion = 0;
 
 	$effect(() => {
 		const version = hexStore.dataVersion;
@@ -392,6 +396,28 @@
 		if (layer?.temporal && hexStore.temporalMode === 'delta') colorScale = 'diverging';
 		mapComponent?.setHexChoropleth(entries, colorScale, hexStore.colorDomain ?? undefined);
 		analysisDataLoaded = true;
+	});
+
+	// ── Compare choropleth: render compare dept hexes when compareDataVersion changes ──
+	$effect(() => {
+		const version = hexStore.compareDataVersion;
+		const entries = hexStore.compareChoroplethEntries;
+		const layer = hexStore.activeLayer;
+		if (version === prevCompareDataVersion) return;
+		prevCompareDataVersion = version;
+		if (entries.length === 0) {
+			mapComponent?.clearCompareHexChoropleth();
+			return;
+		}
+		let colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = layer?.colorScale ?? 'sequential';
+		mapComponent?.setCompareHexChoropleth(entries, colorScale, hexStore.colorDomain ?? undefined);
+	});
+
+	// ── Clear compare dept when compare mode is exited ───────────────────
+	$effect(() => {
+		if (!territoryStore.compareModeActive) {
+			untrack(() => hexStore.clearCompareDept());
+		}
 	});
 
 	// ── Temporal mode toggle: re-render perDepartment layers on mode change ──
@@ -818,6 +844,11 @@
 </script>
 
 <div class="flex h-screen w-full">
+	<!-- Territory column: vertical list, always visible -->
+	<div class="territory-col">
+		<TerritorySelector {territoryStore} />
+	</div>
+
 	<!-- Map + overlays -->
 	<div class="flex-1 flex flex-col relative min-w-0">
 		<!-- Header -->
@@ -907,6 +938,21 @@
 </div>
 
 <style>
+	.territory-col {
+		width: 110px;
+		flex-shrink: 0;
+		background: rgba(10, 12, 18, 0.88);
+		backdrop-filter: blur(8px);
+		border-right: 1px solid rgba(255, 255, 255, 0.07);
+		overflow-y: auto;
+		padding: 10px 6px 16px;
+		scrollbar-width: thin;
+		scrollbar-color: #334155 transparent;
+	}
+	@media (max-width: 768px) {
+		.territory-col { display: none; }
+	}
+
 	.loading-overlay {
 		position: absolute;
 		top: 0;
