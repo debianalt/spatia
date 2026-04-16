@@ -97,7 +97,7 @@
 	</button>
 
 	<TerritorySelector {territoryStore} />
-	<ComparisonPanel {territoryStore} {lensStore} />
+	<ComparisonPanel {territoryStore} {lensStore} {hexStore} />
 
 	{#if showAbout}
 		<!-- Welcome panel (triggered by header button) -->

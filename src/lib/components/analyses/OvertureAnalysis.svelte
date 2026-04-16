@@ -744,6 +744,9 @@
 					{hexStore.territoryPrefix ? 'No hay datos departamentales para este territorio.' : 'Cargando…'}
 				</div>
 			{:else}
+				{#if !selectedDpto}
+					<p class="dept-select-hint">▼ Seleccioná un sector para ver el análisis</p>
+				{/if}
 				{#each deptList as dept}
 					<button class="dept-row dept-clickable" onclick={() => handleDptoClick(dept)}>
 						<div class="dept-name">{dept.dpto ?? dept.distrito}</div>
@@ -873,6 +876,7 @@
 	/* ── Department list ── */
 	.dept-section { margin-bottom: 10px; }
 	.section-title { font-size: 10px; font-weight: 600; color: #cbd5e1; margin-bottom: 6px; }
+	.dept-select-hint { font-size: 9px; color: #60a5fa; margin: 0 0 6px; font-style: italic; opacity: 0.8; }
 	.dept-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
 	.dept-clickable { background: none; border: none; width: 100%; padding: 4px 2px; border-radius: 4px; cursor: pointer; transition: background 0.15s; }
 	.dept-clickable:hover { background: rgba(96,165,250,0.1); }

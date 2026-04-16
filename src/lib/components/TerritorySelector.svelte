@@ -262,13 +262,15 @@
 	}
 
 	.compare-btn:not(:disabled) {
-		color: rgba(255, 255, 255, 0.55);
+		color: #93c5fd;
+		border-color: rgba(59, 130, 246, 0.30);
 		cursor: pointer;
 	}
 
 	.compare-btn:not(:disabled):hover {
-		background: rgba(255, 255, 255, 0.05);
-		color: #e2e8f0;
+		background: rgba(59, 130, 246, 0.10);
+		color: #bfdbfe;
+		border-color: rgba(59, 130, 246, 0.50);
 	}
 
 	.compare-btn.active {

@@ -3,14 +3,17 @@
 	import { HEX_LAYER_REGISTRY, getSatGlobalUrl, getFloodDptoUrl, type TerritoryConfig } from '$lib/config';
 	import type { TerritoryStore } from '$lib/stores/territory.svelte';
 	import type { LensStore } from '$lib/stores/lens.svelte';
+	import type { HexStore } from '$lib/stores/hex.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
 
 	let {
 		territoryStore,
 		lensStore,
+		hexStore,
 	}: {
 		territoryStore: TerritoryStore;
 		lensStore: LensStore;
+		hexStore: HexStore;
 	} = $props();
 
 	interface TerritoryStats {
@@ -58,25 +61,50 @@
 		}
 	}
 
+	// Dept-level mode: compute local avg synchronously from visibleData
+	function computeDeptAvg(territory: TerritoryConfig, cols: string[]): TerritoryStats {
+		const values: Record<string, number | null> = {};
+		for (const col of cols) {
+			const nums = [...hexStore.visibleData.values()]
+				.map(d => d[col])
+				.filter((v): v is number => typeof v === 'number' && !isNaN(v));
+			values[col] = nums.length > 0 ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
+		}
+		return { territory, values };
+	}
+
 	$effect(() => {
 		const layer = activeLayer;
 		const primary = territoryStore.activeTerritory;
 		const compare = territoryStore.compareTerritory;
+		const dpto = hexStore.selectedDpto;
+		// Track visibleData size so we re-run when dept data finishes loading
+		void hexStore.visibleData.size;
 		if (!layer || !compare || !isReady()) return;
 
 		const cols = compareVars.map(v => v.col);
 		loading = true;
 		stats = [];
 
-		Promise.all([
-			loadStats(primary, cols),
-			loadStats(compare, cols),
-		]).then(results => {
-			stats = results;
-			loading = false;
-		}).catch(() => {
-			loading = false;
-		});
+		if (dpto && hexStore.visibleData.size > 0) {
+			// Dept mode: local avg from memory + compare territory global avg
+			const localStat = computeDeptAvg(primary, cols);
+			loadStats(compare, cols).then(compareStat => {
+				stats = [localStat, compareStat];
+				loading = false;
+			}).catch(() => { loading = false; });
+		} else {
+			// Territory mode: both from global parquet
+			Promise.all([
+				loadStats(primary, cols),
+				loadStats(compare, cols),
+			]).then(results => {
+				stats = results;
+				loading = false;
+			}).catch(() => {
+				loading = false;
+			});
+		}
 	});
 
 	function fmt(v: number | null | undefined): string {
@@ -115,11 +143,13 @@
 		{:else if loading}
 			<p class="hint">Cargando datos…</p>
 		{:else if stats.length === 2}
+			{@const dpto = hexStore.selectedDpto}
+			{@const primaryLabel = dpto ? (dpto.length > 10 ? dpto.slice(0, 9) + '.' : dpto) : stats[0].territory.shortLabel}
 			<table class="stats-table">
 				<thead>
 					<tr>
 						<th class="col-var"></th>
-						<th class="col-val">{stats[0].territory.flag} {stats[0].territory.shortLabel}</th>
+						<th class="col-val">{stats[0].territory.flag} {primaryLabel}</th>
 						<th class="col-val">{stats[1].territory.flag} {stats[1].territory.shortLabel}</th>
 						<th class="col-diff">Δ</th>
 					</tr>
@@ -141,7 +171,9 @@
 					{/if}
 				</tbody>
 			</table>
-			<p class="note">Promedio provincial · valores absolutos</p>
+			<p class="note">
+				{dpto ? `Dept. ${dpto}` : 'Prom. provincial'} vs {stats[1].territory.flag} prom. provincial
+			</p>
 		{/if}
 	</div>
 {/if}
