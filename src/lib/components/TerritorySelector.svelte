@@ -14,22 +14,6 @@
 		countryOrder.filter(c => (byCountry[c] ?? []).length > 0)
 	);
 
-	// Which country contains the active territory
-	const activeCountry = $derived(
-		(Object.values(TERRITORY_REGISTRY).find(t => t.id === territoryStore.activeTerritory.id)?.country ?? 'ar') as CountryId
-	);
-
-	// Expanded state — auto-open the active territory's country
-	let expanded = $state<Record<CountryId, boolean>>({ ar: true, py: false, br: false });
-
-	$effect(() => {
-		expanded[activeCountry] = true;
-	});
-
-	function toggle(country: CountryId) {
-		expanded[country] = !expanded[country];
-	}
-
 	// Territories available for comparison (available, not the active one)
 	const compareCandidates = $derived(
 		Object.values(TERRITORY_REGISTRY).filter(
@@ -58,42 +42,35 @@
 	{#each activeCountries as country}
 		{@const territories = byCountry[country] ?? []}
 		<div class="country-block">
-			<button
-				class="country-header"
-				class:open={expanded[country]}
-				onclick={() => toggle(country)}
-			>
+			<div class="country-header">
 				<span class="country-flag">{countryFlags[country]}</span>
 				<span class="country-name">{countryNames[country]}</span>
-				<span class="chevron">{expanded[country] ? '▾' : '▸'}</span>
-			</button>
+			</div>
 
-			{#if expanded[country]}
-				<div class="territory-list">
-					{#each territories as territory (territory.id)}
-						<button
-							class="territory-btn"
-							class:active={territoryStore.activeTerritory.id === territory.id}
-							class:unavailable={!territory.available}
-							disabled={!territory.available}
-							onclick={() => territoryStore.setTerritory(territory.id)}
-							title={territory.available ? territory.label : `${territory.label} — próximamente`}
-						>
-							{#if territoryStore.activeTerritory.id === territory.id}
-								<span class="dot active-dot">●</span>
-							{:else if !territory.available}
-								<span class="dot soon-dot">○</span>
-							{:else}
-								<span class="dot idle-dot">○</span>
-							{/if}
-							<span class="t-name">{territory.label}</span>
-							{#if !territory.available}
-								<span class="badge">próximamente</span>
-							{/if}
-						</button>
-					{/each}
-				</div>
-			{/if}
+			<div class="territory-list">
+				{#each territories as territory (territory.id)}
+					<button
+						class="territory-btn"
+						class:active={territoryStore.activeTerritory.id === territory.id}
+						class:unavailable={!territory.available}
+						disabled={!territory.available}
+						onclick={() => territoryStore.setTerritory(territory.id)}
+						title={territory.available ? territory.label : `${territory.label} — próximamente`}
+					>
+						{#if territoryStore.activeTerritory.id === territory.id}
+							<span class="dot active-dot">●</span>
+						{:else if !territory.available}
+							<span class="dot soon-dot">○</span>
+						{:else}
+							<span class="dot idle-dot">○</span>
+						{/if}
+						<span class="t-name">{territory.label}</span>
+						{#if !territory.available}
+							<span class="badge">próximamente</span>
+						{/if}
+					</button>
+				{/each}
+			</div>
 		</div>
 	{/each}
 
@@ -146,25 +123,10 @@
 	}
 
 	.country-header {
-		width: 100%;
 		display: flex;
 		align-items: center;
 		gap: 5px;
 		padding: 4px 6px;
-		background: none;
-		border: none;
-		cursor: pointer;
-		text-align: left;
-		transition: background 0.12s;
-		border-radius: 4px;
-	}
-
-	.country-header:hover {
-		background: rgba(255, 255, 255, 0.05);
-	}
-
-	.country-header.open {
-		background: rgba(255, 255, 255, 0.04);
 	}
 
 	.country-flag { font-size: 11px; line-height: 1; }
@@ -175,12 +137,6 @@
 		color: rgba(255, 255, 255, 0.50);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
-		flex: 1;
-	}
-
-	.chevron {
-		font-size: 8px;
-		color: rgba(255, 255, 255, 0.25);
 	}
 
 	/* Territory list inside accordion */
