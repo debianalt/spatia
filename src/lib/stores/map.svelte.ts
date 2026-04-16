@@ -69,6 +69,15 @@ export class MapStore {
 		];
 	}
 
+	getHeightColorExpr(): unknown[] {
+		const ramp = COLOR_RAMPS.height;
+		return [
+			'interpolate', ['linear'],
+			['coalesce', ['get', ramp.property], 3],
+			...ramp.stops
+		];
+	}
+
 	addRadio(redcode: string, data: Omit<RadioData, 'color'>, colorOverride?: string) {
 		if (this.selectedRadios.has(redcode)) return;
 		const color = colorOverride || RADIO_COLORS[this.colorIndex % RADIO_COLORS.length];

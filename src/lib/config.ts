@@ -176,6 +176,12 @@ export const COLOR_RAMPS = {
 		stops: [0, '#0f1e30', 1, '#1e4060', 3, '#3080c0', 5, '#50a0e0', 10, '#70c0ff', 20, '#a0dfff', 50, '#d0f0ff'],
 		legendTitleKey: 'legend.estPersons',
 		legendLabels: ['0', '1', '3', '5', '10', '50+']
+	},
+	height: {
+		property: 'best_height_m',
+		stops: [3, '#0f1e30', 5, '#1e4060', 8, '#3080c0', 12, '#50a0e0', 20, '#70c0ff', 35, '#a0dfff', 50, '#d0f0ff'],
+		legendTitleKey: 'legend.buildingHeight',
+		legendLabels: ['3m', '5m', '8m', '12m', '20m', '35m+']
 	}
 } as const;
 
@@ -204,7 +210,7 @@ export const TERRITORY_REGISTRY: Record<string, TerritoryConfig> = {
 	},
 	itapua_py: {
 		id: 'itapua_py', label: 'Itapúa', shortLabel: 'ITA', country: 'py',
-		bbox: [-55.98, -27.42, -55.72, -27.22],  // Encarnación PY (not Posadas AR)
+		bbox: [-57.40, -27.70, -55.00, -26.40],  // Full Itapúa department
 		parquetPrefix: 'itapua_py/', flag: '🇵🇾', available: true,
 	},
 	alto_parana_py: {
@@ -447,6 +453,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.agri.low',
 		legendHighKey: 'legend.agri.high',
+		coverage: { itapua_py: 'available' },
 	},
 	forest_health: {
 		id: 'forest_health',
@@ -1010,6 +1017,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 
 		status: 'available',
 		spatialUnit: 'hexagon',
+		coverage: { itapua_py: 'available' },
 	},
 	{
 		id: 'powerline_density',

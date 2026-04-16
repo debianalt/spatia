@@ -24,7 +24,7 @@ import os
 import sys
 import time
 
-from config import MISIONES_BBOX, OUTPUT_DIR
+from config import OUTPUT_DIR, get_territory
 
 EXPORT_SCALE = 100
 DRIVE_FOLDER = 'spatia-satellite'
@@ -128,23 +128,30 @@ def build_carbon_stock(bbox):
 
 def main():
     parser = argparse.ArgumentParser(description="Export carbon stock composite from GEE")
+    parser.add_argument("--territory", default="misiones", help="Territory ID (default: misiones)")
+    parser.add_argument("--gcs", action="store_true", help="Force export to GCS")
     parser.add_argument("--scale", type=int, default=EXPORT_SCALE)
     args = parser.parse_args()
 
-    is_ci = authenticate()
-    use_gcs = is_ci
-    bbox = ee.Geometry.Rectangle(MISIONES_BBOX)
+    territory = get_territory(args.territory)
+    territory_bbox = territory['bbox']  # [west, south, east, north]
 
+    is_ci = authenticate()
+    use_gcs = args.gcs or is_ci
+    bbox = ee.Geometry.Rectangle(territory_bbox)
+
+    print(f"Territory: {territory['label']} — bbox: {territory_bbox}")
     print("Building carbon stock composite...")
     composite = build_carbon_stock(bbox)
 
     file_name = 'sat_carbon_stock_raster'
+    gcs_prefix = f"satellite/{args.territory}/{file_name}"
     if use_gcs:
         task = ee.batch.Export.image.toCloudStorage(
             image=composite,
-            description=file_name,
+            description=f"{args.territory}_{file_name}",
             bucket='spatia-satellite',
-            fileNamePrefix=f'satellite/{file_name}',
+            fileNamePrefix=gcs_prefix,
             region=bbox, scale=args.scale,
             crs='EPSG:4326', maxPixels=1e9)
     else:

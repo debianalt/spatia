@@ -21,7 +21,7 @@ import os
 import sys
 import time
 
-from config import MISIONES_BBOX
+from config import get_territory
 
 EXPORT_SCALE = 100  # metres — match existing pipeline resolution
 DRIVE_FOLDER = 'spatia-satellite'
@@ -63,6 +63,7 @@ def list_available_years(bbox):
 
 def main():
     parser = argparse.ArgumentParser(description="Export annual PM2.5 rasters from ACAG V6")
+    parser.add_argument("--territory", default="misiones", help="Territory ID (default: misiones)")
     parser.add_argument("--years", type=int, nargs="+", default=None,
                         help="Specific years to export (default: all available)")
     parser.add_argument("--scale", type=int, default=EXPORT_SCALE,
@@ -73,9 +74,13 @@ def main():
                         help="Submit tasks and exit without waiting")
     args = parser.parse_args()
 
+    territory = get_territory(args.territory)
+    territory_bbox = territory['bbox']  # [west, south, east, north]
+
     is_ci = authenticate()
     use_gcs = args.gcs or is_ci
-    bbox = ee.Geometry.Rectangle(MISIONES_BBOX)
+    bbox = ee.Geometry.Rectangle(territory_bbox)
+    print(f"Territory: {territory['label']} — bbox: {territory_bbox}")
 
     # Discover available years
     print("Querying ACAG V6 collection for available years...")
@@ -112,9 +117,9 @@ def main():
         if use_gcs:
             task = ee.batch.Export.image.toCloudStorage(
                 image=pm25,
-                description=file_name,
+                description=f"{args.territory}_{file_name}",
                 bucket=GCS_BUCKET,
-                fileNamePrefix=f'satellite/{file_name}',
+                fileNamePrefix=f'satellite/{args.territory}/{file_name}',
                 region=bbox,
                 scale=args.scale,
                 crs='EPSG:4326',

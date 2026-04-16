@@ -22,7 +22,7 @@ import os
 import sys
 import time
 
-from config import MISIONES_BBOX
+from config import get_territory
 
 DRIVE_FOLDER = 'spatia-satellite'
 SCALE = 250  # compromise: NDVI=250m, others coarser but resampled
@@ -106,11 +106,17 @@ def ghsl_built(epoch):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--territory", default="misiones", help="Territory ID (default: misiones)")
+    parser.add_argument("--gcs", action="store_true", help="Export to GCS instead of Drive")
     parser.add_argument("--no-wait", action="store_true")
     args = parser.parse_args()
 
+    territory = get_territory(args.territory)
+    territory_bbox = territory['bbox']  # [west, south, east, north]
+
     authenticate()
-    bbox = ee.Geometry.Rectangle(MISIONES_BBOX)
+    bbox = ee.Geometry.Rectangle(territory_bbox)
+    print(f"Territory: {territory['label']} — bbox: {territory_bbox}")
 
     # Define periods
     baseline_years = list(range(2014, 2018))  # VIIRS starts 2014
@@ -131,14 +137,23 @@ def main():
         ('act_ghsl_baseline', ghsl_built(2000).clip(bbox)),
     ]
 
-    print(f"Exporting {len(exports)} rasters at {SCALE}m -> Drive ({DRIVE_FOLDER})")
+    dest = f"GCS (spatia-satellite/satellite/{args.territory}/)" if args.gcs else f"Drive ({DRIVE_FOLDER})"
+    print(f"Exporting {len(exports)} rasters at {SCALE}m -> {dest}")
 
     tasks = []
     for name, image in exports:
-        task = ee.batch.Export.image.toDrive(
-            image=image, description=name, folder=DRIVE_FOLDER,
-            fileNamePrefix=name, region=bbox,
-            scale=SCALE, crs='EPSG:4326', maxPixels=1e9)
+        if args.gcs:
+            task = ee.batch.Export.image.toCloudStorage(
+                image=image,
+                description=f"{args.territory}_{name}",
+                bucket='spatia-satellite',
+                fileNamePrefix=f'satellite/{args.territory}/{name}',
+                region=bbox, scale=SCALE, crs='EPSG:4326', maxPixels=1e9)
+        else:
+            task = ee.batch.Export.image.toDrive(
+                image=image, description=name, folder=DRIVE_FOLDER,
+                fileNamePrefix=name, region=bbox,
+                scale=SCALE, crs='EPSG:4326', maxPixels=1e9)
         task.start()
         tasks.append((name, task))
         print(f"  Started: {name}")

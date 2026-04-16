@@ -201,7 +201,7 @@
 				paint: {
 					'fill-extrusion-height': ['max', ['coalesce', ['get', 'best_height_m'], 5], 5],
 					'fill-extrusion-base': 0,
-					'fill-extrusion-color': mapStore.getColorExpr() as any,
+					'fill-extrusion-color': mapStore.getHeightColorExpr() as any,
 					'fill-extrusion-opacity': 0.92
 				}
 			});
@@ -332,6 +332,24 @@
 				filter: ['==', ['get', 'h3index'], '']
 			});
 
+			// ── Compare territory hex choropleth (dept comparison mode) ─────
+			map.addSource('compare-hexagons', {
+				type: 'geojson',
+				data: { type: 'FeatureCollection', features: [] }
+			});
+			map.addLayer({
+				id: 'compare-hex-fill',
+				type: 'fill',
+				source: 'compare-hexagons',
+				paint: { 'fill-color': '#0f172a', 'fill-opacity': 0 }
+			});
+			map.addLayer({
+				id: 'compare-hex-line',
+				type: 'line',
+				source: 'compare-hexagons',
+				paint: { 'line-color': '#0f172a', 'line-width': 0.5, 'line-opacity': 0 }
+			});
+
 			// ── Hex zone highlight layers (GeoJSON, for lasso zones) ────────
 			map.addSource('hex-zones', {
 				type: 'geojson',
@@ -408,6 +426,26 @@
 		});
 
 		map.on('mouseleave', 'buildings-3d', () => {
+			leaveTimeout = setTimeout(() => {
+				if (!lassoActive) map.getCanvas().style.cursor = '';
+				tooltip.style.display = 'none';
+			}, 80);
+		});
+
+		// Itapúa buildings tooltip (height + area only, no census data)
+		map.on('mousemove', 'itapua-buildings-3d', (e) => {
+			if (lassoActive) return;
+			if (leaveTimeout) { clearTimeout(leaveTimeout); leaveTimeout = null; }
+			map.getCanvas().style.cursor = 'pointer';
+			const p = e.features![0].properties!;
+			const h = p.best_height_m != null ? parseFloat(p.best_height_m).toFixed(1) : '?';
+			const a = p.area_m2 != null ? Math.round(p.area_m2).toLocaleString() : '?';
+			tooltip.innerHTML = `<b style="color:#60a5fa">${i18n.t('tip.building')}</b> ${i18n.t('tip.height')} ${h} m | ${i18n.t('tip.area')} ${a} m\u00B2`;
+			tooltip.style.display = 'block';
+			tooltip.style.left = (e.originalEvent.clientX + 14) + 'px';
+			tooltip.style.top = (e.originalEvent.clientY + 14) + 'px';
+		});
+		map.on('mouseleave', 'itapua-buildings-3d', () => {
 			leaveTimeout = setTimeout(() => {
 				if (!lassoActive) map.getCanvas().style.cursor = '';
 				tooltip.style.display = 'none';
@@ -527,18 +565,19 @@
 	function showBuildingsForActiveTerritory() {
 		const layer = activeTerritoryId === 'itapua_py' ? 'itapua-buildings-3d' : 'buildings-3d';
 		const opacity = activeTerritoryId === 'itapua_py' ? 0.92 : 0.85;
+		const colorExpr = activeTerritoryId === 'itapua_py'
+			? mapStore.getHeightColorExpr()
+			: mapStore.getColorExpr();
 		if (map?.getLayer(layer)) {
 			map.setLayoutProperty(layer, 'visibility', 'visible');
-			map.setPaintProperty(layer, 'fill-extrusion-color', mapStore.getColorExpr() as any);
+			map.setPaintProperty(layer, 'fill-extrusion-color', colorExpr as any);
 			map.setPaintProperty(layer, 'fill-extrusion-opacity', opacity);
 		}
 	}
 
 	export function updateColorExpr() {
-		for (const layer of ['buildings-3d', 'itapua-buildings-3d']) {
-			if (map?.getLayer(layer)) {
-				map.setPaintProperty(layer, 'fill-extrusion-color', mapStore.getColorExpr() as any);
-			}
+		if (map?.getLayer('buildings-3d')) {
+			map.setPaintProperty('buildings-3d', 'fill-extrusion-color', mapStore.getColorExpr() as any);
 		}
 	}
 
@@ -607,7 +646,10 @@
 		if (map.getLayer(hide)) map.setLayoutProperty(hide, 'visibility', 'none');
 		if (map.getLayer(show)) {
 			map.setLayoutProperty(show, 'visibility', 'visible');
-			map.setPaintProperty(show, 'fill-extrusion-color', mapStore.getColorExpr() as any);
+			const colorExpr = show === 'itapua-buildings-3d'
+				? mapStore.getHeightColorExpr()
+				: mapStore.getColorExpr();
+			map.setPaintProperty(show, 'fill-extrusion-color', colorExpr as any);
 		}
 	}
 
@@ -1125,6 +1167,47 @@
 
 	const CATEGORICAL_PALETTE = ['#1565c0', '#7e57c2', '#4db6ac', '#66bb6a', '#c0ca33', '#ffb74d', '#e65100', '#78909c'];
 
+	function computeHexColor(value: number, colorScale: string, minVal: number, maxVal: number, range: number): string {
+		if (value === 0 && colorScale !== 'diverging' && colorScale !== 'categorical') return 'rgb(55,65,81)';
+		if (colorScale === 'categorical') {
+			const idx = Math.round(value) - 1;
+			if (idx < 0) return 'rgb(55,65,81)';
+			return CATEGORICAL_PALETTE[idx % CATEGORICAL_PALETTE.length];
+		}
+		let r: number, g: number, b: number;
+		if (colorScale === 'diverging') {
+			const absMax = Math.max(Math.abs(minVal), Math.abs(maxVal)) || 1;
+			const t = value / absMax;
+			if (t < 0) {
+				const s = -t;
+				r = Math.round(163 + s * 76); g = Math.round(163 - s * 95); b = Math.round(163 - s * 95);
+			} else {
+				const s = t;
+				r = Math.round(163 - s * 129); g = Math.round(163 + s * 34); b = Math.round(163 - s * 69);
+			}
+		} else {
+			const t = Math.max(0, Math.min(1, (value - minVal) / range));
+			if (colorScale === 'flood') {
+				r = Math.round(t < 0.5 ? 59 + t * 2 * (234 - 59) : 234 + (t - 0.5) * 2 * (220 - 234));
+				g = Math.round(t < 0.5 ? 130 + t * 2 * (179 - 130) : 179 + (t - 0.5) * 2 * (38 - 179));
+				b = Math.round(t < 0.5 ? 246 + t * 2 * (8 - 246) : 8 + (t - 0.5) * 2 * (38 - 8));
+			} else if (colorScale === 'green') {
+				r = Math.round(t < 0.5 ? 20 + t * 2 * (22 - 20) : 22 + (t - 0.5) * 2 * (187 - 22));
+				g = Math.round(t < 0.5 ? 83 + t * 2 * (101 - 83) : 101 + (t - 0.5) * 2 * (247 - 101));
+				b = Math.round(t < 0.5 ? 45 + t * 2 * (52 - 45) : 52 + (t - 0.5) * 2 * (208 - 52));
+			} else if (colorScale === 'warm') {
+				r = Math.round(t < 0.5 ? 120 + t * 2 * (245 - 120) : 245 + (t - 0.5) * 2 * (253 - 245));
+				g = Math.round(t < 0.5 ? 53 + t * 2 * (158 - 53) : 158 + (t - 0.5) * 2 * (231 - 158));
+				b = Math.round(t < 0.5 ? 15 + t * 2 * (11 - 15) : 11 + (t - 0.5) * 2 * (37 - 11));
+			} else {
+				r = Math.round(t < 0.5 ? 91 + t * 2 * (33 - 91) : 33 + (t - 0.5) * 2 * (253 - 33));
+				g = Math.round(t < 0.5 ? 33 + t * 2 * (145 - 33) : 145 + (t - 0.5) * 2 * (231 - 145));
+				b = Math.round(t < 0.5 ? 182 + t * 2 * (140 - 182) : 140 + (t - 0.5) * 2 * (37 - 140));
+			}
+		}
+		return `rgb(${r},${g},${b})`;
+	}
+
 	export function setHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = 'flood', domain?: [number, number]) {
 		if (!map || !map.isStyleLoaded()) return;
 
@@ -1150,52 +1233,7 @@
 		}
 		const range = maxVal - minVal || 1;
 
-		function getColor(value: number): string {
-			// No-data: score exactly 0 → neutral dark gray (distinct from lowest scale color)
-			if (value === 0 && colorScale !== 'diverging' && colorScale !== 'categorical') {
-				return 'rgb(55,65,81)';
-			}
-			if (colorScale === 'categorical') {
-				const idx = Math.round(value) - 1;
-				if (idx < 0) return 'rgb(55,65,81)';
-				return CATEGORICAL_PALETTE[idx % CATEGORICAL_PALETTE.length];
-			}
-			let r: number, g: number, b: number;
-			if (colorScale === 'diverging') {
-				const absMax = Math.max(Math.abs(minVal), Math.abs(maxVal)) || 1;
-				const t = value / absMax; // -1 to +1
-				if (t < 0) {
-					const s = -t;
-					r = Math.round(163 + s * 76); g = Math.round(163 - s * 95); b = Math.round(163 - s * 95);
-				} else {
-					const s = t;
-					r = Math.round(163 - s * 129); g = Math.round(163 + s * 34); b = Math.round(163 - s * 69);
-				}
-			} else {
-				const t = Math.max(0, Math.min(1, (value - minVal) / range));
-				if (colorScale === 'flood') {
-					r = Math.round(t < 0.5 ? 59 + t * 2 * (234 - 59) : 234 + (t - 0.5) * 2 * (220 - 234));
-					g = Math.round(t < 0.5 ? 130 + t * 2 * (179 - 130) : 179 + (t - 0.5) * 2 * (38 - 179));
-					b = Math.round(t < 0.5 ? 246 + t * 2 * (8 - 246) : 8 + (t - 0.5) * 2 * (38 - 8));
-				} else if (colorScale === 'green') {
-					// visible dark green → forest green → mint
-					r = Math.round(t < 0.5 ? 20 + t * 2 * (22 - 20) : 22 + (t - 0.5) * 2 * (187 - 22));
-					g = Math.round(t < 0.5 ? 83 + t * 2 * (101 - 83) : 101 + (t - 0.5) * 2 * (247 - 101));
-					b = Math.round(t < 0.5 ? 45 + t * 2 * (52 - 45) : 52 + (t - 0.5) * 2 * (208 - 52));
-				} else if (colorScale === 'warm') {
-					// dark amber → amber → bright yellow
-					r = Math.round(t < 0.5 ? 120 + t * 2 * (245 - 120) : 245 + (t - 0.5) * 2 * (253 - 245));
-					g = Math.round(t < 0.5 ? 53 + t * 2 * (158 - 53) : 158 + (t - 0.5) * 2 * (231 - 158));
-					b = Math.round(t < 0.5 ? 15 + t * 2 * (11 - 15) : 11 + (t - 0.5) * 2 * (37 - 11));
-				} else {
-					// Viridis: visible purple → teal → yellow
-					r = Math.round(t < 0.5 ? 91 + t * 2 * (33 - 91) : 33 + (t - 0.5) * 2 * (253 - 33));
-					g = Math.round(t < 0.5 ? 33 + t * 2 * (145 - 33) : 145 + (t - 0.5) * 2 * (231 - 145));
-					b = Math.round(t < 0.5 ? 182 + t * 2 * (140 - 182) : 140 + (t - 0.5) * 2 * (37 - 140));
-				}
-			}
-			return `rgb(${r},${g},${b})`;
-		}
+		const getColor = (value: number) => computeHexColor(value, colorScale, minVal, maxVal, range);
 
 		const features: any[] = [];
 		for (const entry of entries) {
@@ -1227,6 +1265,57 @@
 		if (map.getLayer('hex-fill')) map.setPaintProperty('hex-fill', 'fill-opacity', 0);
 		if (map.getLayer('hex-line')) map.setPaintProperty('hex-line', 'line-opacity', 0);
 		if (map.getLayer('hex-selected')) map.setFilter('hex-selected', ['==', ['get', 'h3index'], '']);
+	}
+
+	export function setCompareHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = 'sequential', domain?: [number, number]) {
+		if (!map || !map.isStyleLoaded()) return;
+		const src = map.getSource('compare-hexagons') as maplibregl.GeoJSONSource | undefined;
+		if (!src) return;
+
+		if (entries.length === 0) {
+			src.setData({ type: 'FeatureCollection', features: [] });
+			map.setPaintProperty('compare-hex-fill', 'fill-opacity', 0);
+			map.setPaintProperty('compare-hex-line', 'line-opacity', 0);
+			return;
+		}
+
+		let minVal: number, maxVal: number;
+		if (domain && colorScale !== 'diverging' && colorScale !== 'categorical') {
+			[minVal, maxVal] = domain;
+		} else {
+			minVal = Infinity; maxVal = -Infinity;
+			for (const e of entries) {
+				if (e.value < minVal) minVal = e.value;
+				if (e.value > maxVal) maxVal = e.value;
+			}
+		}
+		const range = maxVal - minVal || 1;
+		const getColor = (v: number) => computeHexColor(v, colorScale, minVal, maxVal, range);
+
+		const features: any[] = [];
+		for (const entry of entries) {
+			if (!entry.boundary) continue;
+			features.push({
+				type: 'Feature',
+				properties: { h3index: entry.h3index, value: entry.value, color: getColor(entry.value), ...(entry.properties || {}) },
+				geometry: { type: 'Polygon', coordinates: [entry.boundary] }
+			});
+		}
+
+		src.setData({ type: 'FeatureCollection', features });
+		map.setPaintProperty('compare-hex-fill', 'fill-color', ['get', 'color']);
+		map.setPaintProperty('compare-hex-fill', 'fill-opacity', 0.50);
+		map.setPaintProperty('compare-hex-line', 'line-color', '#0f172a');
+		map.setPaintProperty('compare-hex-line', 'line-width', 0.5);
+		map.setPaintProperty('compare-hex-line', 'line-opacity', 0.55);
+	}
+
+	export function clearCompareHexChoropleth() {
+		if (!map || !map.isStyleLoaded()) return;
+		const src = map.getSource('compare-hexagons') as maplibregl.GeoJSONSource | undefined;
+		if (src) src.setData({ type: 'FeatureCollection', features: [] });
+		if (map.getLayer('compare-hex-fill')) map.setPaintProperty('compare-hex-fill', 'fill-opacity', 0);
+		if (map.getLayer('compare-hex-line')) map.setPaintProperty('compare-hex-line', 'line-opacity', 0);
 	}
 
 	export function highlightHexagon(h3index: string) {

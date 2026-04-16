@@ -44,16 +44,20 @@ from config import OUTPUT_DIR, GCS_BUCKET, R2_BUCKET, get_territory
 
 TERRITORY_ID = 'itapua_py'
 
-# All GEE-based analyses (same as SAT_ANALYSES in split_by_admin.py)
+# Analyses routed through gee_export_analysis.py (ANALYSIS_BUILDERS must have them)
 ALL_SAT_ANALYSES = [
-    # Fast batch
+    # Fast batch — all in ANALYSIS_BUILDERS
     "environmental_risk", "climate_comfort", "green_capital",
-    "change_pressure", "forest_health", "forestry_aptitude",
-    # Medium batch
-    "agri_potential", "deforestation_dynamics", "pm25_drivers", "productive_activity",
-    # Slow/heavy
-    "carbon_stock",
-    # SAR — separate run recommended (Sentinel-1 compositing is GEE-intensive)
+    "change_pressure", "forest_health",
+    # Medium batch — in ANALYSIS_BUILDERS
+    "agri_potential",
+    # NOT included here — require separate scripts:
+    #   carbon_stock      → gee_export_carbon_stock.py --territory itapua_py --gcs
+    #   productive_activity → gee_export_activity_rasters.py --territory itapua_py --gcs
+    #   pm25_drivers      → gee_export_pm25_annual.py --territory itapua_py --gcs
+    # NOT included — needs SDM adaptation for PY MapBiomas:
+    #   forestry_aptitude
+    # SAR — separate run:
     # "flood_risk",  # handled by run_flood_update.py separately
 ]
 
@@ -74,15 +78,13 @@ def step_gee_export(analyses: list[str], dry_run: bool) -> bool:
     print("\n" + "=" * 60)
     print("  STEP 2: GEE Exports")
     print("=" * 60)
-    # Split into batches: fast(6), medium(4), slow(1)
+    # Split into batches based on GEE export time
     fast = [a for a in analyses if a in {
         "environmental_risk", "climate_comfort", "green_capital",
-        "change_pressure", "forest_health", "forestry_aptitude"
+        "change_pressure", "forest_health",
     }]
-    medium = [a for a in analyses if a in {
-        "agri_potential", "deforestation_dynamics", "pm25_drivers", "productive_activity"
-    }]
-    slow = [a for a in analyses if a in {"carbon_stock"}]
+    medium = [a for a in analyses if a in {"agri_potential"}]
+    slow = []  # carbon_stock/productive_activity/pm25 use separate scripts
 
     for batch_name, batch in [("fast", fast), ("medium", medium), ("slow", slow)]:
         if not batch:
