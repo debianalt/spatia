@@ -204,7 +204,7 @@ export const TERRITORY_REGISTRY: Record<string, TerritoryConfig> = {
 	},
 	itapua_py: {
 		id: 'itapua_py', label: 'Itapúa', shortLabel: 'ITA', country: 'py',
-		bbox: [-57.40, -27.70, -55.00, -26.40],
+		bbox: [-56.10, -27.52, -55.62, -27.15],  // Encarnación area (not full dept)
 		parquetPrefix: 'itapua_py/', flag: '🇵🇾', available: true,
 	},
 	alto_parana_py: {

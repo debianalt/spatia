@@ -8,6 +8,7 @@
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import misionesBoundary from '$lib/data/misiones_boundary.json';
 	import misionesMask from '$lib/data/misiones_mask.json';
+	import itapuaBoundary from '$lib/data/itapua_boundary.json';
 
 	let { mapStore }: { mapStore: MapStore } = $props();
 
@@ -132,6 +133,31 @@
 						12, 0.5,
 						16, 0.3
 					]
+				},
+				layout: { 'line-join': 'round', 'line-cap': 'round' }
+			});
+
+			// Itapúa territory border — always visible, indicates available coverage
+			map.addSource('itapua-boundary', { type: 'geojson', data: itapuaBoundary as any });
+			map.addLayer({
+				id: 'itapua-border',
+				type: 'line',
+				source: 'itapua-boundary',
+				paint: {
+					'line-color': '#38bdf8',   // sky blue — distinct from Misiones pink
+					'line-width': [
+						'interpolate', ['linear'], ['zoom'],
+						4, 1.5,
+						8, 1.2,
+						12, 0.8
+					],
+					'line-opacity': [
+						'interpolate', ['linear'], ['zoom'],
+						4, 0.8,
+						8, 0.6,
+						12, 0.4
+					],
+					'line-dasharray': [4, 3]   // dashed: "available but different territory"
 				},
 				layout: { 'line-join': 'round', 'line-cap': 'round' }
 			});
