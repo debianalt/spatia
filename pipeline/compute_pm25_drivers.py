@@ -25,7 +25,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from config import OUTPUT_DIR
+from config import OUTPUT_DIR, get_territory
 
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, "sat_pm25_drivers.parquet")
 
@@ -63,11 +63,25 @@ def percentile_rank(series):
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--territory", default="misiones", help="Territory ID (default: misiones)")
+    args = parser.parse_args()
+
+    territory = get_territory(args.territory)
+    t_prefix = territory['output_prefix']
+    if t_prefix:
+        t_dir = os.path.join(OUTPUT_DIR, t_prefix.rstrip('/'))
+        output_path = os.path.join(t_dir, 'sat_pm25_drivers.parquet')
+    else:
+        t_dir = OUTPUT_DIR
+        output_path = OUTPUT_PATH
+
     t0 = time.time()
 
     # -- 1. Load PM2.5 panel (res-9) and compute period means ---------------
     print("Loading PM2.5 annual panel (res-9)...")
-    panel = pd.read_parquet(os.path.join(OUTPUT_DIR, "pm25_annual_panel.parquet"))
+    panel = pd.read_parquet(os.path.join(t_dir, "pm25_annual_panel.parquet"))
     print(f"  {len(panel):,} rows, {panel.h3index.nunique():,} hexagons")
 
     baseline = (panel[panel.year.isin(BASELINE_YEARS)]
@@ -97,51 +111,55 @@ def main():
 
     pm25 = pm25.reset_index()
 
-    # -- 2. Load SHAP (res-7) and aggregate by group -----------------------
-    print("\nLoading SHAP values (res-7, Model B)...")
-    shap = pd.read_parquet(os.path.join(OUTPUT_DIR, "pm25_model_shap.parquet"))
-    shap_cols = [c for c in shap.columns if c.startswith('shap_')]
-    print(f"  {len(shap):,} rows, {len(shap_cols)} SHAP columns")
+    # -- 2. Load SHAP (res-7) and aggregate by group (Misiones-only, skip if missing) --
+    shap_path = os.path.join(t_dir, "pm25_model_shap.parquet")
+    has_shap = os.path.exists(shap_path)
 
-    # Mean |SHAP| per hex across all years
-    hex_shap = shap.groupby('h3index')[shap_cols].apply(
-        lambda g: g.abs().mean()
-    ).reset_index()
+    if has_shap:
+        print("\nLoading SHAP values (res-7, Model B)...")
+        shap = pd.read_parquet(shap_path)
+        shap_cols = [c for c in shap.columns if c.startswith('shap_')]
+        print(f"  {len(shap):,} rows, {len(shap_cols)} SHAP columns")
 
-    # Aggregate SHAP columns by driver group
-    for group, cols in SHAP_GROUPS.items():
-        available = [c for c in cols if c in hex_shap.columns]
-        if available:
-            hex_shap[f'raw_{group}'] = hex_shap[available].sum(axis=1)
-        else:
-            hex_shap[f'raw_{group}'] = 0.0
+        hex_shap = shap.groupby('h3index')[shap_cols].apply(
+            lambda g: g.abs().mean()
+        ).reset_index()
 
-    print(f"  SHAP group means: " + ", ".join(
-        f"{g}={hex_shap[f'raw_{g}'].mean():.4f}" for g in SHAP_GROUPS
-    ))
+        for group, cols in SHAP_GROUPS.items():
+            available = [c for c in cols if c in hex_shap.columns]
+            if available:
+                hex_shap[f'raw_{group}'] = hex_shap[available].sum(axis=1)
+            else:
+                hex_shap[f'raw_{group}'] = 0.0
 
-    # -- 3. Map res-7 SHAP -> res-9 via parent crosswalk --------------------
-    print("\nMapping SHAP (res-7) -> res-9 via parent crosswalk...")
-    parents = pd.read_parquet(
-        os.path.join(OUTPUT_DIR, "h3_parent_crosswalk.parquet")
-    )[['h3index', 'h3_res7']]
+        print(f"  SHAP group means: " + ", ".join(
+            f"{g}={hex_shap[f'raw_{g}'].mean():.4f}" for g in SHAP_GROUPS
+        ))
 
-    shap_cols_keep = ['h3index'] + [f'raw_{g}' for g in SHAP_GROUPS]
-    hex_shap_slim = hex_shap[shap_cols_keep].rename(columns={'h3index': 'h3_res7'})
+        # -- 3. Map res-7 SHAP -> res-9 via parent crosswalk ----------------
+        print("\nMapping SHAP (res-7) -> res-9 via parent crosswalk...")
+        parents = pd.read_parquet(
+            os.path.join(t_dir, "h3_parent_crosswalk.parquet")
+        )[['h3index', 'h3_res7']]
 
-    res9_shap = parents.merge(hex_shap_slim, on='h3_res7', how='left')
-    # Each res-9 hex gets its parent's SHAP values
+        shap_cols_keep = ['h3index'] + [f'raw_{g}' for g in SHAP_GROUPS]
+        hex_shap_slim = hex_shap[shap_cols_keep].rename(columns={'h3index': 'h3_res7'})
 
-    # Percentile rank each group
-    for group in SHAP_GROUPS:
-        res9_shap[f'c_{group}'] = percentile_rank(res9_shap[f'raw_{group}'])
-
-    res9_shap = res9_shap[['h3index'] + [f'c_{group}' for group in SHAP_GROUPS]]
-    print(f"  Mapped {len(res9_shap):,} res-9 hexagons")
+        res9_shap = parents.merge(hex_shap_slim, on='h3_res7', how='left')
+        for group in SHAP_GROUPS:
+            res9_shap[f'c_{group}'] = percentile_rank(res9_shap[f'raw_{group}'])
+        res9_shap = res9_shap[['h3index'] + [f'c_{group}' for group in SHAP_GROUPS]]
+        print(f"  Mapped {len(res9_shap):,} res-9 hexagons")
+    else:
+        print(f"\n  SKIP SHAP: pm25_model_shap.parquet not found in {t_dir}")
+        print("  Driver components (c_fire/climate/terrain/vegetation) will be NaN")
+        res9_shap = pm25[['h3index']].copy()
+        for group in SHAP_GROUPS:
+            res9_shap[f'c_{group}'] = np.nan
 
     # -- 4. Merge PM2.5 + SHAP + typology ----------------------------------
     print("\nMerging...")
-    result = pm25.merge(res9_shap, on='h3index', how='inner')
+    result = pm25.merge(res9_shap, on='h3index', how='left' if not has_shap else 'inner')
 
     # Quintile typology on current score
     result['type'] = pd.qcut(result['score'], 5, labels=[1, 2, 3, 4, 5]).astype(int)
@@ -166,15 +184,17 @@ def main():
           f"range={result.c_pm25_mean.min():.2f}-{result.c_pm25_mean.max():.2f}")
     print(f"  PM2.5 baseline: mean={result.c_pm25_mean_baseline.mean():.2f}")
     print(f"  Delta PM2.5: mean={result.c_pm25_mean_delta.mean():.2f}")
-    print(f"  Driver components (mean percentile):")
-    for g in SHAP_GROUPS:
-        print(f"    c_{g}: {result[f'c_{g}'].mean():.1f}")
+    if has_shap:
+        print(f"  Driver components (mean percentile):")
+        for g in SHAP_GROUPS:
+            print(f"    c_{g}: {result[f'c_{g}'].mean():.1f}")
     print(f"  Types: {result.type.value_counts().sort_index().to_dict()}")
     print(f"\n  Built in {elapsed:.0f}s")
 
-    result.to_parquet(OUTPUT_PATH, index=False)
-    size_mb = os.path.getsize(OUTPUT_PATH) / (1024 * 1024)
-    print(f"  Saved: {OUTPUT_PATH} ({size_mb:.1f} MB)")
+    os.makedirs(t_dir, exist_ok=True)
+    result.to_parquet(output_path, index=False)
+    size_mb = os.path.getsize(output_path) / (1024 * 1024)
+    print(f"  Saved: {output_path} ({size_mb:.1f} MB)")
     print(f"{'=' * 60}")
 
 

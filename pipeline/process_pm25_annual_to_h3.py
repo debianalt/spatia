@@ -30,15 +30,17 @@ import pandas as pd
 import rasterio
 from shapely.geometry import shape
 
-from config import OUTPUT_DIR
+from config import OUTPUT_DIR, get_territory
 
 HEXAGONS_PATH = os.path.join(OUTPUT_DIR, "hexagons-lite.geojson")
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, "pm25_annual_panel.parquet")
 
+_tif_dir = OUTPUT_DIR  # overridden in main() for non-misiones territories
+
 
 def discover_years():
     """Find available sat_pm25_{year}.tif files in output directory."""
-    pattern = os.path.join(OUTPUT_DIR, "sat_pm25_*.tif")
+    pattern = os.path.join(_tif_dir, "sat_pm25_*.tif")
     files = sorted(glob.glob(pattern))
     years = []
     for f in files:
@@ -72,14 +74,28 @@ def sample_raster_centroids(raster_path, features):
 
 
 def main():
+    global _tif_dir
     parser = argparse.ArgumentParser(description="Annual PM2.5 rasters to H3 panel")
+    parser.add_argument("--territory", default="misiones", help="Territory ID (default: misiones)")
     parser.add_argument("--years", type=int, nargs="+", default=None,
                         help="Specific years to process (default: all found TIFFs)")
     args = parser.parse_args()
 
+    territory = get_territory(args.territory)
+    t_prefix = territory['output_prefix']
+    if t_prefix:
+        t_dir = os.path.join(OUTPUT_DIR, t_prefix.rstrip('/'))
+        hexagons_path = os.path.join(t_dir, 'hexagons.geojson')
+        output_path = os.path.join(t_dir, 'pm25_annual_panel.parquet')
+        _tif_dir = t_dir
+    else:
+        t_dir = OUTPUT_DIR
+        hexagons_path = HEXAGONS_PATH
+        output_path = OUTPUT_PATH
+
     # Load hexagon grid
     print("Loading hexagon grid...")
-    with open(HEXAGONS_PATH) as f:
+    with open(hexagons_path) as f:
         gj = json.load(f)
     features = gj["features"]
     h3_ids = [feat["properties"]["h3index"] for feat in features]
@@ -108,7 +124,7 @@ def main():
     t0 = time.time()
 
     for year in sorted(years):
-        raster_path = os.path.join(OUTPUT_DIR, f"sat_pm25_{year}.tif")
+        raster_path = os.path.join(t_dir, f"sat_pm25_{year}.tif")
         print(f"\n  Processing {year}...")
         ty = time.time()
 
@@ -151,9 +167,10 @@ def main():
               f"std={subset.std():.2f}, min={subset.min():.2f}, max={subset.max():.2f}")
 
     # Save
-    df.to_parquet(OUTPUT_PATH, index=False)
-    size_mb = os.path.getsize(OUTPUT_PATH) / (1024 * 1024)
-    print(f"\n  Output: {OUTPUT_PATH}")
+    os.makedirs(t_dir, exist_ok=True)
+    df.to_parquet(output_path, index=False)
+    size_mb = os.path.getsize(output_path) / (1024 * 1024)
+    print(f"\n  Output: {output_path}")
     print(f"  Size: {size_mb:.1f} MB")
     print(f"\nNext step: python pipeline/compute_pm25_trends.py")
     print(f"{'=' * 60}")

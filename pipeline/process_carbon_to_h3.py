@@ -38,7 +38,7 @@ from sklearn.preprocessing import StandardScaler
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
-from config import OUTPUT_DIR
+from config import OUTPUT_DIR, get_territory
 
 HEXAGONS_PATH = os.path.join(OUTPUT_DIR, "hexagons-lite.geojson")
 RASTER_PATH = os.path.join(OUTPUT_DIR, "sat_carbon_stock_raster.tif")
@@ -96,10 +96,22 @@ def percentile_rank(series):
 
 def main():
     parser = argparse.ArgumentParser(description="Process carbon stock raster to H3")
+    parser.add_argument("--territory", default="misiones", help="Territory ID (default: misiones)")
     parser.add_argument("--carbon-price", type=float, default=DEFAULT_CARBON_PRICE,
                         help=f"Carbon price in USD/tCO2e (default: {DEFAULT_CARBON_PRICE})")
     parser.add_argument("--k-range", default="4,6", help="k-means range")
     args = parser.parse_args()
+
+    territory = get_territory(args.territory)
+    t_prefix = territory['output_prefix']
+    if t_prefix:
+        t_dir = os.path.join(OUTPUT_DIR, t_prefix.rstrip('/'))
+    else:
+        t_dir = OUTPUT_DIR
+    hexagons_path = os.path.join(t_dir, 'hexagons.geojson') if t_prefix else HEXAGONS_PATH
+    raster_path = os.path.join(t_dir, 'sat_carbon_stock_raster.tif')
+    output_path = os.path.join(t_dir, 'sat_carbon_stock.parquet')
+    temporal_raster = os.path.join(t_dir, 'sat_carbon_temporal_raster.tif')
 
     t0 = time.time()
     print("=" * 60)
@@ -109,17 +121,17 @@ def main():
 
     # Load hexagon grid
     print("\nLoading hexagon grid...")
-    with open(HEXAGONS_PATH) as f:
+    with open(hexagons_path) as f:
         hexgrid = json.load(f)
     features = hexgrid['features']
     print(f"  {len(features):,} hexagons")
 
     # Process raster
-    print(f"\nProcessing {RASTER_PATH}...")
+    print(f"\nProcessing {raster_path}...")
     results = []
     n = len(features)
 
-    with rasterio.open(RASTER_PATH) as src:
+    with rasterio.open(raster_path) as src:
         print(f"  Raster: {src.width}x{src.height}, {src.count} bands")
 
         for i, feat in enumerate(features):
@@ -216,8 +228,6 @@ def main():
     #  3-4: c_npp_baseline, c_npp_current (MODIS NPP 2018-2020 vs 2022-2024 mean)
     #  5-6: c_standing_tc_bl, c_standing_tc_cur (Hansen treecover2000 × (1 - cum loss by YYYY))
     #  7-8: c_loss_rate_bl, c_loss_rate_cur (annual Hansen loss rate 2001-2020 vs 2021-2024)
-    temporal_raster = os.path.join(OUTPUT_DIR, 'sat_carbon_temporal_raster.tif')
-
     if os.path.exists(temporal_raster):
         print("\nComputing temporal baseline (8-band: AGB + NPP + standing tc + loss rate)...")
         import rasterio as rio_tmp
@@ -225,7 +235,7 @@ def main():
             n_bands = src_t.count
             print(f"  Temporal raster: {n_bands} bands")
             rows = []
-            for i, feat in enumerate(json.load(open(HEXAGONS_PATH))['features']):
+            for i, feat in enumerate(json.load(open(hexagons_path))['features']):
                 h3index = (feat.get("properties", {}).get("h3index")
                            or feat.get("properties", {}).get("h3_index")
                            or feat.get("id"))
@@ -385,7 +395,7 @@ def main():
             seen.add(c)
 
     output = df[final_cols].dropna(subset=['score'])
-    output_path = os.path.join(OUTPUT_DIR, 'sat_carbon_stock.parquet')
+    os.makedirs(t_dir, exist_ok=True)
     output.to_parquet(output_path, index=False)
 
     elapsed = time.time() - t0

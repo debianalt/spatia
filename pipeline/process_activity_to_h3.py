@@ -27,10 +27,12 @@ import pandas as pd
 import rasterio
 from scipy.ndimage import map_coordinates
 
+import argparse
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
 
-from config import OUTPUT_DIR
+from config import OUTPUT_DIR, get_territory
 
 HEXAGONS_PATH = os.path.join(OUTPUT_DIR, "hexagons-lite.geojson")
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, "sat_productive_activity.parquet")
@@ -92,11 +94,28 @@ def pctile(s):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--territory", default="misiones", help="Territory ID (default: misiones)")
+    args = parser.parse_args()
+
+    territory = get_territory(args.territory)
+    t_prefix = territory['output_prefix']
+    if t_prefix:
+        t_dir = os.path.join(OUTPUT_DIR, t_prefix.rstrip('/'))
+        hexagons_path = os.path.join(t_dir, 'hexagons.geojson')
+        output_path = os.path.join(t_dir, 'sat_productive_activity.parquet')
+        raster_dir = t_dir
+    else:
+        t_dir = OUTPUT_DIR
+        hexagons_path = HEXAGONS_PATH
+        output_path = OUTPUT_PATH
+        raster_dir = OUTPUT_DIR
+
     t0 = time.time()
 
     # Load hexagon centroids from geojson
     print("Loading hexagon grid...")
-    with open(HEXAGONS_PATH) as f:
+    with open(hexagons_path) as f:
         gj = json.load(f)
     features = gj["features"]
 
@@ -118,7 +137,7 @@ def main():
 
     # Bilinear sample each raster at hex centroids
     for fname, col in RASTERS:
-        path = os.path.join(OUTPUT_DIR, fname)
+        path = os.path.join(raster_dir, fname)
         if not os.path.exists(path):
             print(f"  SKIP {fname} (not found)")
             result[col] = np.nan
@@ -131,7 +150,7 @@ def main():
         print(f"    mean={mean:.4f}, {time.time()-t1:.1f}s")
 
     # Add Hansen (already at H3 from process_hansen_to_h3.py)
-    hansen_path = os.path.join(OUTPUT_DIR, "hansen_h3_annual.parquet")
+    hansen_path = os.path.join(t_dir, "hansen_h3_annual.parquet")
     if os.path.exists(hansen_path):
         print("  Loading Hansen H3 annual...")
         ha = pd.read_parquet(hansen_path)
@@ -199,9 +218,10 @@ def main():
     print(f"  Types: {result.type.value_counts().sort_index().to_dict()}")
     print(f"  Built in {elapsed:.0f}s")
 
-    result.to_parquet(OUTPUT_PATH, index=False)
-    size_mb = os.path.getsize(OUTPUT_PATH) / (1024 * 1024)
-    print(f"  Saved: {OUTPUT_PATH} ({size_mb:.1f} MB)")
+    os.makedirs(t_dir, exist_ok=True)
+    result.to_parquet(output_path, index=False)
+    size_mb = os.path.getsize(output_path) / (1024 * 1024)
+    print(f"  Saved: {output_path} ({size_mb:.1f} MB)")
     print(f"{'=' * 60}")
 
 
