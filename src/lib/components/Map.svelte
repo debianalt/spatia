@@ -9,6 +9,7 @@
 	import misionesBoundary from '$lib/data/misiones_boundary.json';
 	import misionesMask from '$lib/data/misiones_mask.json';
 	import itapuaBoundary from '$lib/data/itapua_boundary.json';
+	import itapuaMask from '$lib/data/itapua_mask.json';
 
 	let { mapStore }: { mapStore: MapStore } = $props();
 
@@ -63,6 +64,16 @@
 				id: 'mask-fill',
 				type: 'fill',
 				source: 'mask',
+				paint: { 'fill-color': '#1a1a2e', 'fill-opacity': 0.75 }
+			});
+
+			// Mask: fog outside Itapúa — same style, hidden until territory switches
+			map.addSource('itapua-mask', { type: 'geojson', data: itapuaMask as any });
+			map.addLayer({
+				id: 'itapua-mask-fill',
+				type: 'fill',
+				source: 'itapua-mask',
+				layout: { visibility: 'none' },
 				paint: { 'fill-color': '#1a1a2e', 'fill-opacity': 0.75 }
 			});
 
@@ -579,11 +590,18 @@
 	function applyTerritoryVisibility() {
 		if (!map) return;
 		const isItapua = activeTerritoryId === 'itapua_py';
+
+		// Misiones-only layers: mask + census radios + province boundary
 		for (const layerId of ['mask-fill', 'province-fill', 'province-line', 'province-border']) {
 			if (map.getLayer(layerId)) {
 				map.setLayoutProperty(layerId, 'visibility', isItapua ? 'none' : 'visible');
 			}
 		}
+		// Itapúa mask (same dark fog, swapped in when territory is Itapúa)
+		if (map.getLayer('itapua-mask-fill')) {
+			map.setLayoutProperty('itapua-mask-fill', 'visibility', isItapua ? 'visible' : 'none');
+		}
+		// Buildings: swap visibility
 		const hide = isItapua ? 'buildings-3d' : 'itapua-buildings-3d';
 		const show = isItapua ? 'itapua-buildings-3d' : 'buildings-3d';
 		if (map.getLayer(hide)) map.setLayoutProperty(hide, 'visibility', 'none');
