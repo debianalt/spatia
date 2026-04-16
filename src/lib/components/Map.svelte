@@ -144,20 +144,20 @@
 				type: 'line',
 				source: 'itapua-boundary',
 				paint: {
-					'line-color': '#38bdf8',   // sky blue — distinct from Misiones pink
+					'line-color': '#f472b6',
 					'line-width': [
 						'interpolate', ['linear'], ['zoom'],
-						4, 1.5,
-						8, 1.2,
-						12, 0.8
+						6, 1.2,
+						9, 1.0,
+						12, 0.8,
+						16, 0.5
 					],
 					'line-opacity': [
 						'interpolate', ['linear'], ['zoom'],
-						4, 0.8,
-						8, 0.6,
-						12, 0.4
-					],
-					'line-dasharray': [4, 3]   // dashed: "available but different territory"
+						6, 0.7,
+						12, 0.5,
+						16, 0.3
+					]
 				},
 				layout: { 'line-join': 'round', 'line-cap': 'round' }
 			});
