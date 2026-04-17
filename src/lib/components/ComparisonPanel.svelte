@@ -23,13 +23,15 @@
 		error?: string;
 	}
 
+	interface TerritoryGroup {
+		territory: TerritoryConfig;
+		depts: DeptItem[];
+	}
+
 	let stats: TerritoryStats[] = $state([]);
 	let loading = $state(false);
-
-	// Compare dept selector
-	let compareDeptList: DeptItem[] = $state([]);
-	let loadingDeptList = $state(false);
-	let compareDeptOpen = $state(false);
+	let groups: TerritoryGroup[] = $state([]);
+	let selectorOpen = $state(false);
 
 	const activeLayer = $derived(
 		lensStore.activeAnalysis ? HEX_LAYER_REGISTRY[lensStore.activeAnalysis.id] : null
@@ -40,25 +42,28 @@
 		activeLayer?.variables.filter(v => !NON_NUMERIC.has(v.col)) ?? []
 	);
 
-	// Load compare territory dept list when analysis or compare territory changes
+	// Preload dept lists for ALL available territories when analysis changes
 	$effect(() => {
-		const compareTerritory = territoryStore.compareTerritory;
 		const analysis = lensStore.activeAnalysis;
-		compareDeptList = [];
-		compareDeptOpen = false;
-		if (!compareTerritory || !analysis) return;
-		loadingDeptList = true;
-		loadDeptList(analysis.id, compareTerritory.parquetPrefix).then(list => {
-			compareDeptList = list;
-			loadingDeptList = false;
+		groups = [];
+		selectorOpen = false;
+		if (!analysis) return;
+		const territories = Object.values(TERRITORY_REGISTRY).filter(t => t.available);
+		Promise.all(
+			territories.map(t =>
+				loadDeptList(analysis.id, t.parquetPrefix).then(depts => ({ territory: t, depts }))
+			)
+		).then(results => {
+			groups = results;
 		});
 	});
 
-	function selectCompareDept(item: DeptItem) {
-		const ct = territoryStore.compareTerritory;
-		if (!ct) return;
-		hexStore.loadCompareDept(item.name, item.parquetKey, ct.parquetPrefix);
-		compareDeptOpen = false;
+	function selectTarget(t: TerritoryConfig, dept?: DeptItem) {
+		territoryStore.enterCompareMode(t.id);
+		if (dept) {
+			hexStore.loadCompareDept(dept.name, dept.parquetKey, t.parquetPrefix);
+		}
+		selectorOpen = false;
 	}
 
 	async function loadStats(territory: TerritoryConfig, cols: string[]): Promise<TerritoryStats> {
@@ -159,128 +164,189 @@
 		if (a == null || b == null) return '';
 		return b > a ? 'pos' : b < a ? 'neg' : '';
 	}
-
-	// Compare trigger (shown when compare mode inactive + dept selected + candidates available)
-	const compareCandidates = $derived(
-		Object.values(TERRITORY_REGISTRY).filter(
-			t => t.available && t.id !== territoryStore.activeTerritory.id
-		)
-	);
-
-	const showTrigger = $derived(
-		!territoryStore.compareModeActive &&
-		!!hexStore.selectedDpto &&
-		!!lensStore.activeAnalysis &&
-		compareCandidates.length > 0
-	);
-
-	function activateCompare() {
-		if (compareCandidates.length === 1) {
-			territoryStore.enterCompareMode(compareCandidates[0].id);
-		}
-	}
 </script>
 
-{#if showTrigger}
-	<div class="compare-trigger">
-		<button class="trigger-btn" onclick={activateCompare}>
-			Comparar {hexStore.selectedDpto} →
-		</button>
-		<span class="trigger-hint">con {compareCandidates[0].flag} {compareCandidates[0].label}</span>
-	</div>
-{:else if territoryStore.compareModeActive && territoryStore.compareTerritory}
-	{@const ct = territoryStore.compareTerritory}
-	<div class="comparison-panel">
-		<div class="panel-header">
-			<span class="panel-title">
-				{activeLayer ? i18n.t(activeLayer.titleKey) : 'Comparación territorial'}
-			</span>
-			<button class="close-btn" onclick={() => territoryStore.exitCompareMode()}>×</button>
+<div class="cp-root" class:cp-full={territoryStore.compareModeActive && !!activeLayer}>
+	{#if activeLayer}
+		<!-- Selector row: always visible when analysis active -->
+		<div class="compare-row">
+			<button class="compare-row-btn" onclick={() => selectorOpen = !selectorOpen}>
+				{#if territoryStore.compareModeActive && territoryStore.compareTerritory}
+					{territoryStore.compareTerritory.flag}
+					{hexStore.compareDpto ?? territoryStore.compareTerritory.shortLabel} ▾
+				{:else}
+					Comparar con… ▾
+				{/if}
+			</button>
+			{#if territoryStore.compareModeActive}
+				<button class="close-btn" onclick={() => territoryStore.exitCompareMode()}>×</button>
+			{/if}
+			{#if selectorOpen}
+				<div class="compare-dropdown">
+					{#each groups as g (g.territory.id)}
+						<div class="group-header">{g.territory.flag} {g.territory.label}</div>
+						<button class="opt opt-province" onclick={() => selectTarget(g.territory)}>
+							{g.territory.shortLabel} (provincia)
+						</button>
+						{#each g.depts.filter(d => d.name !== hexStore.selectedDpto) as d (d.parquetKey)}
+							<button class="opt opt-dept" onclick={() => selectTarget(g.territory, d)}>
+								{d.name}
+							</button>
+						{/each}
+					{/each}
+				</div>
+			{/if}
 		</div>
 
-		<!-- Compare dept selector (shown when primary dept is selected) -->
-		{#if hexStore.selectedDpto && activeLayer}
-			<div class="dept-row">
-				<span class="dept-label">{ct.flag} Distrito:</span>
-				{#if loadingDeptList}
-					<span class="dept-loading">…</span>
-				{:else if compareDeptList.length > 0}
-					<div class="dept-select-wrap">
-						<button class="dept-select-btn" onclick={() => compareDeptOpen = !compareDeptOpen}>
-							<span>{hexStore.compareDpto ?? 'elegir…'}</span>
-							<svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-								<path d="M1 3 L5 7 L9 3"/>
-							</svg>
-						</button>
-						{#if compareDeptOpen}
-							<div class="dept-dropdown">
-								{#each compareDeptList as item (item.parquetKey)}
-									<button
-										class="dept-opt"
-										class:sel={hexStore.compareDpto === item.name}
-										onclick={() => selectCompareDept(item)}
-									>{item.name}</button>
+		<!-- Stats panel: only when compare active -->
+		{#if territoryStore.compareModeActive && territoryStore.compareTerritory}
+			{@const ct = territoryStore.compareTerritory}
+			<div class="comparison-panel">
+				<div class="panel-header">
+					<span class="panel-title">
+						{activeLayer ? i18n.t(activeLayer.titleKey) : 'Comparación territorial'}
+					</span>
+				</div>
+
+				{#if loading}
+					<p class="hint">Cargando datos…</p>
+				{:else if stats.length === 2}
+					{@const dpto = hexStore.selectedDpto}
+					{@const compareDpto = hexStore.compareDpto}
+					{@const primaryLabel = dpto ? (dpto.length > 10 ? dpto.slice(0, 9) + '.' : dpto) : stats[0].territory.shortLabel}
+					{@const compareLabel = compareDpto ? (compareDpto.length > 10 ? compareDpto.slice(0, 9) + '.' : compareDpto) : stats[1].territory.shortLabel}
+					<table class="stats-table">
+						<thead>
+							<tr>
+								<th class="col-var"></th>
+								<th class="col-val">{stats[0].territory.flag} {primaryLabel}</th>
+								<th class="col-val">{stats[1].territory.flag} {compareLabel}</th>
+								<th class="col-diff">Δ</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#if stats[0].error || stats[1].error}
+								<tr><td colspan="4" class="hint">{stats[0].error ?? stats[1].error}</td></tr>
+							{:else}
+								{#each compareVars as v}
+									{@const a = stats[0].values[v.col]}
+									{@const b = stats[1].values[v.col]}
+									<tr>
+										<td class="col-var">{i18n.t(v.labelKey)}</td>
+										<td class="col-val">{fmt(a)}{v.unit ? ` ${v.unit}` : ''}</td>
+										<td class="col-val">{fmt(b)}{v.unit ? ` ${v.unit}` : ''}</td>
+										<td class="col-diff {diffClass(a, b)}">{diff(a, b)}</td>
+									</tr>
 								{/each}
-							</div>
+							{/if}
+						</tbody>
+					</table>
+					<p class="note">
+						{#if dpto && compareDpto}
+							Dept. {dpto} ({stats[0].territory.flag}) vs Dist. {compareDpto} ({stats[1].territory.flag})
+						{:else if dpto}
+							Dept. {dpto} ({stats[0].territory.flag}) vs {stats[1].territory.flag} prom. provincial
+						{:else}
+							Prom. {stats[0].territory.flag} vs prom. {stats[1].territory.flag}
 						{/if}
-					</div>
-				{:else}
-					<span class="dept-none">Sin datos</span>
+					</p>
 				{/if}
 			</div>
 		{/if}
-
-		{#if !activeLayer}
-			<p class="hint">Seleccioná un análisis para comparar.</p>
-		{:else if loading}
-			<p class="hint">Cargando datos…</p>
-		{:else if stats.length === 2}
-			{@const dpto = hexStore.selectedDpto}
-			{@const compareDpto = hexStore.compareDpto}
-			{@const primaryLabel = dpto ? (dpto.length > 10 ? dpto.slice(0, 9) + '.' : dpto) : stats[0].territory.shortLabel}
-			{@const compareLabel = compareDpto ? (compareDpto.length > 10 ? compareDpto.slice(0, 9) + '.' : compareDpto) : stats[1].territory.shortLabel}
-			<table class="stats-table">
-				<thead>
-					<tr>
-						<th class="col-var"></th>
-						<th class="col-val">{stats[0].territory.flag} {primaryLabel}</th>
-						<th class="col-val">{stats[1].territory.flag} {compareLabel}</th>
-						<th class="col-diff">Δ</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#if stats[0].error || stats[1].error}
-						<tr><td colspan="4" class="hint">{stats[0].error ?? stats[1].error}</td></tr>
-					{:else}
-						{#each compareVars as v}
-							{@const a = stats[0].values[v.col]}
-							{@const b = stats[1].values[v.col]}
-							<tr>
-								<td class="col-var">{i18n.t(v.labelKey)}</td>
-								<td class="col-val">{fmt(a)}{v.unit ? ` ${v.unit}` : ''}</td>
-								<td class="col-val">{fmt(b)}{v.unit ? ` ${v.unit}` : ''}</td>
-								<td class="col-diff {diffClass(a, b)}">{diff(a, b)}</td>
-							</tr>
-						{/each}
-					{/if}
-				</tbody>
-			</table>
-			<p class="note">
-				{#if dpto && compareDpto}
-					Dept. {dpto} ({stats[0].territory.flag}) vs Dist. {compareDpto} ({stats[1].territory.flag})
-				{:else if dpto}
-					Dept. {dpto} ({stats[0].territory.flag}) vs {stats[1].territory.flag} prom. provincial
-				{:else}
-					Prom. {stats[0].territory.flag} vs prom. {stats[1].territory.flag}
-				{/if}
-			</p>
-		{/if}
-	</div>
-{/if}
+	{/if}
+</div>
 
 <style>
+	.cp-root { }
+
+	.cp-root.cp-full {
+		flex: 1;
+		overflow-y: auto;
+		min-height: 0;
+	}
+
+	/* Selector row */
+	.compare-row {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 5px 0;
+		border-bottom: 1px solid rgba(255,255,255,0.06);
+		margin-bottom: 4px;
+		position: relative;
+	}
+
+	.compare-row-btn {
+		font-size: 9px;
+		font-weight: 600;
+		color: #93c5fd;
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 2px 4px;
+		transition: color 0.15s;
+	}
+	.compare-row-btn:hover { color: #bfdbfe; }
+
+	.close-btn {
+		background: none;
+		border: none;
+		color: rgba(255, 255, 255, 0.35);
+		font-size: 14px;
+		cursor: pointer;
+		padding: 0 2px;
+		line-height: 1;
+		margin-left: auto;
+	}
+	.close-btn:hover { color: rgba(255, 255, 255, 0.7); }
+
+	/* Hierarchical dropdown */
+	.compare-dropdown {
+		position: absolute;
+		top: calc(100% + 3px);
+		left: 0;
+		min-width: 180px;
+		max-height: 260px;
+		overflow-y: auto;
+		background: rgba(10, 14, 22, 0.98);
+		border: 1px solid rgba(255,255,255,0.12);
+		border-radius: 5px;
+		z-index: 50;
+		padding: 4px;
+		scrollbar-width: thin;
+		scrollbar-color: #334155 transparent;
+	}
+
+	.group-header {
+		font-size: 8px;
+		font-weight: 700;
+		color: rgba(255,255,255,0.35);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		padding: 6px 8px 2px;
+	}
+	.group-header:first-child { padding-top: 3px; }
+
+	.opt {
+		display: block;
+		width: 100%;
+		padding: 3px 8px;
+		background: none;
+		border: none;
+		border-radius: 3px;
+		text-align: left;
+		font-size: 9px;
+		color: rgba(255,255,255,0.75);
+		cursor: pointer;
+		transition: background 0.1s;
+	}
+	.opt:hover { background: rgba(255,255,255,0.07); }
+	.opt-province { font-weight: 600; color: rgba(255,255,255,0.90); }
+	.opt-dept { padding-left: 16px; }
+
+	/* Stats panel */
 	.comparison-panel {
-		margin-top: 8px;
+		margin-top: 4px;
 		padding: 8px 10px;
 		background: rgba(59, 130, 246, 0.08);
 		border: 1px solid rgba(59, 130, 246, 0.20);
@@ -301,82 +367,6 @@
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
 	}
-
-	.close-btn {
-		background: none;
-		border: none;
-		color: rgba(255, 255, 255, 0.35);
-		font-size: 14px;
-		cursor: pointer;
-		padding: 0 2px;
-		line-height: 1;
-	}
-	.close-btn:hover { color: rgba(255, 255, 255, 0.7); }
-
-	/* Compare dept selector */
-	.dept-row {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		margin-bottom: 6px;
-		flex-wrap: wrap;
-	}
-	.dept-label {
-		font-size: 8.5px;
-		color: rgba(255, 255, 255, 0.45);
-		white-space: nowrap;
-	}
-	.dept-loading, .dept-none {
-		font-size: 8.5px;
-		color: rgba(255, 255, 255, 0.30);
-		font-style: italic;
-	}
-	.dept-select-wrap { position: relative; }
-	.dept-select-btn {
-		display: flex;
-		align-items: center;
-		gap: 4px;
-		padding: 3px 7px;
-		background: rgba(255,255,255,0.06);
-		border: 1px solid rgba(255,255,255,0.14);
-		border-radius: 4px;
-		color: #e2e8f0;
-		font-size: 9px;
-		font-weight: 600;
-		cursor: pointer;
-		transition: background 0.1s;
-	}
-	.dept-select-btn:hover { background: rgba(255,255,255,0.10); }
-	.dept-dropdown {
-		position: absolute;
-		top: calc(100% + 3px);
-		left: 0;
-		min-width: 140px;
-		max-height: 180px;
-		overflow-y: auto;
-		background: rgba(10, 14, 22, 0.98);
-		border: 1px solid rgba(255,255,255,0.12);
-		border-radius: 5px;
-		z-index: 50;
-		padding: 3px;
-		scrollbar-width: thin;
-		scrollbar-color: #334155 transparent;
-	}
-	.dept-opt {
-		display: block;
-		width: 100%;
-		padding: 4px 8px;
-		background: none;
-		border: none;
-		border-radius: 3px;
-		text-align: left;
-		font-size: 9px;
-		color: rgba(255,255,255,0.75);
-		cursor: pointer;
-		transition: background 0.1s;
-	}
-	.dept-opt:hover { background: rgba(255,255,255,0.07); }
-	.dept-opt.sel { color: #f97316; font-weight: 700; }
 
 	.hint {
 		font-size: 9px;
@@ -428,37 +418,5 @@
 		margin: 5px 0 0;
 		text-align: right;
 		font-style: italic;
-	}
-
-	.compare-trigger {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		margin-top: 6px;
-		margin-bottom: 2px;
-		padding: 6px 8px;
-		background: rgba(59, 130, 246, 0.05);
-		border: 1px solid rgba(59, 130, 246, 0.15);
-		border-radius: 5px;
-	}
-
-	.trigger-btn {
-		background: none;
-		border: none;
-		color: #93c5fd;
-		font-size: 9px;
-		font-weight: 600;
-		cursor: pointer;
-		padding: 0;
-		transition: color 0.15s;
-		white-space: nowrap;
-	}
-
-	.trigger-btn:hover { color: #bfdbfe; }
-
-	.trigger-hint {
-		font-size: 8px;
-		color: rgba(255, 255, 255, 0.30);
-		white-space: nowrap;
 	}
 </style>

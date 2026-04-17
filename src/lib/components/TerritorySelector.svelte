@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getTerritoriesByCountry, TERRITORY_REGISTRY, type TerritoryConfig, type CountryId } from '$lib/config';
+	import { getTerritoriesByCountry, type CountryId } from '$lib/config';
 	import type { TerritoryStore } from '$lib/stores/territory.svelte';
 
 	let { territoryStore }: { territoryStore: TerritoryStore } = $props();
@@ -13,29 +13,6 @@
 	const activeCountries = $derived(
 		countryOrder.filter(c => (byCountry[c] ?? []).length > 0)
 	);
-
-	// Territories available for comparison (available, not the active one)
-	const compareCandidates = $derived(
-		Object.values(TERRITORY_REGISTRY).filter(
-			t => t.available && t.id !== territoryStore.activeTerritory.id
-		)
-	);
-
-	let showCompareSelector = $state(false);
-
-	function toggleCompare() {
-		if (territoryStore.compareModeActive) {
-			territoryStore.exitCompareMode();
-			showCompareSelector = false;
-		} else {
-			showCompareSelector = !showCompareSelector;
-		}
-	}
-
-	function selectCompare(t: TerritoryConfig) {
-		territoryStore.enterCompareMode(t.id);
-		showCompareSelector = false;
-	}
 </script>
 
 <div class="territory-selector">
@@ -74,38 +51,6 @@
 		</div>
 	{/each}
 
-	<!-- Compare row -->
-	<div class="compare-row">
-		<button
-			class="compare-btn"
-			class:active={territoryStore.compareModeActive}
-			disabled={compareCandidates.length === 0}
-			title={compareCandidates.length === 0
-				? 'Disponible cuando haya más territorios'
-				: territoryStore.compareModeActive
-					? `Comparando con ${territoryStore.compareTerritory?.label} — click para salir`
-					: 'Comparar territorios'}
-			onclick={toggleCompare}
-		>
-			{#if territoryStore.compareModeActive}
-				{territoryStore.compareTerritory?.flag} {territoryStore.compareTerritory?.label} ×
-			{:else}
-				Comparar territorios →
-			{/if}
-		</button>
-	</div>
-
-	{#if showCompareSelector && !territoryStore.compareModeActive}
-		<div class="compare-picker">
-			<span class="picker-label">Comparar con:</span>
-			{#each compareCandidates as t (t.id)}
-				<button class="territory-btn" onclick={() => selectCompare(t)}>
-					<span>{t.flag}</span>
-					<span class="t-name">{t.label}</span>
-				</button>
-			{/each}
-		</div>
-	{/if}
 </div>
 
 <style>
@@ -195,62 +140,4 @@
 		font-style: italic;
 	}
 
-	/* Compare row */
-	.compare-row {
-		margin-top: 4px;
-		padding-top: 4px;
-		border-top: 1px solid rgba(255, 255, 255, 0.06);
-	}
-
-	.compare-btn {
-		width: 100%;
-		padding: 4px 8px;
-		background: none;
-		border: 1px solid rgba(255, 255, 255, 0.10);
-		border-radius: 4px;
-		color: rgba(255, 255, 255, 0.30);
-		font-size: 9px;
-		font-weight: 600;
-		cursor: not-allowed;
-		transition: all 0.15s;
-		text-align: center;
-		letter-spacing: 0.02em;
-	}
-
-	.compare-btn:not(:disabled) {
-		color: #93c5fd;
-		border-color: rgba(59, 130, 246, 0.30);
-		cursor: pointer;
-	}
-
-	.compare-btn:not(:disabled):hover {
-		background: rgba(59, 130, 246, 0.10);
-		color: #bfdbfe;
-		border-color: rgba(59, 130, 246, 0.50);
-	}
-
-	.compare-btn.active {
-		background: rgba(59, 130, 246, 0.12);
-		border-color: rgba(59, 130, 246, 0.35);
-		color: #93c5fd;
-	}
-
-	/* Compare picker */
-	.compare-picker {
-		display: flex;
-		align-items: center;
-		gap: 4px;
-		padding: 4px 6px;
-		background: rgba(255, 255, 255, 0.04);
-		border-radius: 4px;
-		border: 1px solid rgba(255, 255, 255, 0.08);
-		flex-wrap: wrap;
-		margin-top: 4px;
-	}
-
-	.picker-label {
-		font-size: 8px;
-		color: rgba(255, 255, 255, 0.35);
-		font-weight: 500;
-	}
 </style>

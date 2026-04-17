@@ -106,8 +106,6 @@
 		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 4 L18 12 L10 20"/></svg>
 	</button>
 
-	<ComparisonPanel {territoryStore} {lensStore} {hexStore} />
-
 	{#if showAbout}
 		<!-- Welcome panel (triggered by header button) -->
 		<div class="chart-scroll welcome-panel">
@@ -156,10 +154,13 @@
 			<HexComparison {hexStore} />
 		</div>
 	{:else if lensStore.activeLens && lensStore.activeAnalysis}
-		<!-- Analysis active: show analysis view -->
-		<div class="chart-scroll">
-			<AnalysisView {lensStore} {mapStore} {hexStore} onBack={handleBack} {onRemoveRadio} {onSelectFloodDpto} {onSelectFloodCatastroDpto} {onSelectCatastroDpto} {onSelectScoresCatastroDpto} {onSelectRadioAnalysisDpto} />
-		</div>
+		<!-- Compare selector always visible; when active it fills the panel and replaces AnalysisView -->
+		<ComparisonPanel {territoryStore} {lensStore} {hexStore} />
+		{#if !territoryStore.compareModeActive}
+			<div class="chart-scroll">
+				<AnalysisView {lensStore} {mapStore} {hexStore} onBack={handleBack} {onRemoveRadio} {onSelectFloodDpto} {onSelectFloodCatastroDpto} {onSelectCatastroDpto} {onSelectScoresCatastroDpto} {onSelectRadioAnalysisDpto} />
+			</div>
+		{/if}
 	{:else if mapStore.selectedRadios.size > 0}
 		<!-- No lens, radios selected: comparison chart -->
 		<div class="chart-scroll">

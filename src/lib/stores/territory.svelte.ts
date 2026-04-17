@@ -16,7 +16,7 @@ export class TerritoryStore {
 
 	enterCompareMode(territoryId: string) {
 		const t = TERRITORY_REGISTRY[territoryId];
-		if (!t || !t.available || t.id === this.activeTerritory.id) return;
+		if (!t || !t.available) return;
 		this.compareTerritory = t;
 		this.compareModeActive = true;
 	}

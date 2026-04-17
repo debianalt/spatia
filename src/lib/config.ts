@@ -218,6 +218,64 @@ export const TERRITORY_REGISTRY: Record<string, TerritoryConfig> = {
 		bbox: [-55.80, -26.20, -54.20, -25.20],
 		parquetPrefix: 'alto_parana_py/', flag: '🇵🇾', available: false,
 	},
+	// ── Argentina — próximamente ─────────────────────────────────────────────
+	corrientes: {
+		id: 'corrientes', label: 'Corrientes', shortLabel: 'CTE', country: 'ar',
+		bbox: [-59.50, -30.00, -56.00, -27.00],
+		parquetPrefix: 'corrientes/', flag: '🇦🇷', available: false,
+	},
+	chaco: {
+		id: 'chaco', label: 'Chaco', shortLabel: 'CHA', country: 'ar',
+		bbox: [-63.00, -27.50, -59.00, -24.00],
+		parquetPrefix: 'chaco/', flag: '🇦🇷', available: false,
+	},
+	formosa: {
+		id: 'formosa', label: 'Formosa', shortLabel: 'FOR', country: 'ar',
+		bbox: [-62.50, -26.50, -58.00, -22.00],
+		parquetPrefix: 'formosa/', flag: '🇦🇷', available: false,
+	},
+	// ── Paraguay — próximamente ──────────────────────────────────────────────
+	neembucu_py: {
+		id: 'neembucu_py', label: 'Ñeembucú', shortLabel: 'NEE', country: 'py',
+		bbox: [-58.50, -27.50, -57.30, -26.40],
+		parquetPrefix: 'neembucu_py/', flag: '🇵🇾', available: false,
+	},
+	misiones_py: {
+		id: 'misiones_py', label: 'Misiones', shortLabel: 'MPY', country: 'py',
+		bbox: [-57.30, -27.20, -56.40, -26.80],
+		parquetPrefix: 'misiones_py/', flag: '🇵🇾', available: false,
+	},
+	presidente_hayes_py: {
+		id: 'presidente_hayes_py', label: 'Presidente Hayes', shortLabel: 'PHY', country: 'py',
+		bbox: [-62.00, -25.50, -57.50, -22.00],
+		parquetPrefix: 'presidente_hayes_py/', flag: '🇵🇾', available: false,
+	},
+	boqueron_py: {
+		id: 'boqueron_py', label: 'Boquerón', shortLabel: 'BOQ', country: 'py',
+		bbox: [-62.50, -23.00, -59.50, -20.00],
+		parquetPrefix: 'boqueron_py/', flag: '🇵🇾', available: false,
+	},
+	alto_paraguay_py: {
+		id: 'alto_paraguay_py', label: 'Alto Paraguay', shortLabel: 'AGP', country: 'py',
+		bbox: [-61.00, -23.00, -57.50, -19.50],
+		parquetPrefix: 'alto_paraguay_py/', flag: '🇵🇾', available: false,
+	},
+	// ── Brasil — próximamente ────────────────────────────────────────────────
+	parana_br: {
+		id: 'parana_br', label: 'Paraná', shortLabel: 'PR', country: 'br',
+		bbox: [-54.60, -26.70, -48.00, -22.50],
+		parquetPrefix: 'parana_br/', flag: '🇧🇷', available: false,
+	},
+	santa_catarina_br: {
+		id: 'santa_catarina_br', label: 'Santa Catarina', shortLabel: 'SC', country: 'br',
+		bbox: [-53.90, -29.40, -48.30, -25.90],
+		parquetPrefix: 'santa_catarina_br/', flag: '🇧🇷', available: false,
+	},
+	rio_grande_do_sul_br: {
+		id: 'rio_grande_do_sul_br', label: 'Rio Grande do Sul', shortLabel: 'RS', country: 'br',
+		bbox: [-57.70, -33.80, -49.60, -27.00],
+		parquetPrefix: 'rio_grande_do_sul_br/', flag: '🇧🇷', available: false,
+	},
 };
 
 export function getDefaultTerritory(): TerritoryConfig {
