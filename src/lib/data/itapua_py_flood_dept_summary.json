@@ -1,0 +1,350 @@
+{
+  "province": {
+    "total_hexes": 173048,
+    "high_risk_count": 2449,
+    "avg_score": 47.5
+  },
+  "departments": [
+    {
+      "dpto": "Trinidad",
+      "parquetKey": "trinidad",
+      "avg_score": 62.8,
+      "hex_count": 2375,
+      "high_risk_count": 79,
+      "centroid": [
+        -55.735,
+        -27.1495
+      ]
+    },
+    {
+      "dpto": "Alto Vera",
+      "parquetKey": "alto_vera",
+      "avg_score": 61.7,
+      "hex_count": 13092,
+      "high_risk_count": 4,
+      "centroid": [
+        -55.7222,
+        -26.5954
+      ]
+    },
+    {
+      "dpto": "Nueva Alborada",
+      "parquetKey": "nueva_alborada",
+      "avg_score": 58.0,
+      "hex_count": 2534,
+      "high_risk_count": 218,
+      "centroid": [
+        -55.665,
+        -27.2813
+      ]
+    },
+    {
+      "dpto": "Bella Vista",
+      "parquetKey": "bella_vista",
+      "avg_score": 57.4,
+      "hex_count": 3149,
+      "high_risk_count": 133,
+      "centroid": [
+        -55.5355,
+        -27.0111
+      ]
+    },
+    {
+      "dpto": "Cambyreta",
+      "parquetKey": "cambyreta",
+      "avg_score": 57.4,
+      "hex_count": 2077,
+      "high_risk_count": 129,
+      "centroid": [
+        -55.7699,
+        -27.3561
+      ]
+    },
+    {
+      "dpto": "Obligado",
+      "parquetKey": "obligado",
+      "avg_score": 56.5,
+      "hex_count": 4236,
+      "high_risk_count": 63,
+      "centroid": [
+        -55.7125,
+        -26.9229
+      ]
+    },
+    {
+      "dpto": "Hohenau",
+      "parquetKey": "hohenau",
+      "avg_score": 56.3,
+      "hex_count": 2994,
+      "high_risk_count": 120,
+      "centroid": [
+        -55.7418,
+        -27.0077
+      ]
+    },
+    {
+      "dpto": "Mayor Otano",
+      "parquetKey": "mayor_otano",
+      "avg_score": 56.3,
+      "hex_count": 3257,
+      "high_risk_count": 62,
+      "centroid": [
+        -54.7762,
+        -26.2756
+      ]
+    },
+    {
+      "dpto": "Natalio",
+      "parquetKey": "natalio",
+      "avg_score": 55.9,
+      "hex_count": 3554,
+      "high_risk_count": 63,
+      "centroid": [
+        -55.1481,
+        -26.7574
+      ]
+    },
+    {
+      "dpto": "Pirapo",
+      "parquetKey": "pirapo",
+      "avg_score": 55.6,
+      "hex_count": 7336,
+      "high_risk_count": 71,
+      "centroid": [
+        -55.5412,
+        -26.8461
+      ]
+    },
+    {
+      "dpto": "Carlos A Lopez",
+      "parquetKey": "carlos_a_lopez",
+      "avg_score": 55.5,
+      "hex_count": 8756,
+      "high_risk_count": 60,
+      "centroid": [
+        -54.9021,
+        -26.3704
+      ]
+    },
+    {
+      "dpto": "Capitan Meza",
+      "parquetKey": "capitan_meza",
+      "avg_score": 54.6,
+      "hex_count": 8347,
+      "high_risk_count": 113,
+      "centroid": [
+        -55.3725,
+        -26.7763
+      ]
+    },
+    {
+      "dpto": "Jesus",
+      "parquetKey": "jesus",
+      "avg_score": 54.6,
+      "hex_count": 1387,
+      "high_risk_count": 0,
+      "centroid": [
+        -55.7803,
+        -27.0605
+      ]
+    },
+    {
+      "dpto": "San Rafael Del Parana",
+      "parquetKey": "san_rafael_del_parana",
+      "avg_score": 54.4,
+      "hex_count": 16122,
+      "high_risk_count": 108,
+      "centroid": [
+        -55.1388,
+        -26.4058
+      ]
+    },
+    {
+      "dpto": "San Juan",
+      "parquetKey": "san_juan",
+      "avg_score": 54.0,
+      "hex_count": 901,
+      "high_risk_count": 362,
+      "centroid": [
+        -55.9922,
+        -27.2954
+      ]
+    },
+    {
+      "dpto": "Encarnacion",
+      "parquetKey": "encarnacion",
+      "avg_score": 53.9,
+      "hex_count": 3415,
+      "high_risk_count": 584,
+      "centroid": [
+        -55.8985,
+        -27.2646
+      ]
+    },
+    {
+      "dpto": "Yatytay",
+      "parquetKey": "yatytay",
+      "avg_score": 53.9,
+      "hex_count": 3122,
+      "high_risk_count": 43,
+      "centroid": [
+        -55.0816,
+        -26.6682
+      ]
+    },
+    {
+      "dpto": "La Paz",
+      "parquetKey": "la_paz",
+      "avg_score": 53.4,
+      "hex_count": 2509,
+      "high_risk_count": 0,
+      "centroid": [
+        -55.9091,
+        -26.9867
+      ]
+    },
+    {
+      "dpto": "Edelira",
+      "parquetKey": "edelira",
+      "avg_score": 53.3,
+      "hex_count": 7388,
+      "high_risk_count": 1,
+      "centroid": [
+        -55.4008,
+        -26.58
+      ]
+    },
+    {
+      "dpto": "Capitan Miranda",
+      "parquetKey": "capitan_miranda",
+      "avg_score": 53.2,
+      "hex_count": 1969,
+      "high_risk_count": 0,
+      "centroid": [
+        -55.8331,
+        -27.1821
+      ]
+    },
+    {
+      "dpto": "Tomas Romero P.",
+      "parquetKey": "tomas_romero_p",
+      "avg_score": 53.2,
+      "hex_count": 6723,
+      "high_risk_count": 0,
+      "centroid": [
+        -55.2933,
+        -26.4732
+      ]
+    },
+    {
+      "dpto": "San Pedro Del Parana",
+      "parquetKey": "san_pedro_del_parana",
+      "avg_score": 52.6,
+      "hex_count": 15050,
+      "high_risk_count": 3,
+      "centroid": [
+        -56.0239,
+        -26.7295
+      ]
+    },
+    {
+      "dpto": "Fram",
+      "parquetKey": "fram",
+      "avg_score": 48.8,
+      "hex_count": 3545,
+      "high_risk_count": 0,
+      "centroid": [
+        -56.0203,
+        -27.0764
+      ]
+    },
+    {
+      "dpto": "Carmen Del Parana",
+      "parquetKey": "carmen_del_parana",
+      "avg_score": 38.9,
+      "hex_count": 3013,
+      "high_risk_count": 191,
+      "centroid": [
+        -56.1055,
+        -27.2074
+      ]
+    },
+    {
+      "dpto": "Gral Artigas",
+      "parquetKey": "gral_artigas",
+      "avg_score": 27.3,
+      "hex_count": 15510,
+      "high_risk_count": 0,
+      "centroid": [
+        -56.3772,
+        -26.9109
+      ]
+    },
+    {
+      "dpto": "Isla Yacyreta",
+      "parquetKey": "isla_yacyreta",
+      "avg_score": 27.1,
+      "hex_count": 8785,
+      "high_risk_count": 42,
+      "centroid": [
+        -56.5119,
+        -27.3952
+      ]
+    },
+    {
+      "dpto": "Coronel Bogado",
+      "parquetKey": "coronel_bogado",
+      "avg_score": 27.0,
+      "hex_count": 6066,
+      "high_risk_count": 0,
+      "centroid": [
+        -56.306,
+        -27.1479
+      ]
+    },
+    {
+      "dpto": "Gral. Delgado",
+      "parquetKey": "gral_delgado",
+      "avg_score": 27.0,
+      "hex_count": 4846,
+      "high_risk_count": 0,
+      "centroid": [
+        -56.5565,
+        -27.0741
+      ]
+    },
+    {
+      "dpto": "Isla",
+      "parquetKey": "isla",
+      "avg_score": 27.0,
+      "hex_count": 2429,
+      "high_risk_count": 0,
+      "centroid": [
+        -56.4098,
+        -27.5135
+      ]
+    },
+    {
+      "dpto": "Leandro Oviedo",
+      "parquetKey": "leandro_oviedo",
+      "avg_score": 27.0,
+      "hex_count": 1381,
+      "high_risk_count": 0,
+      "centroid": [
+        -56.2346,
+        -26.7503
+      ]
+    },
+    {
+      "dpto": "San Cosme Y Damian",
+      "parquetKey": "san_cosme_y_damian",
+      "avg_score": 27.0,
+      "hex_count": 7180,
+      "high_risk_count": 0,
+      "centroid": [
+        -56.4868,
+        -27.2628
+      ]
+    }
+  ]
+}

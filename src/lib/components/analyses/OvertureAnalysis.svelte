@@ -67,11 +67,20 @@
 
 	// Bundled summaries for Itapúa (distritos, admin_col='distrito')
 	const ITAPUA_SUMMARIES: Record<string, () => Promise<any>> = {
-		environmental_risk: () => import('$lib/data/itapua_py_sat_environmental_risk_summary.json'),
-		climate_comfort: () => import('$lib/data/itapua_py_sat_climate_comfort_summary.json'),
-		green_capital: () => import('$lib/data/itapua_py_sat_green_capital_summary.json'),
-		change_pressure: () => import('$lib/data/itapua_py_sat_change_pressure_summary.json'),
-		forest_health: () => import('$lib/data/itapua_py_sat_forest_health_summary.json'),
+		environmental_risk:      () => import('$lib/data/itapua_py_sat_environmental_risk_summary.json'),
+		climate_comfort:         () => import('$lib/data/itapua_py_sat_climate_comfort_summary.json'),
+		green_capital:           () => import('$lib/data/itapua_py_sat_green_capital_summary.json'),
+		change_pressure:         () => import('$lib/data/itapua_py_sat_change_pressure_summary.json'),
+		forest_health:           () => import('$lib/data/itapua_py_sat_forest_health_summary.json'),
+		agri_potential:          () => import('$lib/data/itapua_py_sat_agri_potential_summary.json'),
+		carbon_stock:            () => import('$lib/data/itapua_py_sat_carbon_stock_summary.json'),
+		climate_vulnerability:   () => import('$lib/data/itapua_py_sat_climate_vulnerability_summary.json'),
+		deforestation_dynamics:  () => import('$lib/data/itapua_py_sat_deforestation_dynamics_summary.json'),
+		forestry_aptitude:       () => import('$lib/data/itapua_py_sat_forestry_aptitude_summary.json'),
+		location_value:          () => import('$lib/data/itapua_py_sat_location_value_summary.json'),
+		pm25_drivers:            () => import('$lib/data/itapua_py_sat_pm25_drivers_summary.json'),
+		productive_activity:     () => import('$lib/data/itapua_py_sat_productive_activity_summary.json'),
+		flood_risk:              () => import('$lib/data/itapua_py_flood_dept_summary.json'),
 	};
 
 	// Lookup: territory prefix → summaries dict (add new territories here)
