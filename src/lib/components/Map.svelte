@@ -1209,6 +1209,7 @@
 	}
 
 	export function setHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = 'flood', domain?: [number, number]) {
+		console.log('[setHexChoropleth]', 'entries:', entries.length, 'styleLoaded:', map?.isStyleLoaded(), 'hasMap:', !!map);
 		if (!map || !map.isStyleLoaded()) return;
 
 		const src = map.getSource('hexagons') as maplibregl.GeoJSONSource | undefined;

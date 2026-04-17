@@ -805,6 +805,7 @@
 		// Render outside Svelte's reactive batch to prevent $effect interference
 		setTimeout(() => {
 			const entries = hexStore.choroplethEntries;
+			console.log('[handleSelectFloodDpto timeout]', dpto, 'entries:', entries.length, 'visibleData:', hexStore.visibleData?.size, 'colorDomain:', hexStore.colorDomain);
 			if (entries.length > 0) {
 				let colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' = hexStore.activeLayer?.colorScale ?? 'flood';
 				if (hexStore.activeLayer?.temporal && hexStore.temporalMode === 'delta') colorScale = 'diverging';

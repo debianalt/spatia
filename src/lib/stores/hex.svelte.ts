@@ -199,9 +199,10 @@ export class HexStore {
 			this.boundaryCache = boundaries;
 			this.dataVersion++;
 
+			console.log('[loadDept OK]', dpto, 'rows:', data.size, 'boundaries:', boundaries.size, 'url:', url);
 			this.ensureProvincialAvg().catch(() => {});
 		} catch (e) {
-			console.warn('Failed to load department hex data:', e);
+			console.warn('[loadDept FAIL]', dpto, e);
 		}
 
 		this.loading = false;
