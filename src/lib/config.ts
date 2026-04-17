@@ -52,7 +52,7 @@ export function getParquetUrl(name: string): string {
 		sat_location_value: '?v=24',
 		sat_agri_potential: '?v=28',
 		sat_forest_health: '?v=27',
-		sat_forestry_aptitude: '?v=30',
+		sat_forestry_aptitude: '?v=31',
 		sat_service_deprivation: '?v=25',
 		sat_territorial_isolation: '?v=25',
 		sat_health_access: '?v=25',
@@ -494,6 +494,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.forestry.low',
 		legendHighKey: 'legend.forestry.high',
+		coverage: { itapua_py: 'available' },
 	},
 	service_deprivation: {
 		id: 'service_deprivation',
@@ -1051,6 +1052,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 
 		status: 'available',
 		spatialUnit: 'hexagon',
+		coverage: { itapua_py: 'available' },
 	},
 	{
 		id: 'service_deprivation',
