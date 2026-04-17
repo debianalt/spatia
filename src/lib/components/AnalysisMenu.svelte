@@ -16,6 +16,8 @@
 	const lens = $derived(lensStore.activeLens);
 	const cfg = $derived(lens ? LENS_CONFIG[lens] : null);
 	const analyses = $derived(lens ? getAnalysesForLens(lens) : []);
+	const comparableGroup = $derived(analyses.filter(a => a.comparable && getCoverage(a) !== 'unavailable'));
+	const localGroup = $derived(analyses.filter(a => !a.comparable && getCoverage(a) !== 'unavailable'));
 
 	function getCoverage(analysis: AnalysisConfig): 'available' | 'pending' | 'unavailable' {
 		if (!activeTerritory) return 'available';
@@ -34,9 +36,6 @@
 		</div>
 
 		<div class="analysis-list">
-			{@const comparableGroup = analyses.filter(a => a.comparable && getCoverage(a) !== 'unavailable')}
-			{@const localGroup = analyses.filter(a => !a.comparable && getCoverage(a) !== 'unavailable')}
-
 			{#if comparableGroup.length > 0}
 				<div class="group-label">↔ Comparables entre territorios</div>
 				{#each comparableGroup as analysis}
