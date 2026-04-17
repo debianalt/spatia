@@ -162,6 +162,7 @@ def main():
     result = pm25.merge(res9_shap, on='h3index', how='left' if not has_shap else 'inner')
 
     # Quintile typology on current score
+    result = result.dropna(subset=['score'])
     result['type'] = pd.qcut(result['score'], 5, labels=[1, 2, 3, 4, 5]).astype(int)
     result['type_label'] = result['type'].map(QUINTILE_LABELS)
 

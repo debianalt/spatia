@@ -98,8 +98,8 @@ def lst_composite(years):
 
 def ghsl_built(epoch):
     """GHSL built surface fraction for a given epoch."""
-    return (ee.Image('JRC/GHSL/P2023A/GHS_BUILT_S/2030')
-            .select(f'built_surface_{epoch}')
+    return (ee.Image(f'JRC/GHSL/P2023A/GHS_BUILT_S/{epoch}')
+            .select('built_surface')
             .rename('built')
             .toFloat())
 

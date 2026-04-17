@@ -740,6 +740,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		temporalPeriods: { current: '2022–2024', baseline: '2018–2020', source: 'ESA CCI · MODIS · Hansen' },
 		legendLowKey: 'legend.carbon.low',
 		legendHighKey: 'legend.carbon.high',
+		coverage: { itapua_py: 'available' },
 	},
 	// ── Climate Vulnerability (IPCC AR5 meta-analysis) ──
 	climate_vulnerability: {
@@ -806,6 +807,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		temporalPeriods: { current: '2013–2022', baseline: '2001–2010', source: 'ACAG V6' },
 		legendLowKey: 'legend.pm25.low',
 		legendHighKey: 'legend.pm25.high',
+		coverage: { itapua_py: 'available' },
 	},
 	// ── Productive Activity (raw values, VIIRS + NPP + NDVI + GHSL + Hansen + LST) ──
 	productive_activity: {
@@ -836,6 +838,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.prodAct.low',
 		legendHighKey: 'legend.prodAct.high',
+		coverage: { itapua_py: 'available' },
 	},
 	// ── Deforestation Dynamics (Hansen 2001-2024, observed) ──
 	deforestation_dynamics: {
@@ -1098,7 +1101,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'sat.carbon.title',
 		descKey: 'sat.carbon.desc',
-
+		coverage: { itapua_py: 'available' },
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1118,7 +1121,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'invertir',
 		titleKey: 'sat.prodAct.title',
 		descKey: 'sat.prodAct.desc',
-
+		coverage: { itapua_py: 'available' },
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1138,7 +1141,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'sat.pm25.title',
 		descKey: 'sat.pm25.desc',
-
+		coverage: { itapua_py: 'available' },
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
