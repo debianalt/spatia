@@ -26,7 +26,7 @@ import time
 
 from config import (
     PIPELINE_DIR, OUTPUT_DIR, GRID_PATH, PARQUET_PATH,
-    GCS_BUCKET, R2_BUCKET, MIN_HEXAGONS, SCORE_RANGE,
+    GCS_BUCKET, R2_BUCKET, MIN_HEXAGONS, SCORE_RANGE, get_territory,
 )
 
 
@@ -37,10 +37,12 @@ def step(n, msg):
     print(f"{'='*60}\n")
 
 
-def find_local_geotiffs():
+def find_local_geotiffs(directory=None):
     """Find existing GeoTIFFs in the output directory."""
+    if directory is None:
+        directory = OUTPUT_DIR
     files = {}
-    for f in glob.glob(os.path.join(OUTPUT_DIR, "*.tif")):
+    for f in glob.glob(os.path.join(directory, "*.tif")):
         name = os.path.basename(f).lower()
         if "jrc_occurrence" in name:
             files["jrc_occurrence"] = f
@@ -59,6 +61,15 @@ def run(args):
     start_time = time.time()
     downloaded = {}
 
+    # Territory-aware paths
+    territory = get_territory(args.territory)
+    t_prefix = territory['output_prefix']                    # '' or 'itapua_py/'
+    t_dir = os.path.join(OUTPUT_DIR, t_prefix.rstrip('/')) if t_prefix else OUTPUT_DIR
+    grid_path = os.path.join(t_dir, 'hexagons.geojson') if t_prefix else GRID_PATH
+    parquet_path = os.path.join(t_dir, 'hex_flood_risk.parquet') if t_prefix else PARQUET_PATH
+    r2_key = f"data/{t_prefix}hex_flood_risk.parquet"
+    r2_dpto_prefix = f"data/{t_prefix}flood_dpto/"
+
     # ── Step 1-3: GEE export + poll ────────────────────────────────
     if not args.skip_gee:
         step(1, "Authenticate to Google Earth Engine")
@@ -69,6 +80,7 @@ def run(args):
         step(2, "Launch flood export to GCS")
         from gee_flood_detection import launch_exports
         tasks = launch_exports(
+            territory_id=args.territory,
             historical=args.historical,
             current=True,
             drive=False,
@@ -94,19 +106,19 @@ def run(args):
             return 1
     else:
         step("1-4", "SKIPPED (--skip-gee): using local GeoTIFFs")
-        downloaded = find_local_geotiffs()
+        downloaded = find_local_geotiffs(t_dir)
         if downloaded:
             for kind, path in downloaded.items():
                 print(f"  Found {kind}: {path}")
         else:
-            print("  ERROR: No local GeoTIFFs found in pipeline/output/")
+            print(f"  ERROR: No local GeoTIFFs found in {t_dir}")
             return 1
 
     # ── Step 5: H3 zonal stats ─────────────────────────────────────
     step(5, "Aggregate to H3 hexagons (zonal stats)")
 
-    if not os.path.exists(GRID_PATH):
-        print(f"  ERROR: hex grid not found at {GRID_PATH}")
+    if not os.path.exists(grid_path):
+        print(f"  ERROR: hex grid not found at {grid_path}")
         print("  Run `python pipeline/generate_h3_grid.py` first.")
         return 1
 
@@ -114,7 +126,7 @@ def run(args):
     import pandas as pd
     import numpy as np
 
-    gdf = load_hex_grid(GRID_PATH)
+    gdf = load_hex_grid(grid_path)
 
     jrc_occ_path = downloaded.get("jrc_occurrence")
     jrc_rec_path = downloaded.get("jrc_recurrence")
@@ -166,9 +178,9 @@ def run(args):
     })
 
     df = df.dropna(subset=["flood_risk_score"])
-    os.makedirs(os.path.dirname(PARQUET_PATH), exist_ok=True)
-    df.to_parquet(PARQUET_PATH, index=False)
-    print(f"  Saved {len(df):,} hexagons to {PARQUET_PATH}")
+    os.makedirs(t_dir, exist_ok=True)
+    df.to_parquet(parquet_path, index=False)
+    print(f"  Saved {len(df):,} hexagons to {parquet_path}")
     print(f"  Score range: {df['flood_risk_score'].min():.1f} - {df['flood_risk_score'].max():.1f}")
 
     # ── Step 6: Validate parquet before upload ─────────────────────
@@ -176,7 +188,7 @@ def run(args):
     from validate import validate_parquet
 
     is_valid = validate_parquet(
-        PARQUET_PATH,
+        parquet_path,
         min_rows=MIN_HEXAGONS,
         schema_cols=["h3index", "flood_risk_score"],
         value_ranges={"flood_risk_score": SCORE_RANGE},
@@ -189,7 +201,7 @@ def run(args):
     # ── Step 7: Upload to R2 ───────────────────────────────────────
     step(7, "Upload parquet to Cloudflare R2")
     from upload_to_r2 import upload_file
-    success = upload_file(PARQUET_PATH, "data/hex_flood_risk.parquet")
+    success = upload_file(parquet_path, r2_key)
     if not success:
         print("  ERROR: R2 upload failed after retries.")
         return 1
@@ -199,19 +211,19 @@ def run(args):
     try:
         import subprocess as _sp
         split_script = os.path.join(PIPELINE_DIR, "split_flood_by_dpto.py")
-        result = _sp.run([sys.executable, split_script], cwd=PIPELINE_DIR)
+        result = _sp.run([sys.executable, split_script, '--territory', args.territory], cwd=PIPELINE_DIR)
         if result.returncode != 0:
             print("  WARNING: Department splitting failed, continuing...")
         else:
             # Upload department parquets to R2
-            dept_dir = os.path.join(OUTPUT_DIR, "flood_dpto")
+            dept_dir = os.path.join(t_dir, "flood_dpto")
             if os.path.isdir(dept_dir):
                 dept_files = [f for f in os.listdir(dept_dir) if f.endswith(".parquet")]
                 uploaded = 0
                 for fname in dept_files:
                     fpath = os.path.join(dept_dir, fname)
-                    r2_key = f"data/flood_dpto/{fname}"
-                    if upload_file(fpath, r2_key, versioned=False):
+                    r2_dpto_key = f"{r2_dpto_prefix}{fname}"
+                    if upload_file(fpath, r2_dpto_key, versioned=False):
                         uploaded += 1
                 print(f"  Uploaded {uploaded}/{len(dept_files)} department parquets to R2")
     except Exception as e:
@@ -222,7 +234,7 @@ def run(args):
     step(9, "Summary")
     print(f"  Total time: {int(elapsed // 60)}m {int(elapsed % 60)}s")
     print(f"  Hexagons processed: {len(df):,}")
-    print(f"  Output: {PARQUET_PATH}")
+    print(f"  Output: {parquet_path}")
     print(f"  R2 upload: OK")
     print(f"  GEE skipped: {args.skip_gee}")
 
@@ -281,6 +293,8 @@ Examples:
   python pipeline/run_flood_update.py --dry-run          # preview steps
         """,
     )
+    parser.add_argument("--territory", default="misiones",
+                        help="Territory ID (default: misiones)")
     parser.add_argument("--historical", action="store_true",
                         help="Also regenerate historical recurrence (slow, ~4h)")
     parser.add_argument("--current", action="store_true", default=True,

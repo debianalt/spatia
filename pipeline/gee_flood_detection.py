@@ -24,7 +24,7 @@ from datetime import datetime, timedelta
 
 import ee
 
-from config import MISIONES_BBOX, VV_THRESHOLD_DB, EXPORT_SCALE, GCS_BUCKET, EXPORT_PREFIX
+from config import VV_THRESHOLD_DB, EXPORT_SCALE, GCS_BUCKET, EXPORT_PREFIX, get_territory
 
 
 def authenticate():
@@ -50,9 +50,9 @@ def authenticate():
     ee.Initialize(credentials, opt_url="https://earthengine-highvolume.googleapis.com")
 
 
-def get_misiones_aoi() -> ee.Geometry:
-    """Return Misiones bounding box as EE geometry."""
-    return ee.Geometry.Rectangle(MISIONES_BBOX)
+def get_territory_aoi(territory_id: str) -> ee.Geometry:
+    """Return territory bounding box as EE geometry."""
+    return ee.Geometry.Rectangle(get_territory(territory_id)['bbox'])
 
 
 def get_s1_collection(aoi: ee.Geometry, start: str, end: str) -> ee.ImageCollection:
@@ -102,9 +102,13 @@ def compute_historical_recurrence(aoi: ee.Geometry) -> ee.Image:
     def monthly_water(period):
         start, end = period
         col = get_s1_collection(aoi, start, end)
-        # Only process if there are images
-        composite = col.median()
-        water = compute_water_mask(composite)
+        # Fully-masked fallback when no S1 images exist for this month
+        empty = ee.Image.constant(0).rename('water').toUint8().updateMask(ee.Image.constant(0))
+        water = ee.Image(ee.Algorithms.If(
+            col.size().gt(0),
+            compute_water_mask(col.median()),
+            empty,
+        ))
         return water
 
     # Stack all monthly water masks
@@ -114,7 +118,7 @@ def compute_historical_recurrence(aoi: ee.Geometry) -> ee.Image:
     # Recurrence = mean across all months (fraction 0–1)
     recurrence = stack.mean().rename("flood_recurrence").toFloat()
     # Count of valid months
-    count = stack.count().rename("valid_months").toUint16()
+    count = stack.count().rename("valid_months").toFloat()
 
     return recurrence.addBands(count)
 
@@ -139,13 +143,13 @@ def compute_current_extent(aoi: ee.Geometry, days_back: int = 12) -> ee.Image:
     return water.rename("current_flood").toUint8()
 
 
-def export_to_gcs(image: ee.Image, description: str, aoi: ee.Geometry):
+def export_to_gcs(image: ee.Image, description: str, aoi: ee.Geometry, territory_id: str = 'misiones'):
     """Export image to Google Cloud Storage."""
     task = ee.batch.Export.image.toCloudStorage(
         image=image,
         description=description,
         bucket=GCS_BUCKET,
-        fileNamePrefix=f"{EXPORT_PREFIX}/{description}",
+        fileNamePrefix=f"{EXPORT_PREFIX}/{territory_id}/{description}",
         region=aoi,
         scale=EXPORT_SCALE,
         crs="EPSG:4326",
@@ -153,7 +157,7 @@ def export_to_gcs(image: ee.Image, description: str, aoi: ee.Geometry):
         fileFormat="GeoTIFF",
     )
     task.start()
-    print(f"  → Export started: {description} (task ID: {task.id})")
+    print(f"  -> Export started: {description} (task ID: {task.id})")
     return task
 
 
@@ -237,17 +241,17 @@ def export_to_drive(image: ee.Image, description: str, aoi: ee.Geometry):
         fileFormat="GeoTIFF",
     )
     task.start()
-    print(f"  → Export started: {description} (task ID: {task.id})")
+    print(f"  -> Export started: {description} (task ID: {task.id})")
     return task
 
 
-def launch_exports(historical=False, current=True, drive=False, days=12):
+def launch_exports(territory_id='misiones', historical=False, current=True, drive=False, days=12):
     """
     Launch GEE export tasks. Returns list of (task, description) tuples.
     Called by orchestrator or CLI.
     """
-    aoi = get_misiones_aoi()
-    export_fn = export_to_drive if drive else export_to_gcs
+    aoi = get_territory_aoi(territory_id)
+    export_fn = export_to_drive if drive else lambda img, desc, a: export_to_gcs(img, desc, a, territory_id)
     tasks = []
 
     if historical:
@@ -268,7 +272,8 @@ def launch_exports(historical=False, current=True, drive=False, days=12):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Sentinel-1 flood detection for Misiones")
+    parser = argparse.ArgumentParser(description="Sentinel-1 flood detection")
+    parser.add_argument("--territory", default="misiones", help="Territory ID (default: misiones)")
     parser.add_argument("--historical", action="store_true", help="Compute historical recurrence (slow, one-time)")
     parser.add_argument("--current", action="store_true", help="Compute current flood extent (fast, biweekly)")
     parser.add_argument("--drive", action="store_true", help="Export to Google Drive instead of GCS")
@@ -283,6 +288,7 @@ def main():
     authenticate()
 
     tasks = launch_exports(
+        territory_id=args.territory,
         historical=args.historical,
         current=args.current,
         drive=args.drive,

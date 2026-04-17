@@ -310,6 +310,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.flood.low',
 		legendHighKey: 'legend.flood.high',
+		coverage: { itapua_py: 'available' },
 	},
 	// ── EMSA: Infraestructura eléctrica ──
 	powerline_density: {
@@ -778,6 +779,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.climVuln.low',
 		legendHighKey: 'legend.climVuln.high',
+		coverage: { itapua_py: 'available' },
 	},
 	// ── PM2.5 Drivers (25-year ML decomposition) ──
 	pm25_drivers: {
@@ -923,7 +925,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'analysis.floodRisk.title',
 		descKey: 'analysis.floodRisk.desc',
-
+		coverage: { itapua_py: 'available' },
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1111,7 +1113,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'sat.climVuln.title',
 		descKey: 'sat.climVuln.desc',
-
+		coverage: { itapua_py: 'available' },
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
