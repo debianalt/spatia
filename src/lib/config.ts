@@ -44,7 +44,7 @@ export const TERRAIN_CONFIG = {
 
 export function getParquetUrl(name: string): string {
 	const busts: Record<string, string> = {
-		hex_flood_risk: '?v=24',
+		hex_flood_risk: '?v=25',
 		sat_environmental_risk: '?v=27',
 		sat_climate_comfort: '?v=27',
 		sat_green_capital: '?v=26',
@@ -368,7 +368,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.flood.low',
 		legendHighKey: 'legend.flood.high',
-		coverage: { itapua_py: 'available' },
+		coverage: { itapua_py: 'pending' },
 	},
 	// ── EMSA: Infraestructura eléctrica ──
 	powerline_density: {
@@ -985,7 +985,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'analysis.floodRisk.title',
 		descKey: 'analysis.floodRisk.desc',
-		coverage: { itapua_py: 'available' },
+		coverage: { itapua_py: 'pending' },
 		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
