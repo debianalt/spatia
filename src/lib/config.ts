@@ -368,7 +368,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.flood.low',
 		legendHighKey: 'legend.flood.high',
-		coverage: { itapua_py: 'pending' },
+		coverage: { itapua_py: 'available' },
 	},
 	// ── EMSA: Infraestructura eléctrica ──
 	powerline_density: {
@@ -985,7 +985,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'analysis.floodRisk.title',
 		descKey: 'analysis.floodRisk.desc',
-		coverage: { itapua_py: 'pending' },
+		coverage: { itapua_py: 'available' },
 		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',

@@ -245,14 +245,26 @@ def export_to_drive(image: ee.Image, description: str, aoi: ee.Geometry):
     return task
 
 
-def launch_exports(territory_id='misiones', historical=False, current=True, drive=False, days=12):
+def launch_exports(territory_id='misiones', historical=False, current=True, jrc=False, drive=False, days=12):
     """
-    Launch GEE export tasks. Returns list of (task, description) tuples.
+    Launch GEE export tasks. Returns list of task objects.
     Called by orchestrator or CLI.
     """
     aoi = get_territory_aoi(territory_id)
     export_fn = export_to_drive if drive else lambda img, desc, a: export_to_gcs(img, desc, a, territory_id)
     tasks = []
+
+    if jrc:
+        print("Exporting JRC Global Surface Water v1.4 (occurrence/recurrence/seasonality)...")
+        gsw = ee.Image("JRC/GSW1_4/GlobalSurfaceWater")
+        for band, fname in [
+            ("occurrence",  "jrc_occurrence"),
+            ("recurrence",  "jrc_recurrence"),
+            ("seasonality", "jrc_seasonality"),
+        ]:
+            img = gsw.select(band).rename(band)
+            task = export_fn(img, fname, aoi)
+            tasks.append(task)
 
     if historical:
         print("Computing historical flood recurrence (2015-present)...")
@@ -274,14 +286,15 @@ def launch_exports(territory_id='misiones', historical=False, current=True, driv
 def main():
     parser = argparse.ArgumentParser(description="Sentinel-1 flood detection")
     parser.add_argument("--territory", default="misiones", help="Territory ID (default: misiones)")
-    parser.add_argument("--historical", action="store_true", help="Compute historical recurrence (slow, one-time)")
+    parser.add_argument("--jrc", action="store_true", help="Export JRC GSW occurrence/recurrence/seasonality (one-time per territory)")
+    parser.add_argument("--historical", action="store_true", help="Compute historical S1 recurrence (slow, one-time)")
     parser.add_argument("--current", action="store_true", help="Compute current flood extent (fast, biweekly)")
     parser.add_argument("--drive", action="store_true", help="Export to Google Drive instead of GCS")
     parser.add_argument("--days", type=int, default=12, help="Days to look back for current extent")
     parser.add_argument("--wait", action="store_true", help="Poll tasks until completion (for automation)")
     args = parser.parse_args()
 
-    if not args.historical and not args.current:
+    if not args.jrc and not args.historical and not args.current:
         args.current = True  # default to current
 
     print("Authenticating to Google Earth Engine...")
@@ -289,6 +302,7 @@ def main():
 
     tasks = launch_exports(
         territory_id=args.territory,
+        jrc=args.jrc,
         historical=args.historical,
         current=args.current,
         drive=args.drive,
