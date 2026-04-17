@@ -206,7 +206,8 @@ def main():
             centroid = ([round(sum(lngs) / len(lngs), 4), round(sum(lats) / len(lats), 4)]
                         if lats else [0, 0])
 
-            avg_score = round(float(hex_data[score_col].mean()), 1)
+            raw_mean = hex_data[score_col].mean()
+            avg_score = None if (raw_mean != raw_mean) else round(float(raw_mean), 1)  # NaN -> None -> JSON null
             summary_units.append({
                 admin_col: admin_name,
                 "parquetKey": safe_name,
@@ -223,7 +224,7 @@ def main():
                 "unassigned": int(no_admin),
             },
             # Keep "departments" key for backwards compat with Misiones UI
-            "departments": sorted(summary_units, key=lambda d: d["avg_score"], reverse=True),
+            "departments": sorted(summary_units, key=lambda d: d["avg_score"] or 0, reverse=True),
         }
 
         # Summary JSON: for misiones use legacy name, for others prefix with territory

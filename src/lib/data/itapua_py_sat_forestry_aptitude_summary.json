@@ -19,7 +19,7 @@
     {
       "distrito": "Isla",
       "parquetKey": "isla",
-      "avg_score": NaN,
+      "avg_score": null,
       "hex_count": 2429,
       "centroid": [
         -56.4098,
