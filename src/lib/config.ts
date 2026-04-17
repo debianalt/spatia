@@ -52,7 +52,7 @@ export function getParquetUrl(name: string): string {
 		sat_location_value: '?v=24',
 		sat_agri_potential: '?v=28',
 		sat_forest_health: '?v=27',
-		sat_forestry_aptitude: '?v=31',
+		sat_forestry_aptitude: '?v=32',
 		sat_service_deprivation: '?v=25',
 		sat_territorial_isolation: '?v=25',
 		sat_health_access: '?v=25',
