@@ -864,12 +864,6 @@
 					title={i18n.t('header.whatIsThis')}>
 					{i18n.t('header.whatIsThis')}
 				</button>
-				<a
-					href="/servicios"
-					class="text-[12px] text-white/70 hover:text-white transition-colors border border-white/20 rounded px-2 py-0.5 no-underline"
-					title="Servicios de inteligencia geoespacial">
-					Servicios
-				</a>
 			</div>
 
 			<!-- Lens selector (center) -->

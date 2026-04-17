@@ -1010,7 +1010,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'invertir',
 		titleKey: 'sat.locValue.title',
 		descKey: 'sat.locValue.desc',
-
+		coverage: { itapua_py: 'available' },
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1133,7 +1133,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'sat.deforest.title',
 		descKey: 'sat.deforest.desc',
-
+		coverage: { itapua_py: 'available' },
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},

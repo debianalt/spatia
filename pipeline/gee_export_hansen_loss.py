@@ -18,7 +18,7 @@ import os
 import sys
 import time
 
-from config import MISIONES_BBOX
+from config import MISIONES_BBOX, get_territory
 
 EXPORT_SCALE = 30  # Hansen native resolution
 DRIVE_FOLDER = 'spatia-satellite'
@@ -46,11 +46,16 @@ def main():
     parser = argparse.ArgumentParser(description="Export Hansen loss year raster")
     parser.add_argument("--gcs", action="store_true")
     parser.add_argument("--no-wait", action="store_true")
+    parser.add_argument("--territory", default="misiones",
+                        help="Territory ID from config.py (default: misiones)")
     args = parser.parse_args()
 
     is_ci = authenticate()
     use_gcs = args.gcs or is_ci
-    bbox = ee.Geometry.Rectangle(MISIONES_BBOX)
+    territory = get_territory(args.territory)
+    bbox = ee.Geometry.Rectangle(territory['bbox'])
+    gcs_subdir = '' if args.territory == 'misiones' else f"{args.territory}/"
+    desc_suffix = '' if args.territory == 'misiones' else f"_{args.territory}"
 
     hansen = ee.Image(HANSEN)
 
@@ -59,20 +64,21 @@ def main():
         ('hansen_treecover2000', hansen.select('treecover2000').clip(bbox).toUint8()),
     ]
 
-    dest = f"GCS ({GCS_BUCKET})" if use_gcs else f"Drive ({DRIVE_FOLDER})"
-    print(f"Exporting {len(exports)} rasters at {EXPORT_SCALE}m -> {dest}")
+    dest = f"GCS ({GCS_BUCKET}/satellite/{gcs_subdir})" if use_gcs else f"Drive ({DRIVE_FOLDER})"
+    print(f"Exporting {len(exports)} rasters at {EXPORT_SCALE}m -> {dest} [territory={args.territory}]")
 
     tasks = []
     for name, image in exports:
+        task_desc = f"{name}{desc_suffix}"
         if use_gcs:
             task = ee.batch.Export.image.toCloudStorage(
-                image=image, description=name, bucket=GCS_BUCKET,
-                fileNamePrefix=f'satellite/{name}', region=bbox,
+                image=image, description=task_desc, bucket=GCS_BUCKET,
+                fileNamePrefix=f'satellite/{gcs_subdir}{name}', region=bbox,
                 scale=EXPORT_SCALE, crs='EPSG:4326', maxPixels=1e10)
         else:
             task = ee.batch.Export.image.toDrive(
-                image=image, description=name, folder=DRIVE_FOLDER,
-                fileNamePrefix=name, region=bbox,
+                image=image, description=task_desc, folder=DRIVE_FOLDER,
+                fileNamePrefix=task_desc, region=bbox,
                 scale=EXPORT_SCALE, crs='EPSG:4326', maxPixels=1e10)
         task.start()
         tasks.append((name, task))

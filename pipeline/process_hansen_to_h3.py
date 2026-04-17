@@ -23,6 +23,7 @@ Usage:
   python pipeline/process_hansen_to_h3.py
 """
 
+import argparse
 import json
 import os
 import sys
@@ -42,6 +43,26 @@ TREECOVER_PATH = os.path.join(OUTPUT_DIR, "hansen_treecover2000.tif")
 HEXAGONS_PATH = os.path.join(OUTPUT_DIR, "hexagons-lite.geojson")
 ANNUAL_PATH = os.path.join(OUTPUT_DIR, "hansen_h3_annual.parquet")
 SPATIA_PATH = os.path.join(OUTPUT_DIR, "sat_deforestation_dynamics.parquet")
+
+
+def set_territory_paths(territory_id: str) -> None:
+    """Redirect module-level paths to a per-territory output subdirectory.
+
+    Misiones uses the flat output/ tree; other territories use output/<id>/.
+    Falls back from hexagons-lite.geojson to hexagons.geojson if the lite
+    file is missing (non-Misiones territories only ship the full grid).
+    """
+    global LOSSYEAR_PATH, TREECOVER_PATH, HEXAGONS_PATH, ANNUAL_PATH, SPATIA_PATH
+    if territory_id == 'misiones':
+        return
+    t_dir = os.path.join(OUTPUT_DIR, territory_id)
+    LOSSYEAR_PATH = os.path.join(t_dir, "hansen_lossyear.tif")
+    TREECOVER_PATH = os.path.join(t_dir, "hansen_treecover2000.tif")
+    lite = os.path.join(t_dir, "hexagons-lite.geojson")
+    HEXAGONS_PATH = lite if os.path.exists(lite) else os.path.join(t_dir, "hexagons.geojson")
+    ANNUAL_PATH = os.path.join(t_dir, "hansen_h3_annual.parquet")
+    SPATIA_PATH = os.path.join(t_dir, "sat_deforestation_dynamics.parquet")
+
 
 BASELINE_YEARS = range(2001, 2011)
 CURRENT_YEARS = range(2015, 2025)
@@ -133,7 +154,18 @@ def percentile_rank(series):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Hansen -> H3 zonal stats")
+    parser.add_argument("--territory", default="misiones",
+                        help="Territory ID (default: misiones)")
+    args = parser.parse_args()
+    set_territory_paths(args.territory)
+
     t0 = time.time()
+    print(f"Territory: {args.territory}")
+    print(f"  lossyear:  {LOSSYEAR_PATH}")
+    print(f"  treecover: {TREECOVER_PATH}")
+    print(f"  hexagons:  {HEXAGONS_PATH}")
+    print(f"  output:    {SPATIA_PATH}")
 
     # Load hexagon grid
     print("Loading hexagon grid...")
