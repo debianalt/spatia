@@ -960,6 +960,7 @@ export interface AnalysisConfig {
 	spatialUnit?: 'radio' | 'hexagon' | 'catastro';
 	dashboard?: boolean;
 	coverage?: Record<string, 'available' | 'pending' | 'unavailable'>;
+	comparable?: true;
 	choropleth?: {
 		parquet: string;
 		column: string;
@@ -985,6 +986,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		titleKey: 'analysis.floodRisk.title',
 		descKey: 'analysis.floodRisk.desc',
 		coverage: { itapua_py: 'available' },
+		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1029,40 +1031,40 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'sat.envRisk.title',
 		descKey: 'sat.envRisk.desc',
-
+		coverage: { itapua_py: 'available' },
+		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
-		coverage: { itapua_py: 'available' },
 	},
 	{
 		id: 'climate_comfort',
 		lensId: 'vivir',
 		titleKey: 'sat.climate.title',
 		descKey: 'sat.climate.desc',
-
+		coverage: { itapua_py: 'available' },
+		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
-		coverage: { itapua_py: 'available' },
 	},
 	{
 		id: 'green_capital',
 		lensId: 'vivir',
 		titleKey: 'sat.green.title',
 		descKey: 'sat.green.desc',
-
+		coverage: { itapua_py: 'available' },
+		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
-		coverage: { itapua_py: 'available' },
 	},
 	{
 		id: 'change_pressure',
 		lensId: 'invertir',
 		titleKey: 'sat.change.title',
 		descKey: 'sat.change.desc',
-
+		coverage: { itapua_py: 'available' },
+		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
-		coverage: { itapua_py: 'available' },
 	},
 	{
 		id: 'location_value',
@@ -1070,6 +1072,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		titleKey: 'sat.locValue.title',
 		descKey: 'sat.locValue.desc',
 		coverage: { itapua_py: 'available' },
+		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1078,10 +1081,10 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'sat.agri.title',
 		descKey: 'sat.agri.desc',
-
+		coverage: { itapua_py: 'available' },
+		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
-		coverage: { itapua_py: 'available' },
 	},
 	{
 		id: 'powerline_density',
@@ -1097,20 +1100,20 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'sat.forestH.title',
 		descKey: 'sat.forestH.desc',
-
+		coverage: { itapua_py: 'available' },
+		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
-		coverage: { itapua_py: 'available' },
 	},
 	{
 		id: 'forestry_aptitude',
 		lensId: 'producir',
 		titleKey: 'sat.forestry.title',
 		descKey: 'sat.forestry.desc',
-
+		coverage: { itapua_py: 'available' },
+		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
-		coverage: { itapua_py: 'available' },
 	},
 	{
 		id: 'service_deprivation',
@@ -1164,6 +1167,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		titleKey: 'sat.carbon.title',
 		descKey: 'sat.carbon.desc',
 		coverage: { itapua_py: 'available' },
+		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1174,6 +1178,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		titleKey: 'sat.climVuln.title',
 		descKey: 'sat.climVuln.desc',
 		coverage: { itapua_py: 'available' },
+		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1184,6 +1189,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		titleKey: 'sat.prodAct.title',
 		descKey: 'sat.prodAct.desc',
 		coverage: { itapua_py: 'available' },
+		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1194,6 +1200,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		titleKey: 'sat.deforest.title',
 		descKey: 'sat.deforest.desc',
 		coverage: { itapua_py: 'available' },
+		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1204,6 +1211,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		titleKey: 'sat.pm25.title',
 		descKey: 'sat.pm25.desc',
 		coverage: { itapua_py: 'available' },
+		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1213,7 +1221,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'trade.eudr.analysis_title',
 		descKey: 'trade.eudr.analysis_desc',
-
+		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
