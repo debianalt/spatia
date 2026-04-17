@@ -1209,9 +1209,7 @@
 	}
 
 	export function setHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = 'flood', domain?: [number, number]) {
-		console.log('[setHexChoropleth]', 'entries:', entries.length, 'styleLoaded:', map?.isStyleLoaded(), 'hasMap:', !!map);
-		if (!map || !map.isStyleLoaded()) return;
-
+		if (!map) return;
 		const src = map.getSource('hexagons') as maplibregl.GeoJSONSource | undefined;
 		if (!src) return;
 
@@ -1260,7 +1258,7 @@
 	}
 
 	export function clearHexChoropleth() {
-		if (!map || !map.isStyleLoaded()) return;
+		if (!map) return;
 		const src = map.getSource('hexagons') as maplibregl.GeoJSONSource | undefined;
 		if (src) src.setData({ type: 'FeatureCollection', features: [] });
 		if (map.getLayer('hex-fill')) map.setPaintProperty('hex-fill', 'fill-opacity', 0);
@@ -1269,7 +1267,7 @@
 	}
 
 	export function setCompareHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = 'sequential', domain?: [number, number]) {
-		if (!map || !map.isStyleLoaded()) return;
+		if (!map) return;
 		const src = map.getSource('compare-hexagons') as maplibregl.GeoJSONSource | undefined;
 		if (!src) return;
 
@@ -1312,7 +1310,7 @@
 	}
 
 	export function clearCompareHexChoropleth() {
-		if (!map || !map.isStyleLoaded()) return;
+		if (!map) return;
 		const src = map.getSource('compare-hexagons') as maplibregl.GeoJSONSource | undefined;
 		if (src) src.setData({ type: 'FeatureCollection', features: [] });
 		if (map.getLayer('compare-hex-fill')) map.setPaintProperty('compare-hex-fill', 'fill-opacity', 0);
