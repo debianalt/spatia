@@ -75,11 +75,10 @@
 	</div>
 {:else if layer && isGradient}
 	<div class="legend">
-		<div class="legend-title">{title}</div>
+		<div class="legend-title">{title} <span class="legend-range">0–100</span></div>
 		<div class="gradient-bar" style:background={gradient}></div>
 		<div class="gradient-labels">
 			<span>{lowLabel}</span>
-			<span class="gradient-range">0–100</span>
 			<span>{highLabel}</span>
 		</div>
 		<div class="nodata-row">
@@ -92,16 +91,17 @@
 <style>
 	.legend {
 		position: absolute;
-		bottom: 24px;
-		left: 12px;
+		bottom: 4px;
+		left: 50%;
+		transform: translateX(-50%);
 		background: rgba(10, 12, 18, 0.85);
 		backdrop-filter: blur(6px);
 		border: 1px solid rgba(255,255,255,0.08);
 		border-radius: 6px;
 		padding: 8px 10px;
 		z-index: 10;
-		min-width: 120px;
-		max-width: 200px;
+		min-width: 140px;
+		max-width: 280px;
 	}
 	.legend-title {
 		font-size: 9px;
@@ -144,9 +144,13 @@
 		color: rgba(255,255,255,0.55);
 		margin-top: 3px;
 	}
-	.gradient-range {
-		font-size: 7px;
-		color: rgba(255,255,255,0.35);
+	.legend-range {
+		font-size: 8px;
+		font-weight: 400;
+		color: rgba(255,255,255,0.4);
+		letter-spacing: 0;
+		text-transform: none;
+		margin-left: 4px;
 	}
 	.nodata-row {
 		display: flex;
@@ -170,9 +174,10 @@
 
 	@media (max-width: 768px) {
 		.legend {
-			bottom: 12px;
+			bottom: 32px;
 			left: 8px;
-			max-width: 160px;
+			transform: none;
+			max-width: 220px;
 			padding: 6px 8px;
 		}
 	}

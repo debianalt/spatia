@@ -11,10 +11,10 @@
 </script>
 
 <svelte:head>
-	<title>nealab — inteligencia geoespacial abierta para el NEA argentino</title>
+	<title>nealab — inteligencia geoespacial abierta para Misiones y regiones circundantes</title>
 	<meta
 		name="description"
-		content="nealab es una plataforma pública de inteligencia geoespacial abierta centrada especialmente en el Noreste Argentino. Reúne más de veinte capas de análisis para gestión pública, investigación, cooperación internacional y ciencia ciudadana."
+		content="nealab es una plataforma pública de inteligencia geoespacial abierta centrada especialmente en la provincia de Misiones, con cobertura parcial en regiones circundantes. Reúne más de veinte capas de análisis para gestión pública, investigación, cooperación internacional y ciencia ciudadana."
 	/>
 	<meta property="og:title" content="nealab — servicios de inteligencia geoespacial" />
 	<meta
@@ -36,10 +36,10 @@
 				↓ Imprimir / Guardar PDF
 			</button>
 		</div>
-		<div class="kicker">Inteligencia geoespacial abierta · NEA Argentino</div>
+		<div class="kicker">Inteligencia geoespacial abierta · Misiones y regiones circundantes</div>
 		<h1 class="title"><a class="title-link" href="/">nealab</a></h1>
 		<p class="subtitle">
-			Plataforma pública de análisis geoespacial centrada especialmente en el NEA argentino.
+			Plataforma pública de análisis geoespacial centrada especialmente en la provincia de Misiones, con cobertura parcial en regiones circundantes.
 			Datos, métodos y código abiertos; pensada para investigación, gestión pública, cooperación
 			internacional y ciencia ciudadana. Hospedado en <a href="/">spatia.ar</a>.
 		</p>
@@ -52,7 +52,7 @@
 			desarrollada en el marco del <strong>CONICET</strong>, la <strong>UNaM (FHyCS)</strong> y el
 			partenariado académico con el <strong>Google Earth Engine Research &amp; Innovation Program</strong>.
 			Reúne más de veinte capas de análisis sobre la provincia de Misiones —y parcialmente sobre el
-			NEA argentino— para explorar de forma interactiva el estado ecológico, social, productivo y de
+			regiones circundantes— para explorar de forma interactiva el estado ecológico, social, productivo y de
 			infraestructura de la ecorregión.
 		</p>
 		<p>
@@ -71,15 +71,6 @@
 			Argentina, Brasil y Paraguay</em> (código 16/H1710-FE), radicado en la Facultad de
 			Humanidades y Ciencias Sociales de la Universidad Nacional de Misiones y financiado por el
 			Consejo Nacional de Investigaciones Científicas y Técnicas (CONICET).
-		</p>
-		<p>
-			Este proyecto forma parte del <strong>Programa de Investigaciones Interdisciplinarias sobre
-			Regiones de Frontera (INREFRO)</strong>, uno de los espacios académicos de mayor trayectoria
-			y reconocimiento en el estudio de las dinámicas fronterizas del Noreste Argentino. Radicado
-			en la FHyCS-UNaM, INREFRO articula desde hace décadas investigación comparada en
-			antropología, sociología, historia, economía y geografía sobre los procesos socioambientales,
-			culturales y políticos de la triple frontera argentino-brasileño-paraguaya, bajo la
-			dirección del Dr. Roberto Abínzano junto a la Mag. Diana Arellano y la Mag. Norma Oviedo.
 		</p>
 	</section>
 
@@ -166,7 +157,7 @@
 		<ul class="list">
 			<li>
 				<strong>Organismos multilaterales</strong> (PNUD, BID, Banco Mundial, FAO, CEPAL) que
-				necesiten diagnósticos geoespaciales rápidos y reproducibles sobre el NEA argentino, con
+				necesiten diagnósticos geoespaciales rápidos y reproducibles sobre Misiones y regiones circundantes, con
 				datos curados y pipelines auditables.
 			</li>
 			<li>
@@ -190,7 +181,7 @@
 			</li>
 			<li>
 				<strong>Docentes y estudiantes</strong> que quieran introducirse al análisis geoespacial
-				con una plataforma en español, con metodologías explicadas y datos reales sobre el NEA.
+				con una plataforma en español, con metodologías explicadas y datos reales.
 			</li>
 		</ul>
 	</section>

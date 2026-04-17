@@ -1,34 +1,34 @@
 [
   {
-    "analysis": "change_pressure",
+    "analysis": "green_capital",
     "k": 3,
-    "silhouette": 0.2864,
-    "calinski_harabasz": 102385.0,
-    "n_hexagons": 319871,
+    "silhouette": 0.4517,
+    "calinski_harabasz": 492453.0,
+    "n_hexagons": 315415,
     "n_vars": 5,
     "variables": [
-      "c_viirs_trend",
-      "c_ghsl_change",
-      "c_hansen_loss",
-      "c_ndvi_trend",
-      "c_fire_count"
+      "c_ndvi",
+      "c_treecover",
+      "c_npp",
+      "c_lai",
+      "c_vcf"
     ],
     "pca_variance": [
-      0.2592,
-      0.2176,
-      0.2041,
-      0.1751,
-      0.1439
+      0.7379,
+      0.1614,
+      0.0623,
+      0.0327,
+      0.0057
     ],
     "type_labels": {
-      "1": "fire_count alto",
-      "2": "fire_count bajo",
-      "3": "ghsl_change alto"
+      "1": "npp alto",
+      "2": "vcf alto",
+      "3": "lai bajo"
     },
     "type_distribution": {
-      "1": 81394,
-      "2": 170352,
-      "3": 68125
+      "1": 109367,
+      "2": 129295,
+      "3": 76753
     }
   }
 ]

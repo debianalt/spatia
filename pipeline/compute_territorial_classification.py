@@ -34,18 +34,19 @@ from config import OUTPUT_DIR
 # prefix disambiguates duplicate column names across analyses.
 
 SOURCES = [
+    # Solo cargar las fuentes que alimentan METABOLIC_VARS — el inner-join
+    # contra fuentes no-usadas (incluso si están a hex-level) introduce overhead
+    # innecesario y, peor, fuerza el universo de hexes al mínimo común denominador
+    # (ej: sat_health_access tiene 68K hex censal y reducía el output a 65K).
     ('sat_environmental_risk', 'envr', ['score', 'c_deforest', 'c_thermal_amp', 'c_slope', 'c_hand']),
     ('sat_climate_comfort', 'clim', ['score', 'c_heat_day', 'c_heat_night', 'c_precipitation', 'c_frost', 'c_water_stress']),
     ('sat_green_capital', 'gree', ['score', 'c_ndvi', 'c_treecover', 'c_npp', 'c_lai', 'c_vcf']),
     ('sat_change_pressure', 'chng', ['score', 'c_viirs_trend', 'c_ghsl_change', 'c_hansen_loss', 'c_ndvi_trend']),
     ('sat_agri_potential', 'agri', ['score', 'c_soc', 'c_ph_optimal', 'c_clay', 'c_precipitation', 'c_gdd', 'c_slope']),
-    ('sat_forest_health', 'forh', ['score', 'c_ndvi_trend', 'c_loss_ratio', 'c_gpp', 'c_et']),
-    ('sat_location_value', 'locv', ['score', 'c_access_20k', 'c_healthcare', 'c_nightlights', 'c_slope', 'c_road_dist']),
-    ('sat_forestry_aptitude', 'fora', ['score', 'c_ph', 'c_clay', 'c_precipitation', 'c_slope', 'c_road_dist', 'c_access_50k']),
-    ('sat_territorial_gap', 'tgap', ['score', 'c_nightlights', 'c_nbi', 'c_sin_agua', 'c_sin_cloacas', 'c_isolation']),
-    ('sat_health_access', 'heal', ['score', 'c_healthcare_time', 'c_healthcare_walk', 'c_pop_density', 'c_health_coverage', 'c_nbi']),
-    ('sat_education_gap', 'educ', ['score', 'c_no_instruction', 'c_dropout_13_18', 'c_only_primary', 'c_university', 'c_isolation']),
-    ('sat_land_use', 'land', ['score', 'frac_water', 'frac_trees', 'frac_grass', 'frac_flooded', 'frac_crops', 'frac_shrub', 'frac_built', 'frac_bare', 'frac_snow']),
+    # Fuentes no usadas en METABOLIC_VARS — no cargar:
+    # sat_forest_health, sat_forestry_aptitude, sat_territorial_gap,
+    # sat_education_gap (todas hex-level pero innecesarias)
+    # sat_health_access, sat_location_value, sat_land_use (censal-limited / sin raster)
 ]
 
 # ── Metabolic variable selection (15 vars, canonical sources) ─────────────────
@@ -54,16 +55,18 @@ METABOLIC_VARS = [
     ('gree_c_npp', 'm_npp', 'Net Primary Productivity'),
     ('gree_c_ndvi', 'm_ndvi', 'Vegetation index'),
     ('gree_c_treecover', 'm_treecover', 'Tree cover (Hansen 2000)'),
-    ('land_frac_trees', 'm_frac_trees', 'Tree cover fraction (DW)'),
-    ('land_frac_crops', 'm_frac_crops', 'Crop fraction'),
-    ('land_frac_built', 'm_frac_built', 'Built fraction'),
-    ('land_frac_grass', 'm_frac_grass', 'Grass/pasture fraction'),
+    # DROP land_*: sat_land_use no es hex-level (sin raster local)
+    # ('land_frac_trees', 'm_frac_trees', 'Tree cover fraction (DW)'),
+    # ('land_frac_crops', 'm_frac_crops', 'Crop fraction'),
+    # ('land_frac_built', 'm_frac_built', 'Built fraction'),
+    # ('land_frac_grass', 'm_frac_grass', 'Grass/pasture fraction'),
     ('envr_c_deforest', 'm_deforest', 'Deforestation loss'),
     ('chng_c_hansen_loss', 'm_hansen_loss', 'Cumulative forest loss'),
     ('envr_c_thermal_amp', 'm_thermal_amp', 'Thermal amplitude'),
     ('chng_c_viirs_trend', 'm_viirs_trend', 'Urbanisation trend'),
     ('chng_c_ghsl_change', 'm_ghsl_change', 'Built-up expansion'),
-    ('locv_c_nightlights', 'm_nightlights', 'Night-time radiance'),
+    # DROP locv_*: sat_location_value es 68K rows (censal-limited)
+    # ('locv_c_nightlights', 'm_nightlights', 'Night-time radiance'),
     ('agri_c_gdd', 'm_gdd', 'Growing degree days'),
     ('clim_c_precipitation', 'm_precipitation', 'Annual precipitation'),
 ]

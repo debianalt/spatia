@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { fly } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
 	import ComparisonChart from './ComparisonChart.svelte';
 	import AnalysisMenu from './AnalysisMenu.svelte';
 	import AnalysisView from './AnalysisView.svelte';
@@ -7,7 +9,6 @@
 	import FloodZoneComparison from './FloodZoneComparison.svelte';
 	import HexComparison from './HexComparison.svelte';
 	import HexZoneComparison from './HexZoneComparison.svelte';
-	import TerritorySelector from './TerritorySelector.svelte';
 	import ComparisonPanel from './ComparisonPanel.svelte';
 	import { MapStore } from '$lib/stores/map.svelte';
 	import type { LensStore } from '$lib/stores/lens.svelte';
@@ -66,7 +67,7 @@
 
 	let collapsed = $state(true);
 
-	// Auto-open when there's content to show
+	// Auto-open when actual results exist
 	$effect(() => {
 		const hasContent =
 			showAbout ||
@@ -74,10 +75,17 @@
 			lassoStore.zones.length > 0 ||
 			hexStore.selectedHexes.size > 0 ||
 			(lensStore.activeLens && lensStore.activeAnalysis) ||
-			(lensStore.activeLens && mapStore.selectedRadios.size > 0) ||
-			mapStore.selectedRadios.size > 0 ||
-			lensStore.activeLens;
+			mapStore.selectedRadios.size > 0;
 		if (hasContent) collapsed = false;
+	});
+
+	// Open when user switches lens — but don't fight with handleBack's explicit close.
+	// prevLens is a plain variable (not $state) so assigning it never re-triggers the effect.
+	let prevLens: LensId | null = null;
+	$effect(() => {
+		const lens = lensStore.activeLens;
+		if (lens !== null && lens !== prevLens) collapsed = false;
+		prevLens = lens;
 	});
 
 	const isCatastroAnalysis = $derived(lensStore.activeAnalysis?.id === 'catastro');
@@ -85,18 +93,19 @@
 
 	function handleBack() {
 		lensStore.clearAnalysis();
+		collapsed = true;
 	}
 </script>
 
 {#if !collapsed}
 <div class="sidebar absolute top-0 right-0 bottom-0 z-10 rounded-l-lg p-3 px-4 border-l border-border w-full md:w-[440px] text-xs leading-relaxed"
-	style="background: var(--color-panel); backdrop-filter: blur(8px);">
+	style="background: var(--color-panel); backdrop-filter: blur(8px);"
+	transition:fly={{ x: 440, duration: 180, easing: cubicOut }}>
 
 	<button class="collapse-btn" onclick={() => collapsed = true} title={i18n.t('side.welcome.hidePanel')}>
 		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 4 L18 12 L10 20"/></svg>
 	</button>
 
-	<TerritorySelector {territoryStore} />
 	<ComparisonPanel {territoryStore} {lensStore} {hexStore} />
 
 	{#if showAbout}

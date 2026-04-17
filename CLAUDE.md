@@ -44,7 +44,7 @@ db/                     # D1 schema + import scripts (seed.sql gitignored)
 - **Bbox**: padded a [-56.10, -28.20, -53.55, -25.44] para cubrir hexágonos del borde.
 - **GCS bucket `spatia-satellite`**: EXISTE en proyecto `amiable-reducer-398015` (billing activo). Preferir GCS sobre Drive. Para forzar GCS localmente: `--gcs` flag. Descargar: `gcloud storage cp gs://spatia-satellite/satellite/*.tif pipeline/output/`.
 - **GEE auth**: credenciales en `~/.config/earthengine/credentials` (OAuth user, scopes: earthengine, cloud-platform, drive, devstorage).
-- **R2 uploads**: `npx wrangler r2 object put neahub/... --file ... --remote` — el pipeline usa `upload_to_r2.py` pero NO pasa `--remote`, hacer upload manual con `--remote` después.
+- **R2 uploads**: `npx wrangler r2 object put neahub/data/... --file ... --remote` — el pipeline usa `upload_to_r2.py` pero NO pasa `--remote`, hacer upload manual con `--remote` después. **CRÍTICO**: el key DEBE incluir el prefijo `data/` (ej: `neahub/data/sat_dpto/...`, NO `neahub/sat_dpto/...`). El bucket público sirve desde `pub-...r2.dev/data/...`, si subís sin el prefijo el archivo queda huérfano y el browser lee una versión vieja sin darse cuenta.
 - **Parquet cache**: DuckDB-WASM en browser cachea parquets. Usar cache-buster `?v=N` en `getParquetUrl()` al cambiar schema (incrementar N en config.ts).
 
 ## Scoring Methodology

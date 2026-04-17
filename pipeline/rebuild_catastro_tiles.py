@@ -156,6 +156,12 @@ def load_parcels():
                 skipped += 1
                 continue
 
+            # Skip sliver artifacts (topology errors from WFS source)
+            area = float(row.get("area_m2", 0) or 0)
+            if area < 50:
+                skipped += 1
+                continue
+
             # Compute H3 index from centroid
             centroid = geom.centroid
             h3index = h3.latlng_to_cell(centroid.y, centroid.x, H3_RES)

@@ -50,6 +50,12 @@ export class HexStore {
 	colorDomain: [number, number] | null = $state(null);
 	selectedDpto: string | null = $state(null);
 
+	// ── Compare dept (cross-territory dept-to-dept comparison) ──────────────
+	compareVisibleData: Map<string, Record<string, any>> = $state(new Map());
+	private compareBoundaryCache: Map<string, number[][]> = new Map();
+	compareDpto: string | null = $state(null);
+	compareDataVersion: number = $state(0);
+
 	get numericVariables(): HexVariable[] {
 		return this.activeLayer?.variables.filter(v => !NON_NUMERIC_COLS.has(v.col)) ?? [];
 	}
@@ -85,6 +91,7 @@ export class HexStore {
 		this.activeLayer = cfg;
 		this.temporalMode = 'current';
 		this.selectedDpto = null;
+		this.clearCompareDept();
 
 		// Per-department layers: don't load all data, wait for department selection
 		if (cfg.perDepartment) {
@@ -115,10 +122,10 @@ export class HexStore {
 		this.territoryPrefix = prefix;
 		layerDataCache.clear();
 		this.colorDomain = null;
-		// Clear hex data from previous territory so the old choropleth disappears immediately
 		this.visibleData = new Map();
 		this.selectedDpto = null;
 		this.dataVersion++;
+		this.clearCompareDept();
 	}
 
 	/** Territory-aware URL for the global parquet of a layer. */
@@ -198,6 +205,76 @@ export class HexStore {
 		}
 
 		this.loading = false;
+	}
+
+	async loadCompareDept(dpto: string, parquetKey: string, comparePrefix: string): Promise<void> {
+		if (!this.activeLayer) return;
+		const layer = this.activeLayer;
+
+		let url: string;
+		if (layer.id === 'flood_risk') {
+			url = getFloodDptoUrl(parquetKey, comparePrefix);
+		} else if (layer.parquet?.startsWith('sat_')) {
+			url = getSatDptoUrl(layer.id, parquetKey, comparePrefix);
+		} else {
+			url = getScoresDptoUrl(parquetKey, comparePrefix);
+		}
+
+		try {
+			const result = await query(`SELECT * FROM '${url}'`);
+			const data = new Map<string, Record<string, any>>();
+			const bounds = new Map<string, number[][]>();
+
+			const resultCols = result.schema.fields
+				.map((f: any) => f.name)
+				.filter((n: string) => n !== 'h3index');
+			const h3Vec = result.getChild('h3index');
+			const colVecs = Object.fromEntries(resultCols.map((col: string) => [col, result.getChild(col)]));
+
+			for (let i = 0; i < result.numRows; i++) {
+				const h3index = String(h3Vec!.get(i));
+				const values: Record<string, any> = {};
+				for (const col of resultCols) {
+					const val = colVecs[col]?.get(i);
+					if (val === null || val === undefined) continue;
+					const num = Number(val);
+					values[col] = Number.isFinite(num) && typeof val !== 'string' ? num : String(val);
+				}
+				data.set(h3index, values);
+				try {
+					const boundary = cellToBoundary(h3index);
+					const coords = boundary.map(([lat, lng]) => [lng, lat]);
+					coords.push(coords[0]);
+					bounds.set(h3index, coords);
+				} catch { /* skip invalid h3 */ }
+			}
+
+			this.compareVisibleData = data;
+			this.compareBoundaryCache = bounds;
+			this.compareDpto = dpto;
+			this.compareDataVersion++;
+		} catch (e) {
+			console.warn('Failed to load compare dept data:', e);
+		}
+	}
+
+	clearCompareDept(): void {
+		if (this.compareDpto === null && this.compareVisibleData.size === 0) return;
+		this.compareVisibleData = new Map();
+		this.compareBoundaryCache = new Map();
+		this.compareDpto = null;
+		this.compareDataVersion++;
+	}
+
+	get compareChoroplethEntries(): { h3index: string; value: number; properties: Record<string, number>; boundary?: number[][] }[] {
+		if (!this.activeLayer) return [];
+		const pv = this.activeLayer.primaryVariable;
+		const entries: { h3index: string; value: number; properties: Record<string, number>; boundary?: number[][] }[] = [];
+		for (const [h3index, data] of this.compareVisibleData) {
+			const value = (data[pv] ?? 0) as number;
+			entries.push({ h3index, value, properties: data as Record<string, number>, boundary: this.compareBoundaryCache.get(h3index) });
+		}
+		return entries;
 	}
 
 	backToDepartments() {
@@ -540,5 +617,6 @@ export class HexStore {
 		this.colorIndex = 0;
 		this.provincialAvg = null;
 		this.colorDomain = null;
+		this.clearCompareDept();
 	}
 }

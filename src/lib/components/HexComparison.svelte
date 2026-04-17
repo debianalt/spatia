@@ -2,6 +2,7 @@
 	import type { HexStore } from '$lib/stores/hex.svelte';
 	import PetalChart from './PetalChart.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
+	import { downloadCsvFromRows, downloadGeoJsonFromHexList } from '$lib/utils/data-export';
 
 	let {
 		hexStore,
@@ -9,14 +10,14 @@
 		hexStore: HexStore;
 	} = $props();
 
-	const CENSUS_ANALYSES = new Set(['service_deprivation', 'health_access', 'education_capital', 'education_flow', 'sociodemographic', 'economic_activity', 'accessibility', 'carbon_stock', 'productive_activity']);
+	const CENSUS_ANALYSES = new Set(['service_deprivation', 'health_access', 'education_capital', 'education_flow', 'economic_activity', 'accessibility', 'carbon_stock', 'productive_activity']);
 	const selected = $derived([...hexStore.selectedHexes.entries()]);
 	const layer = $derived(hexStore.activeLayer);
 	const isCensus = $derived(layer ? CENSUS_ANALYSES.has(layer.id) : false);
 	const showPetals = $derived(layer ? !CENSUS_ANALYSES.has(layer.id) : true);
 	const variables = $derived(layer?.variables ?? []);
 	const componentVars = $derived(
-		variables.filter(v => !['score', 'type', 'type_label', 'pca_1', 'pca_2'].includes(v.col))
+		variables.filter(v => !['score', 'type', 'pca_1', 'pca_2'].includes(v.col))
 	);
 	const petalLayers = $derived(hexStore.selectionPetalLayers);
 	const petalLabels = $derived(hexStore.petalLabels);
@@ -34,6 +35,22 @@
 		if (abs < 10) return v.toFixed(2);
 		if (abs < 100) return v.toFixed(1);
 		return v.toFixed(0);
+	}
+
+	function downloadSelectedCsv() {
+		const rows = [...hexStore.selectedHexes.entries()].map(([h3, sel]) => ({ h3index: h3, ...sel.data }));
+		if (rows.length === 0) return;
+		const allCols = new Set<string>(['h3index']);
+		for (const row of rows) for (const k of Object.keys(row)) allCols.add(k);
+		const layerId = hexStore.activeLayer?.id ?? 'layer';
+		downloadCsvFromRows(rows, [...allCols], `spatia_${layerId}_hexes_seleccionados.csv`);
+	}
+
+	function downloadSelectedGeoJson() {
+		const h3s = [...hexStore.selectedHexes.keys()];
+		if (h3s.length === 0) return;
+		const layerId = hexStore.activeLayer?.id ?? 'layer';
+		downloadGeoJsonFromHexList(h3s, hexStore.visibleData, `spatia_${layerId}_hexes_seleccionados.geojson`);
 	}
 </script>
 
@@ -77,16 +94,24 @@
 				</div>
 				{#each componentVars as v}
 					{@const val = hexData.data?.[v.col]}
+					{@const isStr = typeof val === 'string' && val.length > 0}
 					{@const numVal = typeof val === 'number' ? val : 0}
 					{@const rawVal = v.rawCol ? hexData.data?.[v.rawCol] : null}
 					{@const displayVal = (rawVal != null && typeof rawVal === 'number') ? rawVal : numVal}
 					<div class="cd-row">
 						<span class="cd-label">{i18n.t(v.labelKey)}</span>
-						<span class="cd-val-data">{fmtSmart(displayVal)}{v.unit ? ` ${v.unit}` : ' (0–100)'}</span>
+						<span class="cd-val-data">{isStr ? val : fmtSmart(displayVal) + (v.unit ? ` ${v.unit}` : ' (0–100)')}</span>
 					</div>
 				{/each}
 			</div>
 		{/each}
+	{/if}
+
+	{#if selected.length > 0}
+		<div class="hc-download-row">
+			<button class="hc-dl-btn" onclick={downloadSelectedCsv}>↓ CSV</button>
+			<button class="hc-dl-btn" onclick={downloadSelectedGeoJson}>↓ GeoJSON</button>
+		</div>
 	{/if}
 
 </div>
@@ -159,6 +184,10 @@
 		line-height: 1;
 	}
 	.hc-remove:hover { color: #ef4444; }
+
+	.hc-download-row { margin-top: 8px; display: flex; gap: 6px; }
+	.hc-dl-btn { flex: 1; padding: 6px 10px; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); border-radius: 4px; color: #60a5fa; font-size: 9px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+	.hc-dl-btn:hover { background: rgba(59,130,246,0.25); border-color: rgba(59,130,246,0.5); }
 
 	.hc-ref-note {
 		display: flex;

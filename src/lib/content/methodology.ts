@@ -74,10 +74,10 @@ export const ANALYSIS_CONTENT: Record<string, MethodologyContent> = {
 	},
 	forestry_aptitude: {
 		howToRead:
-			'El mapa clasifica cada hexágono en tipos de aptitud forestal comercial según la co-ocurrencia de acidez del suelo, precipitación, pendiente, y accesibilidad logística.',
+			'El mapa muestra la similitud biofísica de cada hexágono con las plantaciones forestales que ya existen y prosperan en Misiones. El valor es la probabilidad (0–100) estimada por un modelo de distribución de especie (SDM) entrenado con MapBiomas. Hexágonos sobre agua, urbano o bosque nativo maduro quedan sin pintar: no son objetivo del análisis.',
 		implications:
-			'Los tipos identifican zonas óptimas para plantaciones de pino/eucalipto (suelo ácido, lluvia suficiente, pendiente mecanizable, cerca de rutas) frente a zonas marginales donde la forestación comercial no es viable. Este análisis evalúa aptitud del suelo y clima — no reemplaza la verificación de restricciones legales (áreas protegidas, comunidades indígenas, Ley de Bosques 26.331).',
-		method: `${METHOD_COMMON} Variables: pH SoilGrids, arcilla, precipitación CHIRPS, pendiente FABDEM, distancia a ruta OSM, accesibilidad Nelson. k=3 tipos, silueta=0.33.`,
+			'Score alto = condiciones de clima, suelo y terreno análogas a las zonas donde la silvicultura ya funciona. Es una capa descriptiva, no prescriptiva: NO dice dónde se puede plantar legalmente (eso depende de OTBN, ANP, tenencia, comunidades indígenas), ni garantiza rendimiento comercial, ni reemplaza estudios de campo. Sirve para acotar la búsqueda biofísica; la decisión final exige capas legales y económicas complementarias.',
+		method: `Random Forest (sklearn, 400 árboles, class_weight balanced) entrenado como SDM presencia-background: presencia = hexágonos MapBiomas clase silvicultura ≥50%; background = muestra aleatoria (ratio 1:3) del resto del territorio válido. Covariables biofísicas a resolución H3: clima (ERA5 GDD, temperatura y radiación; CHIRPS precipitación y eventos extremos; TerraClimate déficit hídrico, VPD, humedad del suelo), suelo (SoilGrids arcilla/limo/arena/pH/SOC; HWSD drenaje, textura, profundidad radicular, AWC), terreno (FABDEM pendiente, elevación, TWI, rugosidad), vegetación contextual (NDVI medio) y accesibilidad (tiempo a ciudad 50k). Heladas se excluyen como covariable: en Misiones son 0-2 días/año casi en todo el territorio, aportan ruido sin señal. Validación con Group K-Fold espacial por parent H3 res 5 (~250 km² por bloque). Expansión del score de 68k hexes nativos al grid completo (~320k) vía interpolación KNN ponderada por distancia inversa (k=5). Tipos: k-means k=4 sobre covariables de alto score.`,
 	},
 	service_deprivation: {
 		howToRead:

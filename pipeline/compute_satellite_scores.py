@@ -302,35 +302,9 @@ ANALYSIS_DEFS = [
             ("c_et", "c_et", 0.15, False),                   # more transpiration = active forest
         ],
     },
-    {
-        "id": "forestry_aptitude",
-        "sql": """
-            SELECT r.redcode,
-                COALESCE(s.ph, 50) / 10.0 AS c_ph,
-                COALESCE(s.clay, 0) AS c_clay,
-                COALESCE(c.total_mm, 0) AS c_precipitation,
-                COALESCE(t.slope_mean, 0) AS c_slope,
-                COALESCE(rd.dist_primary_m, 50000) AS c_road_dist,
-                COALESCE(n.tt_cities_50k_min, 300) AS c_access_50k
-            FROM radios_misiones r
-            LEFT JOIN soilgrids s ON r.redcode = s.redcode
-            LEFT JOIN (
-                SELECT redcode, AVG(total_mm) AS total_mm
-                FROM chirps_annual WHERE year >= 2019 GROUP BY redcode
-            ) c ON r.redcode = c.redcode
-            LEFT JOIN fabdem_terrain t ON r.redcode = t.redcode
-            LEFT JOIN road_access rd ON r.redcode = rd.redcode
-            LEFT JOIN nelson_accessibility n ON r.redcode = n.redcode
-        """,
-        "components": [
-            ("c_ph", "c_ph", 0.15, True),               # pines prefer acidic (lower pH)
-            ("c_clay", "c_clay", 0.10, True),            # pines prefer sandy (less clay)
-            ("c_precipitation", "c_precipitation", 0.25, False),  # >1200mm needed
-            ("c_slope", "c_slope", 0.20, True),          # <15° for mechanized harvest
-            ("c_road_dist", "c_road_dist", 0.15, True),  # closer to road = cheaper freight
-            ("c_access_50k", "c_access_50k", 0.15, True),  # closer to sawmills
-        ],
-    },
+    # forestry_aptitude: DEPRECATED. Reemplazado por pipeline/compute_forestry_sdm.py
+    # (species distribution model sobre MapBiomas silvicultura + mascara satelital).
+    # Ya no se recomputa aqui ni en process_raster_to_h3.py.
     # ── SERVIR ────────────────────────────────────────────────────────────
     {
         "id": "service_deprivation",
@@ -622,7 +596,7 @@ def main():
     # (hex-level zonal stats over multi-band GEE exports). Keep their definitions
     # here for documentation but do NOT re-run them via the radio-based pipeline —
     # that would overwrite the hex-level parquets with radio-aggregated blobs.
-    RASTER_BASED = {"environmental_risk", "climate_comfort", "agri_potential", "forest_health", "forestry_aptitude", "change_pressure"}
+    RASTER_BASED = {"environmental_risk", "climate_comfort", "agri_potential", "forest_health", "change_pressure"}
 
     # Filter analyses if --only specified
     analyses = [a for a in ANALYSIS_DEFS if a["id"] not in RASTER_BASED]

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import PetalChart from './PetalChart.svelte';
 	import type { HexStore, HexZone } from '$lib/stores/hex.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import {
@@ -18,14 +17,10 @@
 		onClearHexZones: () => void;
 	} = $props();
 
-	const CENSUS_ANALYSES = new Set(['service_deprivation', 'health_access', 'education_capital', 'education_flow', 'sociodemographic', 'economic_activity', 'accessibility', 'carbon_stock', 'productive_activity']);
 	const zones = $derived(hexStore.hexZones);
 	const variables = $derived(hexStore.activeLayer?.variables ?? []);
 	// numericVariables matches rawValues indexing (same filter as store)
 	const numVars = $derived(hexStore.numericVariables);
-	const showPetals = $derived(hexStore.activeLayer ? !CENSUS_ANALYSES.has(hexStore.activeLayer.id) : true);
-	const layers = $derived(hexStore.petalLayers);
-	const labels = $derived(hexStore.petalLabels);
 
 	function fmtSmart(v: unknown): string {
 		if (typeof v !== 'number' || !Number.isFinite(v)) return '—';
@@ -127,12 +122,6 @@
 		{/each}
 	</div>
 
-	<!-- Petal chart (normalized: 50 = provincial avg) — only for non-census layers -->
-	{#if layers.length > 0 && labels.length >= 3 && showPetals}
-		<p class="petal-note">{i18n.t('zone.petalNote')}</p>
-		<PetalChart {layers} {labels} size={400} />
-	{/if}
-
 	<!-- Vertical zone blocks (like HexComparison) -->
 	{#if numVars.length > 0}
 		{#each zones as zone, zi}
@@ -229,8 +218,6 @@
 		line-height: 1;
 	}
 	.hzc-remove:hover { color: #ef4444; }
-
-	.petal-note { font-size: 8px; color: rgba(255,255,255,0.4); text-align: center; margin: 0 0 2px; }
 
 	.zone-block { margin: 8px 0; padding: 6px 0; border-top: 1px solid rgba(255,255,255,0.06); }
 	.zone-id { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #e2e8f0; font-weight: 600; margin-bottom: 5px; }

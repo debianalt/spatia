@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { TemporalMode } from '$lib/config';
+	import { HEX_LAYER_REGISTRY } from '$lib/config';
 	import type { HexStore } from '$lib/stores/hex.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
 
@@ -11,6 +12,15 @@
 		baseline: 'temporal.baseline',
 		delta: 'temporal.delta',
 	};
+
+	const periods = $derived(layerId ? HEX_LAYER_REGISTRY[layerId]?.temporalPeriods : undefined);
+
+	function getPeriodLabel(mode: TemporalMode): string | undefined {
+		if (!periods) return undefined;
+		if (mode === 'current') return periods.current;
+		if (mode === 'baseline') return periods.baseline;
+		return undefined;
+	}
 
 	function getHint(mode: TemporalMode): string {
 		// Try layer-specific hint first, fall back to generic
@@ -25,12 +35,17 @@
 
 <div class="temporal-toggle">
 	{#each modes as mode}
+		{@const period = getPeriodLabel(mode)}
 		<button
 			class="toggle-btn"
 			class:active={hexStore.temporalMode === mode}
+			class:has-period={!!period}
 			onclick={() => hexStore.setTemporalMode(mode)}
 		>
-			{i18n.t(labelKeys[mode])}
+			<span class="label">{i18n.t(labelKeys[mode])}</span>
+			{#if period}
+				<span class="period">{period}</span>
+			{/if}
 		</button>
 	{/each}
 </div>
@@ -56,11 +71,24 @@
 		font-weight: 600;
 		cursor: pointer;
 		transition: all 0.15s;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1px;
 	}
 	.toggle-btn:hover { color: #a3a3a3; }
 	.toggle-btn.active {
 		background: rgba(255,255,255,0.10);
 		color: #e2e8f0;
+	}
+	.toggle-btn.active .period { color: rgba(226,232,240,0.60); }
+	.label { line-height: 1; }
+	.period {
+		font-size: 7.5px;
+		font-weight: 400;
+		color: rgba(115,115,115,0.80);
+		line-height: 1;
+		white-space: nowrap;
 	}
 	.temporal-hint {
 		font-size: 8px;
