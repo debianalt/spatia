@@ -49,7 +49,7 @@ export function getParquetUrl(name: string): string {
 		sat_climate_comfort: '?v=27',
 		sat_green_capital: '?v=26',
 		sat_change_pressure: '?v=27',
-		sat_location_value: '?v=24',
+		sat_location_value: '?v=25',
 		sat_agri_potential: '?v=28',
 		sat_forest_health: '?v=27',
 		sat_forestry_aptitude: '?v=32',

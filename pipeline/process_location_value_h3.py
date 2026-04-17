@@ -1,15 +1,18 @@
 """
 Process location_value components to H3 parquet for a territory.
 
-Reads 4 GEE-exported rasters from GCS + generates OSM road distance locally,
+Reads GEE-exported rasters from GCS + generates OSM road distance locally,
 then runs H3 zonal stats and computes composite score.
 
 Components (same sources as Misiones):
   c_access_cities   — travel time to cities (Oxford MAP 2015, Nelson 2019 methodology)
-  c_healthcare      — travel time to healthcare (Oxford MAP friction + OSM facilities)
+  c_healthcare      — travel time to healthcare via Oxford MAP friction_surface_2019 +
+                      MCP_Geometric cost distance from OSM hospital/clinic points.
+                      GEE cumulativeCost fails in batch mode; computation done locally
+                      using skimage.graph.MCP_Geometric (identical algorithm).
   c_nightlights     — VIIRS DNB mean radiance 2022-2024
-  c_slope           — terrain slope from SRTM 30m
-  c_road_dist       — distance to primary road from OSM Paraguay
+  c_slope           — terrain slope from Copernicus DEM GLO-30 (FABDEM input)
+  c_road_dist       — distance to primary road from OSM
 
 Score orientation:
   c_access_cities → invert (less time = more accessible = higher value)
@@ -25,9 +28,12 @@ Usage:
 import argparse
 import json
 import os
+import platform
 import subprocess
 import sys
 import time
+
+_GCLOUD = 'gcloud.cmd' if platform.system() == 'Windows' else 'gcloud'
 
 import numpy as np
 import pandas as pd
@@ -75,6 +81,138 @@ def h3_centroid(h3index: str) -> tuple[float, float]:
     except ImportError:
         import h3
         return h3.h3_to_geo(h3index)
+
+
+# ── Healthcare travel time via MCP ────────────────────────────────────────────
+
+def compute_healthcare_mcp(friction_path: str, facility_coords: list,
+                            lats: list, lngs: list) -> np.ndarray:
+    """Compute travel time to nearest healthcare facility via MCP_Geometric.
+
+    Uses the Oxford MAP friction surface (min/m) and Dijkstra's algorithm —
+    the same computation as GEE's cumulativeCost, executed locally.
+
+    Args:
+        friction_path: path to friction surface raster (minutes per meter)
+        facility_coords: list of [lon, lat] pairs for healthcare facilities
+        lats, lngs: H3 centroid coordinates (arrays)
+
+    Returns:
+        Travel time in minutes for each H3 centroid (NaN if unreachable)
+    """
+    try:
+        from skimage.graph import MCP_Geometric
+    except ImportError:
+        raise ImportError("scikit-image required: pip install scikit-image")
+
+    with rasterio.open(friction_path) as src:
+        friction_data = src.read(1).astype(np.float64)
+        transform = src.transform
+        nodata = src.nodata
+
+        # Pixel size in meters (approximate; at 1°≈111km)
+        pixel_w_m = abs(transform.a) * 111_000
+        pixel_h_m = abs(transform.e) * 111_000
+        pixel_size_m = (pixel_w_m + pixel_h_m) / 2
+
+        # Mask nodata + negative (ocean, NoData) with very high cost
+        if nodata is not None:
+            friction_data[friction_data == nodata] = 1e8
+        friction_data[~np.isfinite(friction_data) | (friction_data < 0)] = 1e8
+
+        # Cost per pixel in minutes = friction(min/m) × pixel_size(m)
+        # MCP_Geometric interpolates between pixels, so this is per unit length.
+        # Scale so that output is in minutes.
+        cost_surface = friction_data * pixel_size_m
+
+        # Facility pixel coordinates
+        starts = []
+        for coord in facility_coords:
+            lon, lat = float(coord[0]), float(coord[1])
+            col_f, row_f = ~transform * (lon, lat)
+            r, c = int(row_f), int(col_f)
+            if 0 <= r < cost_surface.shape[0] and 0 <= c < cost_surface.shape[1]:
+                starts.append((r, c))
+
+        if not starts:
+            print("    WARNING: no facility pixels found in raster extent")
+            return np.full(len(lats), np.nan)
+
+        # Deduplicate starts
+        starts = list(set(starts))
+        print(f"    MCP from {len(starts)} facility pixels (out of {len(facility_coords)} coords)")
+
+        mcp = MCP_Geometric(cost_surface)
+        cumulative_costs, _ = mcp.find_costs(starts)
+
+        # Sample at H3 centroids
+        result = np.full(len(lats), np.nan)
+        for i, (lat, lng) in enumerate(zip(lats, lngs)):
+            col_f, row_f = ~transform * (lng, lat)
+            r, c = int(row_f), int(col_f)
+            if 0 <= r < cumulative_costs.shape[0] and 0 <= c < cumulative_costs.shape[1]:
+                val = cumulative_costs[r, c]
+                if val < 1e7:
+                    result[i] = round(float(val), 2)
+
+        return result
+
+
+def compute_slope_from_dem(dem_path: str, output_path: str) -> bool:
+    """Compute slope (degrees) from a DEM raster and save to output_path.
+
+    Uses central-difference gradient (same formula as GEE ee.Terrain.slope).
+    Returns True if successful.
+    """
+    try:
+        with rasterio.open(dem_path) as src:
+            dem = src.read(1).astype(np.float64)
+            transform = src.transform
+            nodata = src.nodata
+            profile = src.profile.copy()
+            mean_lat = transform.f + transform.e * dem.shape[0] / 2
+
+        if nodata is not None:
+            dem[dem == nodata] = np.nan
+
+        # Pixel size in meters (approximate; latitude-corrected for x)
+        pixel_x_m = abs(transform.a) * 111_000 * np.cos(np.radians(mean_lat))
+        pixel_y_m = abs(transform.e) * 111_000
+
+        # Central differences (edges use one-sided)
+        dz_dx = np.gradient(dem, pixel_x_m, axis=1)
+        dz_dy = np.gradient(dem, pixel_y_m, axis=0)
+
+        slope = np.degrees(np.arctan(np.sqrt(dz_dx**2 + dz_dy**2))).astype(np.float32)
+        slope[np.isnan(dem)] = np.nan
+
+        profile.update(dtype='float32', count=1, nodata=None)
+        with rasterio.open(output_path, 'w', **profile) as dst:
+            dst.write(slope, 1)
+
+        valid = np.sum(np.isfinite(slope))
+        print(f"    slope: {valid:,} valid pixels, mean={np.nanmean(slope):.2f} deg")
+        return True
+    except Exception as e:
+        print(f"    ERROR computing slope from DEM: {e}")
+        return False
+
+
+def is_valid_raster(path: str) -> bool:
+    """Return True if raster exists and has at least some non-NaN pixels."""
+    if not os.path.exists(path):
+        return False
+    try:
+        with rasterio.open(path) as src:
+            data = src.read(1)
+            nodata = src.nodata
+            if nodata is not None:
+                valid = np.sum(data != nodata)
+            else:
+                valid = np.sum(np.isfinite(data))
+            return int(valid) > 0
+    except Exception:
+        return False
 
 
 # ── OSM road distance ─────────────────────────────────────────────────────────
@@ -160,37 +298,49 @@ def main():
 
     # ── GEE rasters (must be downloaded from GCS first) ───────────────────
     gcs_subdir = '' if args.territory == 'misiones' else f"{args.territory}/"
+    # c_healthcare is NOT in this dict — it's computed locally from lv_friction.tif
     gee_rasters = {
         'c_access_cities': os.path.join(out_dir, 'lv_cities_access.tif'),
-        'c_healthcare':    os.path.join(out_dir, 'lv_healthcare.tif'),
         'c_nightlights':   os.path.join(out_dir, 'lv_viirs_annual.tif'),
         'c_slope':         os.path.join(out_dir, 'lv_slope.tif'),
     }
+    # Friction raster for local healthcare MCP computation
+    friction_path = os.path.join(out_dir, 'lv_friction.tif')
+    # Raw DEM for local slope computation (GEE ee.Terrain.slope fails on mosaics)
+    dem_path = os.path.join(out_dir, 'lv_dem.tif')
 
-    missing = [(col, path) for col, path in gee_rasters.items()
-               if not os.path.exists(path)]
-    if missing:
-        print(f"\nDownloading {len(missing)} rasters from GCS...")
-        for col, path in missing:
-            fname = os.path.basename(path)
+    all_raster_files = list(gee_rasters.values()) + [friction_path, dem_path]
+    missing_files = [(os.path.basename(p), p) for p in all_raster_files
+                     if not os.path.exists(p) or not is_valid_raster(p)]
+    if missing_files:
+        print(f"\nDownloading {len(missing_files)} rasters from GCS...")
+        for fname, path in missing_files:
             gcs_path = f"gs://{GCS_BUCKET}/satellite/{gcs_subdir}{fname}"
             print(f"  {gcs_path} -> {path}")
             r = subprocess.run(
-                ['gcloud', 'storage', 'cp', gcs_path, path],
+                [_GCLOUD, 'storage', 'cp', gcs_path, path],
                 capture_output=True, text=True
             )
             if r.returncode != 0:
                 print(f"  WARNING: failed to download {fname}: {r.stderr}")
 
-    # Verify which rasters exist
+    # If DEM exists but slope raster is missing/invalid, compute slope locally
+    dem_path = os.path.join(out_dir, 'lv_dem.tif')
+    slope_path = gee_rasters['c_slope']
+    if is_valid_raster(dem_path) and not is_valid_raster(slope_path):
+        print("  Computing slope from DEM locally (GEE ee.Terrain.slope fails on mosaic)...")
+        compute_slope_from_dem(dem_path, slope_path)
+
+    # Verify which rasters are valid (non-empty)
     available = {col: path for col, path in gee_rasters.items()
-                 if os.path.exists(path)}
-    missing_cols = [col for col in gee_rasters if col not in available]
-    if missing_cols:
-        print(f"  WARNING: Missing rasters: {missing_cols}. These components will be skipped.")
+                 if is_valid_raster(path)}
+    invalid = {col: path for col, path in gee_rasters.items()
+               if not is_valid_raster(path)}
+    if invalid:
+        print(f"  WARNING: Invalid/empty rasters: {list(invalid.keys())}. Skipping.")
 
     if not available:
-        print("ERROR: No rasters available. Run gee_export_location_value.py first.")
+        print("ERROR: No valid rasters available. Run gee_export_location_value.py first.")
         return 1
 
     print(f"\nAvailable raster components: {list(available.keys())}")
@@ -245,54 +395,40 @@ def main():
     except Exception as e:
         print(f"    WARNING: road distance failed: {e}")
 
-    # ── Healthcare distance (KDTree from OSM facilities) ──────────────────
-    # GEE cumulativeCost failed; use same KDTree approach as roads.
-    # Source: 874 OSM hospitals/clinics in Itapúa (cached from Overpass).
-    # Replaces GEE lv_healthcare.tif proxy (which was identical to cities access).
+    # ── Healthcare travel time (Oxford MAP friction + MCP) ────────────────
+    # Uses lv_friction.tif (Oxford MAP friction_surface_2019) + hospital coords
+    # to compute minimum-cost travel time via MCP_Geometric (= GEE cumulativeCost).
     health_cache = os.path.join(out_dir, 'lv_healthcare_facilities.json')
-    if os.path.exists(health_cache) and 'c_healthcare' not in data:
-        print("  c_healthcare: computing from OSM facility coords...")
+    if is_valid_raster(friction_path) and os.path.exists(health_cache):
+        print("  c_healthcare: computing via MCP from Oxford MAP friction + OSM facilities...")
+        try:
+            with open(health_cache) as f:
+                hc_pts = json.load(f)
+            hc_vals = compute_healthcare_mcp(friction_path, hc_pts, lats, lngs)
+            data['c_healthcare'] = hc_vals
+            valid = np.sum(np.isfinite(hc_vals))
+            print(f"    valid={valid:,}/{n:,}  mean={np.nanmean(hc_vals):.1f} min")
+        except Exception as e:
+            print(f"    WARNING: MCP healthcare failed: {e}")
+    elif os.path.exists(health_cache):
+        print("  c_healthcare: friction raster missing, falling back to KDTree euclidean...")
         try:
             with open(health_cache) as f:
                 hc_pts = json.load(f)
             mean_lat = float(np.mean(lats))
             cos_lat = np.cos(np.radians(mean_lat))
-            METERS_PER_DEG = 111_000.0
             hc_arr = np.array(hc_pts)
             hc_xy = np.column_stack([hc_arr[:, 0] * cos_lat, hc_arr[:, 1]])
             q_xy = np.column_stack([np.array(lngs) * cos_lat, np.array(lats)])
             tree = cKDTree(hc_xy)
             dists_deg, _ = tree.query(q_xy)
-            hc_dist = (dists_deg * METERS_PER_DEG).astype(np.float32)
-            data['c_healthcare'] = hc_dist
-            print(f"    valid={np.isfinite(hc_dist).sum():,}/{n:,}  mean={np.nanmean(hc_dist):.0f} m")
+            data['c_healthcare'] = (dists_deg * 111_000.0).astype(np.float32)
+            print(f"    valid={np.isfinite(data['c_healthcare']).sum():,}/{n:,}  "
+                  f"mean={np.nanmean(data['c_healthcare']):.0f} m")
         except Exception as e:
-            print(f"    WARNING: healthcare distance failed: {e}")
-    elif 'c_healthcare' in data:
-        # Check if it's actually the proxy (identical to cities access)
-        if 'c_access_cities' in data:
-            corr = np.corrcoef(
-                data['c_healthcare'][np.isfinite(data['c_healthcare']) & np.isfinite(data['c_access_cities'])],
-                data['c_access_cities'][np.isfinite(data['c_healthcare']) & np.isfinite(data['c_access_cities'])]
-            )[0, 1]
-            if abs(corr) > 0.999:
-                print("  c_healthcare: detected as cities proxy (r>0.999), replacing with OSM distance")
-                if os.path.exists(health_cache):
-                    try:
-                        with open(health_cache) as f:
-                            hc_pts = json.load(f)
-                        mean_lat = float(np.mean(lats))
-                        cos_lat = np.cos(np.radians(mean_lat))
-                        METERS_PER_DEG = 111_000.0
-                        hc_arr = np.array(hc_pts)
-                        hc_xy = np.column_stack([hc_arr[:, 0] * cos_lat, hc_arr[:, 1]])
-                        q_xy = np.column_stack([np.array(lngs) * cos_lat, np.array(lats)])
-                        tree = cKDTree(hc_xy)
-                        dists_deg, _ = tree.query(q_xy)
-                        data['c_healthcare'] = (dists_deg * METERS_PER_DEG).astype(np.float32)
-                        print(f"    replaced with OSM proximity: mean={np.nanmean(data['c_healthcare']):.0f} m")
-                    except Exception as e:
-                        print(f"    WARNING: OSM healthcare distance failed: {e}")
+            print(f"    WARNING: healthcare fallback failed: {e}")
+    else:
+        print("  c_healthcare: no friction raster or facility cache — component will be missing")
 
     df = pd.DataFrame(data)
     print(f"  Sampled in {time.time()-t0:.0f}s")
@@ -360,12 +496,13 @@ def main():
     scored['type_label'] = scored['type'].map(type_map)
 
     # ── Display columns ────────────────────────────────────────────────────
+    # Column names must match ANALYSIS_REGISTRY variables in config.ts
     col_rename = {
-        'c_access_cities': 'c_access_cities_min',
-        'c_healthcare':    'c_healthcare_min',
+        'c_access_cities': 'c_access_20k',
+        'c_healthcare':    'c_healthcare',
         'c_nightlights':   'c_nightlights',
-        'c_slope':         'c_slope_deg',
-        'c_road_dist':     'c_road_dist_m',
+        'c_slope':         'c_slope',
+        'c_road_dist':     'c_road_dist',
     }
     for old, new in col_rename.items():
         if old in scored.columns:

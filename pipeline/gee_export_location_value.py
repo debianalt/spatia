@@ -4,29 +4,34 @@ Export location_value component rasters for a territory from GEE.
 Rasters exported:
   1. lv_cities_access  — Oxford MAP accessibility to cities (Nelson 2019 methodology)
                          GEE: Oxford/MAP/accessibility_to_cities_2015_v1_0, band: accessibility
-  2. lv_healthcare     — Healthcare accessibility (Oxford MAP methodology):
-                         friction_surface_2015 + OSM hospital/clinic locations -> costDistance
+  2. lv_friction       — Oxford MAP friction surface 2019 (minutes per meter, motorized travel)
+                         GEE: projects/malariaatlasproject/assets/.../friction_surface/2019_v5_1
+                         cumulativeCost is computed LOCALLY in process_location_value_h3.py using
+                         skimage.graph.MCP_Geometric (same algorithm as GEE cumulativeCost, but
+                         GEE batch cumulativeCost consistently fails for this territory).
   3. lv_viirs_annual   — VIIRS DNB 2022-2024 annual mean radiance (avg_rad)
-  4. lv_slope          — Terrain slope from SRTM 30m (degrees)
+  4. lv_slope          — Terrain slope from Copernicus DEM GLO-30 (TanDEM-X based, 30m).
+                         FABDEM community asset (projects/sat-io/open-datasets/FABDEM) has no
+                         coverage for Paraguay; Copernicus GLO-30 is FABDEM's input DEM and
+                         produces equivalent slope for Paraguay's agricultural landscape.
+                         GEE: COPERNICUS/DEM/GLO30, band: DEM
 
 Note on sources vs Misiones:
-  - Cities: GEE Oxford MAP 2015 ≡ Nelson 2019 figshare (same Oxford MAP team + model)
-  - Healthcare: same Oxford MAP methodology (friction + facilities), applied directly in GEE
+  - Cities: same Oxford MAP / Nelson 2019 dataset
+  - Healthcare: same Oxford MAP friction 2019 source; MCP computed locally
   - VIIRS: same GEE collection
-  - Slope: SRTM (Misiones used FABDEM = SRTM minus buildings/vegetation — same terrain in Paraná plateau)
-  Road distance (5th component) is computed locally from OSM Geofabrik in process_location_value_h3.py.
+  - Slope: Copernicus DEM GLO-30 (FABDEM input; equivalent for slope in low-vegetation areas)
+  Road distance (5th component) is computed locally from OSM in process_location_value_h3.py.
 
 Output: gs://spatia-satellite/satellite/{territory}/lv_{name}.tif
 """
 
 import argparse
-import json
 import os
 import sys
 import time
 
 import ee
-import requests
 
 from config import GCS_BUCKET, get_territory
 
@@ -52,44 +57,14 @@ def authenticate():
     return True
 
 
-def get_osm_healthcare_points(bbox):
-    """Fetch healthcare facilities in bbox from Overpass API."""
-    west, south, east, north = bbox
-    query = f"""
-[out:json][timeout:30][bbox:{south},{west},{north},{east}];
-(
-  node[amenity=hospital];
-  node[amenity=clinic];
-  node[amenity=health_post];
-  node[healthcare];
-  way[amenity=hospital];
-  way[amenity=clinic];
-);
-out center;
-"""
-    url = "https://overpass-api.de/api/interpreter"
-    try:
-        r = requests.post(url, data=query, timeout=30)
-        r.raise_for_status()
-        data = r.json()
-        points = []
-        for el in data.get("elements", []):
-            if el["type"] == "node":
-                points.append(ee.Geometry.Point([el["lon"], el["lat"]]))
-            elif el["type"] == "way" and "center" in el:
-                points.append(ee.Geometry.Point([el["center"]["lon"], el["center"]["lat"]]))
-        print(f"  Found {len(points)} healthcare facilities from OSM")
-        return points
-    except Exception as e:
-        print(f"  WARNING: Overpass API failed ({e}), using empty healthcare set")
-        return []
-
 
 def main():
     parser = argparse.ArgumentParser(description="Export location_value rasters from GEE")
     parser.add_argument("--territory", default="misiones")
     parser.add_argument("--gcs", action="store_true")
     parser.add_argument("--no-wait", action="store_true")
+    parser.add_argument("--only", default=None,
+                        help="Comma-separated subset: cities_access,friction,viirs_annual,slope")
     args = parser.parse_args()
 
     is_ci = authenticate()
@@ -109,22 +84,13 @@ def main():
         .select('accessibility') \
         .clip(ee_bbox)
 
-    # ── 2. Healthcare accessibility (friction + OSM facilities) ─────────────
-    friction = ee.Image('Oxford/MAP/friction_surface_2015_v1_0').select('friction').clip(ee_bbox)
-    facility_points = get_osm_healthcare_points(bbox)
-
-    if facility_points:
-        facilities_fc = ee.FeatureCollection(
-            [ee.Feature(pt) for pt in facility_points])
-        # Compute cost distance: travel time to nearest healthcare facility
-        sources = facilities_fc.geometry().coveringGrid(
-            ee.Projection('EPSG:4326').atScale(1000), 1000)
-        source_mask = ee.Image(1).clip(facilities_fc.geometry().buffer(2000))
-        healthcare_img = friction.costDistance(source_mask).clip(ee_bbox)
-    else:
-        # Fallback: use cities accessibility as proxy
-        print("  Using cities accessibility as healthcare proxy (no OSM facilities found)")
-        healthcare_img = cities_img
+    # ── 2. Oxford MAP friction surface 2019 (exported as-is; MCP computed locally) ──
+    # GEE cumulativeCost fails in batch mode for this region (4 confirmed attempts).
+    # Solution: export the raw friction raster and compute MCP in process_location_value_h3.py
+    # using skimage.graph.MCP_Geometric — identical algorithm, reliable execution.
+    friction_img = ee.Image(
+        'projects/malariaatlasproject/assets/accessibility/friction_surface/2019_v5_1'
+    ).select('friction').clip(ee_bbox)
 
     # ── 3. VIIRS DNB annual mean 2022-2024 ───────────────────────────────────
     viirs = (ee.ImageCollection('NOAA/VIIRS/DNB/MONTHLY_V1/VCMSLCFG')
@@ -133,16 +99,28 @@ def main():
              .mean()
              .clip(ee_bbox))
 
-    # ── 4. SRTM slope ────────────────────────────────────────────────────────
-    srtm = ee.Image('USGS/SRTMGL1_003')
-    slope_img = ee.Terrain.slope(srtm).clip(ee_bbox)
+    # ── 4. Copernicus DEM GLO-30 slope ────────────────────────────────────────
+    # FABDEM community asset (projects/sat-io/open-datasets/FABDEM) has no coverage
+    # for Paraguay (exports successfully but produces all-NaN for this bbox).
+    # Copernicus DEM GLO-30 is FABDEM's input (TanDEM-X + ICESat-2 corrections, 30m).
+    # For slope in Paraguay's low-density agricultural landscape, the difference is
+    # negligible (FABDEM removes vegetation+building heights which are minimal here).
+    cop_dem = (ee.ImageCollection('COPERNICUS/DEM/GLO30')
+               .filterBounds(ee_bbox)
+               .select('DEM')
+               .mosaic())
+    slope_img = ee.Terrain.slope(cop_dem).clip(ee_bbox)
 
-    exports = [
+    all_exports = [
         ('lv_cities_access', cities_img, EXPORT_SCALE),
-        ('lv_healthcare',    healthcare_img, EXPORT_SCALE),
+        ('lv_friction',      friction_img, EXPORT_SCALE),
         ('lv_viirs_annual',  viirs, VIIRS_SCALE),
         ('lv_slope',         slope_img, SLOPE_SCALE),
     ]
+
+    only_set = set(args.only.split(',')) if args.only else None
+    exports = [(n, img, sc) for n, img, sc in all_exports
+               if only_set is None or n.replace('lv_', '') in only_set or n in only_set]
 
     tasks = []
     for name, image, scale in exports:
