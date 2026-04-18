@@ -39,9 +39,9 @@ export const ANALYSIS_CONTENT: Record<string, MethodologyContent> = {
 	},
 	green_capital: {
 		howToRead:
-			'El mapa clasifica cada hexágono en tipos de capital verde según la co-ocurrencia de verdor, cobertura arbórea, productividad primaria, área foliar y fracción de vegetación. Cada color representa un estado ecosistémico distinto.',
+			'El mapa clasifica cada hexágono en tipos de productividad vegetal según la co-ocurrencia de verdor estacional (NDVI), área foliar (LAI), fracción arbórea (VCF) y productividad primaria (NPP). Los valores altos no distinguen bosque nativo de cultivos: la soja en plena temporada puntúa igual o más que el monte secundario.',
 		implications:
-			'Los tipos distinguen selva densa de alta productividad, bosque secundario con cobertura residual, y zonas deforestadas con baja vegetación. Esta distinción cualitativa informa mejor las políticas de conservación que un gradiente continuo.',
+			'La capa mide biomasa activa y productividad fotosintética, no calidad ecológica ni servicios ecosistémicos. Un distrito con alta productividad vegetal puede ser un cinturón sojero; uno con baja productividad puede tener suelo desnudo por estacionalidad. Usar junto con deforestation_dynamics para contextualizar.',
 		method: `${METHOD_COMMON} Variables: NDVI MODIS 250m, cobertura arbórea Hansen 2000, NPP MODIS, LAI MODIS, VCF MODIS. k=3 tipos, silueta=0.46.`,
 	},
 	change_pressure: {
