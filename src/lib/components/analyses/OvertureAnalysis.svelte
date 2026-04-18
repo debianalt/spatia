@@ -77,7 +77,6 @@
 		climate_vulnerability:   () => import('$lib/data/itapua_py_sat_climate_vulnerability_summary.json'),
 		deforestation_dynamics:  () => import('$lib/data/itapua_py_sat_deforestation_dynamics_summary.json'),
 		forestry_aptitude:       () => import('$lib/data/itapua_py_sat_forestry_aptitude_summary.json'),
-		location_value:          () => import('$lib/data/itapua_py_sat_location_value_summary.json'),
 		pm25_drivers:            () => import('$lib/data/itapua_py_sat_pm25_drivers_summary.json'),
 		productive_activity:     () => import('$lib/data/itapua_py_sat_productive_activity_summary.json'),
 		flood_risk:              () => import('$lib/data/itapua_py_flood_dept_summary.json'),
