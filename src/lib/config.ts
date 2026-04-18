@@ -391,6 +391,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: false,
 		legendLowKey: 'legend.powerline.low',
 		legendHighKey: 'legend.powerline.high',
+		coverage: { itapua_py: 'unavailable' },
 	},
 	// ── Satellite composite scores ──
 	environmental_risk: {
@@ -418,6 +419,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'c_heat_day', labelKey: 'sat.climate.heatDay', aggregation: 'mean' },
 			{ col: 'c_heat_night', labelKey: 'sat.climate.heatNight', aggregation: 'mean' },
 			{ col: 'c_precipitation', labelKey: 'sat.climate.precip', aggregation: 'mean' },
+			{ col: 'c_frost', labelKey: 'sat.climate.frost', aggregation: 'mean' },
 			{ col: 'c_water_stress', labelKey: 'sat.climate.waterStress', aggregation: 'mean' },
 		],
 		primaryVariable: 'score',
@@ -491,6 +493,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.locValue.low',
 		legendHighKey: 'legend.locValue.high',
+		coverage: { itapua_py: 'unavailable' },
 	},
 	agri_potential: {
 		id: 'agri_potential',
@@ -574,6 +577,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.deprivation.low',
 		legendHighKey: 'legend.deprivation.high',
+		coverage: { itapua_py: 'unavailable' },
 	},
 	territorial_isolation: {
 		id: 'territorial_isolation',
@@ -595,6 +599,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.isolation.low',
 		legendHighKey: 'legend.isolation.high',
+		coverage: { itapua_py: 'unavailable' },
 	},
 	health_access: {
 		id: 'health_access',
@@ -616,6 +621,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.health.low',
 		legendHighKey: 'legend.health.high',
+		coverage: { itapua_py: 'unavailable' },
 	},
 	education_capital: {
 		id: 'education_capital',
@@ -635,6 +641,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.eduCap.low',
 		legendHighKey: 'legend.eduCap.high',
+		coverage: { itapua_py: 'unavailable' },
 	},
 	education_flow: {
 		id: 'education_flow',
@@ -653,6 +660,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.eduFlow.low',
 		legendHighKey: 'legend.eduFlow.high',
+		coverage: { itapua_py: 'unavailable' },
 	},
 	// ── Territorial classification (PCA + metabolic clustering) ──
 	territorial_types: {
@@ -897,11 +905,14 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		],
 		titleKey: 'sat.prodAct.title',
 		perDepartment: true,
+		temporal: true,
+		temporalPeriods: { current: '2022–2025', baseline: '2014–2017', source: 'VIIRS · MODIS · Hansen · GHSL' },
 		legendLowKey: 'legend.prodAct.low',
 		legendHighKey: 'legend.prodAct.high',
 		coverage: { itapua_py: 'available' },
 	},
 	// ── Deforestation Dynamics (Hansen 2001-2024, observed) ──
+	// No petalVars: only 2 numeric indicators (loss_rate + cumulative) — radar with 2 vars is not meaningful.
 	deforestation_dynamics: {
 		id: 'deforestation_dynamics',
 		parquet: 'sat_deforestation_dynamics',
@@ -920,6 +931,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		temporalPeriods: { current: '2015–2024', baseline: '2001–2010', source: 'Hansen GFC v1.12' },
 		legendLowKey: 'legend.deforest.low',
 		legendHighKey: 'legend.deforest.high',
+		coverage: { itapua_py: 'available' },
 	},
 	// ── EUDR deforestation risk (H3 res-7, 10 provinces) ──
 	eudr: {
@@ -1091,7 +1103,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'emsa.title',
 		descKey: 'emsa.desc',
-
+		coverage: { itapua_py: 'unavailable' },
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1120,7 +1132,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'sat.deprivation.title',
 		descKey: 'sat.deprivation.desc',
-
+		coverage: { itapua_py: 'unavailable' },
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1129,7 +1141,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'sat.isolation.title',
 		descKey: 'sat.isolation.desc',
-
+		coverage: { itapua_py: 'unavailable' },
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1138,7 +1150,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'sat.health.title',
 		descKey: 'sat.health.desc',
-
+		coverage: { itapua_py: 'unavailable' },
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1147,7 +1159,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'sat.eduCap.title',
 		descKey: 'sat.eduCap.desc',
-
+		coverage: { itapua_py: 'unavailable' },
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1156,7 +1168,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'sat.eduFlow.title',
 		descKey: 'sat.eduFlow.desc',
-
+		coverage: { itapua_py: 'unavailable' },
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1221,6 +1233,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'trade.eudr.analysis_title',
 		descKey: 'trade.eudr.analysis_desc',
+		coverage: { itapua_py: 'unavailable' },
 		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
