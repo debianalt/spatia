@@ -40,7 +40,7 @@ SAT_ANALYSES = [
     "change_pressure", "agri_potential", "forest_health", "forestry_aptitude",
     "carbon_stock", "pm25_drivers", "deforestation_dynamics",
     "climate_vulnerability", "productive_activity", "location_value",
-    "land_use",
+    "land_use", "accessibility",
 ]
 
 # Analyses that only work for Misiones (AR census data)
@@ -48,7 +48,7 @@ MISIONES_ONLY = {
     "service_deprivation", "territorial_isolation",
     "health_access", "education_capital", "education_flow",
     "territorial_gap", "education_gap",
-    "territorial_types", "sociodemographic", "economic_activity", "accessibility",
+    "territorial_types", "sociodemographic", "economic_activity",
 }
 
 

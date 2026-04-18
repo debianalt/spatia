@@ -328,11 +328,11 @@ const dict: Record<string, Record<Locale, string>> = {
 	'radio.universitario': { es: 'Universitarios (%)', en: 'University (%)', gn: 'Universidad' },
 	'radio.viirs': { es: 'Luces nocturnas', en: 'Night lights', gn: 'Luces' },
 	'radio.buildingDensity': { es: 'Densidad edilicia', en: 'Building density', gn: 'Oga' },
-	'radio.travelPosadas': { es: 'Min. a Posadas', en: 'Min. to Posadas', gn: 'Posadas' },
-	'radio.travelCabecera': { es: 'Min. a cabecera', en: 'Min. to capital', gn: 'Cabecera' },
+	'radio.travelCapital': { es: 'Min. a capital', en: 'Min. to capital', gn: 'Capital' },
+	'radio.travelCabecera': { es: 'Min. a cabecera', en: 'Min. to dept. seat', gn: 'Cabecera' },
 	'radio.distHospital': { es: 'Dist. hospital (km)', en: 'Dist. hospital (km)', gn: 'Hospital' },
 	'radio.distSecundaria': { es: 'Dist. secundaria (km)', en: 'Dist. secondary school', gn: 'Secundaria' },
-	'radio.distPrimaria': { es: 'Dist. ruta (m)', en: 'Dist. primary road (m)', gn: 'Tape' },
+	'radio.distPrimaria': { es: 'Dist. ruta (km)', en: 'Dist. primary road (km)', gn: 'Tape' },
 
 	// ── EUDR in analysis menu ──
 	'trade.eudr.open_checker': { es: 'Abrir verificador EUDR', en: 'Open EUDR checker', gn: 'EUDR checker' },

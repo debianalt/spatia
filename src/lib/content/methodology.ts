@@ -160,10 +160,10 @@ export const ANALYSIS_CONTENT: Record<string, MethodologyContent> = {
 	},
 	accessibility: {
 		howToRead:
-			'El mapa clasifica cada hexágono en tipos de accesibilidad según la co-ocurrencia de tiempo de viaje a Posadas, a la cabecera departamental, distancia a hospital, escuela secundaria y ruta principal. Cada color representa un nivel de conectividad distinto.',
+			'El mapa clasifica cada hexágono en tipos de accesibilidad según la co-ocurrencia de tiempo de viaje a la capital provincial, a la ciudad más cercana, distancia a hospital, escuela y ruta principal. Cada color representa un nivel de conectividad distinto. Comparable entre Misiones y Itapúa: mismas fuentes y metodología.',
 		implications:
-			'Los tipos distinguen conectividad plena (cercanía a servicios y rutas), accesibilidad parcial (cerca de ruta pero lejos de servicios especializados), y aislamiento funcional (lejos de todo). Cada configuración requiere estrategias de inversión en infraestructura distintas.',
-		method: `${METHOD_COMMON} 5 variables: tiempo motorizado a Posadas y cabecera (Nelson et al. 2019, superficie de fricción Oxford MAP), distancia euclidiana a hospital, escuela secundaria y ruta primaria (OSM). Fuente: Nelson 2019 + Oxford MAP 2019 + OSM.`,
+			'Los tipos distinguen conectividad plena (cercanía a servicios y rutas), accesibilidad parcial (cerca de ruta pero lejos de servicios especializados), y aislamiento funcional (lejos de todo). La comparación entre territorios revela diferencias estructurales: Misiones tiene menor accesibilidad media que Itapúa por su topografía y menor densidad vial.',
+		method: `${METHOD_COMMON} 5 variables: tiempo motorizado a la capital (Posadas/Encarnación) vía MCP_Geometric sobre superficie de fricción Oxford MAP 2019; tiempo a ciudad ≥50k habitantes (raster Nelson/Oxford MAP 2015); distancia a hospital/clínica (OSM); distancia a escuela (OSM); distancia a ruta motorway/trunk/primary/secondary (OSM). Metodología idéntica para ambos territorios. Fuente: Oxford MAP friction_surface_2019 + accessibility_to_cities_2015 + OpenStreetMap.`,
 	},
 	carbon_stock: {
 		howToRead:

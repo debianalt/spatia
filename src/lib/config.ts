@@ -61,7 +61,7 @@ export function getParquetUrl(name: string): string {
 		sat_territorial_types: '?v=25',
 		sat_sociodemographic: '?v=22',
 		sat_economic_activity: '?v=22',
-		sat_accessibility: '?v=23',
+		sat_accessibility: '?v=24',
 		sat_climate_vulnerability: '?v=2',
 		sat_carbon_stock: '?v=3',
 		sat_pm25_drivers: '?v=2',
@@ -790,7 +790,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'score', labelKey: 'analysis.accessibility.score', aggregation: 'mean' },
 			{ col: 'type', labelKey: 'analysis.accessibility.type', aggregation: 'mean' },
 			{ col: 'type_label', labelKey: 'analysis.accessibility.typeLabel', aggregation: 'mean' },
-			{ col: 'travel_min_posadas', rawCol: 'travel_min_posadas_raw', unit: 'min', labelKey: 'radio.travelPosadas', aggregation: 'mean' },
+			{ col: 'travel_min_capital', rawCol: 'travel_min_capital_raw', unit: 'min', labelKey: 'radio.travelCapital', aggregation: 'mean' },
 			{ col: 'travel_min_cabecera', rawCol: 'travel_min_cabecera_raw', unit: 'min', labelKey: 'radio.travelCabecera', aggregation: 'mean' },
 			{ col: 'dist_nearest_hospital_km', rawCol: 'dist_nearest_hospital_km_raw', unit: 'km', labelKey: 'radio.distHospital', aggregation: 'mean' },
 			{ col: 'dist_nearest_secundaria_km', rawCol: 'dist_nearest_secundaria_km_raw', unit: 'km', labelKey: 'radio.distSecundaria', aggregation: 'mean' },
@@ -801,6 +801,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'analysis.accessibility.title',
 		perDepartment: true,
+		comparable: true,
+		coverage: { itapua_py: 'available' },
 	},
 	// ── Carbon Stock & Balance ──
 	carbon_stock: {
@@ -1064,6 +1066,8 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 
 		status: 'available',
 		spatialUnit: 'hexagon',
+		comparable: true,
+		coverage: { itapua_py: 'available' },
 	},
 	// natural_risks hidden — covered by environmental_risk (H3)
 	// ── Satellite H3 analyses ──
@@ -1392,19 +1396,19 @@ export const RADIO_ANALYSIS_REGISTRY: Record<string, RadioAnalysisConfig> = {
 	},
 	accessibility: {
 		id: 'accessibility',
-		choroplethCol: 'travel_min_posadas',
+		choroplethCol: 'travel_min_capital',
 		colorScale: 'sequential',
 		invertChoropleth: true,
 		petalCols: [
-			{ col: 'travel_min_posadas', label: { es: 'Tiempo a Posadas', en: 'Time to Posadas' }, desc: { es: 'Minutos de viaje a la capital', en: 'Travel minutes to the capital' }, invert: true },
+			{ col: 'travel_min_capital', label: { es: 'Tiempo a capital', en: 'Time to capital' }, desc: { es: 'Minutos de viaje a la capital provincial', en: 'Travel minutes to the provincial capital' }, invert: true },
 			{ col: 'travel_min_cabecera', label: { es: 'Tiempo a cabecera', en: 'Time to dept. seat' }, desc: { es: 'Minutos a la cabecera departamental', en: 'Minutes to department seat' }, invert: true },
 			{ col: 'dist_nearest_hospital_km', label: { es: 'Hospital', en: 'Hospital' }, desc: { es: 'Distancia al hospital más cercano (km)', en: 'Distance to nearest hospital (km)' }, invert: true },
 			{ col: 'dist_nearest_secundaria_km', label: { es: 'Escuela sec.', en: 'High school' }, desc: { es: 'Distancia a escuela secundaria (km)', en: 'Distance to high school (km)' }, invert: true },
-			{ col: 'dist_primary_m', label: { es: 'Ruta principal', en: 'Main road' }, desc: { es: 'Distancia a ruta primaria (metros)', en: 'Distance to primary road (meters)' }, invert: true },
+			{ col: 'dist_primary_m', label: { es: 'Ruta principal', en: 'Main road' }, desc: { es: 'Distancia a ruta primaria (km)', en: 'Distance to primary road (km)' }, invert: true },
 		],
-		howToRead: { es: 'Las parcelas se colorean según el tiempo de viaje a Posadas. Verde = más cercano. El pétalo muestra accesibilidad a servicios clave — en este caso mayor extensión = mejor acceso (menor distancia/tiempo).', en: 'Parcels are coloured by travel time to Posadas. Green = closer. The petal shows accessibility to key services.' },
-		implications: { es: 'Zonas a más de 2 horas de Posadas y sin hospital cercano representan alto riesgo para familias. La distancia a ruta principal determina el costo logístico para producción.', en: 'Areas over 2 hours from Posadas without a nearby hospital represent high risk for families.' },
-		methodology: { es: 'Tiempo de viaje motorizado a Posadas y cabecera departamental (superficie de fricción Oxford MAP). Distancia euclidiana a hospitales, escuelas secundarias y rutas primarias (OSM). Fuente: Nelson et al. 2019 + Oxford MAP 2019 + OSM.', en: 'Motorised travel time to Posadas and dept seat (Oxford MAP friction surface). Euclidean distance to hospitals, schools and primary roads.' },
+		howToRead: { es: 'Las parcelas se colorean según el tiempo de viaje a la capital. Verde = más cercano. El pétalo muestra accesibilidad a servicios clave — en este caso mayor extensión = mejor acceso (menor distancia/tiempo).', en: 'Parcels are coloured by travel time to the capital. Green = closer. The petal shows accessibility to key services.' },
+		implications: { es: 'Zonas a más de 2 horas de la capital y sin hospital cercano representan alto riesgo para familias. La distancia a ruta principal determina el costo logístico para producción.', en: 'Areas over 2 hours from the capital without a nearby hospital represent high risk for families.' },
+		methodology: { es: 'Tiempo de viaje motorizado a la capital y cabecera departamental (superficie de fricción Oxford MAP). Distancia a hospitales, escuelas y rutas principales (OSM). Fuente: Nelson et al. 2019 + Oxford MAP 2019 + OSM.', en: 'Motorised travel time to capital and dept seat (Oxford MAP friction surface). Distance to hospitals, schools and primary roads (OSM).' },
 	},
 	change_dynamics: {
 		id: 'change_dynamics',
