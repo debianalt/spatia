@@ -29,7 +29,7 @@ from shapely.geometry import shape
 import duckdb
 
 from config import OUTPUT_DIR, H3_RESOLUTION, get_territory
-from scoring import run_full_diagnostics, geometric_mean_score
+from scoring import run_full_diagnostics, geometric_mean_score, load_goalposts, score_with_goalposts
 
 HEXAGONS_PATH = os.path.join(OUTPUT_DIR, "hexagons-lite.geojson")
 AREAL_CROSSWALK_PATH = os.path.join(OUTPUT_DIR, "h3_radio_crosswalk_areal.parquet")
@@ -186,7 +186,7 @@ def inject_radio_fallback(df: pd.DataFrame, nan_cols: list[str],
 
 
 def process_analysis(analysis_id, raster_path, hexgrid_features, output_path,
-                     territory_id='misiones'):
+                     territory_id='misiones', mode='local', goalposts=None):
     """Process a single analysis raster to H3 parquet."""
     components = ANALYSIS_COMPONENTS[analysis_id]
     band_names = [c[0] for c in components]
@@ -231,12 +231,18 @@ def process_analysis(analysis_id, raster_path, hexgrid_features, output_path,
     df = pd.DataFrame(results)
     print(f"  Raw hexagons: {len(df):,}")
 
-    # Normalise via percentile rank
+    # Normalise: goalpost (comparable mode) or percentile rank (local mode)
+    gp_indicators = goalposts['indicators'] if goalposts else {}
     for band_name, out_col, weight, invert in components:
         raw = df[band_name].astype(float)
-        if invert:
-            raw = -raw
-        df[out_col] = percentile_rank(raw).round(1)
+        if mode == 'comparable' and out_col in gp_indicators:
+            gp = gp_indicators[out_col]
+            df[out_col] = score_with_goalposts(raw, gp['lo'], gp['hi'],
+                                               invert=gp.get('invert', invert)).round(1)
+        else:
+            if invert:
+                raw = -raw
+            df[out_col] = percentile_rank(raw).round(1)
 
     # PCA-validated geometric mean score (OECD/HDI methodology)
     comp_cols = [c[1] for c in components]
@@ -263,15 +269,29 @@ def process_analysis(analysis_id, raster_path, hexgrid_features, output_path,
     print(f"  Valid hexagons for PCA: {len(df_valid):,} / {len(df):,}")
 
     diagnostics = run_full_diagnostics(df_valid, valid_cols, corr_threshold=0.70)
-    retained = diagnostics["variable_selection"]["retained"]
-    dropped = diagnostics["variable_selection"]["dropped"]
 
     kmo = diagnostics["kmo_bartlett"].get("kmo_overall")
     if kmo is not None:
         print(f"    KMO: {kmo:.3f} {'OK' if kmo >= 0.60 else 'WARNING < 0.60'}")
-    if dropped:
-        print(f"    Dropped (|r|>0.70): {dropped}")
-    print(f"    Retained ({len(retained)}): {retained}")
+
+    if mode == 'comparable' and goalposts:
+        locked = goalposts.get('pca_variable_selection', {}).get(analysis_id)
+        if locked:
+            retained = [c for c in locked if c in valid_cols]
+            dropped = [c for c in valid_cols if c not in retained]
+            print(f"    [comparable] Locked selection ({len(retained)}): {retained}")
+            if dropped:
+                print(f"    [comparable] Excluded: {dropped}")
+        else:
+            retained = diagnostics["variable_selection"]["retained"]
+            dropped = diagnostics["variable_selection"]["dropped"]
+            print(f"    [comparable] No lock: using PCA selection: {retained}")
+    else:
+        retained = diagnostics["variable_selection"]["retained"]
+        dropped = diagnostics["variable_selection"]["dropped"]
+        if dropped:
+            print(f"    Dropped (|r|>0.70): {dropped}")
+        print(f"    Retained ({len(retained)}): {retained}")
 
     df['score'] = geometric_mean_score(df, retained, floor=1.0).round(1)
 
@@ -298,7 +318,13 @@ def main():
                         help="Territory ID from config.py (default: misiones)")
     parser.add_argument("--input-dir", default=None,
                         help="Directory with GeoTIFFs (default: OUTPUT_DIR or territory subdir)")
+    parser.add_argument("--mode", choices=['comparable', 'local'], default='local',
+                        help="comparable: goalpost normalization. local: percentile rank (default).")
     args = parser.parse_args()
+
+    goalposts = load_goalposts() if args.mode == 'comparable' else None
+    if goalposts:
+        print(f"  Loaded goalposts v{goalposts.get('version', '?')} ({args.mode} mode)")
 
     territory = get_territory(args.territory)
     t_prefix = territory['output_prefix']
@@ -346,7 +372,7 @@ def main():
 
         output_path = os.path.join(out_dir, f"sat_{aid}.parquet")
         n = process_analysis(aid, raster_path, features, output_path,
-                             territory_id=args.territory)
+                             territory_id=args.territory, mode=args.mode, goalposts=goalposts)
         results[aid] = n
 
     elapsed = time.time() - t0

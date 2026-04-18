@@ -263,6 +263,38 @@ def geometric_mean_score(
     return result
 
 
+# ── Goalpost-based normalization (cross-territory comparable) ────────────────
+
+def load_goalposts(path: str = None) -> dict:
+    """Load goalposts.json from pipeline/config/."""
+    if path is None:
+        path = os.path.join(os.path.dirname(__file__), 'config', 'goalposts.json')
+    with open(path) as f:
+        return json.load(f)
+
+
+def score_with_goalposts(
+    series: pd.Series,
+    lo: float,
+    hi: float,
+    invert: bool = False,
+) -> pd.Series:
+    """
+    Normalize series to 0–100 using fixed goalposts (cross-territory comparable).
+
+    Values below lo → 0; above hi → 100 (clipped). If invert=True, higher
+    raw value → lower score (e.g. accessibility time, slope, thermal stress).
+    NaN inputs produce NaN output.
+
+    Unlike normalize_percentile, this produces the same score for the same
+    raw value regardless of which territory's hex set is being scored.
+    """
+    norm = ((series - lo) / (hi - lo)).clip(0, 1) * 100.0
+    if invert:
+        norm = 100.0 - norm
+    return norm.where(series.notna(), other=np.nan)
+
+
 # ── Full diagnostic pipeline ─────────────────────────────────────────────────
 
 def run_full_diagnostics(

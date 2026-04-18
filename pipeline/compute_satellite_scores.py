@@ -41,6 +41,8 @@ from scoring import (
     geometric_mean_score,
     run_full_diagnostics,
     generate_report,
+    load_goalposts,
+    score_with_goalposts,
 )
 
 CROSSWALK_PATH = os.path.join(OUTPUT_DIR, "h3_radio_crosswalk.parquet")
@@ -496,8 +498,14 @@ def compute_analysis(
     emit_diagnostics: bool = False,
     emit_legacy: bool = False,
     output_dir: str = OUTPUT_DIR,
+    mode: str = 'local',
+    goalposts: dict | None = None,
 ) -> pd.DataFrame:
-    """Compute a single composite analysis using PCA-validated geometric mean."""
+    """Compute a single composite analysis using PCA-validated geometric mean.
+
+    mode='local': percentile rank within this territory's hex set (default).
+    mode='comparable': fixed goalpost normalization — cross-territory comparable.
+    """
     analysis_id = analysis_def["id"]
     components = analysis_def["components"]
 
@@ -510,26 +518,48 @@ def compute_analysis(
     hex_data = join_to_h3(radio_data, crosswalk, areal_crosswalk)
     print(f"    H3 hexagons: {len(hex_data):,}")
 
-    # Normalize each component via percentile rank
+    # Normalize each component
+    gp_indicators = goalposts.get('indicators', {}) if goalposts else {}
     for out_col, sql_col, _weight, invert in components:
         raw = hex_data[sql_col].astype(float)
-        if invert:
-            raw = -raw
-        hex_data[out_col] = normalize_percentile(raw)
+        if mode == 'comparable' and out_col in gp_indicators:
+            gp = gp_indicators[out_col]
+            hex_data[out_col] = score_with_goalposts(
+                raw, gp['lo'], gp['hi'], invert=gp.get('invert', invert)
+            )
+        else:
+            if invert:
+                raw = -raw
+            hex_data[out_col] = normalize_percentile(raw)
 
     comp_cols = [c[0] for c in components]
 
-    # ── PCA diagnostics + variable selection ─────────────────────────────
+    # ── PCA diagnostics (always run for audit) ───────────────────────────
     diagnostics = run_full_diagnostics(hex_data, comp_cols, corr_threshold=0.70)
-    retained = diagnostics["variable_selection"]["retained"]
-    dropped = diagnostics["variable_selection"]["dropped"]
 
     kmo = diagnostics["kmo_bartlett"].get("kmo_overall")
     if kmo is not None:
         print(f"    KMO: {kmo:.3f} {'OK' if kmo >= 0.60 else 'WARNING < 0.60'}")
-    if dropped:
-        print(f"    Dropped (|r|>0.70): {dropped}")
-    print(f"    Retained ({len(retained)}): {retained}")
+
+    # Variable selection: locked from goalposts in comparable mode
+    if mode == 'comparable' and goalposts:
+        locked = goalposts.get('pca_variable_selection', {}).get(analysis_id)
+        if locked:
+            retained = [c for c in locked if c in comp_cols]
+            dropped  = [c for c in comp_cols if c not in retained]
+            print(f"    [comparable] Locked selection ({len(retained)}): {retained}")
+            if dropped:
+                print(f"    [comparable] Excluded: {dropped}")
+        else:
+            retained = diagnostics["variable_selection"]["retained"]
+            dropped  = diagnostics["variable_selection"]["dropped"]
+            print(f"    [comparable] No lock found, using PCA selection: {retained}")
+    else:
+        retained = diagnostics["variable_selection"]["retained"]
+        dropped  = diagnostics["variable_selection"]["dropped"]
+        if dropped:
+            print(f"    Dropped (|r|>0.70): {dropped}")
+        print(f"    Retained ({len(retained)}): {retained}")
 
     # ── Geometric mean score (HDI-style, floor=1.0) ─────────────────────
     hex_data["score"] = geometric_mean_score(hex_data, retained, floor=1.0).round(1)
@@ -590,7 +620,16 @@ def main():
         "--legacy", action="store_true",
         help="Include score_legacy column (old weighted arithmetic mean) for validation"
     )
+    parser.add_argument(
+        "--mode", choices=["comparable", "local"], default="local",
+        help="comparable: fixed goalpost normalization (cross-territory). local: percentile rank within territory (default)."
+    )
     args = parser.parse_args()
+
+    goalposts = load_goalposts() if args.mode == "comparable" else None
+    if goalposts:
+        print(f"  Loaded goalposts v{goalposts.get('version', '?')} "
+              f"({goalposts.get('computed', '?')})")
 
     # These analyses have direct raster pipelines in process_raster_to_h3.py
     # (hex-level zonal stats over multi-band GEE exports). Keep their definitions
@@ -654,6 +693,8 @@ def main():
                 emit_diagnostics=args.diagnostics,
                 emit_legacy=args.legacy,
                 output_dir=args.output_dir,
+                mode=args.mode,
+                goalposts=goalposts,
             )
             out_path = os.path.join(args.output_dir, f"sat_{aid}.parquet")
             result.to_parquet(out_path, index=False)

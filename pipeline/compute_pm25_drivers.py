@@ -26,6 +26,7 @@ import numpy as np
 import pandas as pd
 
 from config import OUTPUT_DIR, get_territory
+from scoring import load_goalposts, score_with_goalposts
 
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, "sat_pm25_drivers.parquet")
 
@@ -66,7 +67,11 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--territory", default="misiones", help="Territory ID (default: misiones)")
+    parser.add_argument("--mode", choices=['comparable', 'local'], default='local',
+                        help="comparable: goalpost normalization (cross-territory). local: percentile rank (default).")
     args = parser.parse_args()
+
+    goalposts = load_goalposts() if args.mode == 'comparable' else None
 
     territory = get_territory(args.territory)
     t_prefix = territory['output_prefix']
@@ -99,9 +104,14 @@ def main():
           f"mean={pm25.pm25_current.mean():.2f}")
     print(f"  Delta: mean={pm25.pm25_delta.mean():.2f}")
 
-    # Percentile rank (higher PM2.5 = higher score = worse)
-    pm25['score'] = percentile_rank(pm25['pm25_current'])
-    pm25['score_baseline'] = percentile_rank(pm25['pm25_baseline'])
+    # Score: higher PM2.5 = higher score = worse exposure
+    if args.mode == 'comparable' and goalposts:
+        gp = goalposts['indicators'].get('c_pm25_mean', {'lo': 5, 'hi': 30})
+        pm25['score'] = score_with_goalposts(pm25['pm25_current'], gp['lo'], gp['hi']).round(1)
+        pm25['score_baseline'] = score_with_goalposts(pm25['pm25_baseline'], gp['lo'], gp['hi']).round(1)
+    else:
+        pm25['score'] = percentile_rank(pm25['pm25_current'])
+        pm25['score_baseline'] = percentile_rank(pm25['pm25_baseline'])
     pm25['delta_score'] = (pm25['score'] - pm25['score_baseline']).round(1)
 
     # Raw values for display
@@ -161,9 +171,11 @@ def main():
     print("\nMerging...")
     result = pm25.merge(res9_shap, on='h3index', how='left' if not has_shap else 'inner')
 
-    # Quintile typology on current score
+    # Typology on current score — absolute quintiles on 0-100 scale
     result = result.dropna(subset=['score'])
-    result['type'] = pd.qcut(result['score'], 5, labels=[1, 2, 3, 4, 5]).astype(int)
+    bins = [0, 20, 40, 60, 80, 100]
+    result['type'] = pd.cut(result['score'], bins=bins, labels=[1, 2, 3, 4, 5],
+                            include_lowest=True).astype(int)
     result['type_label'] = result['type'].map(QUINTILE_LABELS)
 
     # Select final columns

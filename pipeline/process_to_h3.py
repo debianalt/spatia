@@ -28,7 +28,7 @@ import pandas as pd
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
-from scoring import geometric_mean_score, run_full_diagnostics, generate_report
+from scoring import geometric_mean_score, run_full_diagnostics, generate_report, score_with_goalposts
 
 try:
     import rasterio
@@ -155,34 +155,28 @@ def compute_flood_risk_score(jrc_occurrence: pd.Series, jrc_recurrence: pd.Serie
                              emit_diagnostics: bool = False,
                              output_dir: str = None) -> pd.Series:
     """
-    Composite flood risk score (0–100) via PCA-validated geometric mean.
+    Composite flood risk score (0–100) via goalpost-normalized geometric mean.
 
-    Combines JRC Global Surface Water (1984–2021) historical data with
+    Combines JRC Global Surface Water v1.4 (1984–2021) historical data with
     Sentinel-1 SAR current flood extent.
 
-    Methodology: percentile-rank each component, run PCA diagnostics,
-    select non-redundant variables (|r| < 0.70), compute geometric mean
-    with floor=1.0 (HDI-style, partially compensatory).
+    Methodology: Tier 1 goalpost normalization (JRC occurrence/recurrence and
+    S1 extent are all 0–100% physical scales — no reference population needed).
+    Geometric mean with floor=1.0 (HDI-style, partially compensatory).
+    All three components retained: they measure distinct phenomena (historical
+    presence, inter-annual recurrence, current extent).
     """
     df = pd.DataFrame({
-        "c_occurrence": normalize_percentile(jrc_occurrence),
-        "c_recurrence": normalize_percentile(jrc_recurrence),
-        "c_extent": normalize_percentile(s1_extent),
+        "c_occurrence": score_with_goalposts(jrc_occurrence, lo=0, hi=100),
+        "c_recurrence": score_with_goalposts(jrc_recurrence, lo=0, hi=100),
+        "c_extent":     score_with_goalposts(s1_extent,      lo=0, hi=100),
     })
 
-    comp_cols = ["c_occurrence", "c_recurrence", "c_extent"]
-    diagnostics = run_full_diagnostics(df, comp_cols, corr_threshold=0.70)
-    retained = diagnostics["variable_selection"]["retained"]
-    dropped = diagnostics["variable_selection"]["dropped"]
-
-    kmo = diagnostics["kmo_bartlett"].get("kmo_overall")
-    if kmo is not None:
-        print(f"    Flood KMO: {kmo:.3f}")
-    if dropped:
-        print(f"    Flood dropped (|r|>0.70): {dropped}")
-    print(f"    Flood retained ({len(retained)}): {retained}")
+    retained = ["c_occurrence", "c_recurrence", "c_extent"]
+    print(f"    Flood scoring: goalpost Tier 1 (physical 0–100%), all 3 components retained")
 
     if emit_diagnostics and output_dir:
+        diagnostics = run_full_diagnostics(df, retained, corr_threshold=0.70)
         generate_report("flood_risk", diagnostics, output_dir=output_dir)
 
     score = geometric_mean_score(df, retained, floor=1.0)

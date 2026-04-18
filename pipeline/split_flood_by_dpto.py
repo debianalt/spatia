@@ -156,7 +156,8 @@ def main():
 
     for dpto in dptos:
         subset = flood_assigned[flood_assigned["dpto"] == dpto]
-        hex_data = subset[FLOOD_COLS].drop_duplicates("h3index").reset_index(drop=True)
+        avail_cols = [c for c in FLOOD_COLS if c in subset.columns]
+        hex_data = subset[avail_cols].drop_duplicates("h3index").reset_index(drop=True)
 
         # Safe filename
         safe_name = dpto.lower().replace(" ", "_").replace("á", "a").replace("é", "e") \

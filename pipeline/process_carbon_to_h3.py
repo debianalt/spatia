@@ -39,6 +39,7 @@ from sklearn.preprocessing import StandardScaler
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
 from config import OUTPUT_DIR, get_territory
+from scoring import load_goalposts, score_with_goalposts
 
 HEXAGONS_PATH = os.path.join(OUTPUT_DIR, "hexagons-lite.geojson")
 RASTER_PATH = os.path.join(OUTPUT_DIR, "sat_carbon_stock_raster.tif")
@@ -100,7 +101,11 @@ def main():
     parser.add_argument("--carbon-price", type=float, default=DEFAULT_CARBON_PRICE,
                         help=f"Carbon price in USD/tCO2e (default: {DEFAULT_CARBON_PRICE})")
     parser.add_argument("--k-range", default="4,6", help="k-means range")
+    parser.add_argument("--mode", choices=['comparable', 'local'], default='local',
+                        help="comparable: goalpost normalization. local: percentile rank (default).")
     args = parser.parse_args()
+
+    goalposts = load_goalposts() if args.mode == 'comparable' else None
 
     territory = get_territory(args.territory)
     t_prefix = territory['output_prefix']
@@ -211,11 +216,17 @@ def main():
         ('c_npp_raw',           'c_npp',            False),
     ]
 
+    gp_indicators = goalposts['indicators'] if goalposts else {}
     for raw_col, score_col, invert in score_vars:
         raw = df[raw_col].astype(float)
-        if invert:
-            raw = -raw
-        df[score_col] = percentile_rank(raw).round(1)
+        if args.mode == 'comparable' and score_col in gp_indicators:
+            gp = gp_indicators[score_col]
+            # Carbon stock: higher = more carbon = higher score — always invert=False here
+            df[score_col] = score_with_goalposts(raw, gp['lo'], gp['hi'], invert=False).round(1)
+        else:
+            if invert:
+                raw = -raw
+            df[score_col] = percentile_rank(raw).round(1)
 
     # Overall score: geometric mean of key carbon dimensions
     key_cols = ['c_total_carbon', 'c_npp', 'c_agb_cci']

@@ -17,11 +17,13 @@ Usage:
   python pipeline/compute_productive_activity.py
 """
 
+import argparse
 import os
 import time
 import numpy as np
 import pandas as pd
 from config import OUTPUT_DIR
+from scoring import load_goalposts, score_with_goalposts
 
 RADIO_DATA = os.path.join(OUTPUT_DIR, "radio_data")
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, "sat_productive_activity.parquet")
@@ -56,6 +58,13 @@ def aggregate_to_h3(radio_df, cols, xw):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Compute productive activity layer")
+    parser.add_argument("--mode", choices=['comparable', 'local'], default='local',
+                        help="comparable: goalpost normalization. local: percentile rank (default).")
+    args = parser.parse_args()
+
+    goalposts = load_goalposts() if args.mode == 'comparable' else None
+
     t0 = time.time()
     xw = pd.read_parquet(os.path.join(OUTPUT_DIR, "h3_radio_crosswalk_areal.parquet"))
 
@@ -159,9 +168,14 @@ def main():
         result[f'{name}_baseline'] = h3_data[bl].round(3) if bl in h3_data else 0
         result[f'{name}_delta'] = (result[name] - result[f'{name}_baseline']).round(3)
 
-    # Score = VIIRS percentile (primary choropleth variable)
-    result['score'] = pctile(result['c_viirs'])
-    result['score_baseline'] = pctile(result['c_viirs_baseline'])
+    # Score = VIIRS (higher = more activity)
+    if args.mode == 'comparable' and goalposts:
+        gp = goalposts['indicators'].get('c_viirs', {'lo': 0, 'hi': 15})
+        result['score'] = score_with_goalposts(result['c_viirs'], gp['lo'], gp['hi']).round(1)
+        result['score_baseline'] = score_with_goalposts(result['c_viirs_baseline'], gp['lo'], gp['hi']).round(1)
+    else:
+        result['score'] = pctile(result['c_viirs'])
+        result['score_baseline'] = pctile(result['c_viirs_baseline'])
     result['delta_score'] = (result['score'] - result['score_baseline']).round(1)
 
     # Type = quintile of VIIRS

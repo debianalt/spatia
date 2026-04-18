@@ -14,6 +14,7 @@ Usage:
   python pipeline/compute_deforestation_layer.py
 """
 
+import argparse
 import os
 import sys
 import time
@@ -23,6 +24,7 @@ import pandas as pd
 import psycopg2
 
 from config import OUTPUT_DIR
+from scoring import load_goalposts, score_with_goalposts
 
 DB = dict(dbname='ndvi_misiones', host='localhost', user='postgres', password='')
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, "sat_deforestation_dynamics.parquet")
@@ -40,6 +42,13 @@ def percentile_rank(series):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Compute deforestation dynamics layer")
+    parser.add_argument("--mode", choices=['comparable', 'local'], default='local',
+                        help="comparable: goalpost normalization. local: percentile rank (default).")
+    args = parser.parse_args()
+
+    goalposts = load_goalposts() if args.mode == 'comparable' else None
+
     t0 = time.time()
     conn = psycopg2.connect(**DB)
 
@@ -87,10 +96,15 @@ def main():
                 vals = shap.groupby('redcode')[cols].apply(lambda g: g.abs().sum(axis=1).mean())
                 radio = radio.merge(vals.rename(name).reset_index(), on='redcode', how='left')
 
-    # --- Percentile scores ------------------------------------------------
-    # Score = current loss rate percentiled (higher = more deforestation)
-    radio['score'] = percentile_rank(radio['loss_current'])
-    radio['score_baseline'] = percentile_rank(radio['loss_baseline'])
+    # --- Scores (higher = more deforestation) ----------------------------
+    # c_loss_rate is computed below; use loss_current * 100 (%/yr) here
+    if args.mode == 'comparable' and goalposts:
+        gp = goalposts['indicators'].get('c_loss_rate', {'lo': 0, 'hi': 5})
+        radio['score'] = score_with_goalposts(radio['loss_current'] * 100, gp['lo'], gp['hi']).round(1)
+        radio['score_baseline'] = score_with_goalposts(radio['loss_baseline'] * 100, gp['lo'], gp['hi']).round(1)
+    else:
+        radio['score'] = percentile_rank(radio['loss_current'])
+        radio['score_baseline'] = percentile_rank(radio['loss_baseline'])
     radio['delta_score'] = (radio['score'] - radio['score_baseline']).round(1)
 
     # Raw values for display (convert to %/yr)
@@ -104,12 +118,9 @@ def main():
         if col in radio.columns:
             radio[f'c_{col.replace("shap_", "")}'] = percentile_rank(radio[col])
 
-    # Type labels
-    try:
-        radio['type'] = pd.qcut(radio['score'], 4, labels=[1, 2, 3, 4]).astype(int)
-    except ValueError:
-        radio['type'] = pd.cut(radio['score'], bins=[0, 25, 50, 75, 100],
-                                labels=[1, 2, 3, 4], include_lowest=True).astype(int)
+    # Type labels — absolute quartile intervals on 0-100 scale
+    radio['type'] = pd.cut(radio['score'], bins=[0, 25, 50, 75, 100],
+                            labels=[1, 2, 3, 4], include_lowest=True).astype(int)
     type_labels = {1: 'Baja presion', 2: 'Presion moderada',
                    3: 'Alta presion', 4: 'Presion critica'}
     radio['type_label'] = radio['type'].map(type_labels)
