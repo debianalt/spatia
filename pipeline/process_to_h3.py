@@ -258,7 +258,8 @@ def main():
         df = pd.DataFrame({
             "h3index": gdf["h3index"],
             "jrc_occurrence": occurrence.round(2),
-            "flood_recurrence_mean": recurrence.round(4),
+            "jrc_recurrence": recurrence.round(2),
+            "jrc_seasonality": pd.Series(0.0, index=gdf.index),
             "flood_extent_pct": (extent * 100).round(2),
             "flood_risk_score": score,
         })

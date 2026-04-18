@@ -44,7 +44,7 @@ export const TERRAIN_CONFIG = {
 
 export function getParquetUrl(name: string): string {
 	const busts: Record<string, string> = {
-		hex_flood_risk: '?v=26',
+		hex_flood_risk: '?v=27',
 		sat_environmental_risk: '?v=28',
 		sat_climate_comfort: '?v=28',
 		sat_green_capital: '?v=27',

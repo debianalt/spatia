@@ -50,7 +50,7 @@ def find_local_geotiffs(directory=None):
             files["jrc_recurrence"] = f
         elif "jrc_seasonality" in name:
             files["jrc_seasonality"] = f
-        elif "current" in name:
+        elif name.startswith("flood_current") or name.startswith("sentinel1_flood"):
             files["current"] = f
         elif "recurrence" in name:
             files["recurrence"] = f
