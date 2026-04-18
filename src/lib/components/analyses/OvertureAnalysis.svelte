@@ -116,8 +116,8 @@
 	function getScoreColor(score: number): string {
 		if (isCategorical) return getTypeColor(Math.round(score));
 		if (colorScale === 'flood') {
-			if (score >= 70) return '#dc2626';
-			if (score >= 40) return '#eab308';
+			if (score >= 10) return '#dc2626';
+			if (score >= 4)  return '#eab308';
 			return '#3b82f6';
 		}
 		if (colorScale === 'green') {
@@ -137,6 +137,12 @@
 	}
 
 	function getScoreLevel(score: number): string {
+		if (colorScale === 'flood') {
+			if (score >= 10) return i18n.t('legend.high');
+			if (score >= 4)  return i18n.t('legend.medium');
+			if (score >= 2)  return i18n.t('legend.low');
+			return i18n.t('legend.veryLow');
+		}
 		if (score >= 70) return i18n.t('legend.high');
 		if (score >= 40) return i18n.t('legend.medium');
 		if (score >= 20) return i18n.t('legend.low');
