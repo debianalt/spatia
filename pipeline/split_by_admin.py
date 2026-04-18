@@ -118,6 +118,9 @@ def main():
     parser.add_argument("--territory", default="misiones",
                         help="Territory ID from config.py (default: misiones)")
     parser.add_argument("--only", default=None, help="Comma-separated analysis IDs")
+    parser.add_argument("--fill-missing", dest="fill_missing", action="store_true", default=None,
+                        help="Fill hexes missing from analysis with score=0 (default: True for non-Misiones)")
+    parser.add_argument("--no-fill-missing", dest="fill_missing", action="store_false")
     args = parser.parse_args()
 
     territory = get_territory(args.territory)
@@ -157,11 +160,21 @@ def main():
     print(f"  Analyses: {len(analyses)}")
     print("=" * 60)
 
+    # Default fill_missing: True for non-Misiones territories
+    fill_missing = args.fill_missing if args.fill_missing is not None else (t_id != 'misiones')
+
     # Build lookup once
     if t_id == 'misiones':
         h3_admin = build_crosswalk_misiones()
     else:
         h3_admin = build_crosswalk_territory(territory)
+
+    # Full hex DataFrame for fill-missing mode
+    if fill_missing:
+        full_hexes = pd.DataFrame({
+            'h3index': list(h3_admin.keys()),
+            admin_col: list(h3_admin.values()),
+        })
 
     # Process each analysis
     for analysis_id in analyses:
@@ -172,10 +185,24 @@ def main():
 
         print(f"\nSplitting {analysis_id}...")
         df = pd.read_parquet(parquet_path)
-        df[admin_col] = df["h3index"].map(h3_admin)
 
-        no_admin = df[admin_col].isna().sum()
-        df_assigned = df.dropna(subset=[admin_col])
+        if fill_missing:
+            # Left-join from full crosswalk: every territory hex gets a row
+            df = full_hexes.merge(df.drop(columns=[admin_col], errors='ignore'),
+                                  on='h3index', how='left')
+            for col in df.columns:
+                if col in ('h3index', admin_col):
+                    continue
+                if df[col].dtype == object:
+                    df[col] = df[col].fillna('')
+                else:
+                    df[col] = df[col].fillna(0)
+            no_admin = 0
+            df_assigned = df
+        else:
+            df[admin_col] = df["h3index"].map(h3_admin)
+            no_admin = df[admin_col].isna().sum()
+            df_assigned = df.dropna(subset=[admin_col])
 
         score_col = "score" if "score" in df.columns else "territorial_type"
         component_cols = [c for c in df.columns
