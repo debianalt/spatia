@@ -1071,7 +1071,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'invertir',
 		titleKey: 'sat.locValue.title',
 		descKey: 'sat.locValue.desc',
-		coverage: { itapua_py: 'available' },
+		coverage: { itapua_py: 'unavailable' },
 		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
