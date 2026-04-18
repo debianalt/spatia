@@ -42,6 +42,7 @@ const ITAPUA_SUMMARIES: Record<string, () => Promise<any>> = {
 	pm25_drivers:           () => import('$lib/data/itapua_py_sat_pm25_drivers_summary.json'),
 	productive_activity:    () => import('$lib/data/itapua_py_sat_productive_activity_summary.json'),
 	forestry_aptitude:      () => import('$lib/data/itapua_py_sat_forestry_aptitude_summary.json'),
+	land_use:               () => import('$lib/data/itapua_py_sat_land_use_summary.json'),
 	flood_risk:             () => import('$lib/data/itapua_py_flood_dept_summary.json'),
 };
 

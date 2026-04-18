@@ -116,10 +116,10 @@ export const ANALYSIS_CONTENT: Record<string, MethodologyContent> = {
 	},
 	land_use: {
 		howToRead:
-			'El mapa clasifica cada hexágono según su cobertura dominante: selva nativa, plantación forestal, pastizal, agricultura, agua o urbano. La fuente es MapBiomas Argentina (Landsat 30m, 2022) que distingue bosque nativo de silvicultura.',
+			'El mapa clasifica cada hexágono según su cobertura dominante: selva nativa, plantación forestal, pastizal, agricultura, agua, humedal o urbano. Misiones usa MapBiomas Argentina Col. 1 (Landsat 30m); Itapúa usa MapBiomas Paraguay Col. 1. Misma metodología de clasificación en ambos territorios.',
 		implications:
-			'La separación entre selva nativa (73%) y plantación forestal (12%) permite evaluar el estado de conservación real: los pinares/eucaliptos no son selva paranaense aunque Dynamic World los clasifique igual. Los mosaicos agropecuarios indican zonas de transición activa.',
-		method: `${METHOD_COMMON} Fuente: MapBiomas Argentina Collection 1 (Landsat 30m, 2022). Clases remapeadas: bosque nativo, plantación, pastizal, agricultura, mosaico, humedal, urbano, agua. k=6 tipos, silueta=0.62.`,
+			'Misiones: selva nativa domina (~73% de hexes), con plantaciones forestales (~12%) y mosaicos agrícolas en el este y sur. Itapúa (PY): cultivos/soja (~40%) y pastizal natural (~14%) dominan, con selva nativa residual (~20%) concentrada en el norte y corredores riparios. La comparación revela el contraste entre la Selva Atlántica conservada y el frente agrícola paraguayo.',
+		method: `${METHOD_COMMON} Fuente: MapBiomas Argentina Collection 1 (Landsat 30m, 2022) para Misiones; MapBiomas Paraguay Collection 1 para Itapúa. Misiones: PCA + k=6 k-means sobre fracciones de cobertura por polígono H3 (silueta=0.62). Itapúa: muestreo centroide H3 + k=6 k-means (silueta=0.91). Clases unificadas: bosque nativo (incl. bosque inundable), plantación, pastizal, pastizal natural, agricultura, mosaico, humedal, urbano, agua, suelo desnudo.`,
 	},
 	powerline_density: {
 		howToRead:
