@@ -1,0 +1,617 @@
+{
+  "province": {
+    "total_hexes": 41751,
+    "avg_scores": {
+      "paving_index": 9.5,
+      "urban_consolidation": 3.5,
+      "service_access": 4.3,
+      "commercial_vitality": 3.6,
+      "road_connectivity": 4.0,
+      "building_mix": 0.3,
+      "urbanization": 3.4,
+      "water_exposure": 2.3
+    }
+  },
+  "departments": [
+    {
+      "distrito": "Encarnacion",
+      "parquetKey": "encarnacion",
+      "avg_scores": {
+        "paving_index": 27.3,
+        "urban_consolidation": 6.4,
+        "service_access": 20.3,
+        "commercial_vitality": 20.6,
+        "road_connectivity": 8.5,
+        "building_mix": 0.6,
+        "urbanization": 4.2,
+        "water_exposure": 4.4
+      },
+      "overall_score": 11.5,
+      "hex_count": 1747,
+      "centroid": [
+        -55.9002,
+        -27.2721
+      ]
+    },
+    {
+      "distrito": "Cambyreta",
+      "parquetKey": "cambyreta",
+      "avg_scores": {
+        "paving_index": 14.3,
+        "urban_consolidation": 5.0,
+        "service_access": 17.4,
+        "commercial_vitality": 15.2,
+        "road_connectivity": 9.2,
+        "building_mix": 0.1,
+        "urbanization": 4.2,
+        "water_exposure": 8.9
+      },
+      "overall_score": 9.3,
+      "hex_count": 1158,
+      "centroid": [
+        -55.7817,
+        -27.3525
+      ]
+    },
+    {
+      "distrito": "San Juan",
+      "parquetKey": "san_juan",
+      "avg_scores": {
+        "paving_index": 29.6,
+        "urban_consolidation": 6.0,
+        "service_access": 7.8,
+        "commercial_vitality": 7.7,
+        "road_connectivity": 9.2,
+        "building_mix": 0.0,
+        "urbanization": 4.2,
+        "water_exposure": 2.0
+      },
+      "overall_score": 8.3,
+      "hex_count": 306,
+      "centroid": [
+        -55.9837,
+        -27.2903
+      ]
+    },
+    {
+      "distrito": "Obligado",
+      "parquetKey": "obligado",
+      "avg_scores": {
+        "paving_index": 14.9,
+        "urban_consolidation": 5.2,
+        "service_access": 7.4,
+        "commercial_vitality": 6.7,
+        "road_connectivity": 5.2,
+        "building_mix": 1.5,
+        "urbanization": 3.4,
+        "water_exposure": 2.7
+      },
+      "overall_score": 5.9,
+      "hex_count": 1410,
+      "centroid": [
+        -55.6845,
+        -26.9542
+      ]
+    },
+    {
+      "distrito": "Carmen Del Parana",
+      "parquetKey": "carmen_del_parana",
+      "avg_scores": {
+        "paving_index": 18.9,
+        "urban_consolidation": 4.0,
+        "service_access": 5.8,
+        "commercial_vitality": 6.4,
+        "road_connectivity": 4.3,
+        "building_mix": 0.0,
+        "urbanization": 3.3,
+        "water_exposure": 3.3
+      },
+      "overall_score": 5.8,
+      "hex_count": 633,
+      "centroid": [
+        -56.0976,
+        -27.1926
+      ]
+    },
+    {
+      "distrito": "Hohenau",
+      "parquetKey": "hohenau",
+      "avg_scores": {
+        "paving_index": 9.1,
+        "urban_consolidation": 5.0,
+        "service_access": 8.9,
+        "commercial_vitality": 7.0,
+        "road_connectivity": 5.6,
+        "building_mix": 2.0,
+        "urbanization": 3.3,
+        "water_exposure": 5.9
+      },
+      "overall_score": 5.8,
+      "hex_count": 1025,
+      "centroid": [
+        -55.7183,
+        -27.0306
+      ]
+    },
+    {
+      "distrito": "Isla Yacyreta",
+      "parquetKey": "isla_yacyreta",
+      "avg_scores": {
+        "paving_index": 18.1,
+        "urban_consolidation": 3.4,
+        "service_access": 5.1,
+        "commercial_vitality": 7.1,
+        "road_connectivity": 4.5,
+        "building_mix": 0.2,
+        "urbanization": 2.7,
+        "water_exposure": 2.6
+      },
+      "overall_score": 5.5,
+      "hex_count": 425,
+      "centroid": [
+        -56.7405,
+        -27.41
+      ]
+    },
+    {
+      "distrito": "La Paz",
+      "parquetKey": "la_paz",
+      "avg_scores": {
+        "paving_index": 19.6,
+        "urban_consolidation": 4.1,
+        "service_access": 4.4,
+        "commercial_vitality": 3.6,
+        "road_connectivity": 4.7,
+        "building_mix": 0.0,
+        "urbanization": 3.2,
+        "water_exposure": 0.5
+      },
+      "overall_score": 5.0,
+      "hex_count": 563,
+      "centroid": [
+        -55.9082,
+        -26.9892
+      ]
+    },
+    {
+      "distrito": "Capitan Miranda",
+      "parquetKey": "capitan_miranda",
+      "avg_scores": {
+        "paving_index": 12.5,
+        "urban_consolidation": 3.8,
+        "service_access": 3.5,
+        "commercial_vitality": 5.5,
+        "road_connectivity": 4.2,
+        "building_mix": 0.0,
+        "urbanization": 3.8,
+        "water_exposure": 2.3
+      },
+      "overall_score": 4.5,
+      "hex_count": 873,
+      "centroid": [
+        -55.8239,
+        -27.196
+      ]
+    },
+    {
+      "distrito": "Coronel Bogado",
+      "parquetKey": "coronel_bogado",
+      "avg_scores": {
+        "paving_index": 10.0,
+        "urban_consolidation": 3.3,
+        "service_access": 6.3,
+        "commercial_vitality": 4.8,
+        "road_connectivity": 3.5,
+        "building_mix": 0.0,
+        "urbanization": 3.3,
+        "water_exposure": 2.3
+      },
+      "overall_score": 4.2,
+      "hex_count": 1534,
+      "centroid": [
+        -56.2852,
+        -27.1487
+      ]
+    },
+    {
+      "distrito": "Trinidad",
+      "parquetKey": "trinidad",
+      "avg_scores": {
+        "paving_index": 11.6,
+        "urban_consolidation": 4.2,
+        "service_access": 4.7,
+        "commercial_vitality": 4.4,
+        "road_connectivity": 3.7,
+        "building_mix": 0.9,
+        "urbanization": 3.2,
+        "water_exposure": 0.6
+      },
+      "overall_score": 4.2,
+      "hex_count": 797,
+      "centroid": [
+        -55.7407,
+        -27.1516
+      ]
+    },
+    {
+      "distrito": "Bella Vista",
+      "parquetKey": "bella_vista",
+      "avg_scores": {
+        "paving_index": 9.3,
+        "urban_consolidation": 3.0,
+        "service_access": 5.1,
+        "commercial_vitality": 5.6,
+        "road_connectivity": 3.8,
+        "building_mix": 0.5,
+        "urbanization": 3.2,
+        "water_exposure": 1.8
+      },
+      "overall_score": 4.0,
+      "hex_count": 1434,
+      "centroid": [
+        -55.5343,
+        -27.0222
+      ]
+    },
+    {
+      "distrito": "Leandro Oviedo",
+      "parquetKey": "leandro_oviedo",
+      "avg_scores": {
+        "paving_index": 13.0,
+        "urban_consolidation": 3.7,
+        "service_access": 1.2,
+        "commercial_vitality": 1.2,
+        "road_connectivity": 3.4,
+        "building_mix": 0.0,
+        "urbanization": 3.5,
+        "water_exposure": 5.9
+      },
+      "overall_score": 4.0,
+      "hex_count": 499,
+      "centroid": [
+        -56.2343,
+        -26.7499
+      ]
+    },
+    {
+      "distrito": "Tomas Romero P.",
+      "parquetKey": "tomas_romero_p.",
+      "avg_scores": {
+        "paving_index": 8.6,
+        "urban_consolidation": 4.8,
+        "service_access": 5.5,
+        "commercial_vitality": 3.2,
+        "road_connectivity": 4.0,
+        "building_mix": 1.3,
+        "urbanization": 3.7,
+        "water_exposure": 1.3
+      },
+      "overall_score": 4.0,
+      "hex_count": 2474,
+      "centroid": [
+        -55.2805,
+        -26.4854
+      ]
+    },
+    {
+      "distrito": "Gral. Delgado",
+      "parquetKey": "gral._delgado",
+      "avg_scores": {
+        "paving_index": 14.4,
+        "urban_consolidation": 3.5,
+        "service_access": 2.7,
+        "commercial_vitality": 2.0,
+        "road_connectivity": 3.6,
+        "building_mix": 0.0,
+        "urbanization": 3.2,
+        "water_exposure": 0.0
+      },
+      "overall_score": 3.7,
+      "hex_count": 962,
+      "centroid": [
+        -56.5427,
+        -27.1138
+      ]
+    },
+    {
+      "distrito": "Natalio",
+      "parquetKey": "natalio",
+      "avg_scores": {
+        "paving_index": 14.3,
+        "urban_consolidation": 3.5,
+        "service_access": 2.2,
+        "commercial_vitality": 1.9,
+        "road_connectivity": 3.2,
+        "building_mix": 0.0,
+        "urbanization": 3.2,
+        "water_exposure": 1.5
+      },
+      "overall_score": 3.7,
+      "hex_count": 1723,
+      "centroid": [
+        -55.1393,
+        -26.7666
+      ]
+    },
+    {
+      "distrito": "San Cosme Y Damian",
+      "parquetKey": "san_cosme_y_damian",
+      "avg_scores": {
+        "paving_index": 12.9,
+        "urban_consolidation": 3.3,
+        "service_access": 2.3,
+        "commercial_vitality": 2.1,
+        "road_connectivity": 3.6,
+        "building_mix": 0.0,
+        "urbanization": 3.1,
+        "water_exposure": 1.4
+      },
+      "overall_score": 3.6,
+      "hex_count": 983,
+      "centroid": [
+        -56.4195,
+        -27.2588
+      ]
+    },
+    {
+      "distrito": "Fram",
+      "parquetKey": "fram",
+      "avg_scores": {
+        "paving_index": 8.3,
+        "urban_consolidation": 2.9,
+        "service_access": 3.7,
+        "commercial_vitality": 2.9,
+        "road_connectivity": 3.0,
+        "building_mix": 0.0,
+        "urbanization": 4.1,
+        "water_exposure": 3.1
+      },
+      "overall_score": 3.5,
+      "hex_count": 1217,
+      "centroid": [
+        -56.0163,
+        -27.0817
+      ]
+    },
+    {
+      "distrito": "Pirapo",
+      "parquetKey": "pirapo",
+      "avg_scores": {
+        "paving_index": 12.3,
+        "urban_consolidation": 3.2,
+        "service_access": 2.5,
+        "commercial_vitality": 1.8,
+        "road_connectivity": 3.7,
+        "building_mix": 0.1,
+        "urbanization": 3.3,
+        "water_exposure": 0.9
+      },
+      "overall_score": 3.5,
+      "hex_count": 1452,
+      "centroid": [
+        -55.5286,
+        -26.8698
+      ]
+    },
+    {
+      "distrito": "Capitan Meza",
+      "parquetKey": "capitan_meza",
+      "avg_scores": {
+        "paving_index": 9.2,
+        "urban_consolidation": 3.2,
+        "service_access": 2.9,
+        "commercial_vitality": 1.5,
+        "road_connectivity": 3.8,
+        "building_mix": 0.2,
+        "urbanization": 3.3,
+        "water_exposure": 1.7
+      },
+      "overall_score": 3.2,
+      "hex_count": 2643,
+      "centroid": [
+        -55.3561,
+        -26.7821
+      ]
+    },
+    {
+      "distrito": "Jesus",
+      "parquetKey": "jesus",
+      "avg_scores": {
+        "paving_index": 5.3,
+        "urban_consolidation": 3.1,
+        "service_access": 3.8,
+        "commercial_vitality": 2.8,
+        "road_connectivity": 4.6,
+        "building_mix": 0.0,
+        "urbanization": 3.2,
+        "water_exposure": 2.6
+      },
+      "overall_score": 3.2,
+      "hex_count": 514,
+      "centroid": [
+        -55.7716,
+        -27.0618
+      ]
+    },
+    {
+      "distrito": "Nueva Alborada",
+      "parquetKey": "nueva_alborada",
+      "avg_scores": {
+        "paving_index": 9.1,
+        "urban_consolidation": 3.3,
+        "service_access": 1.3,
+        "commercial_vitality": 1.2,
+        "road_connectivity": 3.2,
+        "building_mix": 0.0,
+        "urbanization": 3.4,
+        "water_exposure": 3.0
+      },
+      "overall_score": 3.1,
+      "hex_count": 1046,
+      "centroid": [
+        -55.6643,
+        -27.281
+      ]
+    },
+    {
+      "distrito": "Yatytay",
+      "parquetKey": "yatytay",
+      "avg_scores": {
+        "paving_index": 8.0,
+        "urban_consolidation": 3.3,
+        "service_access": 2.7,
+        "commercial_vitality": 1.5,
+        "road_connectivity": 3.0,
+        "building_mix": 0.0,
+        "urbanization": 3.5,
+        "water_exposure": 1.2
+      },
+      "overall_score": 2.9,
+      "hex_count": 1320,
+      "centroid": [
+        -55.0674,
+        -26.6808
+      ]
+    },
+    {
+      "distrito": "Gral Artigas",
+      "parquetKey": "gral_artigas",
+      "avg_scores": {
+        "paving_index": 1.6,
+        "urban_consolidation": 2.3,
+        "service_access": 2.7,
+        "commercial_vitality": 1.5,
+        "road_connectivity": 2.8,
+        "building_mix": 0.0,
+        "urbanization": 2.9,
+        "water_exposure": 7.6
+      },
+      "overall_score": 2.7,
+      "hex_count": 1907,
+      "centroid": [
+        -56.2621,
+        -26.9421
+      ]
+    },
+    {
+      "distrito": "San Pedro Del Parana",
+      "parquetKey": "san_pedro_del_parana",
+      "avg_scores": {
+        "paving_index": 7.8,
+        "urban_consolidation": 3.2,
+        "service_access": 1.6,
+        "commercial_vitality": 1.1,
+        "road_connectivity": 3.3,
+        "building_mix": 0.0,
+        "urbanization": 3.2,
+        "water_exposure": 0.2
+      },
+      "overall_score": 2.5,
+      "hex_count": 2966,
+      "centroid": [
+        -56.03,
+        -26.7698
+      ]
+    },
+    {
+      "distrito": "Edelira",
+      "parquetKey": "edelira",
+      "avg_scores": {
+        "paving_index": 3.8,
+        "urban_consolidation": 3.0,
+        "service_access": 2.0,
+        "commercial_vitality": 1.2,
+        "road_connectivity": 3.6,
+        "building_mix": 0.0,
+        "urbanization": 3.7,
+        "water_exposure": 1.0
+      },
+      "overall_score": 2.3,
+      "hex_count": 2626,
+      "centroid": [
+        -55.3885,
+        -26.5915
+      ]
+    },
+    {
+      "distrito": "San Rafael Del Parana",
+      "parquetKey": "san_rafael_del_parana",
+      "avg_scores": {
+        "paving_index": 4.2,
+        "urban_consolidation": 2.4,
+        "service_access": 1.6,
+        "commercial_vitality": 1.0,
+        "road_connectivity": 3.2,
+        "building_mix": 0.0,
+        "urbanization": 3.0,
+        "water_exposure": 2.1
+      },
+      "overall_score": 2.2,
+      "hex_count": 3454,
+      "centroid": [
+        -55.0692,
+        -26.4906
+      ]
+    },
+    {
+      "distrito": "Carlos A Lopez",
+      "parquetKey": "carlos_a_lopez",
+      "avg_scores": {
+        "paving_index": 2.8,
+        "urban_consolidation": 2.5,
+        "service_access": 1.3,
+        "commercial_vitality": 1.7,
+        "road_connectivity": 3.7,
+        "building_mix": 0.0,
+        "urbanization": 3.4,
+        "water_exposure": 0.8
+      },
+      "overall_score": 2.0,
+      "hex_count": 1258,
+      "centroid": [
+        -54.8907,
+        -26.3895
+      ]
+    },
+    {
+      "distrito": "Alto Vera",
+      "parquetKey": "alto_vera",
+      "avg_scores": {
+        "paving_index": 1.6,
+        "urban_consolidation": 2.5,
+        "service_access": 0.4,
+        "commercial_vitality": 0.3,
+        "road_connectivity": 2.9,
+        "building_mix": 0.0,
+        "urbanization": 3.3,
+        "water_exposure": 0.9
+      },
+      "overall_score": 1.5,
+      "hex_count": 2801,
+      "centroid": [
+        -55.7273,
+        -26.631
+      ]
+    },
+    {
+      "distrito": "Isla",
+      "parquetKey": "isla",
+      "avg_scores": {
+        "paving_index": 0.0,
+        "urban_consolidation": 1.0,
+        "service_access": 0.0,
+        "commercial_vitality": 0.8,
+        "road_connectivity": 1.0,
+        "building_mix": 0.0,
+        "urbanization": 1.0,
+        "water_exposure": 0.0
+      },
+      "overall_score": 0.5,
+      "hex_count": 1,
+      "centroid": [
+        -56.4074,
+        -27.5456
+      ]
+    }
+  ]
+}

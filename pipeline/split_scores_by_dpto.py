@@ -1,16 +1,22 @@
 """
 Split overture_scores.parquet into per-department parquets + summary JSON.
 
-Uses the same spatial assignment logic as split_flood_by_dpto.py:
-dissolves radio geometries into department polygons, then assigns each
-hex centroid to a department via point-in-polygon.
-
 Usage:
-  python pipeline/split_scores_by_dpto.py
+  python pipeline/split_scores_by_dpto.py                   # Misiones
+  python pipeline/split_scores_by_dpto.py --territory itapua_py
 
-Output:
+For Misiones: dissolves radio geometries into department polygons, assigns
+each hex centroid to a department via point-in-polygon.
+
+For Itapúa: uses h3_admin_crosswalk.parquet (already has distrito column).
+
+Output (Misiones):
   pipeline/output/scores_dpto/overture_scores_{DPTO}.parquet  (x17)
   src/lib/data/scores_dept_summary.json
+
+Output (Itapúa):
+  pipeline/output/itapua_py/scores_dpto/overture_scores_{distrito}.parquet
+  src/lib/data/itapua_py_scores_dept_summary.json
 """
 
 import json
@@ -24,13 +30,11 @@ from shapely.geometry import Point
 from shapely.ops import unary_union
 from shapely.prepared import prep
 
-from config import OUTPUT_DIR
+from config import OUTPUT_DIR, get_territory
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DPTO_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "scores_dpto")
 SRC_DATA_DIR = os.path.join(SCRIPT_DIR, "..", "src", "lib", "data")
 
-SCORES_PATH = os.path.join(OUTPUT_DIR, "overture_scores.parquet")
 RADIOS_PATH = os.path.join(OUTPUT_DIR, "radios_misiones.parquet")
 RADIO_STATS_PATH = os.path.join(OUTPUT_DIR, "radio_stats_master.parquet")
 
@@ -145,54 +149,38 @@ def safe_filename(dpto: str) -> str:
             .replace("ü", "u"))
 
 
-def main():
-    t0 = time.time()
+def assign_hexes_itapua(scores: pd.DataFrame, crosswalk_path: str) -> pd.DataFrame:
+    """Assign each hex to a distrito using the prebuilt crosswalk parquet."""
+    print("Assigning hexes to distritos via crosswalk...")
+    crosswalk = pd.read_parquet(crosswalk_path, columns=["h3index", "distrito"])
+    scores = scores.merge(crosswalk, on="h3index", how="left")
+    no_match = scores["distrito"].isna().sum()
+    print(f"  Matched: {len(scores) - no_match:,}/{len(scores):,}, unmatched: {no_match:,}")
+    return scores
 
-    if not os.path.exists(SCORES_PATH):
-        print(f"ERROR: Missing scores parquet: {SCORES_PATH}")
-        print("Run `python pipeline/compute_overture_scores.py` first.")
-        return 1
 
-    os.makedirs(DPTO_OUTPUT_DIR, exist_ok=True)
+def split_and_save(scores: pd.DataFrame, admin_col: str, output_dir: str,
+                   summary_path: str, dpto_key: str) -> int:
+    """Split scores by admin_col, save per-unit parquets, write summary JSON."""
+    os.makedirs(output_dir, exist_ok=True)
 
-    print("=" * 60)
-    print("  Split Overture Scores by Department")
-    print("=" * 60)
+    prov_avgs = {col: round(float(scores[col].mean()), 1) for col in SCORE_COLS}
 
-    print("\nLoading scores data...")
-    scores = pd.read_parquet(SCORES_PATH)
-    all_cols = ["h3index"] + META_COLS + SCORE_COLS + COMPONENT_COLS
-    scores = scores[[c for c in all_cols if c in scores.columns]]
-    print(f"  {len(scores):,} hexes loaded")
-
-    dept_polys = build_dept_polygons()
-    scores = assign_hexes_to_depts(scores, dept_polys)
-
-    no_dpto = scores["dpto"].isna().sum()
-    print(f"  Unassigned hexes: {no_dpto}")
-    scores_assigned = scores.dropna(subset=["dpto"])
-
-    # Province-wide averages
-    prov_avgs = {}
-    for col in SCORE_COLS:
-        prov_avgs[col] = round(float(scores[col].mean()), 1)
-
-    dptos = sorted(scores_assigned["dpto"].unique())
-    print(f"\nSplitting into {len(dptos)} departments...")
+    units = sorted(scores[admin_col].dropna().unique())
+    print(f"\nSplitting into {len(units)} units...")
 
     summary = []
     output_cols = ["h3index"] + META_COLS + SCORE_COLS + COMPONENT_COLS
 
-    for dpto in dptos:
-        subset = scores_assigned[scores_assigned["dpto"] == dpto]
+    for unit in units:
+        subset = scores[scores[admin_col] == unit]
         hex_data = subset[[c for c in output_cols if c in subset.columns]].drop_duplicates("h3index").reset_index(drop=True)
 
-        safe_name = safe_filename(dpto)
-        parquet_path = os.path.join(DPTO_OUTPUT_DIR, f"overture_scores_{safe_name}.parquet")
+        safe_name = safe_filename(unit)
+        parquet_path = os.path.join(output_dir, f"overture_scores_{safe_name}.parquet")
         hex_data.to_parquet(parquet_path, index=False)
         size_kb = os.path.getsize(parquet_path) / 1024
 
-        # Compute centroid
         lats, lngs = [], []
         for h3idx in hex_data["h3index"]:
             try:
@@ -201,44 +189,82 @@ def main():
                 lngs.append(lng)
             except Exception:
                 pass
-
         centroid = [round(sum(lngs) / len(lngs), 4), round(sum(lats) / len(lats), 4)] if lats else [0, 0]
 
-        avg_scores = {}
-        for col in SCORE_COLS:
-            avg_scores[col] = round(float(hex_data[col].mean()), 1)
-
-        # Overall average of all 8 scores
+        avg_scores = {col: round(float(hex_data[col].mean()), 1) for col in SCORE_COLS}
         overall = round(sum(avg_scores.values()) / len(SCORE_COLS), 1)
 
         summary.append({
-            "dpto": dpto,
+            dpto_key: unit,
             "parquetKey": safe_name,
             "avg_scores": avg_scores,
             "overall_score": overall,
             "hex_count": len(hex_data),
             "centroid": centroid,
         })
-
-        print(f"  {dpto}: {len(hex_data):,} hexes, {size_kb:.0f}KB, overall={overall}")
+        print(f"  {unit}: {len(hex_data):,} hexes, {size_kb:.0f}KB, overall={overall}")
 
     summary_data = {
-        "province": {
-            "total_hexes": len(scores),
-            "avg_scores": prov_avgs,
-        },
+        "province": {"total_hexes": len(scores), "avg_scores": prov_avgs},
         "departments": sorted(summary, key=lambda d: d["overall_score"], reverse=True),
     }
-
     os.makedirs(SRC_DATA_DIR, exist_ok=True)
-    summary_path = os.path.join(SRC_DATA_DIR, "scores_dept_summary.json")
     with open(summary_path, "w", encoding="utf-8") as f:
         json.dump(summary_data, f, ensure_ascii=False, indent=2)
+
+    return len(units)
+
+
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Split Overture scores by department")
+    parser.add_argument("--territory", default="misiones", help="Territory ID (default: misiones)")
+    args = parser.parse_args()
+
+    t0 = time.time()
+
+    territory = get_territory(args.territory)
+    out_prefix = territory['output_prefix'].rstrip('/')
+    t_dir = os.path.join(OUTPUT_DIR, out_prefix) if out_prefix else OUTPUT_DIR
+
+    scores_path = os.path.join(t_dir, "overture_scores.parquet")
+    dpto_output_dir = os.path.join(t_dir, "scores_dpto")
+
+    if not os.path.exists(scores_path):
+        print(f"ERROR: Missing scores parquet: {scores_path}")
+        print("Run `python pipeline/compute_overture_scores.py` first.")
+        return 1
+
+    print("=" * 60)
+    print(f"  Split Overture Scores by Department — {args.territory}")
+    print("=" * 60)
+
+    print("\nLoading scores data...")
+    scores = pd.read_parquet(scores_path)
+    all_cols = ["h3index"] + META_COLS + SCORE_COLS + COMPONENT_COLS
+    scores = scores[[c for c in all_cols if c in scores.columns]]
+    print(f"  {len(scores):,} hexes loaded")
+
+    if args.territory == "misiones":
+        dept_polys = build_dept_polygons()
+        scores = assign_hexes_to_depts(scores, dept_polys)
+        scores_assigned = scores.dropna(subset=["dpto"])
+        summary_path = os.path.join(SRC_DATA_DIR, "scores_dept_summary.json")
+        n_units = split_and_save(scores_assigned, "dpto", dpto_output_dir, summary_path, "dpto")
+    else:
+        crosswalk_path = os.path.join(t_dir, "h3_admin_crosswalk.parquet")
+        if not os.path.exists(crosswalk_path):
+            print(f"ERROR: Missing crosswalk: {crosswalk_path}")
+            return 1
+        scores = assign_hexes_itapua(scores, crosswalk_path)
+        scores_assigned = scores.dropna(subset=["distrito"])
+        summary_path = os.path.join(SRC_DATA_DIR, f"{args.territory}_scores_dept_summary.json")
+        n_units = split_and_save(scores_assigned, "distrito", dpto_output_dir, summary_path, "distrito")
 
     elapsed = time.time() - t0
     print(f"\n{'=' * 60}")
     print(f"  Summary saved to {summary_path}")
-    print(f"  {len(dptos)} department parquets in {DPTO_OUTPUT_DIR}")
+    print(f"  {n_units} unit parquets in {dpto_output_dir}")
     print(f"  Total time: {elapsed:.0f}s")
     print(f"{'=' * 60}")
 

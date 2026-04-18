@@ -45,6 +45,7 @@ const ITAPUA_SUMMARIES: Record<string, () => Promise<any>> = {
 	land_use:               () => import('$lib/data/itapua_py_sat_land_use_summary.json'),
 	accessibility:          () => import('$lib/data/itapua_py_sat_accessibility_summary.json'),
 	flood_risk:             () => import('$lib/data/itapua_py_flood_dept_summary.json'),
+	territorial_scores:     () => import('$lib/data/itapua_py_scores_dept_summary.json'),
 };
 
 const TERRITORY_SUMMARIES: Record<string, Record<string, () => Promise<any>>> = {

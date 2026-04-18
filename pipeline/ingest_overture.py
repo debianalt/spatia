@@ -1,17 +1,18 @@
 """
 Ingest walkthru.earth Overture Indices into Spatia H3 grid.
 
-Downloads H3-indexed Overture data from Source Cooperative, filters to Misiones
+Downloads H3-indexed Overture data from Source Cooperative, filters to territory
 using res-5 parent cells, converts h3_index BIGINT to h3index VARCHAR, and
-writes Misiones-only parquets.
+writes territory-specific parquets.
 
 Source: https://source.coop/walkthru-earth/walkthru-indices
 License: CC BY 4.0
 
 Usage:
-  python pipeline/ingest_overture.py                          # all themes
-  python pipeline/ingest_overture.py --theme buildings        # single theme
-  python pipeline/ingest_overture.py --release 2026-03-18.0   # specific release
+  python pipeline/ingest_overture.py                               # all themes, Misiones
+  python pipeline/ingest_overture.py --theme buildings             # single theme
+  python pipeline/ingest_overture.py --territory itapua_py         # Itapúa
+  python pipeline/ingest_overture.py --release 2026-03-18.0        # specific release
 """
 
 import json
@@ -27,6 +28,7 @@ from config import (
     OVERTURE_RELEASE,
     OVERTURE_THEMES,
     OUTPUT_DIR,
+    get_territory,
 )
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -47,6 +49,20 @@ def load_boundary() -> dict:
     return geojson
 
 
+def get_territory_parent_cells(territory_id: str) -> list[int]:
+    """Return H3 res-5 parent cell BIGINTs covering a territory."""
+    if territory_id == 'misiones':
+        return get_misiones_parent_cells()
+    territory = get_territory(territory_id)
+    from shapely.geometry import box
+    west, south, east, north = territory['bbox']
+    bbox_poly = box(west, south, east, north).buffer(0.15)
+    parent_cells = list(h3.geo_to_cells(bbox_poly.__geo_interface__, res=PARENT_RES))
+    bigints = [int(c, 16) for c in parent_cells]
+    print(f"  {territory_id} covered by {len(bigints)} H3 res-{PARENT_RES} parent cells (buffered)")
+    return bigints
+
+
 def get_misiones_parent_cells() -> list[int]:
     """Generate H3 res-5 parent cell BIGINTs covering Misiones.
 
@@ -64,15 +80,16 @@ def get_misiones_parent_cells() -> list[int]:
 
 
 def ingest_theme(conn: duckdb.DuckDBPyConnection, theme: str,
-                 parent_bigints: list[int], release: str) -> str | None:
+                 parent_bigints: list[int], release: str,
+                 out_dir: str | None = None) -> str | None:
     """
-    Query remote Overture parquet for a single theme, filter to Misiones,
+    Query remote Overture parquet for a single theme, filter to territory,
     convert h3_index BIGINT → h3index VARCHAR, save locally.
 
     Returns output path on success, None on failure.
     """
     url = OVERTURE_BASE_URL.format(theme=theme, release=release)
-    output_path = os.path.join(OUTPUT_DIR, f"overture_{theme}.parquet")
+    output_path = os.path.join(out_dir or OUTPUT_DIR, f"overture_{theme}.parquet")
 
     print(f"\n  Theme: {theme}")
     print(f"  Source: {url}")
@@ -117,25 +134,31 @@ def ingest_theme(conn: duckdb.DuckDBPyConnection, theme: str,
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Ingest Overture Indices for Misiones")
+    parser = argparse.ArgumentParser(description="Ingest Overture Indices for a territory")
     parser.add_argument("--theme", choices=OVERTURE_THEMES,
                         help="Single theme to ingest (default: all)")
+    parser.add_argument("--territory", default="misiones",
+                        help="Territory ID (default: misiones)")
     parser.add_argument("--release", default=OVERTURE_RELEASE,
                         help=f"Overture release version (default: {OVERTURE_RELEASE})")
     args = parser.parse_args()
 
     themes = [args.theme] if args.theme else OVERTURE_THEMES
 
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    territory = get_territory(args.territory)
+    out_prefix = territory['output_prefix'].rstrip('/')
+    out_dir = os.path.join(OUTPUT_DIR, out_prefix) if out_prefix else OUTPUT_DIR
+    os.makedirs(out_dir, exist_ok=True)
 
     print("=" * 60)
-    print("  Overture Indices Ingestion")
+    print(f"  Overture Indices Ingestion — {args.territory}")
     print(f"  Release: {args.release}")
     print(f"  Themes: {', '.join(themes)}")
+    print(f"  Output: {out_dir}")
     print("=" * 60)
 
-    print("\nLoading Misiones boundary...")
-    parent_bigints = get_misiones_parent_cells()
+    print(f"\nComputing parent cells for {args.territory}...")
+    parent_bigints = get_territory_parent_cells(args.territory)
 
     print("\nInitialising DuckDB with H3 + httpfs extensions...")
     conn = duckdb.connect()
@@ -146,7 +169,7 @@ def main():
     start = time.time()
 
     for theme in themes:
-        path = ingest_theme(conn, theme, parent_bigints, args.release)
+        path = ingest_theme(conn, theme, parent_bigints, args.release, out_dir)
         results[theme] = path
 
     conn.close()

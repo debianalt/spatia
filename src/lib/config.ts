@@ -68,7 +68,7 @@ export function getParquetUrl(name: string): string {
 		sat_deforestation_dynamics: '?v=2',
 		sat_productive_activity: '?v=5',
 		sat_land_use: '?v=1',
-		overture_scores: '?v=24',
+		overture_scores: '?v=25',
 		emsa_powerlines: '?v=20',
 	};
 	const bust = busts[name] || '';
@@ -741,6 +741,8 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'analysis.scores.title',
 		perDepartment: true,
+		comparable: true,
+		coverage: { itapua_py: 'available' },
 		legendLowKey: 'legend.scores.low',
 		legendHighKey: 'legend.scores.high',
 	},
@@ -1042,6 +1044,8 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 
 		status: 'available',
 		spatialUnit: 'hexagon',
+		comparable: true,
+		coverage: { itapua_py: 'available' },
 	},
 	// ── Radio-based analyses (radio_stats_master via crosswalk) ──
 	// investment_value removed — re_median_usd_m2 only covers 26% of radios

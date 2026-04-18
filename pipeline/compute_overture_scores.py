@@ -28,22 +28,24 @@ import time
 import duckdb
 import pandas as pd
 
-from config import OUTPUT_DIR
+from config import OUTPUT_DIR, get_territory
 from scoring import geometric_mean_score, run_full_diagnostics
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Input parquets
-BUILDINGS_PATH = os.path.join(OUTPUT_DIR, "overture_buildings.parquet")
-TRANSPORTATION_PATH = os.path.join(OUTPUT_DIR, "overture_transportation.parquet")
-PLACES_PATH = os.path.join(OUTPUT_DIR, "overture_places.parquet")
-BASE_PATH = os.path.join(OUTPUT_DIR, "overture_base.parquet")
+TYPE_LABELS = {
+    1: 'Urbano consolidado',
+    2: 'Urbano',
+    3: 'Periurbano',
+    4: 'Rural conectado',
+    5: 'Rural disperso',
+}
 
-DEFAULT_OUTPUT = os.path.join(OUTPUT_DIR, "overture_scores.parquet")
 
-
-def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str) -> int:
-    """Compute all 8 indicators and write unified parquet."""
+def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str,
+                   buildings_path: str, transportation_path: str,
+                   places_path: str, base_path: str) -> int:
+    """Compute all 8 indicators + composite score/type/type_label and write parquet."""
 
     t0 = time.time()
 
@@ -54,7 +56,7 @@ def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str) -> int:
         SELECT h3index, building_count, n_residential, n_commercial,
                n_education, n_medical, n_religious, n_agricultural,
                avg_height_m, avg_floors
-        FROM read_parquet('{BUILDINGS_PATH}')
+        FROM read_parquet('{buildings_path}')
     """)
     b_count = conn.execute("SELECT count(*) FROM buildings").fetchone()[0]
     print(f"  buildings: {b_count:,} hexes")
@@ -65,7 +67,7 @@ def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str) -> int:
                n_track, n_primary, n_secondary, n_tertiary,
                n_residential, n_bridge, n_pedestrian, n_footway,
                n_cycleway, n_living_street
-        FROM read_parquet('{TRANSPORTATION_PATH}')
+        FROM read_parquet('{transportation_path}')
     """)
     t_count = conn.execute("SELECT count(*) FROM transportation").fetchone()[0]
     print(f"  transportation: {t_count:,} hexes")
@@ -79,7 +81,7 @@ def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str) -> int:
                n_lodging, n_travel_and_transportation,
                n_hospital, n_school, n_pharmacy, n_gas_station,
                n_restaurant, n_grocery_store
-        FROM read_parquet('{PLACES_PATH}')
+        FROM read_parquet('{places_path}')
     """)
     p_count = conn.execute("SELECT count(*) FROM places").fetchone()[0]
     print(f"  places: {p_count:,} hexes")
@@ -91,7 +93,7 @@ def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str) -> int:
                n_lu_agriculture, n_lu_residential, n_lu_developed,
                n_lu_managed, n_lu_park, n_lu_protected, n_lu_recreation,
                water_count, n_river, n_stream, n_canal, n_lake
-        FROM read_parquet('{BASE_PATH}')
+        FROM read_parquet('{base_path}')
     """)
     base_count = conn.execute("SELECT count(*) FROM base").fetchone()[0]
     print(f"  base: {base_count:,} hexes")
@@ -491,6 +493,51 @@ def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str) -> int:
     raw_cols_all = [c for c in df.columns if c.startswith(("uc_", "rc_", "urb_"))]
     df.drop(columns=raw_cols_all, inplace=True)
 
+    # ── Composite score + k-means types ─────────────────────────────────
+    print("\nComputing composite score + types...")
+    all_score_cols = [
+        'paving_index', 'urban_consolidation', 'service_access',
+        'commercial_vitality', 'road_connectivity', 'building_mix',
+        'urbanization', 'water_exposure',
+    ]
+    pct_cols = []
+    for col in all_score_cols:
+        p_col = f'r_{col}'
+        valid = df[col] > 0
+        df[p_col] = 0.0
+        if valid.sum() > 1:
+            df.loc[valid, p_col] = df.loc[valid, col].rank(pct=True) * 100.0
+        pct_cols.append(p_col)
+
+    diag = run_full_diagnostics(df[df[pct_cols].sum(axis=1) > 0], pct_cols, corr_threshold=0.70)
+    retained_pct = diag['variable_selection']['retained']
+    dropped_pct = diag['variable_selection']['dropped']
+    kmo_all = diag['kmo_bartlett'].get('kmo_overall')
+    if kmo_all is not None:
+        print(f"  KMO (all 8): {kmo_all:.3f}")
+    if dropped_pct:
+        print(f"  Dropped (corr): {dropped_pct}")
+    print(f"  Retained ({len(retained_pct)}): {retained_pct}")
+
+    df['score'] = geometric_mean_score(df, retained_pct, floor=1.0).round(1)
+    df.drop(columns=pct_cols, inplace=True)
+
+    from sklearn.cluster import KMeans
+    X_km = df[all_score_cols].fillna(0).values
+    km = KMeans(n_clusters=5, random_state=42, n_init=10)
+    raw_labels = km.fit_predict(X_km)
+    cluster_means = {c: float(df['score'].values[raw_labels == c].mean()) for c in range(5)}
+    order = sorted(cluster_means, key=lambda c: -cluster_means[c])
+    label_map = {c: rank + 1 for rank, c in enumerate(order)}
+    df['type'] = [label_map[l] for l in raw_labels]
+    df['type_label'] = df['type'].map(TYPE_LABELS)
+
+    type_dist = df['type_label'].value_counts().to_dict()
+    print(f"  score: mean={df['score'].mean():.1f}, min={df['score'].min():.1f}, max={df['score'].max():.1f}")
+    for t in range(1, 6):
+        lbl = TYPE_LABELS[t]
+        print(f"  type {t} ({lbl}): {type_dist.get(lbl, 0):,}")
+
     # Write final parquet
     df.to_parquet(output_path, index=False, compression="zstd")
     if os.path.exists(tmp_path):
@@ -531,24 +578,36 @@ def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str) -> int:
 
 def main():
     parser = argparse.ArgumentParser(description="Compute 8 territorial scores from Overture data")
-    parser.add_argument("--output", default=DEFAULT_OUTPUT, help=f"Output parquet path (default: {DEFAULT_OUTPUT})")
+    parser.add_argument("--territory", default="misiones", help="Territory ID (default: misiones)")
+    parser.add_argument("--output", default=None, help="Output parquet path (default: auto)")
     args = parser.parse_args()
 
-    for path, name in [(BUILDINGS_PATH, "buildings"), (TRANSPORTATION_PATH, "transportation"),
-                       (PLACES_PATH, "places"), (BASE_PATH, "base")]:
+    territory = get_territory(args.territory)
+    out_prefix = territory['output_prefix'].rstrip('/')
+    t_dir = os.path.join(OUTPUT_DIR, out_prefix) if out_prefix else OUTPUT_DIR
+
+    buildings_path = os.path.join(t_dir, "overture_buildings.parquet")
+    transportation_path = os.path.join(t_dir, "overture_transportation.parquet")
+    places_path = os.path.join(t_dir, "overture_places.parquet")
+    base_path = os.path.join(t_dir, "overture_base.parquet")
+    output_path = args.output or os.path.join(t_dir, "overture_scores.parquet")
+
+    for path, name in [(buildings_path, "buildings"), (transportation_path, "transportation"),
+                       (places_path, "places"), (base_path, "base")]:
         if not os.path.exists(path):
             print(f"ERROR: Missing {name} parquet: {path}")
-            print("Run `python pipeline/run_overture_update.py` first to ingest Overture data.")
+            print("Run `python pipeline/ingest_overture.py` first.")
             return 1
 
     print("=" * 60)
-    print("  Compute Overture Territorial Scores (v2)")
+    print(f"  Compute Overture Territorial Scores — {args.territory}")
     print("=" * 60)
 
     conn = duckdb.connect()
     conn.execute("INSTALL h3 FROM community; LOAD h3;")
 
-    row_count = compute_scores(conn, args.output)
+    row_count = compute_scores(conn, output_path, buildings_path, transportation_path,
+                               places_path, base_path)
     conn.close()
 
     return 0 if row_count > 0 else 1
