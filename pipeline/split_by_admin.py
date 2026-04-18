@@ -118,6 +118,8 @@ def main():
     parser.add_argument("--territory", default="misiones",
                         help="Territory ID from config.py (default: misiones)")
     parser.add_argument("--only", default=None, help="Comma-separated analysis IDs")
+    parser.add_argument("--sat-only", action="store_true",
+                        help="Misiones: run only SAT_ANALYSES with polygon crosswalk + fill_missing")
     parser.add_argument("--fill-missing", dest="fill_missing", action="store_true", default=None,
                         help="Fill hexes missing from analysis with score=0 (default: True for non-Misiones)")
     parser.add_argument("--no-fill-missing", dest="fill_missing", action="store_false")
@@ -141,7 +143,9 @@ def main():
     os.makedirs(SRC_DATA_DIR, exist_ok=True)
 
     # Choose analyses
-    if t_id == 'misiones':
+    if t_id == 'misiones' and args.sat_only:
+        all_analyses = SAT_ANALYSES  # polygon crosswalk mode: comparable layers only
+    elif t_id == 'misiones':
         all_analyses = SAT_ANALYSES + list(MISIONES_ONLY)
     else:
         all_analyses = SAT_ANALYSES  # GEE-only for non-AR territories
@@ -160,14 +164,22 @@ def main():
     print(f"  Analyses: {len(analyses)}")
     print("=" * 60)
 
-    # Default fill_missing: True for non-Misiones territories
-    fill_missing = args.fill_missing if args.fill_missing is not None else (t_id != 'misiones')
+    # Crosswalk selection:
+    # - Misiones --sat-only: polygon crosswalk (h3_admin_crosswalk.parquet) + fill_missing
+    # - Misiones default: dasymetric census crosswalk (MISIONES_ONLY layers need census radios)
+    # - Other territories: polygon crosswalk always
+    crosswalk_path = os.path.join(t_dir, 'h3_admin_crosswalk.parquet')
+    use_polygon = (t_id != 'misiones') or (args.sat_only and os.path.exists(crosswalk_path))
 
-    # Build lookup once
-    if t_id == 'misiones':
-        h3_admin = build_crosswalk_misiones()
-    else:
+    if use_polygon:
         h3_admin = build_crosswalk_territory(territory)
+        if t_id == 'misiones':
+            print("  Using polygon crosswalk (comparable layers — parity with Itapua)")
+    else:
+        h3_admin = build_crosswalk_misiones()
+
+    # Default fill_missing: True when using polygon crosswalk
+    fill_missing = args.fill_missing if args.fill_missing is not None else use_polygon
 
     # Full hex DataFrame for fill-missing mode
     if fill_missing:

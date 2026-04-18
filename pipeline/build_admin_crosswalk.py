@@ -88,6 +88,33 @@ def load_polygons_gaul(territory: dict) -> list[dict]:
     return features
 
 
+def load_polygons_from_radios(territory: dict) -> list[dict]:
+    """Dissolve Misiones census radios by dpto → department polygons."""
+    from shapely import wkb
+    from shapely.ops import unary_union
+    from shapely.geometry import mapping
+
+    radios_path = os.path.join(OUTPUT_DIR, 'radios_misiones.parquet')
+    stats_path = os.path.join(OUTPUT_DIR, 'radio_stats_master.parquet')
+    radios = pd.read_parquet(radios_path)
+    radio_stats = pd.read_parquet(stats_path, columns=['redcode', 'dpto'])
+    radios['geom'] = radios['geometry'].apply(lambda b: wkb.loads(b))
+    radios = radios.merge(radio_stats, on='redcode', how='inner')
+
+    features = []
+    for dpto, group in radios.groupby('dpto'):
+        geoms = [g for g in group['geom'] if g is not None and g.is_valid]
+        if geoms:
+            dissolved = unary_union(geoms)
+            features.append({
+                'type': 'Feature',
+                'properties': {'ADM2_NAME': dpto},
+                'geometry': mapping(dissolved),
+            })
+    print(f"  Dissolved {len(features)} department polygons from census radios")
+    return features
+
+
 def load_polygons_shapefile(shapefile_path: str, territory: dict) -> list[dict]:
     """Load admin polygons from a local shapefile or GeoJSON."""
     try:
@@ -205,7 +232,7 @@ def build_hex_geojson(df: pd.DataFrame) -> dict:
 def main():
     parser = argparse.ArgumentParser(description="Build H3->admin crosswalk for a territory")
     parser.add_argument("--territory", required=True, help="Territory ID from config.py")
-    parser.add_argument("--source", choices=["gaul", "gadm", "geojson"], default="gaul",
+    parser.add_argument("--source", choices=["gaul", "gadm", "geojson", "radios"], default="gaul",
                         help="Polygon source (default: gaul)")
     parser.add_argument("--shapefile", default=None,
                         help="Path to shapefile or GeoJSON (required for gadm/geojson sources)")
@@ -231,7 +258,9 @@ def main():
     print("=" * 60)
 
     # ---- Load polygons ----
-    if args.source == 'gaul':
+    if args.source == 'radios':
+        features = load_polygons_from_radios(territory)
+    elif args.source == 'gaul':
         features = load_polygons_gaul(territory)
     elif args.source in ('gadm', 'geojson'):
         if not args.shapefile:
