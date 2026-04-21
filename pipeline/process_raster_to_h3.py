@@ -49,6 +49,11 @@ RADIO_FALLBACK = {
     },
 }
 
+H3_FALLBACK = {
+    'c_fire': 'fire_h3.parquet',
+    'c_fire_count': 'fire_h3.parquet',
+}
+
 # Component definitions per analysis: (band_name, output_col, weight, invert)
 ANALYSIS_COMPONENTS = {
     'environmental_risk': [
@@ -185,6 +190,41 @@ def inject_radio_fallback(df: pd.DataFrame, nan_cols: list[str],
     return df
 
 
+def inject_h3_fallback(df: pd.DataFrame, nan_cols: list[str],
+                       components: list, territory_dir: str) -> pd.DataFrame:
+    """Inject H3-level data for columns where raster had no data.
+
+    Uses pre-computed H3 parquets (e.g. fire_h3.parquet) as fallback
+    for non-Misiones territories that lack radio-level data.
+    Always uses percentile_rank (matching inject_radio_fallback behavior).
+    """
+    for col in nan_cols:
+        fname = H3_FALLBACK.get(col)
+        if not fname:
+            print(f"    No H3 fallback defined for {col}")
+            continue
+
+        path = os.path.join(territory_dir, fname)
+        if not os.path.exists(path):
+            print(f"    Missing {path} — skipping {col}")
+            continue
+
+        fb = pd.read_parquet(path, columns=['h3index', col])
+        df = df.drop(columns=[col], errors='ignore')
+        df = df.merge(fb, on='h3index', how='left')
+
+        invert = any(c[3] for c in components if c[1] == col)
+        raw = df[col].astype(float)
+        if invert:
+            raw = -raw
+        df[col] = percentile_rank(raw).round(1)
+
+        injected = df[col].notna().sum()
+        print(f"    H3 fallback {col}: {injected:,} hexagons with data")
+
+    return df
+
+
 def process_analysis(analysis_id, raster_path, hexgrid_features, output_path,
                      territory_id='misiones', mode='local', goalposts=None):
     """Process a single analysis raster to H3 parquet."""
@@ -247,15 +287,21 @@ def process_analysis(analysis_id, raster_path, hexgrid_features, output_path,
     # PCA-validated geometric mean score (OECD/HDI methodology)
     comp_cols = [c[1] for c in components]
 
-    # Inject radio-level fallback for 100% NaN columns (e.g. fire) — Misiones only
+    # Inject fallback for columns with no usable data (all-NaN or all-zero with fallback available)
     nan_cols = [c for c in comp_cols if df[c].isna().all()]
-    if nan_cols:
-        print(f"  100% NaN columns: {nan_cols}")
+    # Detect raster bands that produced all-zeros (possibly inverted to constant by goalposts)
+    no_variation_cols = [c for c in comp_cols
+                         if c not in nan_cols and c in H3_FALLBACK
+                         and df[c].notna().any() and df[c].std() < 0.01]
+    fallback_cols = nan_cols + no_variation_cols
+    if fallback_cols:
+        print(f"  Fallback needed: {fallback_cols}")
         if territory_id == 'misiones':
             print(f"  Attempting radio fallback...")
-            df = inject_radio_fallback(df, nan_cols, components)
+            df = inject_radio_fallback(df, fallback_cols, components)
         else:
-            print(f"  Skipping radio fallback (no radio data for {territory_id})")
+            territory_dir = os.path.dirname(output_path)
+            df = inject_h3_fallback(df, fallback_cols, components, territory_dir)
 
     # Exclude remaining 100% NaN columns (no fallback available)
     valid_cols = [c for c in comp_cols if not df[c].isna().all()]
