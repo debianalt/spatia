@@ -89,8 +89,13 @@ def h3_centroids(features: list[dict]) -> tuple[list[str], np.ndarray]:
 def sample_raster_at_points(tif_path: str, coords: np.ndarray) -> np.ndarray:
     """Sample all bands of raster at (lon, lat) pairs. Returns (N, bands)."""
     with rasterio.open(tif_path) as src:
-        # rasterio.sample expects (lon, lat) = (x, y)
-        gen = src.sample(coords.tolist())
+        sample_coords = coords
+        if not src.crs.is_geographic:
+            from pyproj import Transformer
+            transformer = Transformer.from_crs('EPSG:4326', src.crs, always_xy=True)
+            xs, ys = transformer.transform(coords[:, 0], coords[:, 1])
+            sample_coords = np.column_stack([xs, ys])
+        gen = src.sample(sample_coords.tolist())
         vals = np.array(list(gen), dtype=np.float32)
         nodata = src.nodata
         if nodata is not None:

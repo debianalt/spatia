@@ -145,6 +145,8 @@ def main():
         print(f"  Sampling {fname} -> {col}...")
         t1 = time.time()
         vals = sample_raster_bilinear(path, lngs, lats)
+        if fname.startswith('act_ghsl_'):
+            vals = vals / 10000.0
         result[col] = vals
         mean = np.nanmean(vals)
         print(f"    mean={mean:.4f}, {time.time()-t1:.1f}s")

@@ -40,10 +40,14 @@ SHAP_GROUPS = {
     'climate': ['shap_temp_mean', 'shap_frost_days', 'shap_solar_radiation',
                 'shap_dewpoint_mean', 'shap_total_mm'],
     'terrain': ['shap_elev_mean', 'shap_slope_mean', 'shap_hand_mean',
-                'shap_twi_merit_mean'],
+                'shap_twi_merit_mean',
+                'shap_ph', 'shap_clay', 'shap_sand', 'shap_soc'],
     'vegetation': ['shap_mean_ndvi', 'shap_mean_lst_day', 'shap_mean_lst_night',
                    'shap_lst_amplitude', 'shap_mean_npp', 'shap_tree_cover',
-                   'shap_delta_tree_cover'],
+                   'shap_delta_tree_cover',
+                   'shap_frac_native_forest', 'shap_frac_plantation',
+                   'shap_frac_agriculture', 'shap_frac_urban',
+                   'shap_frac_pasture', 'shap_frac_mosaic', 'shap_frac_wetland'],
 }
 
 QUINTILE_LABELS = {
@@ -156,8 +160,10 @@ def main():
         hex_shap_slim = hex_shap[shap_cols_keep].rename(columns={'h3index': 'h3_res7'})
 
         res9_shap = parents.merge(hex_shap_slim, on='h3_res7', how='left')
+        raw_total = sum(res9_shap[f'raw_{g}'] for g in SHAP_GROUPS)
+        raw_total = raw_total.replace(0, np.nan)
         for group in SHAP_GROUPS:
-            res9_shap[f'c_{group}'] = percentile_rank(res9_shap[f'raw_{group}'])
+            res9_shap[f'c_{group}'] = (res9_shap[f'raw_{group}'] / raw_total * 100).round(1)
         res9_shap = res9_shap[['h3index'] + [f'c_{group}' for group in SHAP_GROUPS]]
         print(f"  Mapped {len(res9_shap):,} res-9 hexagons")
     else:
