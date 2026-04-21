@@ -201,6 +201,14 @@ def build_panel(t_dir):
         if loaded_cols:
             print(f"  {os.path.basename(path)} -> {loaded_cols}")
 
+    # ── 1e½. Fill static feature NaN via H3 neighbor interpolation ─────
+    static_fill_cols = ["elev_mean", "slope_mean", "hand_mean", "twi_merit_mean",
+                        "ph", "clay", "sand", "soc"]
+    existing = [c for c in static_fill_cols if c in panel.columns]
+    if existing and any(panel[c].isna().any() for c in existing):
+        print("Filling static feature NaN via H3 neighbor interpolation...")
+        panel = _fill_static_nans(panel, existing)
+
     # ── 1f. Derived features ────────────────────────────────────────────
     print("Computing derived features...")
     panel = panel.sort_values(["h3index", "year"])
@@ -281,6 +289,46 @@ def _compute_spatial_lag(panel, col, new_col):
     if records:
         lag_df = pd.DataFrame(records)
         panel = panel.merge(lag_df, on=["h3index", "year"], how="left")
+
+    return panel
+
+
+def _fill_static_nans(panel, cols):
+    """Fill NaN in static (time-invariant) columns via H3 neighbor mean."""
+    hex_ids = panel["h3index"].unique()
+    hex_set = set(hex_ids)
+
+    neighbor_map = {}
+    for hx in hex_ids:
+        neighbor_map[hx] = [n for n in h3.grid_ring(hx, 1) if n in hex_set]
+
+    for col in cols:
+        if col not in panel.columns or panel[col].isna().sum() == 0:
+            continue
+        hex_vals = panel.groupby("h3index")[col].first()
+        missing = hex_vals[hex_vals.isna()].index.tolist()
+
+        fill_map = {}
+        still_missing = []
+        for hx in missing:
+            vals = [hex_vals[n] for n in neighbor_map[hx]
+                    if n in hex_vals.index and pd.notna(hex_vals[n])]
+            if vals:
+                fill_map[hx] = float(np.mean(vals))
+            else:
+                still_missing.append(hx)
+
+        for hx in still_missing:
+            ring2 = [n for n in h3.grid_ring(hx, 2) if n in hex_set]
+            vals = [hex_vals[n] for n in ring2
+                    if n in hex_vals.index and pd.notna(hex_vals[n])]
+            if vals:
+                fill_map[hx] = float(np.mean(vals))
+
+        if fill_map:
+            panel[col] = panel[col].fillna(panel["h3index"].map(fill_map))
+            remaining = panel.groupby("h3index")[col].first().isna().sum()
+            print(f"    {col}: filled {len(fill_map)} hex, {remaining} still NaN")
 
     return panel
 
