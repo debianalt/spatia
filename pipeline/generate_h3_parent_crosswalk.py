@@ -2,33 +2,38 @@
 Generate H3 parent crosswalk parquet: maps each res-9 hexagon to its parent at res 4-8.
 
 Outputs:
-  - h3_parent_crosswalk.parquet  (h3index, lat, lng, h3_res8, h3_res7, h3_res6, h3_res5, h3_res4)
+  - {territory_dir}/h3_parent_crosswalk.parquet  (h3index, lat, lng, h3_res8..h3_res4)
 
 Usage:
   python pipeline/generate_h3_parent_crosswalk.py
-
-Upload to R2:
-  wrangler r2 object put neahub-public/data/h3_parent_crosswalk.parquet \
-    --file pipeline/output/h3_parent_crosswalk.parquet --remote
+  python pipeline/generate_h3_parent_crosswalk.py --territory itapua_py
 """
 
+import argparse
 import json
 import os
+import sys
 
 import h3
 import pandas as pd
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, SCRIPT_DIR)
+from config import OUTPUT_DIR, get_territory
+
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
-BOUNDARY_PATH = os.path.join(PROJECT_ROOT, "src", "lib", "data", "misiones_boundary.json")
-OUTPUT_DIR = os.path.join(SCRIPT_DIR, "output")
 
 H3_BASE_RES = 9
 PARENT_RESOLUTIONS = [8, 7, 6, 5, 4]
 
+BOUNDARY_FILES = {
+    'misiones': os.path.join(PROJECT_ROOT, "src", "lib", "data", "misiones_boundary.json"),
+    'itapua_py': os.path.join(PROJECT_ROOT, "src", "lib", "data", "itapua_boundary.json"),
+}
 
-def load_boundary() -> dict:
-    with open(BOUNDARY_PATH, "r", encoding="utf-8") as f:
+
+def load_boundary(path: str) -> dict:
+    with open(path, "r", encoding="utf-8") as f:
         geojson = json.load(f)
     if geojson.get("type") == "FeatureCollection":
         return geojson["features"][0]["geometry"]
@@ -37,15 +42,44 @@ def load_boundary() -> dict:
     return geojson
 
 
+def load_hex_ids_from_geojson(t_dir: str) -> list[str]:
+    """Extract h3index values from existing hexagons.geojson."""
+    for fname in ('hexagons.geojson', 'hexagons-lite.geojson'):
+        path = os.path.join(t_dir, fname)
+        if os.path.exists(path):
+            with open(path) as f:
+                gj = json.load(f)
+            return [feat['properties']['h3index'] for feat in gj['features']]
+    return []
+
+
 def main():
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    parser = argparse.ArgumentParser(description="Generate H3 parent crosswalk")
+    parser.add_argument("--territory", default="misiones",
+                        help="Territory ID (default: misiones)")
+    args = parser.parse_args()
 
-    print("Loading Misiones boundary...")
-    boundary = load_boundary()
+    territory = get_territory(args.territory)
+    t_prefix = territory['output_prefix']
+    t_dir = os.path.join(OUTPUT_DIR, t_prefix.rstrip('/')) if t_prefix else OUTPUT_DIR
+    os.makedirs(t_dir, exist_ok=True)
 
-    print(f"Generating H3 grid at resolution {H3_BASE_RES}...")
-    hex_ids = list(h3.geo_to_cells(boundary, res=H3_BASE_RES))
-    print(f"  -> {len(hex_ids):,} hexagons")
+    t_id = territory['id']
+    print(f"Territory: {territory['label']} ({t_id})")
+
+    hex_ids = load_hex_ids_from_geojson(t_dir)
+    if hex_ids:
+        print(f"Loaded {len(hex_ids):,} hexagons from hexagons.geojson")
+    else:
+        boundary_path = BOUNDARY_FILES.get(t_id)
+        if not boundary_path or not os.path.exists(boundary_path):
+            print(f"ERROR: No hexagons.geojson or boundary file for {t_id}")
+            return 1
+        print(f"Loading boundary from {boundary_path}...")
+        boundary = load_boundary(boundary_path)
+        print(f"Generating H3 grid at resolution {H3_BASE_RES}...")
+        hex_ids = list(h3.geo_to_cells(boundary, res=H3_BASE_RES))
+        print(f"  -> {len(hex_ids):,} hexagons")
 
     print("Computing parent crosswalk...")
     records = []
@@ -61,16 +95,14 @@ def main():
         records.append(row)
 
     df = pd.DataFrame(records)
-    out_path = os.path.join(OUTPUT_DIR, "h3_parent_crosswalk.parquet")
+    out_path = os.path.join(t_dir, "h3_parent_crosswalk.parquet")
     df.to_parquet(out_path, index=False)
     size_kb = os.path.getsize(out_path) / 1024
     print(f"  -> Saved {out_path} ({size_kb:.0f} KB, {len(df):,} rows)")
     print(f"  -> Columns: {list(df.columns)}")
 
-    print(f"\nUpload to R2:")
-    print(f"  wrangler r2 object put neahub-public/data/h3_parent_crosswalk.parquet \\")
-    print(f"    --file {out_path} --remote")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

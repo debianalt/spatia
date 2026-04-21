@@ -1,15 +1,14 @@
 """
-Spatial ML model for PM2.5 prediction in Misiones (Branch B).
+Spatial ML model for PM2.5 prediction (GEE-direct, no radio dependencies).
 
 Panel model at H3 res-7 (~1.2km, matching ACAG PM2.5 resolution).
-Compares OLS, Random Forest, and LightGBM under three CV schemes:
-random, spatial-block (leave-one-department-out), and temporal.
+Reads covariates from H3-direct parquets (bilinear-interpolated from GEE
+rasters), not from radio censales.  Supports multiple territories.
 
 Usage:
+  python pipeline/model_pm25_spatial.py --territory misiones --phase all
+  python pipeline/model_pm25_spatial.py --territory itapua_py --phase all
   python pipeline/model_pm25_spatial.py --phase build
-  python pipeline/model_pm25_spatial.py --phase train
-  python pipeline/model_pm25_spatial.py --phase interpret
-  python pipeline/model_pm25_spatial.py --phase all
 """
 
 import argparse
@@ -23,7 +22,6 @@ import h3
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
-from scipy.spatial import cKDTree
 from scipy.stats import pearsonr
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
@@ -31,19 +29,9 @@ from sklearn.metrics import mean_absolute_error, root_mean_squared_error, r2_sco
 from sklearn.model_selection import GroupKFold, KFold
 from sklearn.preprocessing import StandardScaler
 
-from config import OUTPUT_DIR
+from config import OUTPUT_DIR, get_territory
 
 warnings.filterwarnings("ignore", category=FutureWarning)
-
-# ── Paths ────────────────────────────────────────────────────────────────
-PANEL_PATH = os.path.join(OUTPUT_DIR, "pm25_model_panel.parquet")
-RESULTS_PATH = os.path.join(OUTPUT_DIR, "pm25_model_results.json")
-SHAP_PATH = os.path.join(OUTPUT_DIR, "pm25_model_shap.parquet")
-
-PM25_PANEL = os.path.join(OUTPUT_DIR, "pm25_annual_panel.parquet")
-PARENT_XW = os.path.join(OUTPUT_DIR, "h3_parent_crosswalk.parquet")
-RADIO_XW = os.path.join(OUTPUT_DIR, "h3_radio_crosswalk_areal.parquet")
-RADIO_DATA = os.path.join(OUTPUT_DIR, "radio_data")
 
 # ── Feature groups (for ablation) ────────────────────────────────────────
 FEATURE_GROUPS = {
@@ -60,13 +48,11 @@ FEATURE_GROUPS = {
     "soil": ["ph", "clay", "sand", "soc"],
 }
 
-# Spatial-only features (for within-year decomposition) -- static or slow-changing
 SPATIAL_FEATURES = (
     FEATURE_GROUPS["land_use"] + FEATURE_GROUPS["terrain"] +
     FEATURE_GROUPS["soil"] + ["jrc_occurrence"]
 )
 
-# Temporal features (for between-hex decomposition) -- vary year to year
 TEMPORAL_FEATURES = (
     FEATURE_GROUPS["fire"] + FEATURE_GROUPS["climate"] +
     ["mean_ndvi", "mean_npp", "tree_cover"]
@@ -77,169 +63,172 @@ TEMPORAL_FEATURES = (
 # PHASE 1: BUILD PANEL
 # ══════════════════════════════════════════════════════════════════════════
 
-def build_panel():
-    """Construct (h3_res7, year) panel with target + features."""
+def build_panel(t_dir):
+    """Construct (h3_res7, year) panel with target + features from H3-direct parquets."""
     t0 = time.time()
+
+    panel_path = os.path.join(t_dir, "pm25_model_panel.parquet")
+    pm25_path = os.path.join(t_dir, "pm25_annual_panel.parquet")
+    parent_xw_path = os.path.join(t_dir, "h3_parent_crosswalk.parquet")
+    admin_xw_path = os.path.join(t_dir, "h3_admin_crosswalk.parquet")
+    cov_path = os.path.join(t_dir, "pm25_covariates_annual.parquet")
 
     # ── 1a. Aggregate PM2.5 to res-7 ────────────────────────────────────
     print("Loading PM2.5 panel and parent crosswalk...")
-    pm25 = pd.read_parquet(PM25_PANEL)
-    parents = pd.read_parquet(PARENT_XW)[["h3index", "h3_res7"]]
+    pm25 = pd.read_parquet(pm25_path)
+    parents = pd.read_parquet(parent_xw_path)[["h3index", "h3_res7"]]
 
     pm25 = pm25.merge(parents, on="h3index", how="inner")
     target = (pm25.groupby(["h3_res7", "year"])["pm25"]
               .mean().reset_index()
               .rename(columns={"h3_res7": "h3index"}))
 
-    # Restrict to 2000-2022 (fire/NDVI start 2000)
     target = target[(target.year >= 2000) & (target.year <= 2022)]
     n_hex = target["h3index"].nunique()
     n_years = target["year"].nunique()
-    print(f"  Target: {len(target):,} rows ({n_hex:,} hex × {n_years} years)")
+    print(f"  Target: {len(target):,} rows ({n_hex:,} hex x {n_years} years)")
 
-    # ── 1b. Build radio -> res-7 crosswalk ───────────────────────────────
-    print("Building radio -> H3 res-7 crosswalk...")
-    radio_xw = pd.read_parquet(RADIO_XW)
-    radio_xw = radio_xw.merge(parents, on="h3index", how="inner")
-    # Aggregate weights: for each (radio, res-7), sum of res-9 weights
-    radio_to_r7 = (radio_xw.groupby(["redcode", "h3_res7"])["weight"]
-                   .sum().reset_index()
-                   .rename(columns={"h3_res7": "h3index"}))
-    # Normalise within each res-7 hex
-    totals = radio_to_r7.groupby("h3index")["weight"].transform("sum")
-    radio_to_r7["weight"] = radio_to_r7["weight"] / totals
-    print(f"  Crosswalk: {len(radio_to_r7):,} (radio, h3_res7) pairs")
+    # ── 1b. Department mapping via admin crosswalk ──────────────────────
+    print("Loading admin crosswalk for department mapping...")
+    admin = pd.read_parquet(admin_xw_path)
+    admin_col = [c for c in admin.columns if c != 'h3index'][0]
+    admin = admin.rename(columns={admin_col: 'dpto'})
+    admin = admin.merge(parents, on="h3index", how="inner")
+    dept_map = (admin.groupby("h3_res7")["dpto"]
+                .agg(lambda x: x.mode().iloc[0])
+                .rename("dpto"))
+    dept_map.index.name = "h3index"
+    print(f"  Departments: {dept_map.nunique()} unique from {len(admin):,} hex")
 
-    # ── 1c. Department mapping ──────────────────────────────────────────
-    # Dominant radio per h3_res7 -> department
-    dominant = (radio_to_r7.sort_values("weight", ascending=False)
-                .drop_duplicates("h3index"))
-    dominant["dpto"] = dominant["redcode"].str[:5]
-    dept_map = dominant.set_index("h3index")["dpto"]
-
-    # ── 1d. Load annual radio covariates ────────────────────────────────
-    print("Loading annual radio covariates...")
-    annual_specs = [
-        ("fire_annual.parquet", ["burned_fraction", "burn_count", "max_monthly_frac"]),
-        ("era5_annual.parquet", ["temp_mean", "temp_max", "frost_days",
-                                 "solar_radiation", "dewpoint_mean"]),
-        ("chirps_annual.parquet", ["total_mm"]),
-        ("ndvi_annual_mean.parquet", ["mean_ndvi"]),
-        ("lst_annual.parquet", ["mean_lst_day", "mean_lst_night", "amplitude"]),
-        ("npp_annual.parquet", ["mean_npp"]),
-        ("vcf_annual.parquet", ["tree_cover"]),
-    ]
-
+    # ── 1c. Load annual H3-direct covariates ────────────────────────────
+    print("Loading H3-direct annual covariates...")
     panel = target.copy()
 
-    for fname, cols in annual_specs:
-        path = os.path.join(RADIO_DATA, fname)
-        df = pd.read_parquet(path)
-        # Rename amplitude to avoid collision
-        if "amplitude" in cols:
-            df = df.rename(columns={"amplitude": "lst_amplitude"})
-            cols = [c if c != "amplitude" else "lst_amplitude" for c in cols]
+    if os.path.exists(cov_path):
+        cov = pd.read_parquet(cov_path)
+        cov = cov[cov.year.between(2000, 2022)]
+        cov = cov.merge(parents, on="h3index", how="inner")
 
-        df = df[df.year.between(2000, 2022)]
-        use_cols = ["year", "redcode"] + [c for c in cols if c in df.columns]
-        df = df[use_cols]
+        cov_cols = [c for c in cov.columns
+                    if c not in ("h3index", "year", "h3_res7")]
 
-        # Handle ERA5 gap: impute missing radios via nearest neighbor
-        if fname == "era5_annual.parquet":
-            df = _impute_era5_gap(df, cols)
+        # Rename LST columns if needed
+        if "lst_day" in cov.columns and "mean_lst_day" not in cov.columns:
+            cov = cov.rename(columns={
+                "lst_day": "mean_lst_day",
+                "lst_night": "mean_lst_night",
+            })
+            cov_cols = [c.replace("lst_day", "mean_lst_day")
+                           .replace("lst_night", "mean_lst_night")
+                        for c in cov_cols]
 
-        # Weighted aggregation: radio -> h3_res7
-        merged = radio_to_r7.merge(df, on="redcode", how="inner")
-        for col in [c for c in cols if c in merged.columns]:
-            merged[f"w_{col}"] = merged[col] * merged["weight"]
+        cov_r7 = (cov.groupby(["h3_res7", "year"])
+                  .mean(numeric_only=True).reset_index()
+                  .rename(columns={"h3_res7": "h3index"}))
 
-        w_cols = [c for c in merged.columns if c.startswith("w_")]
-        agg = merged.groupby(["h3index", "year"])[w_cols].sum().reset_index()
-        agg.columns = [c.replace("w_", "") if c.startswith("w_") else c
-                       for c in agg.columns]
+        # Drop h3_res7 if still present after rename
+        cov_r7 = cov_r7.drop(columns=["h3_res7"], errors="ignore")
 
-        panel = panel.merge(agg, on=["h3index", "year"], how="left")
-        coverage = panel[cols[0]].notna().mean() * 100 if cols[0] in panel.columns else 0
-        print(f"  {fname:30s} -> {len(cols)} cols, coverage: {coverage:.1f}%")
+        panel = panel.merge(cov_r7, on=["h3index", "year"], how="left")
 
-    # ── 1e. Static H3 features (res-9 -> mean to res-7) ─────────────────
+        for col in cov_cols[:7]:
+            if col in panel.columns:
+                cov_pct = panel[col].notna().mean() * 100
+                print(f"  {col:30s} coverage: {cov_pct:.1f}%")
+        if len(cov_cols) > 7:
+            print(f"  ... and {len(cov_cols) - 7} more columns")
+    else:
+        print(f"  WARNING: {cov_path} not found — running without annual covariates")
+
+    # ── 1d. Static H3 features (res-9 -> mean to res-7) ─────────────────
     print("Loading static H3 features...")
-    lu = pd.read_parquet(os.path.join(OUTPUT_DIR, "sat_land_use.parquet"))
-    lu_cols = [c for c in lu.columns if c.startswith("frac_") and c != "frac_bare"
-               and c != "frac_water" and c != "frac_grassland"]
-    lu = lu[["h3index"] + lu_cols].merge(parents, on="h3index", how="inner")
-    lu_agg = lu.groupby("h3_res7")[lu_cols].mean().reset_index()
-    lu_agg = lu_agg.rename(columns={"h3_res7": "h3index"})
-    panel = panel.merge(lu_agg, on="h3index", how="left")
-    print(f"  sat_land_use -> {len(lu_cols)} cols")
 
-    flood = pd.read_parquet(os.path.join(OUTPUT_DIR, "hex_flood_risk.parquet"))
-    flood = flood[["h3index", "jrc_occurrence"]].merge(parents, on="h3index", how="inner")
-    flood_agg = flood.groupby("h3_res7")["jrc_occurrence"].mean().reset_index()
-    flood_agg = flood_agg.rename(columns={"h3_res7": "h3index"})
-    panel = panel.merge(flood_agg, on="h3index", how="left")
-    print(f"  hex_flood_risk -> jrc_occurrence")
+    # Land use
+    lu_path = os.path.join(t_dir, "sat_land_use.parquet")
+    if os.path.exists(lu_path):
+        lu = pd.read_parquet(lu_path)
+        lu_cols = [c for c in lu.columns if c.startswith("frac_")
+                   and c not in ("frac_bare", "frac_water", "frac_grassland")]
+        lu = lu[["h3index"] + lu_cols].merge(parents, on="h3index", how="inner")
+        lu_agg = lu.groupby("h3_res7")[lu_cols].mean().reset_index()
+        lu_agg = lu_agg.rename(columns={"h3_res7": "h3index"})
+        panel = panel.merge(lu_agg, on="h3index", how="left")
+        print(f"  sat_land_use -> {len(lu_cols)} cols")
 
-    # ── 1f. Static radio features -> res-7 ──────────────────────────────
-    print("Loading static radio features...")
-    static_specs = [
-        ("fabdem_terrain.parquet", ["elev_mean", "slope_mean", "ruggedness_mean"]),
-        ("soilgrids.parquet", ["ph", "clay", "sand", "soc"]),
-        ("merit_hydro.parquet", ["hand_mean", "twi_merit_mean"]),
-        ("hansen_baseline.parquet", ["treecover2000"]),
+    # Flood risk
+    flood_path = os.path.join(t_dir, "hex_flood_risk.parquet")
+    if os.path.exists(flood_path):
+        flood = pd.read_parquet(flood_path)
+        flood = flood[["h3index", "jrc_occurrence"]].merge(parents, on="h3index", how="inner")
+        flood_agg = flood.groupby("h3_res7")["jrc_occurrence"].mean().reset_index()
+        flood_agg = flood_agg.rename(columns={"h3_res7": "h3index"})
+        panel = panel.merge(flood_agg, on="h3index", how="left")
+        print(f"  hex_flood_risk -> jrc_occurrence")
+
+    # ── 1e. Static H3 terrain + soil + hydro ────────────────────────────
+    print("Loading static terrain/soil/hydro H3 features...")
+
+    static_h3_specs = [
+        # (preferred_file, fallback_file, columns_to_extract_with_renames)
+        ("fabdem_terrain_h3.parquet", "srtm_terrain_h3.parquet",
+         {"elev_mean": "elev_mean", "slope_mean": "slope_mean"}),
+        ("merit_hydro_h3.parquet", "srtm_terrain_h3.parquet",
+         {"hand_mean": "hand_mean", "twi_merit_mean": "twi_merit_mean",
+          "twi_mean": "twi_merit_mean"}),
+        ("soilgrids_h3.parquet", None,
+         {"ph": "ph", "clay": "clay", "sand": "sand", "soc": "soc"}),
     ]
 
-    for fname, cols in static_specs:
-        path = os.path.join(RADIO_DATA, fname)
+    for preferred, fallback, col_map in static_h3_specs:
+        path = os.path.join(t_dir, preferred)
+        if not os.path.exists(path) and fallback:
+            path = os.path.join(t_dir, fallback)
+        if not os.path.exists(path):
+            print(f"  SKIP {preferred} (not found)")
+            continue
+
         df = pd.read_parquet(path)
-        use_cols = ["redcode"] + [c for c in cols if c in df.columns]
-        df = df[use_cols]
+        df = df.merge(parents, on="h3index", how="inner")
 
-        merged = radio_to_r7.merge(df, on="redcode", how="inner")
-        for col in [c for c in cols if c in merged.columns]:
-            merged[f"w_{col}"] = merged[col] * merged["weight"]
-        w_cols = [c for c in merged.columns if c.startswith("w_")]
-        agg = merged.groupby("h3index")[w_cols].sum().reset_index()
-        agg.columns = [c.replace("w_", "") if c.startswith("w_") else c
-                       for c in agg.columns]
+        loaded_cols = []
+        for src_col, dst_col in col_map.items():
+            if src_col in df.columns and dst_col not in panel.columns:
+                agg = df.groupby("h3_res7")[src_col].mean().reset_index()
+                agg = agg.rename(columns={"h3_res7": "h3index", src_col: dst_col})
+                panel = panel.merge(agg, on="h3index", how="left")
+                loaded_cols.append(dst_col)
 
-        panel = panel.merge(agg, on="h3index", how="left")
-        print(f"  {fname:30s} -> {len(cols)} cols")
+        if loaded_cols:
+            print(f"  {os.path.basename(path)} -> {loaded_cols}")
 
-    # ── 1g. Derived features ────────────────────────────────────────────
+    # ── 1f. Derived features ────────────────────────────────────────────
     print("Computing derived features...")
     panel = panel.sort_values(["h3index", "year"])
 
-    # PM2.5 lag-1
     panel["pm25_lag1"] = panel.groupby("h3index")["pm25"].shift(1)
 
-    # Fire lag-1
     if "burned_fraction" in panel.columns:
         panel["fire_lag1"] = panel.groupby("h3index")["burned_fraction"].shift(1)
 
-    # Delta tree cover
     if "tree_cover" in panel.columns:
         panel["delta_tree_cover"] = panel.groupby("h3index")["tree_cover"].diff()
 
-    # Fire neighbors (spatial lag at H3 res-7)
     if "burned_fraction" in panel.columns:
         print("  Computing fire spatial lag (H3 ring-1 neighbors)...")
         panel = _compute_spatial_lag(panel, "burned_fraction", "fire_neighbors")
 
-    # Fire regional: provincial mean burned_fraction per year
     if "burned_fraction" in panel.columns:
         fire_reg = (panel.groupby("year")["burned_fraction"]
                     .mean().rename("fire_regional").reset_index())
         panel = panel.merge(fire_reg, on="year", how="left")
-        print("  fire_regional: provincial mean burned_fraction per year")
+        print("  fire_regional: mean burned_fraction per year")
 
-    # ── 1h. Add department column ───────────────────────────────────────
+    # ── 1g. Add department column ───────────────────────────────────────
     panel["dpto"] = panel["h3index"].map(dept_map)
 
-    # Drop first year (no lag) and rows with no department
     panel = panel[panel.year >= 2001].dropna(subset=["dpto"])
 
-    # ── 1i. Summary ─────────────────────────────────────────────────────
+    # ── 1h. Summary ─────────────────────────────────────────────────────
     elapsed = time.time() - t0
     all_features = _get_feature_names(panel)
     print(f"\n{'=' * 60}")
@@ -258,51 +247,9 @@ def build_panel():
           f"range={panel.pm25.min():.2f}-{panel.pm25.max():.2f}")
     print(f"{'=' * 60}")
 
-    panel.to_parquet(PANEL_PATH, index=False)
-    print(f"  Saved: {PANEL_PATH} ({os.path.getsize(PANEL_PATH) / 1024 / 1024:.1f} MB)")
-    return panel
-
-
-def _impute_era5_gap(df, cols):
-    """Impute ERA5 values for missing radios via nearest-neighbor."""
-    all_radios_path = os.path.join(RADIO_DATA, "radios_misiones.parquet")
-    if not os.path.exists(all_radios_path):
-        return df
-    radios = pd.read_parquet(all_radios_path)
-    if "lat" not in radios.columns or "lng" not in radios.columns:
-        # Try to compute from geometry
-        return df
-
-    era5_radios = set(df["redcode"].unique())
-    all_radios_set = set(radios["redcode"].unique())
-    missing = all_radios_set - era5_radios
-    if not missing:
-        return df
-
-    # Build KDTree from ERA5 radios
-    era5_locs = radios[radios["redcode"].isin(era5_radios)][["redcode", "lat", "lng"]]
-    missing_locs = radios[radios["redcode"].isin(missing)][["redcode", "lat", "lng"]]
-
-    if era5_locs.empty or missing_locs.empty:
-        return df
-
-    tree = cKDTree(era5_locs[["lat", "lng"]].values)
-    _, idx = tree.query(missing_locs[["lat", "lng"]].values)
-    nn_map = dict(zip(missing_locs["redcode"].values,
-                      era5_locs["redcode"].values[idx]))
-
-    # For each missing radio, copy data from nearest ERA5 radio
-    imputed = []
-    for missing_rc, source_rc in nn_map.items():
-        source_data = df[df["redcode"] == source_rc].copy()
-        source_data["redcode"] = missing_rc
-        imputed.append(source_data)
-
-    if imputed:
-        df = pd.concat([df] + imputed, ignore_index=True)
-        print(f"    ERA5: imputed {len(nn_map)} radios via nearest-neighbor")
-
-    return df
+    panel.to_parquet(panel_path, index=False)
+    print(f"  Saved: {panel_path} ({os.path.getsize(panel_path) / 1024 / 1024:.1f} MB)")
+    return panel, panel_path
 
 
 def _compute_spatial_lag(panel, col, new_col):
@@ -310,13 +257,11 @@ def _compute_spatial_lag(panel, col, new_col):
     hex_ids = panel["h3index"].unique()
     hex_set = set(hex_ids)
 
-    # Build neighbor map
     neighbor_map = {}
     for hx in hex_ids:
         ring = h3.grid_ring(hx, 1)
         neighbor_map[hx] = [n for n in ring if n in hex_set]
 
-    # For each (hex, year), compute mean of neighbors
     yearly = panel.groupby(["h3index", "year"])[col].first()
 
     records = []
@@ -347,7 +292,6 @@ def _get_feature_names(panel, exclude_groups=None):
     for group_name, group_feats in FEATURE_GROUPS.items():
         if group_name not in exclude_groups:
             all_feats.extend(group_feats)
-    # Deduplicate preserving order
     seen = set()
     unique = []
     for f in all_feats:
@@ -384,25 +328,26 @@ def _run_lgbm_cv(X, y, folds, params=None):
     }
 
 
-def train_and_evaluate(panel=None):
+def train_and_evaluate(panel=None, t_dir=None):
     """Train Model A (all features) and Model B (no lag) under 3 CV schemes."""
+    panel_path = os.path.join(t_dir, "pm25_model_panel.parquet")
+    results_path = os.path.join(t_dir, "pm25_model_results.json")
+
     if panel is None:
         print("Loading panel...")
-        panel = pd.read_parquet(PANEL_PATH)
+        panel = pd.read_parquet(panel_path)
 
     features_a = _get_feature_names(panel)
     features_b = _get_feature_names(panel, exclude_groups=["autoregressive"])
     print(f"\nModel A features ({len(features_a)}): {features_a}")
     print(f"Model B features ({len(features_b)}): {features_b}")
 
-    # ── Prepare data (use Model A features as superset) ─────────────────
     df = panel.dropna(subset=["pm25"] + features_a).copy()
     y = df["pm25"].values
     groups_dept = df["dpto"].values
     years = df["year"].values
     print(f"\n  Clean rows: {len(df):,} (dropped {len(panel) - len(df):,} with NaN)")
 
-    # ── Define CV schemes ───────────────────────────────────────────────
     dept_codes = np.unique(groups_dept)
     spatial_folds = [(np.where(groups_dept != d)[0], np.where(groups_dept == d)[0])
                      for d in dept_codes]
@@ -418,7 +363,6 @@ def train_and_evaluate(panel=None):
 
     results = {}
 
-    # ── Model A (with lag) and Model B (without lag) ────────────────────
     for model_label, feats in [("ModelA", features_a), ("ModelB", features_b)]:
         print(f"\n{'=' * 60}")
         print(f"{model_label}: LightGBM with {len(feats)} features")
@@ -435,14 +379,12 @@ def train_and_evaluate(panel=None):
             print(f"  {cv_name:20s}  R2={metrics['r2']:.4f}  "
                   f"RMSE={metrics['rmse']:.3f}  MAE={metrics['mae']:.3f}")
 
-    # ── Decomposition: within-year (spatial) vs between-hex (temporal) ──
     print(f"\n{'=' * 60}")
     print("DECOMPOSITION: within-year (spatial) vs between-hex (temporal)")
     print(f"{'=' * 60}")
 
     decompose_variation(df, results)
 
-    # ── Summary table ───────────────────────────────────────────────────
     print(f"\n{'=' * 60}")
     print("SUMMARY -- R2 by model x CV scheme")
     print(f"{'=' * 60}")
@@ -459,10 +401,9 @@ def train_and_evaluate(panel=None):
         print(row)
     print(f"{'=' * 60}")
 
-    # ── Save ────────────────────────────────────────────────────────────
-    with open(RESULTS_PATH, "w") as f:
+    with open(results_path, "w") as f:
         json.dump(results, f, indent=2, default=str)
-    print(f"\nResults saved: {RESULTS_PATH}")
+    print(f"\nResults saved: {results_path}")
 
     return results, df, features_b
 
@@ -471,13 +412,10 @@ def decompose_variation(df, results):
     """Within-year spatial models + between-hex temporal models."""
     y_all = df["pm25"].values
 
-    # -- SPATIAL FEATURES for within-year analysis --
     spatial_feats = [f for f in SPATIAL_FEATURES if f in df.columns]
-    # Deduplicate
     spatial_feats = list(dict.fromkeys(spatial_feats))
     print(f"\n  Within-year spatial features ({len(spatial_feats)}): {spatial_feats}")
 
-    # For each year, train LightGBM on spatial features only
     year_r2 = {}
     for yr in sorted(df["year"].unique()):
         mask = df["year"].values == yr
@@ -487,7 +425,6 @@ def decompose_variation(df, results):
         X_yr = sub[spatial_feats]
         y_yr = sub["pm25"].values
 
-        # 5-fold CV within this year
         kf = KFold(n_splits=5, shuffle=True, random_state=42)
         true_all, pred_all = [], []
         for tr, te in kf.split(X_yr):
@@ -510,12 +447,10 @@ def decompose_variation(df, results):
         "by_year": {str(k): round(v, 4) for k, v in year_r2.items()},
     }
 
-    # -- TEMPORAL FEATURES for between-hex analysis --
     temporal_feats = [f for f in TEMPORAL_FEATURES if f in df.columns]
     temporal_feats = list(dict.fromkeys(temporal_feats))
     print(f"\n  Between-hex temporal features ({len(temporal_feats)}): {temporal_feats}")
 
-    # Sample 500 hexagons, fit per-hex OLS on temporal features
     hex_ids = df["h3index"].unique()
     rng = np.random.RandomState(42)
     sample_hex = rng.choice(hex_ids, min(500, len(hex_ids)), replace=False)
@@ -556,23 +491,25 @@ def decompose_variation(df, results):
 # PHASE 3: INTERPRET
 # ══════════════════════════════════════════════════════════════════════════
 
-def interpret(panel=None):
+def interpret(panel=None, t_dir=None):
     """SHAP analysis, ablation study, residual diagnostics."""
+    panel_path = os.path.join(t_dir, "pm25_model_panel.parquet")
+    results_path = os.path.join(t_dir, "pm25_model_results.json")
+    shap_path = os.path.join(t_dir, "pm25_model_shap.parquet")
+
     if panel is None:
         print("Loading panel...")
-        panel = pd.read_parquet(PANEL_PATH)
+        panel = pd.read_parquet(panel_path)
 
-    # Use Model B (no lag) for interpretation -- scientifically meaningful
     features = _get_feature_names(panel, exclude_groups=["autoregressive"])
     features_a = _get_feature_names(panel)
     df = panel.dropna(subset=["pm25"] + features_a).copy()
-    X = df[features]  # Model B features
+    X = df[features]
     y = df["pm25"].values
     print(f"  Model B features ({len(features)}): {features}")
 
-    # Load best params
-    if os.path.exists(RESULTS_PATH):
-        with open(RESULTS_PATH) as f:
+    if os.path.exists(results_path):
+        with open(results_path) as f:
             results = json.load(f)
         best_params = results.get("optuna_best_params", {})
     else:
@@ -586,16 +523,14 @@ def interpret(panel=None):
             "reg_alpha": 0.1, "reg_lambda": 0.1,
         }
 
-    # ── Train final model on full data ──────────────────────────────────
     print("Training final LightGBM on full data...")
     model = lgb.LGBMRegressor(
         **best_params, n_jobs=-1, random_state=42, verbose=-1,
     )
     model.fit(X, y)
     y_pred = model.predict(X)
-    print(f"  In-sample R²={r2_score(y, y_pred):.4f}")
+    print(f"  In-sample R2={r2_score(y, y_pred):.4f}")
 
-    # ── LightGBM native feature importance ──────────────────────────────
     print("\n=== Feature Importance (LightGBM gain) ===")
     importance = pd.DataFrame({
         "feature": features,
@@ -605,14 +540,12 @@ def interpret(panel=None):
         bar = "#" * int(row["gain"] / importance["gain"].max() * 40)
         print(f"  {row['feature']:30s} {row['gain']:>8.0f}  {bar}")
 
-    # ── SHAP ────────────────────────────────────────────────────────────
     print("\n=== SHAP Analysis ===")
     try:
         import shap
 
         explainer = shap.TreeExplainer(model)
 
-        # Use subsample for speed
         n_shap = min(20000, len(X))
         rng = np.random.RandomState(42)
         shap_idx = rng.choice(len(X), n_shap, replace=False)
@@ -624,7 +557,6 @@ def interpret(panel=None):
         elapsed = time.time() - t0
         print(f"  Done in {elapsed:.0f}s")
 
-        # Mean |SHAP| importance
         shap_importance = pd.DataFrame({
             "feature": features,
             "mean_abs_shap": np.abs(shap_values).mean(axis=0),
@@ -635,7 +567,6 @@ def interpret(panel=None):
             bar = "#" * int(row["mean_abs_shap"] / shap_importance["mean_abs_shap"].max() * 40)
             print(f"    {row['feature']:30s} {row['mean_abs_shap']:.4f}  {bar}")
 
-        # Save full SHAP for all data
         print("\n  Computing full SHAP for all observations...")
         shap_all = explainer.shap_values(X)
         shap_df = pd.DataFrame(shap_all, columns=[f"shap_{f}" for f in features])
@@ -643,14 +574,13 @@ def interpret(panel=None):
         shap_df["year"] = df["year"].values
         shap_df["pm25"] = y
         shap_df["pm25_pred"] = y_pred
-        shap_df.to_parquet(SHAP_PATH, index=False)
-        print(f"  Saved: {SHAP_PATH} ({os.path.getsize(SHAP_PATH) / 1024 / 1024:.1f} MB)")
+        shap_df.to_parquet(shap_path, index=False)
+        print(f"  Saved: {shap_path} ({os.path.getsize(shap_path) / 1024 / 1024:.1f} MB)")
 
     except ImportError:
         print("  shap not installed, skipping")
 
-    # ── Ablation study (Model B -- no lag) ────────────────────────────
-    print("\n=== Ablation Study — Model B (spatial CV, no lag) ===")
+    print("\n=== Ablation Study -- Model B (spatial CV, no lag) ===")
     groups_dept = df["dpto"].values
     dept_sizes = pd.Series(groups_dept).value_counts()
     eval_depts = dept_sizes.head(5).index.tolist()
@@ -681,31 +611,27 @@ def interpret(panel=None):
         print(f"  Drop {group_name:15s} ({len(available):2d} feats): "
               f"R2={ablated_r2:.4f}  dR2={delta:+.4f}")
 
-    # ── Residual diagnostics ────────────────────────────────────────────
     print("\n=== Residual Diagnostics ===")
     residuals = y - y_pred
     print(f"  Mean residual: {residuals.mean():.4f}")
     print(f"  Std residual:  {residuals.std():.4f}")
 
-    # R² by department
-    print("\n  R² by department:")
+    print("\n  R2 by department:")
     for dept in sorted(df["dpto"].unique()):
         mask = df["dpto"].values == dept
         if mask.sum() < 10:
             continue
         r2 = r2_score(y[mask], y_pred[mask])
         rmse = root_mean_squared_error(y[mask], y_pred[mask])
-        print(f"    {dept}: R²={r2:.4f}, RMSE={rmse:.3f}, n={mask.sum():,}")
+        print(f"    {dept}: R2={r2:.4f}, RMSE={rmse:.3f}, n={mask.sum():,}")
 
-    # R² by year
-    print("\n  R² by year:")
+    print("\n  R2 by year:")
     for yr in sorted(df["year"].unique()):
         mask = df["year"].values == yr
         r2 = r2_score(y[mask], y_pred[mask])
         rmse = root_mean_squared_error(y[mask], y_pred[mask])
-        print(f"    {yr}: R²={r2:.4f}, RMSE={rmse:.3f}")
+        print(f"    {yr}: R2={r2:.4f}, RMSE={rmse:.3f}")
 
-    # Moran's I on residuals
     print("\n=== Spatial Autocorrelation of Residuals ===")
     try:
         _moran_residuals(df, residuals)
@@ -718,18 +644,15 @@ def _moran_residuals(df, residuals):
     df_copy = df.copy()
     df_copy["residual"] = residuals
 
-    # Mean residual per hexagon
     hex_resid = df_copy.groupby("h3index")["residual"].mean()
 
     hex_ids = hex_resid.index.tolist()
     hex_set = set(hex_ids)
     n = len(hex_ids)
 
-    # Build spatial weights (H3 ring-1)
     hex_to_idx = {h: i for i, h in enumerate(hex_ids)}
     vals = hex_resid.values
 
-    # Compute Moran's I manually (avoid heavy libpysal dependency for this)
     mean_r = vals.mean()
     diffs = vals - mean_r
     numerator = 0.0
@@ -765,20 +688,32 @@ def _moran_residuals(df, residuals):
 
 def main():
     parser = argparse.ArgumentParser(description="PM2.5 spatial ML model")
+    parser.add_argument("--territory", default="misiones",
+                        help="Territory ID (default: misiones)")
     parser.add_argument("--phase", choices=["build", "train", "interpret", "all"],
                         default="all")
     args = parser.parse_args()
 
+    territory = get_territory(args.territory)
+    t_prefix = territory['output_prefix']
+    t_dir = os.path.join(OUTPUT_DIR, t_prefix.rstrip('/')) if t_prefix else OUTPUT_DIR
+
+    print(f"Territory: {territory['label']} ({territory['id']})")
+    print(f"Output dir: {t_dir}")
+    print(f"Phase: {args.phase}")
+    print(f"{'=' * 60}")
+
     panel = None
+    panel_path = os.path.join(t_dir, "pm25_model_panel.parquet")
 
     if args.phase in ("build", "all"):
-        panel = build_panel()
+        panel, panel_path = build_panel(t_dir)
 
     if args.phase in ("train", "all"):
-        train_and_evaluate(panel)
+        train_and_evaluate(panel, t_dir)
 
     if args.phase in ("interpret", "all"):
-        interpret(panel)
+        interpret(panel, t_dir)
 
 
 if __name__ == "__main__":
