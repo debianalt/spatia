@@ -165,7 +165,7 @@ def run(args):
 
     # Composite score
     score = compute_flood_risk_score(
-        jrc_occurrence.fillna(0), jrc_recurrence.fillna(0), s1_extent.fillna(0)
+        jrc_occurrence.fillna(0), jrc_recurrence.fillna(0), (s1_extent * 100).fillna(0)
     )
 
     df = pd.DataFrame({

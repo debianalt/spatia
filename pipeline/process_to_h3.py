@@ -252,7 +252,7 @@ def main():
         extent = zonal_stats_rasterio(gdf, args.current)
 
         score = compute_flood_risk_score(
-            occurrence.fillna(0), recurrence.fillna(0), extent.fillna(0)
+            occurrence.fillna(0), recurrence.fillna(0), (extent * 100).fillna(0)
         )
 
         df = pd.DataFrame({

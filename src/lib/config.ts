@@ -44,7 +44,7 @@ export const TERRAIN_CONFIG = {
 
 export function getParquetUrl(name: string): string {
 	const busts: Record<string, string> = {
-		hex_flood_risk: '?v=27',
+		hex_flood_risk: '?v=28',
 		sat_environmental_risk: '?v=34',
 		sat_climate_comfort: '?v=32',
 		sat_green_capital: '?v=32',
@@ -1492,8 +1492,8 @@ export function getAnalysisById(id: string): AnalysisConfig | undefined {
 
 export const DATA_FRESHNESS: Record<string, { dataDate: string; processedDate: string; sourceKey: string }> = {
 	hex_flood_risk: {
-		dataDate: 'marzo 2026',
-		processedDate: '21/03/2026',
+		dataDate: 'abril 2026',
+		processedDate: '21/04/2026',
 		sourceKey: 'analysis.flood.source',
 	},
 	censo_radios: {
