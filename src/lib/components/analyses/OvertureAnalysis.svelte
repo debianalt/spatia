@@ -80,6 +80,9 @@
 		pm25_drivers:            () => import('$lib/data/itapua_py_sat_pm25_drivers_summary.json'),
 		productive_activity:     () => import('$lib/data/itapua_py_sat_productive_activity_summary.json'),
 		flood_risk:              () => import('$lib/data/itapua_py_flood_dept_summary.json'),
+		land_use:                () => import('$lib/data/itapua_py_sat_land_use_summary.json'),
+		accessibility:           () => import('$lib/data/itapua_py_sat_accessibility_summary.json'),
+		territorial_scores:      () => import('$lib/data/itapua_py_scores_dept_summary.json'),
 	};
 
 	// Lookup: territory prefix → summaries dict (add new territories here)
@@ -441,8 +444,8 @@
 			method: `${METHOD_COMMON} 3 variables Censo 2022: tasa de inasistencia 6-12 años, tasa de inasistencia 13-18 años, tasa de maternidad adolescente. Variables directas (mayor = peor flujo). Crosswalk dasimétrico. KMO=0.61.`,
 		},
 		land_use: {
-			howToRead: 'El mapa clasifica cada hexágono según su cobertura dominante: selva nativa, plantación forestal, pastizal, agricultura, agua o urbano. La fuente es MapBiomas Argentina (Landsat 30m, 2022) que distingue bosque nativo de silvicultura.',
-			implications: 'La separación entre selva nativa (73%) y plantación forestal (12%) permite evaluar el estado de conservación real: los pinares/eucaliptos no son selva paranaense aunque Dynamic World los clasifique igual. Los mosaicos agropecuarios indican zonas de transición activa.',
+			howToRead: 'El mapa clasifica cada hexágono según su cobertura dominante: selva nativa, plantación forestal, pastizal, agricultura, agua o urbano. Misiones usa MapBiomas Argentina Col. 1 (Landsat 30m); Itapúa usa MapBiomas Paraguay Col. 1. Nota: MapBiomas Paraguay no distingue plantación forestal, urbano ni mosaico — estas clases aparecen como 0% en Itapúa.',
+			implications: 'Misiones: selva nativa (73%) y plantación forestal (12%) permiten evaluar conservación real. Itapúa: cultivos (~40%) y pastizal natural (~14%) dominan. Plantación forestal, urbano y mosaico muestran 0% en Itapúa por limitaciones de MapBiomas Paraguay Col. 1.',
 			method: `${METHOD_COMMON} Fuente: MapBiomas Argentina Collection 1 (Landsat 30m, 2022). Clases remapeadas: bosque nativo, plantación, pastizal, agricultura, mosaico, humedal, urbano, agua. k=6 tipos, silueta=0.62.`,
 		},
 		powerline_density: {
@@ -598,7 +601,7 @@
 					{@const displayVal = (rawVal != null && typeof rawVal === 'number') ? rawVal : numVal}
 					<div class="cd-row">
 						<span class="cd-label">{i18n.t(v.labelKey)}</span>
-						<span class="cd-val-data">{fmtSmart(displayVal)}{v.unit ? ` ${v.unit}` : ' (0–100)'}</span>
+						<span class="cd-val-data">{fmtSmart(displayVal)}{v.unit ? ` ${v.unit}` : ' /100'}</span>
 					</div>
 				{/each}
 			</div>

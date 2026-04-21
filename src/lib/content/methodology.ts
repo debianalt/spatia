@@ -116,9 +116,9 @@ export const ANALYSIS_CONTENT: Record<string, MethodologyContent> = {
 	},
 	land_use: {
 		howToRead:
-			'El mapa clasifica cada hexágono según su cobertura dominante: selva nativa, plantación forestal, pastizal, agricultura, agua, humedal o urbano. Misiones usa MapBiomas Argentina Col. 1 (Landsat 30m); Itapúa usa MapBiomas Paraguay Col. 1. Misma metodología de clasificación en ambos territorios.',
+			'El mapa clasifica cada hexágono según su cobertura dominante: selva nativa, plantación forestal, pastizal, agricultura, agua, humedal o urbano. Misiones usa MapBiomas Argentina Col. 1 (Landsat 30m); Itapúa usa MapBiomas Paraguay Col. 1. Nota: MapBiomas Paraguay Col. 1 no distingue plantación forestal, urbano ni mosaico agropecuario — estas clases aparecen como 0% en Itapúa. Las plantaciones forestales se incluyen dentro de bosque nativo; las áreas urbanas no se clasifican separadamente.',
 		implications:
-			'Misiones: selva nativa domina (~73% de hexes), con plantaciones forestales (~12%) y mosaicos agrícolas en el este y sur. Itapúa (PY): cultivos/soja (~40%) y pastizal natural (~14%) dominan, con selva nativa residual (~20%) concentrada en el norte y corredores riparios. La comparación revela el contraste entre la Selva Atlántica conservada y el frente agrícola paraguayo.',
+			'Misiones: selva nativa domina (~73% de hexes), con plantaciones forestales (~12%) y mosaicos agrícolas en el este y sur. Itapúa (PY): cultivos/soja (~40%) y pastizal natural (~14%) dominan, con selva nativa residual (~20%) concentrada en el norte y corredores riparios. La comparación revela el contraste entre la Selva Atlántica conservada y el frente agrícola paraguayo. Plantación forestal, urbano y mosaico muestran 0% en Itapúa por limitaciones de la clasificación MapBiomas Paraguay (ver nota arriba).',
 		method: `${METHOD_COMMON} Fuente: MapBiomas Argentina Collection 1 (Landsat 30m, 2022) para Misiones; MapBiomas Paraguay Collection 1 para Itapúa. Misiones: PCA + k=6 k-means sobre fracciones de cobertura por polígono H3 (silueta=0.62). Itapúa: muestreo centroide H3 + k=6 k-means (silueta=0.91). Clases unificadas: bosque nativo (incl. bosque inundable), plantación, pastizal, pastizal natural, agricultura, mosaico, humedal, urbano, agua, suelo desnudo.`,
 	},
 	powerline_density: {
