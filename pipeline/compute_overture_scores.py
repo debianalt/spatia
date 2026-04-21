@@ -29,7 +29,7 @@ import duckdb
 import pandas as pd
 
 from config import OUTPUT_DIR, get_territory
-from scoring import geometric_mean_score, run_full_diagnostics
+from scoring import geometric_mean_score, run_full_diagnostics, load_goalposts, score_with_goalposts
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -44,7 +44,8 @@ TYPE_LABELS = {
 
 def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str,
                    buildings_path: str, transportation_path: str,
-                   places_path: str, base_path: str) -> int:
+                   places_path: str, base_path: str,
+                   mode: str = 'local', goalposts: dict | None = None) -> int:
     """Compute all 8 indicators + composite score/type/type_label and write parquet."""
 
     t0 = time.time()
@@ -98,18 +99,26 @@ def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str,
     base_count = conn.execute("SELECT count(*) FROM base").fetchone()[0]
     print(f"  base: {base_count:,} hexes")
 
-    # ── Compute percentiles for normalization ────────────────────────────
-    print("\nComputing percentiles for normalization...")
+    # ── Compute normalization caps ─────────────────────────────────────
+    gp_indicators = goalposts.get('indicators', {}) if goalposts else {}
 
-    p95_building = conn.execute(
-        "SELECT PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY building_count) FROM buildings WHERE building_count > 0"
-    ).fetchone()[0] or 1
-    print(f"  P95 building_count: {p95_building}")
-
-    p95_segment = conn.execute(
-        "SELECT PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY segment_count) FROM transportation WHERE segment_count > 0"
-    ).fetchone()[0] or 1
-    print(f"  P95 segment_count: {p95_segment}")
+    if mode == 'comparable':
+        gp_bd = gp_indicators.get('c_building_density', {})
+        gp_sd = gp_indicators.get('c_segment_density', {})
+        p95_building = gp_bd.get('hi', 100)
+        p95_segment = gp_sd.get('hi', 15)
+        print(f"\n  [comparable] building_density cap: {p95_building}  (goalpost hi)")
+        print(f"  [comparable] segment_density cap: {p95_segment}  (goalpost hi)")
+    else:
+        print("\nComputing percentiles for normalization...")
+        p95_building = conn.execute(
+            "SELECT PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY building_count) FROM buildings WHERE building_count > 0"
+        ).fetchone()[0] or 1
+        print(f"  P95 building_count: {p95_building}")
+        p95_segment = conn.execute(
+            "SELECT PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY segment_count) FROM transportation WHERE segment_count > 0"
+        ).fetchone()[0] or 1
+        print(f"  P95 segment_count: {p95_segment}")
 
     # ── Build master hex list + bigint versions ──────────────────────────
     print("\nBuilding master hex list...")
@@ -384,10 +393,15 @@ def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str,
         SELECT center_h3 AS h3index, water_kring_total
         FROM water_agg
     """)
-    p95_water = conn.execute(
-        "SELECT PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY water_kring_total) FROM score_water WHERE water_kring_total > 0"
-    ).fetchone()[0] or 1
-    print(f"  P95 water_kring_total: {p95_water}")
+    if mode == 'comparable':
+        gp_wk = gp_indicators.get('c_water_kring', {})
+        p95_water = gp_wk.get('hi', 12)
+        print(f"  [comparable] water_kring cap: {p95_water}  (goalpost hi)")
+    else:
+        p95_water = conn.execute(
+            "SELECT PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY water_kring_total) FROM score_water WHERE water_kring_total > 0"
+        ).fetchone()[0] or 1
+        print(f"  P95 water_kring_total: {p95_water}")
 
     conn.execute(f"""
         CREATE TABLE score_water_final AS
@@ -460,17 +474,22 @@ def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str,
     }
 
     for score_col, raw_cols in composites.items():
-        # Percentile rank each raw sub-component (0-100)
-        pct_cols = []
-        for col in raw_cols:
-            pct_name = f"{col}_pct"
-            valid = df[col].notna() & (df[col] > 0)
-            df[pct_name] = 0.0
-            if valid.sum() > 1:
-                df.loc[valid, pct_name] = df.loc[valid, col].rank(pct=True) * 100.0
-            pct_cols.append(pct_name)
+        if mode == 'comparable':
+            pct_cols = []
+            for col in raw_cols:
+                pct_name = f"{col}_pct"
+                df[pct_name] = (df[col].astype(float).clip(0, 1) * 100.0).round(2)
+                pct_cols.append(pct_name)
+        else:
+            pct_cols = []
+            for col in raw_cols:
+                pct_name = f"{col}_pct"
+                valid = df[col].notna() & (df[col] > 0)
+                df[pct_name] = 0.0
+                if valid.sum() > 1:
+                    df.loc[valid, pct_name] = df.loc[valid, col].rank(pct=True) * 100.0
+                pct_cols.append(pct_name)
 
-        # PCA diagnostics + variable selection
         diagnostics = run_full_diagnostics(df[df[pct_cols].sum(axis=1) > 0], pct_cols, corr_threshold=0.70)
         retained = diagnostics["variable_selection"]["retained"]
         dropped = diagnostics["variable_selection"]["dropped"]
@@ -482,10 +501,8 @@ def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str,
             print(f"  {score_col} dropped: {dropped}")
         print(f"  {score_col} retained ({len(retained)}): {retained}")
 
-        # Geometric mean of retained percentile-ranked components
         df[score_col] = geometric_mean_score(df, retained, floor=1.0).round(1)
 
-        # Clean up temp columns
         for pct_name in pct_cols:
             df.drop(columns=[pct_name], inplace=True)
 
@@ -500,27 +517,44 @@ def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str,
         'commercial_vitality', 'road_connectivity', 'building_mix',
         'urbanization', 'water_exposure',
     ]
-    pct_cols = []
-    for col in all_score_cols:
-        p_col = f'r_{col}'
-        valid = df[col] > 0
-        df[p_col] = 0.0
-        if valid.sum() > 1:
-            df.loc[valid, p_col] = df.loc[valid, col].rank(pct=True) * 100.0
-        pct_cols.append(p_col)
 
-    diag = run_full_diagnostics(df[df[pct_cols].sum(axis=1) > 0], pct_cols, corr_threshold=0.70)
-    retained_pct = diag['variable_selection']['retained']
-    dropped_pct = diag['variable_selection']['dropped']
-    kmo_all = diag['kmo_bartlett'].get('kmo_overall')
-    if kmo_all is not None:
-        print(f"  KMO (all 8): {kmo_all:.3f}")
-    if dropped_pct:
-        print(f"  Dropped (corr): {dropped_pct}")
-    print(f"  Retained ({len(retained_pct)}): {retained_pct}")
+    if mode == 'comparable' and goalposts:
+        # Sub-scores are already 0-100 with fixed caps → use directly for geomean.
+        # Resolve locked selection: goalposts stores r_-prefixed names, strip to get bare cols.
+        locked = goalposts.get('pca_variable_selection', {}).get('territorial_scores')
+        if locked:
+            retained_direct = [c.removeprefix('r_') for c in locked if c.removeprefix('r_') in all_score_cols]
+            excluded = [c for c in all_score_cols if c not in retained_direct]
+            print(f"  [comparable] Locked selection ({len(retained_direct)}): {retained_direct}")
+            if excluded:
+                print(f"  [comparable] Excluded: {excluded}")
+        else:
+            retained_direct = all_score_cols
+            print(f"  [comparable] No lock found, using all 8: {retained_direct}")
 
-    df['score'] = geometric_mean_score(df, retained_pct, floor=1.0).round(1)
-    df.drop(columns=pct_cols, inplace=True)
+        df['score'] = geometric_mean_score(df, retained_direct, floor=1.0).round(1)
+    else:
+        pct_cols = []
+        for col in all_score_cols:
+            p_col = f'r_{col}'
+            valid = df[col] > 0
+            df[p_col] = 0.0
+            if valid.sum() > 1:
+                df.loc[valid, p_col] = df.loc[valid, col].rank(pct=True) * 100.0
+            pct_cols.append(p_col)
+
+        diag = run_full_diagnostics(df[df[pct_cols].sum(axis=1) > 0], pct_cols, corr_threshold=0.70)
+        retained_pct = diag['variable_selection']['retained']
+        dropped_pct = diag['variable_selection']['dropped']
+        kmo_all = diag['kmo_bartlett'].get('kmo_overall')
+        if kmo_all is not None:
+            print(f"  KMO (all 8): {kmo_all:.3f}")
+        if dropped_pct:
+            print(f"  Dropped (corr): {dropped_pct}")
+        print(f"  Retained ({len(retained_pct)}): {retained_pct}")
+
+        df['score'] = geometric_mean_score(df, retained_pct, floor=1.0).round(1)
+        df.drop(columns=pct_cols, inplace=True)
 
     from sklearn.cluster import KMeans
     X_km = df[all_score_cols].fillna(0).values
@@ -579,8 +613,14 @@ def compute_scores(conn: duckdb.DuckDBPyConnection, output_path: str,
 def main():
     parser = argparse.ArgumentParser(description="Compute 8 territorial scores from Overture data")
     parser.add_argument("--territory", default="misiones", help="Territory ID (default: misiones)")
+    parser.add_argument("--mode", choices=["comparable", "local"], default="local",
+                        help="comparable: fixed goalpost normalization; local: P95 percentile (default)")
     parser.add_argument("--output", default=None, help="Output parquet path (default: auto)")
     args = parser.parse_args()
+
+    gp = load_goalposts() if args.mode == "comparable" else None
+    if gp:
+        print(f"  Mode: comparable (goalposts v{gp.get('version', '?')})")
 
     territory = get_territory(args.territory)
     out_prefix = territory['output_prefix'].rstrip('/')
@@ -607,7 +647,8 @@ def main():
     conn.execute("INSTALL h3 FROM community; LOAD h3;")
 
     row_count = compute_scores(conn, output_path, buildings_path, transportation_path,
-                               places_path, base_path)
+                               places_path, base_path,
+                               mode=args.mode, goalposts=gp)
     conn.close()
 
     return 0 if row_count > 0 else 1

@@ -3,13 +3,13 @@
     "total_hexes": 182286,
     "avg_scores": {
       "paving_index": 10.3,
-      "urban_consolidation": 3.6,
+      "urban_consolidation": 2.6,
       "service_access": 4.6,
       "commercial_vitality": 4.2,
-      "road_connectivity": 5.0,
+      "road_connectivity": 4.3,
       "building_mix": 0.3,
-      "urbanization": 2.9,
-      "water_exposure": 9.2
+      "urbanization": 1.7,
+      "water_exposure": 10.3
     }
   },
   "departments": [
@@ -18,13 +18,13 @@
       "parquetKey": "capital",
       "avg_scores": {
         "paving_index": 27.1,
-        "urban_consolidation": 7.0,
+        "urban_consolidation": 6.2,
         "service_access": 19.1,
         "commercial_vitality": 18.8,
-        "road_connectivity": 9.5,
+        "road_connectivity": 9.1,
         "building_mix": 0.7,
-        "urbanization": 3.9,
-        "water_exposure": 10.1
+        "urbanization": 3.2,
+        "water_exposure": 11.4
       },
       "overall_score": 12.0,
       "hex_count": 7866,
@@ -38,15 +38,15 @@
       "parquetKey": "iguazu",
       "avg_scores": {
         "paving_index": 17.7,
-        "urban_consolidation": 4.9,
+        "urban_consolidation": 4.2,
         "service_access": 12.8,
         "commercial_vitality": 13.0,
-        "road_connectivity": 6.9,
+        "road_connectivity": 6.3,
         "building_mix": 0.7,
-        "urbanization": 2.7,
-        "water_exposure": 7.6
+        "urbanization": 2.0,
+        "water_exposure": 8.7
       },
-      "overall_score": 8.3,
+      "overall_score": 8.2,
       "hex_count": 13090,
       "centroid": [
         -54.5139,
@@ -58,15 +58,15 @@
       "parquetKey": "san_pedro",
       "avg_scores": {
         "paving_index": 7.8,
-        "urban_consolidation": 3.3,
+        "urban_consolidation": 2.3,
         "service_access": 3.4,
         "commercial_vitality": 3.0,
-        "road_connectivity": 4.5,
+        "road_connectivity": 3.8,
         "building_mix": 0.2,
-        "urbanization": 2.9,
-        "water_exposure": 33.7
+        "urbanization": 1.6,
+        "water_exposure": 37.5
       },
-      "overall_score": 7.4,
+      "overall_score": 7.5,
       "hex_count": 23245,
       "centroid": [
         -53.7879,
@@ -78,15 +78,15 @@
       "parquetKey": "g._m._belgrano",
       "avg_scores": {
         "paving_index": 12.4,
-        "urban_consolidation": 3.6,
+        "urban_consolidation": 2.5,
         "service_access": 4.7,
         "commercial_vitality": 3.5,
-        "road_connectivity": 4.9,
+        "road_connectivity": 4.1,
         "building_mix": 0.1,
-        "urbanization": 3.0,
-        "water_exposure": 13.0
+        "urbanization": 1.6,
+        "water_exposure": 14.4
       },
-      "overall_score": 5.7,
+      "overall_score": 5.4,
       "hex_count": 21353,
       "centroid": [
         -53.7848,
@@ -98,15 +98,15 @@
       "parquetKey": "candelaria",
       "avg_scores": {
         "paving_index": 15.9,
-        "urban_consolidation": 3.9,
+        "urban_consolidation": 2.8,
         "service_access": 4.0,
         "commercial_vitality": 3.8,
-        "road_connectivity": 5.4,
+        "road_connectivity": 4.7,
         "building_mix": 0.2,
-        "urbanization": 2.8,
-        "water_exposure": 6.2
+        "urbanization": 1.7,
+        "water_exposure": 7.1
       },
-      "overall_score": 5.3,
+      "overall_score": 5.0,
       "hex_count": 3934,
       "centroid": [
         -55.6064,
@@ -118,15 +118,15 @@
       "parquetKey": "eldorado",
       "avg_scores": {
         "paving_index": 10.1,
-        "urban_consolidation": 3.2,
+        "urban_consolidation": 2.6,
         "service_access": 5.7,
         "commercial_vitality": 4.7,
-        "road_connectivity": 6.5,
+        "road_connectivity": 5.5,
         "building_mix": 0.2,
-        "urbanization": 2.5,
-        "water_exposure": 4.2
+        "urbanization": 1.7,
+        "water_exposure": 4.8
       },
-      "overall_score": 4.6,
+      "overall_score": 4.4,
       "hex_count": 6691,
       "centroid": [
         -54.55,
@@ -138,15 +138,15 @@
       "parquetKey": "l._n._alem",
       "avg_scores": {
         "paving_index": 11.9,
-        "urban_consolidation": 3.9,
+        "urban_consolidation": 2.7,
         "service_access": 3.6,
         "commercial_vitality": 2.9,
-        "road_connectivity": 4.8,
+        "road_connectivity": 4.1,
         "building_mix": 0.3,
-        "urbanization": 2.9,
-        "water_exposure": 5.8
+        "urbanization": 1.6,
+        "water_exposure": 6.7
       },
-      "overall_score": 4.5,
+      "overall_score": 4.2,
       "hex_count": 5566,
       "centroid": [
         -55.3796,
@@ -158,15 +158,15 @@
       "parquetKey": "san_ignacio",
       "avg_scores": {
         "paving_index": 11.4,
-        "urban_consolidation": 3.7,
+        "urban_consolidation": 2.7,
         "service_access": 5.1,
         "commercial_vitality": 4.4,
-        "road_connectivity": 5.1,
+        "road_connectivity": 4.3,
         "building_mix": 0.7,
-        "urbanization": 2.8,
-        "water_exposure": 3.1
+        "urbanization": 1.8,
+        "water_exposure": 3.6
       },
-      "overall_score": 4.5,
+      "overall_score": 4.2,
       "hex_count": 11510,
       "centroid": [
         -55.4229,
@@ -174,39 +174,19 @@
       ]
     },
     {
-      "dpto": "Oberá",
-      "parquetKey": "obera",
-      "avg_scores": {
-        "paving_index": 10.6,
-        "urban_consolidation": 3.7,
-        "service_access": 2.9,
-        "commercial_vitality": 3.4,
-        "road_connectivity": 4.9,
-        "building_mix": 0.3,
-        "urbanization": 3.1,
-        "water_exposure": 5.6
-      },
-      "overall_score": 4.3,
-      "hex_count": 11390,
-      "centroid": [
-        -55.026,
-        -27.5385
-      ]
-    },
-    {
       "dpto": "Apóstoles",
       "parquetKey": "apostoles",
       "avg_scores": {
         "paving_index": 13.3,
-        "urban_consolidation": 3.4,
+        "urban_consolidation": 2.6,
         "service_access": 2.8,
         "commercial_vitality": 2.9,
-        "road_connectivity": 4.3,
+        "road_connectivity": 3.8,
         "building_mix": 0.3,
-        "urbanization": 2.3,
-        "water_exposure": 4.2
+        "urbanization": 1.4,
+        "water_exposure": 4.9
       },
-      "overall_score": 4.2,
+      "overall_score": 4.0,
       "hex_count": 5959,
       "centroid": [
         -55.7463,
@@ -214,19 +194,39 @@
       ]
     },
     {
+      "dpto": "Oberá",
+      "parquetKey": "obera",
+      "avg_scores": {
+        "paving_index": 10.6,
+        "urban_consolidation": 2.6,
+        "service_access": 2.9,
+        "commercial_vitality": 3.4,
+        "road_connectivity": 4.2,
+        "building_mix": 0.3,
+        "urbanization": 1.8,
+        "water_exposure": 6.5
+      },
+      "overall_score": 4.0,
+      "hex_count": 11390,
+      "centroid": [
+        -55.026,
+        -27.5385
+      ]
+    },
+    {
       "dpto": "L.G. San Martín",
       "parquetKey": "l.g._san_martin",
       "avg_scores": {
         "paving_index": 11.1,
-        "urban_consolidation": 3.3,
+        "urban_consolidation": 2.4,
         "service_access": 3.4,
         "commercial_vitality": 2.8,
-        "road_connectivity": 4.7,
+        "road_connectivity": 4.0,
         "building_mix": 0.2,
-        "urbanization": 2.9,
-        "water_exposure": 4.1
+        "urbanization": 1.8,
+        "water_exposure": 4.8
       },
-      "overall_score": 4.1,
+      "overall_score": 3.8,
       "hex_count": 10342,
       "centroid": [
         -54.9959,
@@ -238,15 +238,15 @@
       "parquetKey": "cainguas",
       "avg_scores": {
         "paving_index": 8.3,
-        "urban_consolidation": 3.4,
+        "urban_consolidation": 2.2,
         "service_access": 2.7,
         "commercial_vitality": 2.1,
-        "road_connectivity": 4.2,
+        "road_connectivity": 3.5,
         "building_mix": 0.4,
-        "urbanization": 3.0,
-        "water_exposure": 5.0
+        "urbanization": 1.6,
+        "water_exposure": 5.7
       },
-      "overall_score": 3.6,
+      "overall_score": 3.3,
       "hex_count": 8185,
       "centroid": [
         -54.7684,
@@ -258,15 +258,15 @@
       "parquetKey": "san_javier",
       "avg_scores": {
         "paving_index": 6.1,
-        "urban_consolidation": 3.3,
+        "urban_consolidation": 2.2,
         "service_access": 2.7,
         "commercial_vitality": 2.2,
-        "road_connectivity": 5.3,
+        "road_connectivity": 4.5,
         "building_mix": 0.2,
-        "urbanization": 3.0,
-        "water_exposure": 3.9
+        "urbanization": 1.6,
+        "water_exposure": 4.6
       },
-      "overall_score": 3.3,
+      "overall_score": 3.0,
       "hex_count": 7294,
       "centroid": [
         -55.1209,
@@ -278,15 +278,15 @@
       "parquetKey": "montecarlo",
       "avg_scores": {
         "paving_index": 6.8,
-        "urban_consolidation": 2.7,
+        "urban_consolidation": 2.0,
         "service_access": 2.4,
         "commercial_vitality": 2.4,
-        "road_connectivity": 5.4,
+        "road_connectivity": 4.5,
         "building_mix": 0.3,
-        "urbanization": 2.3,
-        "water_exposure": 2.8
+        "urbanization": 1.5,
+        "water_exposure": 3.2
       },
-      "overall_score": 3.1,
+      "overall_score": 2.9,
       "hex_count": 5664,
       "centroid": [
         -54.6734,
@@ -298,15 +298,15 @@
       "parquetKey": "25_de_mayo",
       "avg_scores": {
         "paving_index": 5.4,
-        "urban_consolidation": 3.1,
+        "urban_consolidation": 2.0,
         "service_access": 2.3,
         "commercial_vitality": 1.7,
-        "road_connectivity": 4.7,
+        "road_connectivity": 3.9,
         "building_mix": 0.1,
-        "urbanization": 3.0,
-        "water_exposure": 2.2
+        "urbanization": 1.5,
+        "water_exposure": 2.6
       },
-      "overall_score": 2.8,
+      "overall_score": 2.4,
       "hex_count": 14931,
       "centroid": [
         -54.5864,
@@ -318,15 +318,15 @@
       "parquetKey": "guarani",
       "avg_scores": {
         "paving_index": 5.0,
-        "urban_consolidation": 3.1,
+        "urban_consolidation": 1.9,
         "service_access": 1.4,
         "commercial_vitality": 1.0,
-        "road_connectivity": 3.5,
+        "road_connectivity": 3.0,
         "building_mix": 0.2,
-        "urbanization": 3.2,
-        "water_exposure": 2.3
+        "urbanization": 1.6,
+        "water_exposure": 2.7
       },
-      "overall_score": 2.5,
+      "overall_score": 2.1,
       "hex_count": 21383,
       "centroid": [
         -54.2651,
@@ -338,15 +338,15 @@
       "parquetKey": "concepcion",
       "avg_scores": {
         "paving_index": 4.0,
-        "urban_consolidation": 2.4,
+        "urban_consolidation": 1.6,
         "service_access": 1.6,
         "commercial_vitality": 1.0,
-        "road_connectivity": 4.1,
+        "road_connectivity": 3.4,
         "building_mix": 0.1,
-        "urbanization": 2.4,
-        "water_exposure": 2.9
+        "urbanization": 1.3,
+        "water_exposure": 3.4
       },
-      "overall_score": 2.3,
+      "overall_score": 2.0,
       "hex_count": 3883,
       "centroid": [
         -55.443,

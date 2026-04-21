@@ -38,7 +38,7 @@ from scipy.spatial import cKDTree
 from sklearn.cluster import KMeans
 
 from config import OUTPUT_DIR, GCS_BUCKET, get_territory
-from scoring import run_full_diagnostics, geometric_mean_score
+from scoring import run_full_diagnostics, geometric_mean_score, load_goalposts, score_with_goalposts
 
 _GCLOUD = 'gcloud.cmd' if platform.system() == 'Windows' else 'gcloud'
 
@@ -248,8 +248,17 @@ def kdtree_distances_km(query_lats: list, query_lngs: list,
 def main():
     parser = argparse.ArgumentParser(description="Compute accessibility H3 parquet")
     parser.add_argument("--territory", default="misiones")
+    parser.add_argument("--mode", choices=["comparable", "local"], default="local",
+                        help="comparable: fixed goalpost normalization; local: percentile rank (default)")
     parser.add_argument("--diagnostics", action="store_true")
     args = parser.parse_args()
+
+    goalposts = load_goalposts() if args.mode == "comparable" else None
+    if goalposts:
+        print(f"  Mode: comparable (goalposts v{goalposts.get('version', '?')})")
+        gp_indicators = goalposts.get('indicators', {})
+    else:
+        gp_indicators = {}
 
     territory = get_territory(args.territory)
     bbox = territory['bbox']
@@ -345,8 +354,7 @@ def main():
     dist_road_raw = kdtree_distances_km(lats, lngs, road_pts)
     print(f"  mean={np.nanmean(dist_road_raw):.2f} km")
 
-    # ── Percentile ranks (inverted: less = better = higher rank) ─────────────
-    print("\nComputing percentile ranks...")
+    # ── Normalize raw values → 0-100 component scores ──────────────────────
     df = pd.DataFrame({
         'h3index': h3ids,
         'travel_capital_raw':   travel_capital_raw,
@@ -356,18 +364,31 @@ def main():
         'road_raw':             dist_road_raw,
     })
 
-    RANK_COLS = {
-        'travel_capital_raw':  'r_travel_capital',
-        'travel_cabecera_raw': 'r_travel_cabecera',
-        'hospital_raw':        'r_hospital',
-        'school_raw':          'r_school',
-        'road_raw':            'r_road',
+    RAW_TO_COMPONENT = {
+        'travel_capital_raw':  ('r_travel_capital',  'c_travel_capital'),
+        'travel_cabecera_raw': ('r_travel_cabecera', 'c_travel_cabecera'),
+        'hospital_raw':        ('r_hospital',        'c_dist_hospital'),
+        'school_raw':          ('r_school',          'c_dist_school'),
+        'road_raw':            ('r_road',            'c_dist_road'),
     }
-    for raw_col, r_col in RANK_COLS.items():
-        df[r_col] = percentile_rank(df[raw_col], invert=True)
-        print(f"  {r_col}: mean={df[r_col].mean():.1f}")
 
-    rank_cols = list(RANK_COLS.values())
+    if args.mode == 'comparable':
+        print("\nNormalizing with goalposts (comparable mode)...")
+        for raw_col, (r_col, gp_key) in RAW_TO_COMPONENT.items():
+            gp = gp_indicators.get(gp_key)
+            if gp:
+                df[r_col] = score_with_goalposts(df[raw_col], gp['lo'], gp['hi'], invert=gp.get('invert', False))
+                print(f"  {r_col}: goalpost [{gp['lo']}, {gp['hi']}] invert={gp.get('invert')}  mean={df[r_col].mean():.1f}")
+            else:
+                df[r_col] = percentile_rank(df[raw_col], invert=False)
+                print(f"  {r_col}: no goalpost, fallback percentile  mean={df[r_col].mean():.1f}")
+    else:
+        print("\nComputing percentile ranks (local mode)...")
+        for raw_col, (r_col, _gp_key) in RAW_TO_COMPONENT.items():
+            df[r_col] = percentile_rank(df[raw_col], invert=False)
+            print(f"  {r_col}: mean={df[r_col].mean():.1f}")
+
+    rank_cols = [v[0] for v in RAW_TO_COMPONENT.values()]
 
     # ── PCA diagnostics (OECD methodology) ───────────────────────────────────
     print("\nRunning PCA diagnostics...")
@@ -375,8 +396,21 @@ def main():
     df_valid = df[valid_mask][rank_cols]
     if len(df_valid) > 100:
         diag = run_full_diagnostics(df_valid, rank_cols, corr_threshold=0.70)
-        retained = diag['variable_selection']['retained']
-        dropped = diag['variable_selection']['dropped']
+        if args.mode == 'comparable' and goalposts:
+            locked = goalposts.get('pca_variable_selection', {}).get('accessibility')
+            if locked:
+                retained = [c for c in locked if c in rank_cols]
+                dropped = [c for c in rank_cols if c not in retained]
+                print(f"  [comparable] Locked selection ({len(retained)}): {retained}")
+                if dropped:
+                    print(f"  [comparable] Excluded: {dropped}")
+            else:
+                retained = diag['variable_selection']['retained']
+                dropped = diag['variable_selection']['dropped']
+                print(f"  [comparable] No lock found, using PCA selection: {retained}")
+        else:
+            retained = diag['variable_selection']['retained']
+            dropped = diag['variable_selection']['dropped']
         print(f"  Retained: {retained}")
         if dropped:
             print(f"  Dropped (|r|>0.70): {dropped}")
@@ -384,7 +418,6 @@ def main():
             diag_path = os.path.join(out_dir, 'accessibility_diagnostics.json')
             with open(diag_path, 'w') as f:
                 json.dump(diag, f, indent=2, default=str)
-            # Store PCA coordinates for visualization
             from sklearn.decomposition import PCA
             from sklearn.preprocessing import StandardScaler
             scaler = StandardScaler()

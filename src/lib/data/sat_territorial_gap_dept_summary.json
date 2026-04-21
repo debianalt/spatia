@@ -1,4 +1,5 @@
 {
+  "territory": "misiones",
   "province": {
     "total_hexes": 319932,
     "avg_score": 41.5,
@@ -17,7 +18,7 @@
     },
     {
       "dpto": "G. M. Belgrano",
-      "parquetKey": "g._m._belgrano",
+      "parquetKey": "g_m_belgrano",
       "avg_score": 50.7,
       "hex_count": 32315,
       "centroid": [
@@ -117,7 +118,7 @@
     },
     {
       "dpto": "L.G. San Martín",
-      "parquetKey": "l.g._san_martin",
+      "parquetKey": "lg_san_martin",
       "avg_score": 32.6,
       "hex_count": 15689,
       "centroid": [
@@ -137,7 +138,7 @@
     },
     {
       "dpto": "L. N. Alem",
-      "parquetKey": "l._n._alem",
+      "parquetKey": "l_n_alem",
       "avg_score": 30.4,
       "hex_count": 11662,
       "centroid": [

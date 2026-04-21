@@ -646,7 +646,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'analysis.aptitude.title': { es: '¿Qué condiciones productivas tiene el suelo?', en: 'What productive conditions does the soil have?', gn: "Mba'éichapa yvy temitỹ rehegua?" },
 	'analysis.aptitude.desc': { es: 'Suelo, lluvia, pendiente y aptitud agrícola — potencial productivo por parcela', en: 'Soil, rainfall, slope and agricultural aptitude — productive potential per parcel', gn: "Yvy, ama, yvy ho'a ha temitỹ teko porã" },
 	'analysis.accessibility.title': { es: '¿Qué zonas están más aisladas?', en: 'Which areas are most isolated?', gn: "Mba'e yvýpa oĩ mombyryve?" },
-	'analysis.accessibility.desc': { es: 'Tiempo a Posadas, hospital, escuela y ruta — accesibilidad a servicios por parcela', en: 'Time to Posadas, hospital, school and road — service accessibility per parcel', gn: "Aravo Posadas peve, hospital, mbo'ehao ha tape" },
+	'analysis.accessibility.desc': { es: 'Tiempo a capital, hospital, escuela y ruta — accesibilidad a servicios por parcela', en: 'Time to capital, hospital, school and road — service accessibility per parcel', gn: "Aravo taviguasu peve, hospital, mbo'ehao ha tape" },
 	'analysis.change.title': { es: '¿Qué zonas se están transformando más rápido?', en: 'Which areas are transforming fastest?', gn: "Mba'e yvýpa oñemoambue pya'evéva?" },
 	'analysis.change.desc': { es: 'Parcelas nuevas, deforestación, densidad edilicia — dinámica de cambio', en: 'New parcels, deforestation, building density — change dynamics', gn: "Yvy pyahu, ka'aguy jepe'a, óga papapy" },
 	'analysis.socio.title': { es: '¿Dónde son mayores las carencias sociales?', en: 'Where are social deprivations greatest?', gn: "Moõpa oĩ mba'e'ỹ tuichavéva?" },

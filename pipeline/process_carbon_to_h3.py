@@ -209,7 +209,7 @@ def main():
         ('c_agb_raw',           'c_agb_cci',        False),
         ('c_agb_gedi',          'c_agb_gedi',       False),
         ('c_total_carbon_raw',  'c_total_carbon',   False),
-        ('c_soc_tcha',          'c_soc',            False),
+        ('c_soc_raw_dgkg',      'c_soc',            False),
         ('c_emissions_raw',     'c_gross_emissions', False),  # high emissions = high score
         ('c_removals_raw',      'c_gross_removals', False),
         ('c_net_flux_raw',      'c_net_flux',       False),
@@ -229,7 +229,7 @@ def main():
             df[score_col] = percentile_rank(raw).round(1)
 
     # Overall score: geometric mean of key carbon dimensions
-    key_cols = ['c_total_carbon', 'c_npp', 'c_agb_cci']
+    key_cols = ['c_agb_cci', 'c_total_carbon', 'c_soc', 'c_net_flux']
     vals = df[key_cols].clip(lower=1.0)
     df['score'] = np.exp(np.log(vals).mean(axis=1)).round(1)
 

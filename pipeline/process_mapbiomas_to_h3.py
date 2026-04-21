@@ -129,19 +129,28 @@ def run_pca_kmeans(df: pd.DataFrame) -> pd.DataFrame:
         dominant_class = CLASSES[dominant_idx]
         dominant_frac = cluster_means[dominant_idx]
         label = READABLE.get(dominant_class, dominant_class)
-        if dominant_frac < 0.4:
+        if dominant_frac < 40:
             label = f'Mosaico ({label})'
         type_labels[c + 1] = label
-        print(f"  Type {c+1}: {label} ({mask.sum():,}, {dominant_class}={dominant_frac:.2f})")
+        print(f"  Type {c+1}: {label} ({mask.sum():,}, {dominant_class}={dominant_frac:.1f}%)")
 
     result = df[['h3index']].copy()
     result['type'] = best_labels + 1
-    result['type_label'] = result['type'].map(type_labels)
+    # Label each hexagon by its own dominant class (not cluster label — avoids k-means drift)
+    dominant_idx = df[frac_cols].values.argmax(axis=1)
+    dominant_frac = df[frac_cols].values.max(axis=1)
+    hex_labels = []
+    for idx, frac in zip(dominant_idx, dominant_frac):
+        label = READABLE.get(CLASSES[idx], CLASSES[idx])
+        if frac < 40:
+            label = f'Mosaico ({label})'
+        hex_labels.append(label)
+    result['type_label'] = hex_labels
     result['score'] = result['type'].astype(float)
     result['pca_1'] = X_pca[:, 0]
     result['pca_2'] = X_pca[:, 1]
     for col in frac_cols:
-        result[col] = df[col].round(1)  # already 0-100
+        result[col] = df[col].round(1)
     return result
 
 
@@ -160,51 +169,55 @@ def main():
     frac_cols = [f'frac_{cls}' for cls in CLASSES]
 
     if args.territory != 'misiones':
-        # Use centroid sampling on sdm_mapbiomas_py.tif Band 1 (land_use_class)
+        # Polygon zonal stats on MapBiomas classification raster (same technique as Misiones)
         mapbiomas_raster = os.path.join(t_dir, 'sdm_mapbiomas_py.tif')
         if not os.path.exists(mapbiomas_raster):
             print(f"ERROR: {mapbiomas_raster} not found. Run GEE export first.")
             return
 
-        # Load H3 indices from existing parquet (or crosswalk)
-        if os.path.exists(out_path):
-            h3_indices = pd.read_parquet(out_path, columns=['h3index'])['h3index'].tolist()
-        else:
-            cw_path = os.path.join(t_dir, 'h3_admin_crosswalk.parquet')
-            h3_indices = pd.read_parquet(cw_path, columns=['h3index'])['h3index'].tolist()
-        print(f"Territory: {territory['label']} — {len(h3_indices):,} hexes, centroid sampling from Band 1")
+        hex_path = os.path.join(t_dir, 'hexagons.geojson')
+        if not os.path.exists(hex_path):
+            print(f"ERROR: {hex_path} not found.")
+            return
 
-        try:
-            from h3 import cell_to_latlng
-        except ImportError:
-            import h3 as _h3
-            cell_to_latlng = _h3.h3_to_geo
+        print(f"Loading hexagon grid from {hex_path}...")
+        with open(hex_path, 'r') as f:
+            hexgrid = json.load(f)
+        features = hexgrid['features']
+        print(f"  {len(features):,} hexagons")
 
-        frac_cols = [f'frac_{cls}' for cls in CLASSES]
+        t0 = time.time()
+        results = []
 
-        print(f"  Sampling {mapbiomas_raster} ...")
         with rasterio.open(mapbiomas_raster) as src:
-            arr = src.read(1)  # land_use_class band
-            transform = src.transform
+            print(f"Raster: {src.width}x{src.height}, CRS={src.crs}")
+            for fi, feat in enumerate(features):
+                if fi % 50000 == 0 and fi > 0:
+                    elapsed = time.time() - t0
+                    rate = fi / elapsed
+                    eta = (len(features) - fi) / rate / 60
+                    print(f"  {fi:,}/{len(features):,} ({rate:.0f} hex/s, ETA {eta:.1f} min)")
 
-        rows = []
-        for h3idx in h3_indices:
-            lat, lng = cell_to_latlng(h3idx)
-            row_px, col_px = rasterio.transform.rowcol(transform, lng, lat)
-            row_px = max(0, min(row_px, arr.shape[0] - 1))
-            col_px = max(0, min(col_px, arr.shape[1] - 1))
-            val = arr[row_px, col_px]
-            row = {'h3index': h3idx}
-            for col in frac_cols:
-                row[col] = 0.0
-            if not np.isnan(val):
-                mapped_cls = REMAP.get(int(val), None)
-                if mapped_cls:
-                    row[f'frac_{mapped_cls}'] = 100.0
-            rows.append(row)
+                h3index = feat.get("properties", {}).get("h3index") or feat.get("id")
+                geom = shape(feat["geometry"])
+                fracs = compute_fractions(src, geom)
 
-        df = pd.DataFrame(rows)
-        print(f"  {len(df):,} hexagons processed")
+                if fracs:
+                    fracs['h3index'] = h3index
+                    results.append(fracs)
+
+        df = pd.DataFrame(results)
+        print(f"Processed: {len(df):,} hexagons with fractions")
+
+        for cls in CLASSES:
+            col = f'frac_{cls}'
+            if col not in df.columns:
+                df[col] = 0.0
+
+        # Scale fracs from 0-1 to 0-100
+        for col in frac_cols:
+            df[col] = (df[col] * 100).round(1)
+
         result = run_pca_kmeans(df)
     else:
         # Misiones: compute fractions from raster

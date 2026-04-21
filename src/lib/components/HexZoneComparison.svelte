@@ -138,7 +138,7 @@
 					{@const rv = zone.stats.rawValues[vi]}
 					<div class="cd-row">
 						<span class="cd-label">{i18n.t(v.labelKey)}</span>
-						<span class="cd-val">{fmtSmart(rv)}{v.unit ? ` ${v.unit}` : ' (0–100)'}</span>
+						<span class="cd-val">{fmtSmart(rv)}{v.unit ? ` ${v.unit}` : ' /100'}</span>
 					</div>
 				{/each}
 				<div class="zone-dl">

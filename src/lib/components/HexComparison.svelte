@@ -100,7 +100,7 @@
 					{@const displayVal = (rawVal != null && typeof rawVal === 'number') ? rawVal : numVal}
 					<div class="cd-row">
 						<span class="cd-label">{i18n.t(v.labelKey)}</span>
-						<span class="cd-val-data">{isStr ? val : fmtSmart(displayVal) + (v.unit ? ` ${v.unit}` : ' (0–100)')}</span>
+						<span class="cd-val-data">{isStr ? val : fmtSmart(displayVal) + (v.unit ? ` ${v.unit}` : ' /100')}</span>
 					</div>
 				{/each}
 			</div>

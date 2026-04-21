@@ -25,9 +25,8 @@ import os
 import sys
 import time
 
-from config import MISIONES_BBOX
+from config import get_territory
 
-EXPORT_SCALE = 100
 GCS_BUCKET = 'spatia-satellite'
 
 
@@ -43,8 +42,16 @@ def authenticate():
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Export temporal carbon composite to GCS")
+    parser.add_argument("--territory", default="misiones", help="Territory ID (default: misiones)")
+    args = parser.parse_args()
+
+    territory = get_territory(args.territory)
+    t_prefix = territory['output_prefix']
+    scale = territory['export_scale']
+
     authenticate()
-    bbox = ee.Geometry.Rectangle(MISIONES_BBOX)
+    bbox = ee.Geometry.Rectangle(territory['bbox'])
 
     # ── 1-2. ESA CCI AGB baseline (2018-2020 mean) vs current (2022) ────────
     cci = ee.ImageCollection('projects/sat-io/open-datasets/ESA/ESA_CCI_AGB').filterBounds(bbox)
@@ -98,12 +105,15 @@ def main():
                  .addBands(loss_rate_bl).addBands(loss_rate_cur))
     print(f"Bands: {composite.bandNames().getInfo()}")
 
+    gcs_prefix = f'satellite/{t_prefix}sat_carbon_temporal_raster'
+    description = f'{args.territory}_carbon_temporal' if args.territory != 'misiones' else 'sat_carbon_temporal_raster'
+
     task = ee.batch.Export.image.toCloudStorage(
         image=composite,
-        description='sat_carbon_temporal_raster',
+        description=description,
         bucket=GCS_BUCKET,
-        fileNamePrefix='satellite/sat_carbon_temporal_raster',
-        region=bbox, scale=EXPORT_SCALE,
+        fileNamePrefix=gcs_prefix,
+        region=bbox, scale=scale,
         crs='EPSG:4326', maxPixels=1e9)
     task.start()
     print("Export to GCS started")
