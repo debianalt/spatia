@@ -172,7 +172,10 @@ def build_ndvi_composite(bbox):
 
 def build_ghsl_smod(bbox):
     """1-band GHSL Settlement Model 2020 class."""
-    smod = ee.Image('JRC/GHSL/P2023A/GHS_SMOD_E2020_GLOBE_R2023A_4326_1000_V1_0').select('smod_code')
+    smod = (ee.ImageCollection('JRC/GHSL/P2023A/GHS_SMOD_V2-0')
+            .filter(ee.Filter.eq('system:index', '2020'))
+            .first()
+            .select('smod_code'))
     return smod.rename('smod_class').clip(bbox).toFloat()
 
 
