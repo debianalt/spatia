@@ -55,8 +55,6 @@ export class HexStore {
 	private compareBoundaryCache: Map<string, number[][]> = new Map();
 	compareDpto: string | null = $state(null);
 	compareDataVersion: number = $state(0);
-	// True when both territories are loaded globally (province-level compare)
-	fullCompareMode: boolean = $state(false);
 
 	get numericVariables(): HexVariable[] {
 		return this.activeLayer?.variables.filter(v => !NON_NUMERIC_COLS.has(v.col)) ?? [];
@@ -302,7 +300,6 @@ export class HexStore {
 			this.centroidCache = centroids;
 			this.boundaryCache = bounds;
 			this.selectedDpto = null;
-			this.fullCompareMode = true;
 			this.dataVersion++;
 		} else {
 			this.compareVisibleData = data;
@@ -316,30 +313,18 @@ export class HexStore {
 		const layer = this.activeLayer;
 		if (!layer || layer.id === 'flood_risk') return;
 
-		// If primary territory has no hexes yet (perDepartment layer, no dept selected),
-		// load both territories simultaneously so both are visible for comparison.
-		const loadPrimary = layer.perDepartment && this.visibleData.size === 0;
-
 		try {
-			if (loadPrimary) {
-				await Promise.all([
-					this.loadGlobalInto(layer, this.territoryPrefix, 'primary'),
-					this.loadGlobalInto(layer, comparePrefix, 'compare'),
-				]);
-			} else {
-				await this.loadGlobalInto(layer, comparePrefix, 'compare');
-			}
+			await this.loadGlobalInto(layer, comparePrefix, 'compare');
 		} catch (e) {
 			console.warn('Failed to load full compare data:', e);
 		}
 	}
 
 	clearCompareDept(): void {
-		if (this.compareDpto === null && this.compareVisibleData.size === 0 && !this.fullCompareMode) return;
+		if (this.compareDpto === null && this.compareVisibleData.size === 0) return;
 		this.compareVisibleData = new Map();
 		this.compareBoundaryCache = new Map();
 		this.compareDpto = null;
-		this.fullCompareMode = false;
 		this.compareDataVersion++;
 	}
 
