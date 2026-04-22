@@ -97,7 +97,9 @@ export function getReportUrl(analysisId: string, parquetKey: string, territoryPr
 }
 
 export function getSatGlobalUrl(analysisId: string, territoryPrefix = ''): string {
-	return `${getBase()}/data/${territoryPrefix}sat_${analysisId}.parquet?cb=${_sessionBust}`;
+	const layer = HEX_LAYER_REGISTRY[analysisId];
+	const name = layer?.parquet ?? `sat_${analysisId}`;
+	return `${getBase()}/data/${territoryPrefix}${name}.parquet?cb=${_sessionBust}`;
 }
 
 export function getDeptSummaryUrl(analysisId: string, territoryPrefix = ''): string {
