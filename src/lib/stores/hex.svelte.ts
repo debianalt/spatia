@@ -449,9 +449,14 @@ export class HexStore {
 
 	// ── Selection ────────────────────────────────────────────────────────
 
+	private static goldenAngleColor(i: number): string {
+		const hue = Math.round((i * 137.508) % 360);
+		return `hsl(${hue}, 72%, 63%)`;
+	}
+
 	selectHex(h3index: string) {
 		if (this.selectedHexes.has(h3index)) return;
-		const color = ZONE_COLORS[this.colorIndex % ZONE_COLORS.length];
+		const color = HexStore.goldenAngleColor(this.colorIndex);
 		this.colorIndex++;
 		const data = this.visibleData.get(h3index) ?? {};
 		const updated = new Map(this.selectedHexes);

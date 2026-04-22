@@ -357,10 +357,12 @@
 
 	// ── HexStore reactivity: sync hex selection highlights with map ───────
 	$effect(() => {
-		const hexes = [...hexStore.selectedHexes.entries()].map(([h3index, d]) => ({
+		const allHexes = [...hexStore.selectedHexes.entries()].map(([h3index, d]) => ({
 			h3index, color: d.color
 		}));
-		mapComponent?.highlightHexagons(hexes);
+		const primary = allHexes.filter(h => hexStore.visibleData.has(h.h3index));
+		const compare = allHexes.filter(h => hexStore.compareVisibleData.has(h.h3index));
+		mapComponent?.highlightHexagons(primary, compare);
 	});
 
 	// ── Flood parcel selection highlights on catastro layer ───────────────
