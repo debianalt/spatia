@@ -545,6 +545,13 @@
 			tooltip.style.display = 'none';
 		});
 
+		map.on('mousemove', 'compare-hex-fill', () => {
+			if (!lassoActive) map.getCanvas().style.cursor = 'pointer';
+		});
+		map.on('mouseleave', 'compare-hex-fill', () => {
+			if (!lassoActive) map.getCanvas().style.cursor = '';
+		});
+
 	}
 
 	export function setHexLayerInfo(title: string, isCategorical: boolean) {
