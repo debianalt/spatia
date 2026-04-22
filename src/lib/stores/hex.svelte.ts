@@ -55,6 +55,8 @@ export class HexStore {
 	private compareBoundaryCache: Map<string, number[][]> = new Map();
 	compareDpto: string | null = $state(null);
 	compareDataVersion: number = $state(0);
+	// True when both territories are loaded globally (province-level compare)
+	fullCompareMode: boolean = $state(false);
 
 	get numericVariables(): HexVariable[] {
 		return this.activeLayer?.variables.filter(v => !NON_NUMERIC_COLS.has(v.col)) ?? [];
@@ -300,6 +302,7 @@ export class HexStore {
 			this.centroidCache = centroids;
 			this.boundaryCache = bounds;
 			this.selectedDpto = null;
+			this.fullCompareMode = true;
 			this.dataVersion++;
 		} else {
 			this.compareVisibleData = data;
@@ -332,10 +335,11 @@ export class HexStore {
 	}
 
 	clearCompareDept(): void {
-		if (this.compareDpto === null && this.compareVisibleData.size === 0) return;
+		if (this.compareDpto === null && this.compareVisibleData.size === 0 && !this.fullCompareMode) return;
 		this.compareVisibleData = new Map();
 		this.compareBoundaryCache = new Map();
 		this.compareDpto = null;
+		this.fullCompareMode = false;
 		this.compareDataVersion++;
 	}
 

@@ -394,7 +394,8 @@
 		prevDataVersion = version;
 
 		// Skip for perDepartment layers — rendered directly via handleSelectFloodDpto
-		if (layer?.perDepartment) return;
+		// Exception: fullCompareMode loads global data bypassing dept selection
+		if (layer?.perDepartment && !hexStore.fullCompareMode) return;
 
 		if (entries.length === 0) {
 			mapComponent?.clearHexChoropleth();
