@@ -203,9 +203,12 @@ def main():
             # Left-join from full crosswalk: every territory hex gets a row
             df = full_hexes.merge(df.drop(columns=[admin_col], errors='ignore'),
                                   on='h3index', how='left')
+            score_like = {'score', 'score_baseline', 'delta_score'}
             for col in df.columns:
                 if col in ('h3index', admin_col):
                     continue
+                if col in score_like or col.startswith('c_'):
+                    continue  # NaN = no raster coverage
                 if df[col].dtype == object:
                     df[col] = df[col].fillna('')
                 else:

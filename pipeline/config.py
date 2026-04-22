@@ -33,7 +33,7 @@ TERRITORY_CONFIGS: dict[str, dict] = {
         'id': 'itapua_py',
         'label': 'Itapúa',
         'country': 'py',
-        'bbox': [-57.40, -27.70, -55.00, -26.40],   # padded to cover edge hexagons
+        'bbox': [-57.40, -27.70, -54.60, -26.10],   # padded to cover edge hexagons
         'admin_level': 'distrito',
         'admin_col': 'distrito',
         'admin_collection': 'FAO/GAUL/2015/level2',  # provisional; see explore_itapua_admin.py

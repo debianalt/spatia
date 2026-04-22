@@ -33,6 +33,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
 
 from config import OUTPUT_DIR, get_territory
+from scoring import load_goalposts, score_with_goalposts
 
 HEXAGONS_PATH = os.path.join(OUTPUT_DIR, "hexagons-lite.geojson")
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, "sat_productive_activity.parquet")
@@ -96,7 +97,11 @@ def pctile(s):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--territory", default="misiones", help="Territory ID (default: misiones)")
+    parser.add_argument("--mode", choices=['comparable', 'local'], default='local',
+                        help="comparable: goalpost normalization. local: percentile rank (default).")
     args = parser.parse_args()
+
+    goalposts = load_goalposts() if args.mode == 'comparable' else None
 
     territory = get_territory(args.territory)
     t_prefix = territory['output_prefix']
@@ -182,9 +187,14 @@ def main():
         if var in result.columns and bl_col in result.columns:
             result[f'{var}_delta'] = (result[var] - result[bl_col]).round(4)
 
-    # Score = VIIRS percentile (primary choropleth)
-    result['score'] = pctile(result['c_viirs'])
-    result['score_baseline'] = pctile(result['c_viirs_baseline'])
+    # Score = primary choropleth
+    if args.mode == 'comparable' and goalposts:
+        gp = goalposts['indicators'].get('c_viirs', {'lo': 0, 'hi': 15})
+        result['score'] = score_with_goalposts(result['c_viirs'], gp['lo'], gp['hi']).round(1)
+        result['score_baseline'] = score_with_goalposts(result['c_viirs_baseline'], gp['lo'], gp['hi']).round(1)
+    else:
+        result['score'] = pctile(result['c_viirs'])
+        result['score_baseline'] = pctile(result['c_viirs_baseline'])
     result['delta_score'] = (result['score'] - result['score_baseline']).round(1)
 
     # Round raw values

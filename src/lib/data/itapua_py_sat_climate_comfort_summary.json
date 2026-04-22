@@ -2,14 +2,14 @@
   "territory": "itapua_py",
   "province": {
     "total_hexes": 173048,
-    "avg_score": 49.6,
+    "avg_score": 65.7,
     "unassigned": 0
   },
   "departments": [
     {
       "distrito": "Trinidad",
       "parquetKey": "trinidad",
-      "avg_score": 71.4,
+      "avg_score": 73.4,
       "hex_count": 2375,
       "centroid": [
         -55.735,
@@ -17,13 +17,103 @@
       ]
     },
     {
+      "distrito": "Alto Vera",
+      "parquetKey": "alto_vera",
+      "avg_score": 71.6,
+      "hex_count": 13092,
+      "centroid": [
+        -55.7222,
+        -26.5954
+      ]
+    },
+    {
+      "distrito": "Nueva Alborada",
+      "parquetKey": "nueva_alborada",
+      "avg_score": 71.6,
+      "hex_count": 2534,
+      "centroid": [
+        -55.665,
+        -27.2813
+      ]
+    },
+    {
       "distrito": "Obligado",
       "parquetKey": "obligado",
-      "avg_score": 68.9,
+      "avg_score": 70.3,
       "hex_count": 4236,
       "centroid": [
         -55.7125,
         -26.9229
+      ]
+    },
+    {
+      "distrito": "San Rafael Del Parana",
+      "parquetKey": "san_rafael_del_parana",
+      "avg_score": 70.1,
+      "hex_count": 16122,
+      "centroid": [
+        -55.1388,
+        -26.4058
+      ]
+    },
+    {
+      "distrito": "Tomas Romero P.",
+      "parquetKey": "tomas_romero_p",
+      "avg_score": 69.8,
+      "hex_count": 6723,
+      "centroid": [
+        -55.2933,
+        -26.4732
+      ]
+    },
+    {
+      "distrito": "Carlos A Lopez",
+      "parquetKey": "carlos_a_lopez",
+      "avg_score": 69.6,
+      "hex_count": 8756,
+      "centroid": [
+        -54.9021,
+        -26.3704
+      ]
+    },
+    {
+      "distrito": "Bella Vista",
+      "parquetKey": "bella_vista",
+      "avg_score": 69.4,
+      "hex_count": 3149,
+      "centroid": [
+        -55.5355,
+        -27.0111
+      ]
+    },
+    {
+      "distrito": "Edelira",
+      "parquetKey": "edelira",
+      "avg_score": 69.3,
+      "hex_count": 7388,
+      "centroid": [
+        -55.4008,
+        -26.58
+      ]
+    },
+    {
+      "distrito": "Hohenau",
+      "parquetKey": "hohenau",
+      "avg_score": 69.0,
+      "hex_count": 2994,
+      "centroid": [
+        -55.7418,
+        -27.0077
+      ]
+    },
+    {
+      "distrito": "Cambyreta",
+      "parquetKey": "cambyreta",
+      "avg_score": 68.8,
+      "hex_count": 2077,
+      "centroid": [
+        -55.7699,
+        -27.3561
       ]
     },
     {
@@ -37,19 +127,9 @@
       ]
     },
     {
-      "distrito": "Alto Vera",
-      "parquetKey": "alto_vera",
-      "avg_score": 68.7,
-      "hex_count": 13092,
-      "centroid": [
-        -55.7222,
-        -26.5954
-      ]
-    },
-    {
       "distrito": "Pirapo",
       "parquetKey": "pirapo",
-      "avg_score": 68.2,
+      "avg_score": 68.7,
       "hex_count": 7336,
       "centroid": [
         -55.5412,
@@ -57,19 +137,9 @@
       ]
     },
     {
-      "distrito": "Edelira",
-      "parquetKey": "edelira",
-      "avg_score": 67.9,
-      "hex_count": 7388,
-      "centroid": [
-        -55.4008,
-        -26.58
-      ]
-    },
-    {
       "distrito": "Jesus",
       "parquetKey": "jesus",
-      "avg_score": 67.4,
+      "avg_score": 68.4,
       "hex_count": 1387,
       "centroid": [
         -55.7803,
@@ -77,9 +147,39 @@
       ]
     },
     {
+      "distrito": "Yatytay",
+      "parquetKey": "yatytay",
+      "avg_score": 68.0,
+      "hex_count": 3122,
+      "centroid": [
+        -55.0816,
+        -26.6682
+      ]
+    },
+    {
+      "distrito": "Encarnacion",
+      "parquetKey": "encarnacion",
+      "avg_score": 67.7,
+      "hex_count": 3415,
+      "centroid": [
+        -55.8985,
+        -27.2646
+      ]
+    },
+    {
+      "distrito": "Mayor Otano",
+      "parquetKey": "mayor_otano",
+      "avg_score": 67.7,
+      "hex_count": 3257,
+      "centroid": [
+        -54.7762,
+        -26.2756
+      ]
+    },
+    {
       "distrito": "La Paz",
       "parquetKey": "la_paz",
-      "avg_score": 66.8,
+      "avg_score": 67.0,
       "hex_count": 2509,
       "centroid": [
         -55.9091,
@@ -87,39 +187,9 @@
       ]
     },
     {
-      "distrito": "Hohenau",
-      "parquetKey": "hohenau",
-      "avg_score": 66.3,
-      "hex_count": 2994,
-      "centroid": [
-        -55.7418,
-        -27.0077
-      ]
-    },
-    {
-      "distrito": "Nueva Alborada",
-      "parquetKey": "nueva_alborada",
-      "avg_score": 66.3,
-      "hex_count": 2534,
-      "centroid": [
-        -55.665,
-        -27.2813
-      ]
-    },
-    {
-      "distrito": "Bella Vista",
-      "parquetKey": "bella_vista",
-      "avg_score": 66.0,
-      "hex_count": 3149,
-      "centroid": [
-        -55.5355,
-        -27.0111
-      ]
-    },
-    {
       "distrito": "San Pedro Del Parana",
       "parquetKey": "san_pedro_del_parana",
-      "avg_score": 66.0,
+      "avg_score": 66.2,
       "hex_count": 15050,
       "centroid": [
         -56.0239,
@@ -129,7 +199,7 @@
     {
       "distrito": "Fram",
       "parquetKey": "fram",
-      "avg_score": 64.9,
+      "avg_score": 65.5,
       "hex_count": 3545,
       "centroid": [
         -56.0203,
@@ -137,29 +207,9 @@
       ]
     },
     {
-      "distrito": "Cambyreta",
-      "parquetKey": "cambyreta",
-      "avg_score": 64.1,
-      "hex_count": 2077,
-      "centroid": [
-        -55.7699,
-        -27.3561
-      ]
-    },
-    {
-      "distrito": "Capitan Meza",
-      "parquetKey": "capitan_meza",
-      "avg_score": 64.0,
-      "hex_count": 8347,
-      "centroid": [
-        -55.3725,
-        -26.7763
-      ]
-    },
-    {
       "distrito": "Natalio",
       "parquetKey": "natalio",
-      "avg_score": 63.3,
+      "avg_score": 65.4,
       "hex_count": 3554,
       "centroid": [
         -55.1481,
@@ -167,99 +217,19 @@
       ]
     },
     {
-      "distrito": "Leandro Oviedo",
-      "parquetKey": "leandro_oviedo",
-      "avg_score": 61.9,
-      "hex_count": 1381,
+      "distrito": "Capitan Meza",
+      "parquetKey": "capitan_meza",
+      "avg_score": 65.0,
+      "hex_count": 8347,
       "centroid": [
-        -56.2346,
-        -26.7503
-      ]
-    },
-    {
-      "distrito": "Gral Artigas",
-      "parquetKey": "gral_artigas",
-      "avg_score": 57.3,
-      "hex_count": 15510,
-      "centroid": [
-        -56.3772,
-        -26.9109
-      ]
-    },
-    {
-      "distrito": "Encarnacion",
-      "parquetKey": "encarnacion",
-      "avg_score": 56.8,
-      "hex_count": 3415,
-      "centroid": [
-        -55.8985,
-        -27.2646
-      ]
-    },
-    {
-      "distrito": "Tomas Romero P.",
-      "parquetKey": "tomas_romero_p",
-      "avg_score": 56.0,
-      "hex_count": 6723,
-      "centroid": [
-        -55.2933,
-        -26.4732
-      ]
-    },
-    {
-      "distrito": "Yatytay",
-      "parquetKey": "yatytay",
-      "avg_score": 55.6,
-      "hex_count": 3122,
-      "centroid": [
-        -55.0816,
-        -26.6682
-      ]
-    },
-    {
-      "distrito": "Coronel Bogado",
-      "parquetKey": "coronel_bogado",
-      "avg_score": 52.6,
-      "hex_count": 6066,
-      "centroid": [
-        -56.306,
-        -27.1479
-      ]
-    },
-    {
-      "distrito": "Carmen Del Parana",
-      "parquetKey": "carmen_del_parana",
-      "avg_score": 51.7,
-      "hex_count": 3013,
-      "centroid": [
-        -56.1055,
-        -27.2074
-      ]
-    },
-    {
-      "distrito": "Gral. Delgado",
-      "parquetKey": "gral_delgado",
-      "avg_score": 50.6,
-      "hex_count": 4846,
-      "centroid": [
-        -56.5565,
-        -27.0741
-      ]
-    },
-    {
-      "distrito": "San Cosme Y Damian",
-      "parquetKey": "san_cosme_y_damian",
-      "avg_score": 44.6,
-      "hex_count": 7180,
-      "centroid": [
-        -56.4868,
-        -27.2628
+        -55.3725,
+        -26.7763
       ]
     },
     {
       "distrito": "San Juan",
       "parquetKey": "san_juan",
-      "avg_score": 44.4,
+      "avg_score": 64.8,
       "hex_count": 901,
       "centroid": [
         -55.9922,
@@ -267,19 +237,59 @@
       ]
     },
     {
-      "distrito": "San Rafael Del Parana",
-      "parquetKey": "san_rafael_del_parana",
-      "avg_score": 15.8,
-      "hex_count": 16122,
+      "distrito": "Carmen Del Parana",
+      "parquetKey": "carmen_del_parana",
+      "avg_score": 64.7,
+      "hex_count": 3013,
       "centroid": [
-        -55.1388,
-        -26.4058
+        -56.1055,
+        -27.2074
+      ]
+    },
+    {
+      "distrito": "Leandro Oviedo",
+      "parquetKey": "leandro_oviedo",
+      "avg_score": 62.1,
+      "hex_count": 1381,
+      "centroid": [
+        -56.2346,
+        -26.7503
+      ]
+    },
+    {
+      "distrito": "Coronel Bogado",
+      "parquetKey": "coronel_bogado",
+      "avg_score": 58.7,
+      "hex_count": 6066,
+      "centroid": [
+        -56.306,
+        -27.1479
+      ]
+    },
+    {
+      "distrito": "Gral Artigas",
+      "parquetKey": "gral_artigas",
+      "avg_score": 58.1,
+      "hex_count": 15510,
+      "centroid": [
+        -56.3772,
+        -26.9109
+      ]
+    },
+    {
+      "distrito": "Gral. Delgado",
+      "parquetKey": "gral_delgado",
+      "avg_score": 52.1,
+      "hex_count": 4846,
+      "centroid": [
+        -56.5565,
+        -27.0741
       ]
     },
     {
       "distrito": "Isla Yacyreta",
       "parquetKey": "isla_yacyreta",
-      "avg_score": 8.0,
+      "avg_score": 49.8,
       "hex_count": 8785,
       "centroid": [
         -56.5119,
@@ -287,33 +297,23 @@
       ]
     },
     {
-      "distrito": "Carlos A Lopez",
-      "parquetKey": "carlos_a_lopez",
-      "avg_score": 1.0,
-      "hex_count": 8756,
+      "distrito": "San Cosme Y Damian",
+      "parquetKey": "san_cosme_y_damian",
+      "avg_score": 48.3,
+      "hex_count": 7180,
       "centroid": [
-        -54.9021,
-        -26.3704
+        -56.4868,
+        -27.2628
       ]
     },
     {
       "distrito": "Isla",
       "parquetKey": "isla",
-      "avg_score": 0.0,
+      "avg_score": null,
       "hex_count": 2429,
       "centroid": [
         -56.4098,
         -27.5135
-      ]
-    },
-    {
-      "distrito": "Mayor Otano",
-      "parquetKey": "mayor_otano",
-      "avg_score": 0.0,
-      "hex_count": 3257,
-      "centroid": [
-        -54.7762,
-        -26.2756
       ]
     }
   ]

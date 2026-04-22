@@ -37,6 +37,7 @@ from rasterio.windows import from_bounds
 from shapely.geometry import shape
 
 from config import OUTPUT_DIR
+from scoring import load_goalposts, score_with_goalposts
 
 LOSSYEAR_PATH = os.path.join(OUTPUT_DIR, "hansen_lossyear.tif")
 TREECOVER_PATH = os.path.join(OUTPUT_DIR, "hansen_treecover2000.tif")
@@ -157,8 +158,12 @@ def main():
     parser = argparse.ArgumentParser(description="Hansen -> H3 zonal stats")
     parser.add_argument("--territory", default="misiones",
                         help="Territory ID (default: misiones)")
+    parser.add_argument("--mode", choices=['comparable', 'local'], default='local',
+                        help="comparable: goalpost normalization. local: percentile rank (default).")
     args = parser.parse_args()
     set_territory_paths(args.territory)
+
+    goalposts = load_goalposts() if args.mode == 'comparable' else None
 
     t0 = time.time()
     print(f"Territory: {args.territory}")
@@ -238,8 +243,13 @@ def main():
     result = result[result.treecover2000 > 5].copy()
 
     # Scores (higher loss rate = higher score = more deforestation pressure)
-    result["score"] = percentile_rank(result["loss_rate_current"])
-    result["score_baseline"] = percentile_rank(result["loss_rate_baseline"])
+    if args.mode == 'comparable' and goalposts:
+        gp = goalposts['indicators'].get('c_loss_rate', {'lo': 0, 'hi': 5})
+        result["score"] = score_with_goalposts(result["loss_rate_current"], gp['lo'], gp['hi']).round(1)
+        result["score_baseline"] = score_with_goalposts(result["loss_rate_baseline"], gp['lo'], gp['hi']).round(1)
+    else:
+        result["score"] = percentile_rank(result["loss_rate_current"])
+        result["score_baseline"] = percentile_rank(result["loss_rate_baseline"])
     result["delta_score"] = (result["score"] - result["score_baseline"]).round(1)
 
     # Display values
