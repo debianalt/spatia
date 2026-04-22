@@ -20,6 +20,7 @@
 	interface TerritoryStats {
 		territory: TerritoryConfig;
 		values: Record<string, number | null>;
+		rawValues: Record<string, number | null>;
 		error?: string;
 	}
 
@@ -67,10 +68,15 @@
 	}
 
 	async function loadStats(territory: TerritoryConfig, cols: string[]): Promise<TerritoryStats> {
-		if (cols.length === 0) return { territory, values: {} };
+		if (cols.length === 0) return { territory, values: {}, rawValues: {} };
 		const analysisId = lensStore.activeAnalysis?.id ?? '';
-		if (analysisId === 'flood_risk') return { territory, values: {}, error: 'Sin datos globales' };
+		if (analysisId === 'flood_risk') return { territory, values: {}, rawValues: {}, error: 'Sin datos globales' };
 		const url = getSatGlobalUrl(analysisId, territory.parquetPrefix);
+
+		const rawColMap = new Map<string, string>();
+		for (const v of compareVars) {
+			if (v.rawCol) rawColMap.set(v.col, v.rawCol);
+		}
 
 		try {
 			const schema = await query(`DESCRIBE SELECT * FROM '${url}'`);
@@ -81,30 +87,44 @@
 				if (name) available.add(name);
 			}
 			const validCols = cols.filter(c => available.has(c));
-			if (validCols.length === 0) return { territory, values: {} };
+			if (validCols.length === 0) return { territory, values: {}, rawValues: {} };
 
-			const selects = validCols.map(col => `AVG("${col}") AS "${col}"`).join(', ');
+			const rawCols = [...rawColMap.values()].filter(c => available.has(c));
+			const allCols = [...new Set([...validCols, ...rawCols])];
+			const selects = allCols.map(col => `AVG("${col}") AS "${col}"`).join(', ');
 			const result = await query(`SELECT ${selects} FROM '${url}'`);
 			const values: Record<string, number | null> = {};
+			const rawValues: Record<string, number | null> = {};
 			for (const col of validCols) {
 				const vec = result.getChild(col);
 				values[col] = vec ? (vec.get(0) as number | null) : null;
 			}
-			return { territory, values };
+			for (const col of rawCols) {
+				const vec = result.getChild(col);
+				rawValues[col] = vec ? (vec.get(0) as number | null) : null;
+			}
+			return { territory, values, rawValues };
 		} catch (e) {
-			return { territory, values: {}, error: String(e) };
+			return { territory, values: {}, rawValues: {}, error: String(e) };
 		}
 	}
 
 	function computeDeptAvg(territory: TerritoryConfig, cols: string[], data: Map<string, Record<string, any>>): TerritoryStats {
 		const values: Record<string, number | null> = {};
-		for (const col of cols) {
+		const rawValues: Record<string, number | null> = {};
+		const rawCols = new Set<string>();
+		for (const v of compareVars) {
+			if (v.rawCol) rawCols.add(v.rawCol);
+		}
+		for (const col of [...cols, ...rawCols]) {
 			const nums = [...data.values()]
 				.map(d => d[col])
 				.filter((v): v is number => typeof v === 'number' && !isNaN(v));
-			values[col] = nums.length > 0 ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
+			const avg = nums.length > 0 ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
+			if (rawCols.has(col)) rawValues[col] = avg;
+			else values[col] = avg;
 		}
-		return { territory, values };
+		return { territory, values, rawValues };
 	}
 
 	$effect(() => {
@@ -229,8 +249,10 @@
 								<tr><td colspan="4" class="hint">{stats[0].error ?? stats[1].error}</td></tr>
 							{:else}
 								{#each compareVars as v}
-									{@const a = stats[0].values[v.col]}
-									{@const b = stats[1].values[v.col]}
+									{@const rawA = v.rawCol ? stats[0].rawValues[v.rawCol] : null}
+									{@const rawB = v.rawCol ? stats[1].rawValues[v.rawCol] : null}
+									{@const a = (rawA != null && typeof rawA === 'number') ? rawA : stats[0].values[v.col]}
+									{@const b = (rawB != null && typeof rawB === 'number') ? rawB : stats[1].values[v.col]}
 									<tr>
 										<td class="col-var">{i18n.t(v.labelKey)}</td>
 										<td class="col-val">{fmt(a)}{v.unit ? ` ${v.unit}` : ''}</td>

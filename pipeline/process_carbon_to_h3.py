@@ -205,6 +205,8 @@ def main():
     # ── Percentile rank scoring ───────────────────────────────────────
     print("\nPercentile rank scoring...")
 
+    df['c_agb_gedi_raw'] = df['c_agb_gedi'].copy()
+
     score_vars = [
         ('c_agb_raw',           'c_agb_cci',        False),
         ('c_agb_gedi',          'c_agb_gedi',       False),
@@ -391,7 +393,7 @@ def main():
         'c_standing_tc_current', 'c_standing_tc_baseline', 'c_standing_tc_delta',
         'c_loss_rate_current', 'c_loss_rate_baseline', 'c_loss_rate_delta',
         # Raw physical units
-        'c_agb_raw', 'c_agb_raw_baseline', 'c_agb_gedi',
+        'c_agb_raw', 'c_agb_raw_baseline', 'c_agb_gedi_raw',
         'c_total_carbon_raw', 'c_total_carbon_raw_baseline',
         'c_soc_tcha', 'c_emissions_raw', 'c_removals_raw',
         'c_net_flux_raw', 'c_npp_raw',
