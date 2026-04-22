@@ -11,7 +11,7 @@
 	import { LassoStore } from '$lib/stores/lasso.svelte';
 	import { HexStore } from '$lib/stores/hex.svelte';
 	import { TerritoryStore } from '$lib/stores/territory.svelte';
-	import { initDuckDB, query, isReady } from '$lib/stores/duckdb';
+	import { initDuckDB, query, isReady, getInitError } from '$lib/stores/duckdb';
 	import { PARQUETS, MAP_INIT, HEX_LAYER_REGISTRY, getAnalysisById, getAnalysesForLens, type AnalysisConfig, type LensId } from '$lib/config';
 	import { i18n, type Locale } from '$lib/stores/i18n.svelte';
 	import { page } from '$app/stores';
@@ -24,6 +24,7 @@
 
 	let mapComponent: ReturnType<typeof MapComponent>;
 	let mapContainer: HTMLDivElement;
+	let duckdbFailed = $state(false);
 	// ── URL state: read params on mount, write on change ──
 	function updateUrlState() {
 		const params = new URLSearchParams();
@@ -81,7 +82,7 @@
 			.then(() => {
 				warmupRadioStats();
 			})
-			.catch(e => console.warn('DuckDB init failed:', e));
+			.catch(e => { console.warn('DuckDB init failed:', e); duckdbFailed = true; });
 
 		mapContainer?.addEventListener('radio-select', ((e: CustomEvent) => {
 			if (lassoStore.active) return;
@@ -422,6 +423,12 @@
 		}
 		let colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = layer?.colorScale ?? 'sequential';
 		mapComponent?.setCompareHexChoropleth(entries, colorScale, hexStore.colorDomain ?? undefined);
+	});
+
+	// ── Clear data load error when analysis changes ──────────────────────────
+	$effect(() => {
+		lensStore.activeAnalysis; // reactive dependency
+		hexStore.clearLoadError();
 	});
 
 	// ── Dept bbox outlines + auto-fly when both depts are loaded ────────────
@@ -957,6 +964,18 @@
 		</div>
 	</div>
 </div>
+
+{#if duckdbFailed || hexStore.loadError}
+	<div style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;align-items:flex-start;gap:12px;border-radius:10px;border:1px solid rgba(239,68,68,0.35);background:rgba(23,5,5,0.92);padding:12px 16px;backdrop-filter:blur(8px);max-width:280px;box-shadow:0 4px 24px rgba(0,0,0,0.6)">
+		<span style="font-size:12px;color:#fca5a5;line-height:1.5;flex:1">
+			{duckdbFailed ? i18n.t('error.engineFailed') : i18n.t('error.dataLoadFailed')}
+		</span>
+		<button
+			style="background:none;border:none;cursor:pointer;color:rgba(252,165,165,0.5);font-size:16px;line-height:1;padding:0;flex-shrink:0"
+			onclick={() => { duckdbFailed = false; hexStore.clearLoadError(); }}
+		>✕</button>
+	</div>
+{/if}
 
 <style>
 	.territory-col {

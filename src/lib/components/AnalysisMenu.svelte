@@ -52,7 +52,7 @@
 						{#if analysis.status === 'coming_soon'}
 							<span class="item-badge">{i18n.t('analysis.status.comingSoon')}</span>
 						{:else if coverage === 'pending'}
-							<span class="item-badge">⏳ próximamente</span>
+							<span class="item-badge">⏳ {i18n.t('analysis.coverage.pending')}</span>
 						{/if}
 					</button>
 				{/each}
@@ -76,7 +76,7 @@
 						{#if analysis.status === 'coming_soon'}
 							<span class="item-badge">{i18n.t('analysis.status.comingSoon')}</span>
 						{:else if coverage === 'pending'}
-							<span class="item-badge">⏳ próximamente</span>
+							<span class="item-badge">⏳ {i18n.t('analysis.coverage.pending')}</span>
 						{/if}
 					</button>
 				{/each}

@@ -43,6 +43,7 @@ export class HexStore {
 	selectedHexes: Map<string, HexSelectionData> = $state(new Map());
 	hexZones: HexZone[] = $state([]);
 	loading: boolean = $state(false);
+	loadError: string | null = $state(null);
 	temporalMode: TemporalMode = $state('current');
 
 	private colorIndex = 0;
@@ -147,6 +148,7 @@ export class HexStore {
 		const layer = this.activeLayer;
 
 		this.loading = true;
+		this.loadError = null;
 		this.selectedDpto = dpto;
 		this.visibleData = new Map();
 		this.clearSelection();
@@ -210,6 +212,7 @@ export class HexStore {
 			this.ensureProvincialAvg().catch(() => {});
 		} catch (e) {
 			console.warn('[loadDept FAIL]', dpto, e);
+			this.loadError = 'dataLoadFailed';
 		}
 
 		this.loading = false;
@@ -218,6 +221,7 @@ export class HexStore {
 	async loadCompareDept(dpto: string, parquetKey: string, comparePrefix: string): Promise<void> {
 		if (!this.activeLayer) return;
 		const layer = this.activeLayer;
+		this.loadError = null;
 
 		let url: string;
 		if (layer.id === 'flood_risk') {
@@ -264,6 +268,7 @@ export class HexStore {
 			this.compareDataVersion++;
 		} catch (e) {
 			console.warn('Failed to load compare dept data:', e);
+			this.loadError = 'dataLoadFailed';
 		}
 	}
 
@@ -378,6 +383,7 @@ export class HexStore {
 		if (layer.perDepartment) return;
 
 		this.loading = true;
+		this.loadError = null;
 
 		try {
 			await this.loadBaseResolution(layer);
@@ -385,6 +391,7 @@ export class HexStore {
 			this.ensureProvincialAvg().catch(() => {});
 		} catch (e) {
 			console.warn('Failed to load hex data:', e);
+			this.loadError = 'dataLoadFailed';
 		}
 
 		this.loading = false;
@@ -707,6 +714,10 @@ export class HexStore {
 
 	// ── Full clear ───────────────────────────────────────────────────────
 
+	clearLoadError() {
+		this.loadError = null;
+	}
+
 	clearAll() {
 		this.activeLayer = null;
 		this.visibleData = new Map();
@@ -714,6 +725,7 @@ export class HexStore {
 		this.boundaryCache = new Map();
 		this.selectedDpto = null;
 		this.deptBbox = null;
+		this.loadError = null;
 		this.temporalMode = 'current';
 		this.dataVersion++;
 		this.selectedHexes = new Map();
