@@ -258,45 +258,74 @@ export class HexStore {
 		}
 	}
 
-	async loadFullCompare(comparePrefix: string): Promise<void> {
-		const layer = this.activeLayer;
-		if (!layer || layer.id === 'flood_risk') return;
+	private async loadGlobalInto(
+		layer: HexLayerConfig,
+		prefix: string,
+		target: 'primary' | 'compare'
+	): Promise<void> {
+		const url = getSatGlobalUrl(layer.id, prefix);
+		const result = await query(`SELECT * FROM '${url}'`);
+		const data = new Map<string, Record<string, any>>();
+		const centroids = new Map<string, [number, number]>();
+		const bounds = new Map<string, number[][]>();
 
-		const url = getSatGlobalUrl(layer.id, comparePrefix);
+		const resultCols = result.schema.fields
+			.map((f: any) => f.name)
+			.filter((n: string) => n !== 'h3index');
+		const h3Vec = result.getChild('h3index');
+		const colVecs = Object.fromEntries(resultCols.map((col: string) => [col, result.getChild(col)]));
 
-		try {
-			const result = await query(`SELECT * FROM '${url}'`);
-			const data = new Map<string, Record<string, any>>();
-			const bounds = new Map<string, number[][]>();
-
-			const resultCols = result.schema.fields
-				.map((f: any) => f.name)
-				.filter((n: string) => n !== 'h3index');
-			const h3Vec = result.getChild('h3index');
-			const colVecs = Object.fromEntries(resultCols.map((col: string) => [col, result.getChild(col)]));
-
-			for (let i = 0; i < result.numRows; i++) {
-				const h3index = String(h3Vec!.get(i));
-				const values: Record<string, any> = {};
-				for (const col of resultCols) {
-					const val = colVecs[col]?.get(i);
-					if (val === null || val === undefined) continue;
-					const num = Number(val);
-					values[col] = Number.isFinite(num) && typeof val !== 'string' ? num : String(val);
-				}
-				data.set(h3index, values);
-				try {
-					const boundary = cellToBoundary(h3index);
-					const coords = boundary.map(([lat, lng]: [number, number]) => [lng, lat]);
-					coords.push(coords[0]);
-					bounds.set(h3index, coords);
-				} catch { /* skip invalid h3 */ }
+		for (let i = 0; i < result.numRows; i++) {
+			const h3index = String(h3Vec!.get(i));
+			const values: Record<string, any> = {};
+			for (const col of resultCols) {
+				const val = colVecs[col]?.get(i);
+				if (val === null || val === undefined) continue;
+				const num = Number(val);
+				values[col] = Number.isFinite(num) && typeof val !== 'string' ? num : String(val);
 			}
+			data.set(h3index, values);
+			try {
+				const [lat, lng] = cellToLatLng(h3index);
+				centroids.set(h3index, [lng, lat]);
+				const boundary = cellToBoundary(h3index);
+				const coords = boundary.map(([lat, lng]: [number, number]) => [lng, lat]);
+				coords.push(coords[0]);
+				bounds.set(h3index, coords);
+			} catch { /* skip invalid h3 */ }
+		}
 
+		if (target === 'primary') {
+			this.visibleData = data;
+			this.centroidCache = centroids;
+			this.boundaryCache = bounds;
+			this.selectedDpto = null;
+			this.dataVersion++;
+		} else {
 			this.compareVisibleData = data;
 			this.compareBoundaryCache = bounds;
 			this.compareDpto = null;
 			this.compareDataVersion++;
+		}
+	}
+
+	async loadFullCompare(comparePrefix: string): Promise<void> {
+		const layer = this.activeLayer;
+		if (!layer || layer.id === 'flood_risk') return;
+
+		// If primary territory has no hexes yet (perDepartment layer, no dept selected),
+		// load both territories simultaneously so both are visible for comparison.
+		const loadPrimary = layer.perDepartment && this.visibleData.size === 0;
+
+		try {
+			if (loadPrimary) {
+				await Promise.all([
+					this.loadGlobalInto(layer, this.territoryPrefix, 'primary'),
+					this.loadGlobalInto(layer, comparePrefix, 'compare'),
+				]);
+			} else {
+				await this.loadGlobalInto(layer, comparePrefix, 'compare');
+			}
 		} catch (e) {
 			console.warn('Failed to load full compare data:', e);
 		}
