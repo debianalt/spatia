@@ -422,6 +422,22 @@
 		mapComponent?.setCompareHexChoropleth(entries, colorScale, hexStore.colorDomain ?? undefined);
 	});
 
+	// ── Dept bbox outlines + auto-fly when both depts are loaded ────────────
+	$effect(() => {
+		const p = hexStore.deptBbox;
+		const c = hexStore.compareDeptBbox;
+		mapComponent?.updateDeptHighlights(p, c);
+		if (p && c) {
+			const union: [number, number, number, number] = [
+				Math.min(p[0], c[0]),
+				Math.min(p[1], c[1]),
+				Math.max(p[2], c[2]),
+				Math.max(p[3], c[3])
+			];
+			mapComponent?.flyToBbox(union);
+		}
+	});
+
 	// ── Clear compare dept when compare mode is exited ───────────────────
 	$effect(() => {
 		if (!territoryStore.compareModeActive) {

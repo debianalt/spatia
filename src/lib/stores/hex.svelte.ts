@@ -56,6 +56,10 @@ export class HexStore {
 	compareDpto: string | null = $state(null);
 	compareDataVersion: number = $state(0);
 
+	// Bounding boxes for dept highlight outlines on map
+	deptBbox: [number, number, number, number] | null = $state(null);
+	compareDeptBbox: [number, number, number, number] | null = $state(null);
+
 	get numericVariables(): HexVariable[] {
 		return this.activeLayer?.variables.filter(v => !NON_NUMERIC_COLS.has(v.col)) ?? [];
 	}
@@ -80,6 +84,7 @@ export class HexStore {
 			this.centroidCache = new Map();
 			this.boundaryCache = new Map();
 			this.selectedDpto = null;
+			this.deptBbox = null;
 			this.temporalMode = 'current';
 			this.dataVersion++;
 			this.clearSelection();
@@ -91,6 +96,7 @@ export class HexStore {
 		this.activeLayer = cfg;
 		this.temporalMode = 'current';
 		this.selectedDpto = null;
+		this.deptBbox = null;
 		this.clearCompareDept();
 
 		// Per-department layers: don't load all data, wait for department selection
@@ -124,6 +130,7 @@ export class HexStore {
 		this.colorDomain = null;
 		this.visibleData = new Map();
 		this.selectedDpto = null;
+		this.deptBbox = null;
 		this.dataVersion++;
 		this.clearCompareDept();
 	}
@@ -197,6 +204,7 @@ export class HexStore {
 			this.visibleData = data;
 			this.centroidCache = centroids;
 			this.boundaryCache = boundaries;
+			this.deptBbox = HexStore.bboxFromBounds(boundaries);
 			this.dataVersion++;
 
 			this.ensureProvincialAvg().catch(() => {});
@@ -252,6 +260,7 @@ export class HexStore {
 			this.compareVisibleData = data;
 			this.compareBoundaryCache = bounds;
 			this.compareDpto = dpto;
+			this.compareDeptBbox = HexStore.bboxFromBounds(bounds);
 			this.compareDataVersion++;
 		} catch (e) {
 			console.warn('Failed to load compare dept data:', e);
@@ -300,11 +309,13 @@ export class HexStore {
 			this.centroidCache = centroids;
 			this.boundaryCache = bounds;
 			this.selectedDpto = null;
+			this.deptBbox = null;
 			this.dataVersion++;
 		} else {
 			this.compareVisibleData = data;
 			this.compareBoundaryCache = bounds;
 			this.compareDpto = null;
+			this.compareDeptBbox = null;
 			this.compareDataVersion++;
 		}
 	}
@@ -320,11 +331,26 @@ export class HexStore {
 		}
 	}
 
+	private static bboxFromBounds(bounds: Map<string, number[][]>): [number, number, number, number] | null {
+		if (bounds.size === 0) return null;
+		let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+		for (const coords of bounds.values()) {
+			for (const [lng, lat] of coords) {
+				if (lng < minLng) minLng = lng;
+				if (lat < minLat) minLat = lat;
+				if (lng > maxLng) maxLng = lng;
+				if (lat > maxLat) maxLat = lat;
+			}
+		}
+		return [minLng, minLat, maxLng, maxLat];
+	}
+
 	clearCompareDept(): void {
 		if (this.compareDpto === null && this.compareVisibleData.size === 0) return;
 		this.compareVisibleData = new Map();
 		this.compareBoundaryCache = new Map();
 		this.compareDpto = null;
+		this.compareDeptBbox = null;
 		this.compareDataVersion++;
 	}
 
@@ -341,6 +367,7 @@ export class HexStore {
 
 	backToDepartments() {
 		this.selectedDpto = null;
+		this.deptBbox = null;
 		this.clearSelection();
 		this.clearHexZones();
 	}
@@ -681,6 +708,7 @@ export class HexStore {
 		this.centroidCache = new Map();
 		this.boundaryCache = new Map();
 		this.selectedDpto = null;
+		this.deptBbox = null;
 		this.temporalMode = 'current';
 		this.dataVersion++;
 		this.selectedHexes = new Map();

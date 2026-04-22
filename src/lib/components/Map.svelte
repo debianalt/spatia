@@ -306,6 +306,29 @@
 				filter: emptyFilter
 			});
 
+			// ── Department bbox outlines — visible at all zoom levels ────────
+			map.addSource('dept-highlights', {
+				type: 'geojson',
+				data: { type: 'FeatureCollection', features: [] }
+			});
+			map.addLayer({
+				id: 'dept-highlight-fill',
+				type: 'fill',
+				source: 'dept-highlights',
+				paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.07 }
+			});
+			map.addLayer({
+				id: 'dept-highlight-line',
+				type: 'line',
+				source: 'dept-highlights',
+				paint: {
+					'line-color': ['get', 'color'],
+					'line-width': ['interpolate', ['linear'], ['zoom'], 4, 3, 8, 2, 12, 1.5],
+					'line-opacity': ['interpolate', ['linear'], ['zoom'], 4, 0.9, 10, 0.6, 14, 0.3],
+					'line-dasharray': [5, 3]
+				}
+			});
+
 			// ── Hexagon H3 layers (GeoJSON, loaded dynamically) ─────────
 			map.addSource('hexagons', {
 				type: 'geojson',
@@ -641,6 +664,32 @@
 			duration: 1500,
 			maxZoom: 10
 		});
+	}
+
+	export function updateDeptHighlights(
+		primary: [number, number, number, number] | null,
+		compare: [number, number, number, number] | null
+	) {
+		const src = map?.getSource('dept-highlights') as maplibregl.GeoJSONSource | undefined;
+		if (!src) return;
+		const features: any[] = [];
+		if (primary) {
+			const [w, s, e, n] = primary;
+			features.push({
+				type: 'Feature',
+				properties: { color: '#60a5fa' },
+				geometry: { type: 'Polygon', coordinates: [[[w,s],[e,s],[e,n],[w,n],[w,s]]] }
+			});
+		}
+		if (compare) {
+			const [w, s, e, n] = compare;
+			features.push({
+				type: 'Feature',
+				properties: { color: '#f59e0b' },
+				geometry: { type: 'Polygon', coordinates: [[[w,s],[e,s],[e,n],[w,n],[w,s]]] }
+			});
+		}
+		src.setData({ type: 'FeatureCollection', features });
 	}
 
 	function applyTerritoryVisibility() {
