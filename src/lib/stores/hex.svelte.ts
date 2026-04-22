@@ -1,5 +1,5 @@
 import { query, isReady } from '$lib/stores/duckdb';
-import { PARQUETS, HEX_LAYER_REGISTRY, getFloodDptoUrl, getScoresDptoUrl, getSatDptoUrl, getTemporalCol, type HexLayerConfig, type HexVariable, type TemporalMode } from '$lib/config';
+import { PARQUETS, HEX_LAYER_REGISTRY, getFloodDptoUrl, getScoresDptoUrl, getSatDptoUrl, getSatGlobalUrl, getTemporalCol, type HexLayerConfig, type HexVariable, type TemporalMode } from '$lib/config';
 import { pointInPolygon } from '$lib/utils/geometry';
 import { i18n } from '$lib/stores/i18n.svelte';
 import { cellToLatLng, cellToBoundary } from 'h3-js';
@@ -258,6 +258,50 @@ export class HexStore {
 		}
 	}
 
+	async loadFullCompare(comparePrefix: string): Promise<void> {
+		const layer = this.activeLayer;
+		if (!layer || layer.id === 'flood_risk') return;
+
+		const url = getSatGlobalUrl(layer.id, comparePrefix);
+
+		try {
+			const result = await query(`SELECT * FROM '${url}'`);
+			const data = new Map<string, Record<string, any>>();
+			const bounds = new Map<string, number[][]>();
+
+			const resultCols = result.schema.fields
+				.map((f: any) => f.name)
+				.filter((n: string) => n !== 'h3index');
+			const h3Vec = result.getChild('h3index');
+			const colVecs = Object.fromEntries(resultCols.map((col: string) => [col, result.getChild(col)]));
+
+			for (let i = 0; i < result.numRows; i++) {
+				const h3index = String(h3Vec!.get(i));
+				const values: Record<string, any> = {};
+				for (const col of resultCols) {
+					const val = colVecs[col]?.get(i);
+					if (val === null || val === undefined) continue;
+					const num = Number(val);
+					values[col] = Number.isFinite(num) && typeof val !== 'string' ? num : String(val);
+				}
+				data.set(h3index, values);
+				try {
+					const boundary = cellToBoundary(h3index);
+					const coords = boundary.map(([lat, lng]: [number, number]) => [lng, lat]);
+					coords.push(coords[0]);
+					bounds.set(h3index, coords);
+				} catch { /* skip invalid h3 */ }
+			}
+
+			this.compareVisibleData = data;
+			this.compareBoundaryCache = bounds;
+			this.compareDpto = null;
+			this.compareDataVersion++;
+		} catch (e) {
+			console.warn('Failed to load full compare data:', e);
+		}
+	}
+
 	clearCompareDept(): void {
 		if (this.compareDpto === null && this.compareVisibleData.size === 0) return;
 		this.compareVisibleData = new Map();
@@ -367,6 +411,15 @@ export class HexStore {
 		const data = this.visibleData.get(h3index) ?? {};
 		const updated = new Map(this.selectedHexes);
 		updated.set(h3index, { color, data });
+		this.selectedHexes = updated;
+	}
+
+	selectCompareHex(h3index: string) {
+		if (this.selectedHexes.has(h3index)) return;
+		const data = this.compareVisibleData.get(h3index) ?? {};
+		const updated = new Map(this.selectedHexes);
+		// Amber color to distinguish compare territory hexes visually
+		updated.set(h3index, { color: '#f59e0b', data });
 		this.selectedHexes = updated;
 	}
 

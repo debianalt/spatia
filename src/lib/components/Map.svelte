@@ -496,6 +496,16 @@
 			}));
 		});
 
+		map.on('click', 'compare-hex-fill', (e) => {
+			if (lassoActive) return;
+			const h3index = e.features![0].properties!.h3index;
+			if (!h3index) return;
+			container.dispatchEvent(new CustomEvent('compare-hex-select', {
+				bubbles: true,
+				detail: { h3index, properties: e.features![0].properties! }
+			}));
+		});
+
 		// Click on selected hex border (thick line intercepts before hex-fill)
 		map.on('click', 'hex-selected', (e) => {
 			if (lassoActive) return;

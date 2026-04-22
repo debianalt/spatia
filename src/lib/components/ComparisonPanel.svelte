@@ -63,6 +63,8 @@
 		territoryStore.enterCompareMode(t.id);
 		if (dept) {
 			hexStore.loadCompareDept(dept.name, dept.parquetKey, t.parquetPrefix);
+		} else {
+			hexStore.loadFullCompare(t.parquetPrefix);
 		}
 		selectorOpen = false;
 	}

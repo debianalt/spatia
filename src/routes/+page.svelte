@@ -106,6 +106,15 @@
 			mapComponent?.setRadioHighlight(getRadioHighlightEntries());
 		}) as EventListener);
 
+		mapContainer?.addEventListener('compare-hex-select', ((e: CustomEvent) => {
+			if (lassoStore.active) return;
+			const { h3index } = e.detail;
+			if (hexStore.activeLayer && hexStore.compareVisibleData.size > 0) {
+				hexStore.selectCompareHex(h3index);
+				hexStore.ensureProvincialAvgLoaded();
+			}
+		}) as EventListener);
+
 		mapContainer?.addEventListener('hex-select', ((e: CustomEvent) => {
 			if (lassoStore.active) return;
 			const { h3index, properties } = e.detail;
