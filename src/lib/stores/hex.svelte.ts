@@ -207,7 +207,7 @@ export class HexStore {
 			this.visibleData = data;
 			this.centroidCache = centroids;
 			this.boundaryCache = boundaries;
-			this.deptBbox = HexStore.bboxFromBounds(boundaries);
+			this.deptBbox = HexStore.bboxFromCentroids(centroids);
 			this.dataVersion++;
 
 			this.ensureProvincialAvg().catch(() => {});
@@ -347,6 +347,19 @@ export class HexStore {
 				if (lng > maxLng) maxLng = lng;
 				if (lat > maxLat) maxLat = lat;
 			}
+		}
+		return [minLng, minLat, maxLng, maxLat];
+	}
+
+	// Use centroids (not vertices) to avoid border hexagon vertex overreach across international boundaries
+	private static bboxFromCentroids(centroids: Map<string, [number, number]>): [number, number, number, number] | null {
+		if (centroids.size === 0) return null;
+		let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+		for (const [lng, lat] of centroids.values()) {
+			if (lng < minLng) minLng = lng;
+			if (lat < minLat) minLat = lat;
+			if (lng > maxLng) maxLng = lng;
+			if (lat > maxLat) maxLat = lat;
 		}
 		return [minLng, minLat, maxLng, maxLat];
 	}
