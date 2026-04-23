@@ -673,6 +673,15 @@
 		});
 	}
 
+	export function fitBoundsDept(bbox: [number, number, number, number]) {
+		// bbox: [minLng, minLat, maxLng, maxLat] — fits tightly to actual dept hexagons
+		map?.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], {
+			padding: 20,
+			pitch: 50,
+			duration: 1500,
+		});
+	}
+
 	export function updateDeptHighlights(
 		primary: [number, number, number, number] | null,
 		compare: [number, number, number, number] | null
