@@ -13,6 +13,7 @@
 	import { TerritoryStore } from '$lib/stores/territory.svelte';
 	import { initDuckDB, query, isReady, getInitError } from '$lib/stores/duckdb';
 	import { cellToLatLng } from 'h3-js';
+	import { isInsideMisiones } from '$lib/utils/misiones-pip';
 	import { PARQUETS, MAP_INIT, HEX_LAYER_REGISTRY, getAnalysisById, getAnalysesForLens, type AnalysisConfig, type LensId } from '$lib/config';
 	import { i18n, type Locale } from '$lib/stores/i18n.svelte';
 	import { page } from '$app/stores';
@@ -700,6 +701,8 @@
 			const floodLngs: number[] = [];
 			for (let i = 0; i < result.numRows; i++) {
 				const row = result.get(i)!.toJSON() as Record<string, any>;
+				const [lat, lng] = cellToLatLng(row.h3index);
+				if (!isInsideMisiones(lat, lng)) continue;
 				h3ScoreMap.set(row.h3index, Number(row.flood_risk_score) || 0);
 				h3FullData.set(row.h3index, {
 					flood_risk_score: Number(row.flood_risk_score) || 0,
@@ -708,7 +711,6 @@
 					jrc_seasonality: Number(row.jrc_seasonality) || 0,
 					flood_extent_pct: Number(row.flood_extent_pct) || 0,
 				});
-				const [lat, lng] = cellToLatLng(row.h3index);
 				floodLats.push(lat); floodLngs.push(lng);
 			}
 
@@ -738,6 +740,8 @@
 			for (let i = 0; i < result.numRows; i++) {
 				const row = result.get(i)!.toJSON() as Record<string, any>;
 				const h3 = row.h3index as string;
+				const [lat, lng] = cellToLatLng(h3);
+				if (!isInsideMisiones(lat, lng)) continue;
 				// Use urban_consolidation as default choropleth indicator
 				h3ScoreMap.set(h3, Number(row.urban_consolidation) || 0);
 				const data: Record<string, number> = {};
@@ -745,7 +749,6 @@
 					if (key !== 'h3index') data[key] = Number(row[key]) || 0;
 				}
 				h3FullData.set(h3, data);
-				const [lat, lng] = cellToLatLng(h3);
 				scoreLats.push(lat); scoreLngs.push(lng);
 			}
 
@@ -855,7 +858,11 @@
 		prevDataVersion = hexStore.dataVersion;
 		// Render outside Svelte's reactive batch to prevent $effect interference
 		setTimeout(() => {
-			const entries = hexStore.choroplethEntries;
+			const allEntries = hexStore.choroplethEntries;
+			const entries = allEntries.filter(e => {
+				const [lat, lng] = cellToLatLng(e.h3index);
+				return isInsideMisiones(lat, lng);
+			});
 			if (entries.length > 0) {
 				let colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' = hexStore.activeLayer?.colorScale ?? 'flood';
 				if (hexStore.activeLayer?.temporal && hexStore.temporalMode === 'delta') colorScale = 'diverging';
