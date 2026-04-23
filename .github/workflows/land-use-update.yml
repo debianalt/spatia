@@ -92,6 +92,13 @@ jobs:
         env:
           GEE_SERVICE_ACCOUNT_KEY: ${{ secrets.GEE_SERVICE_ACCOUNT_KEY }}
 
+      - name: Download areal crosswalk from R2
+        run: |
+          npx wrangler r2 object get "neahub/data/h3_radio_crosswalk_areal.parquet" --file "pipeline/output/h3_radio_crosswalk_areal.parquet" --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       - name: Split by department
         run: python pipeline/split_satellite_by_dpto.py --only land_use
 

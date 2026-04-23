@@ -28,6 +28,28 @@ jobs:
           pip install -r pipeline/requirements.txt
           npm install -g wrangler
 
+      - name: Download static reference data from GCS
+        run: |
+          python -c "
+          import json, os
+          from google.cloud import storage
+          from google.oauth2 import service_account
+
+          key = json.loads(os.environ['GEE_SERVICE_ACCOUNT_KEY'])
+          creds = service_account.Credentials.from_service_account_info(key)
+          client = storage.Client(credentials=creds, project=key.get('project_id'))
+          bucket = client.bucket('spatia-satellite')
+
+          for fname in ['radios_misiones.parquet', 'radio_stats_master.parquet']:
+              local = f'pipeline/output/{fname}'
+              print(f'Downloading gs://spatia-satellite/static/{fname}...')
+              bucket.blob(f'static/{fname}').download_to_filename(local)
+              size_mb = os.path.getsize(local) / (1024 * 1024)
+              print(f'  OK: {size_mb:.1f} MB')
+          "
+        env:
+          GEE_SERVICE_ACCOUNT_KEY: ${{ secrets.GEE_SERVICE_ACCOUNT_KEY }}
+
       - name: Run catastro update pipeline
         working-directory: pipeline
         run: python run_catastro_update.py
