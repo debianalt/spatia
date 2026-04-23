@@ -1,6 +1,7 @@
 import { query, isReady } from '$lib/stores/duckdb';
 import { PARQUETS, HEX_LAYER_REGISTRY, getFloodDptoUrl, getScoresDptoUrl, getSatDptoUrl, getSatGlobalUrl, getTemporalCol, type HexLayerConfig, type HexVariable, type TemporalMode } from '$lib/config';
 import { pointInPolygon } from '$lib/utils/geometry';
+import { isInsideMisiones } from '$lib/utils/misiones-pip';
 import { i18n } from '$lib/stores/i18n.svelte';
 import { cellToLatLng, cellToBoundary } from 'h3-js';
 
@@ -184,17 +185,17 @@ export class HexStore {
 
 			for (let i = 0; i < result.numRows; i++) {
 				const h3index = String(h3indexVec!.get(i));
-				const values: Record<string, any> = {};
-				for (const col of resultCols) {
-					const val = colVecs[col]?.get(i);
-					if (val === null || val === undefined) continue;
-					const num = Number(val);
-					values[col] = Number.isFinite(num) && typeof val !== 'string' ? num : String(val);
-				}
-				data.set(h3index, values);
-
 				try {
 					const [lat, lng] = cellToLatLng(h3index);
+					if (!isInsideMisiones(lat, lng)) continue;
+					const values: Record<string, any> = {};
+					for (const col of resultCols) {
+						const val = colVecs[col]?.get(i);
+						if (val === null || val === undefined) continue;
+						const num = Number(val);
+						values[col] = Number.isFinite(num) && typeof val !== 'string' ? num : String(val);
+					}
+					data.set(h3index, values);
 					centroids.set(h3index, [lng, lat]);
 					const boundary = cellToBoundary(h3index);
 					const coords = boundary.map(([lat, lng]) => [lng, lat]);
