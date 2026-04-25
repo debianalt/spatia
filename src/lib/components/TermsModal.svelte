@@ -58,16 +58,21 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: 24px;
+		padding: 32px 24px;
+		overflow-y: auto;
 	}
 
 	.modal {
 		background: #111111;
 		border: 1px solid rgba(255, 255, 255, 0.15);
-		max-width: 520px;
+		max-width: 560px;
 		width: 100%;
-		padding: 36px 32px 32px;
+		padding: 48px 40px 40px;
 		font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+		max-height: calc(100vh - 64px);
+		overflow-y: auto;
+		display: flex;
+		flex-direction: column;
 	}
 
 	.kicker {
@@ -96,10 +101,11 @@
 	.points {
 		list-style: none;
 		padding: 0;
-		margin: 0 0 28px;
+		margin: 0 0 32px;
 		display: flex;
 		flex-direction: column;
-		gap: 10px;
+		gap: 12px;
+		flex: 1;
 	}
 
 	.points li {
@@ -126,6 +132,11 @@
 		display: flex;
 		flex-direction: column;
 		gap: 10px;
+		position: sticky;
+		bottom: 0;
+		background: #111111;
+		padding-top: 20px;
+		margin-top: auto;
 	}
 
 	.btn-primary {
