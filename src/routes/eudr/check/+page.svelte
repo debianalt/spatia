@@ -10,6 +10,9 @@
 	let loading = $state(false);
 	let error = $state('');
 
+	// EUDR disclaimer gate — resets on every visit (intentional: EUDR has legal weight)
+	let eudrDisclaimerAccepted = $state(false);
+
 	// Result state
 	interface EudrResult {
 		id: string;
@@ -165,6 +168,47 @@
 	<meta property="og:type" content="website" />
 </svelte:head>
 
+{#if !eudrDisclaimerAccepted}
+<div class="eudr-gate">
+	<div class="eudr-gate-card">
+		<div class="eudr-gate-kicker">EUDR Check · nealab / spatia.ar</div>
+		<h1 class="eudr-gate-title">Aviso importante antes de usar esta herramienta</h1>
+		<ul class="eudr-gate-points">
+			<li>
+				<span class="eudr-gate-label">Evaluación indicativa, no certificación.</span>
+				Este análisis se basa en percepción remota (Hansen GFC + MODIS). No constituye
+				certificación de cumplimiento bajo el Reglamento (UE) 2023/1115 ni tiene valor
+				jurídico ante ninguna autoridad.
+			</li>
+			<li>
+				<span class="eudr-gate-label">Sin valor probatorio.</span>
+				El resultado no puede usarse como prueba de due-diligence ante autoridades de la
+				Unión Europea, compradores internacionales ni terceros de ningún tipo.
+			</li>
+			<li>
+				<span class="eudr-gate-label">Limitaciones de datos.</span>
+				Las geometrías parcelarias pueden contener errores o desactualizaciones. La exactitud
+				temporal de los datos depende de la fecha del último procesamiento disponible en
+				cada fuente satelital.
+			</li>
+			<li>
+				<span class="eudr-gate-label">Complemento obligatorio.</span>
+				Cualquier decisión de exportación o certificación basada en esta herramienta debe
+				complementarse con due-diligence profesional certificado e independiente.
+			</li>
+			<li>
+				<span class="eudr-gate-label">Sin responsabilidad.</span>
+				Al continuar, aceptás que nealab, su autor, CONICET y UNaM no asumen responsabilidad
+				por consecuencias comerciales, legales o regulatorias derivadas de este análisis.
+			</li>
+		</ul>
+		<button class="eudr-gate-btn" onclick={() => eudrDisclaimerAccepted = true}>
+			Entendido — continuar con el análisis
+		</button>
+		<a class="eudr-gate-link" href="/terminos">Ver términos y condiciones completos →</a>
+	</div>
+</div>
+{:else}
 <div class="py-6">
 	<h1 class="text-xl font-bold text-white mb-6">{i18n.t('eudr.check.title')}</h1>
 
@@ -340,3 +384,100 @@
 		</div>
 	</div>
 </div>
+{/if}
+
+<style>
+	.eudr-gate {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: calc(100vh - 80px);
+		padding: 32px 24px;
+	}
+
+	.eudr-gate-card {
+		max-width: 560px;
+		width: 100%;
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		background: rgba(255, 255, 255, 0.02);
+		padding: 36px 32px 32px;
+		font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+	}
+
+	.eudr-gate-kicker {
+		font-size: 10px;
+		color: rgba(255, 255, 255, 0.35);
+		text-transform: uppercase;
+		letter-spacing: 0.12em;
+		margin-bottom: 14px;
+	}
+
+	.eudr-gate-title {
+		font-size: 18px;
+		font-weight: 700;
+		color: #ffffff;
+		margin: 0 0 20px;
+		line-height: 1.3;
+	}
+
+	.eudr-gate-points {
+		list-style: none;
+		padding: 0;
+		margin: 0 0 28px;
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	.eudr-gate-points li {
+		font-size: 12px;
+		color: rgba(255, 255, 255, 0.7);
+		line-height: 1.55;
+		padding-left: 14px;
+		position: relative;
+	}
+
+	.eudr-gate-points li::before {
+		content: '—';
+		position: absolute;
+		left: 0;
+		color: rgba(255, 255, 255, 0.25);
+	}
+
+	.eudr-gate-label {
+		color: #ffffff;
+		font-weight: 700;
+	}
+
+	.eudr-gate-btn {
+		display: block;
+		width: 100%;
+		background: #ffffff;
+		color: #000000;
+		border: none;
+		padding: 12px 20px;
+		font-family: inherit;
+		font-size: 12px;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		cursor: pointer;
+		text-align: center;
+		transition: opacity 0.15s;
+		margin-bottom: 12px;
+	}
+
+	.eudr-gate-btn:hover { opacity: 0.85; }
+
+	.eudr-gate-link {
+		display: block;
+		text-align: center;
+		font-size: 11px;
+		color: rgba(255, 255, 255, 0.4);
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 3px;
+		transition: color 0.15s;
+	}
+
+	.eudr-gate-link:hover { color: rgba(255, 255, 255, 0.7); }
+</style>

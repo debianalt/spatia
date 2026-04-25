@@ -219,10 +219,18 @@
 		</p>
 		<p>
 			<strong>nealab es una herramienta analítica, no prescriptiva.</strong> Ningún análisis en
-			esta plataforma constituye una recomendación de acción. Los scores, tipologías y rankings
-			son síntesis cuantitativas de variables observables desde percepción remota, censos y fuentes
-			administrativas. No sustituyen el juicio experto, la deliberación democrática ni la
-			responsabilidad política de quien decide.
+			esta plataforma constituye una recomendación de acción, una certificación técnica ni una
+			consultoría profesional. Los scores, tipologías y rankings son síntesis cuantitativas de
+			variables observables desde percepción remota, censos y fuentes administrativas. No
+			sustituyen el juicio experto, la deliberación democrática ni la responsabilidad política
+			de quien decide.
+		</p>
+		<p>
+			<strong>Sin garantía de exactitud.</strong> La plataforma y toda la información que contiene
+			se proveen tal cual (as-is), sin garantías expresas ni implícitas sobre exactitud,
+			completitud, actualización o idoneidad para ningún propósito en particular. Los datos
+			satelitales, censales y administrativos pueden contener errores, desfasajes temporales o
+			limitaciones metodológicas documentadas en la ficha técnica de cada capa.
 		</p>
 		<p>
 			<strong>Ningún análisis geoespacial puede considerarse completo sin trabajo de campo en
@@ -246,10 +254,16 @@
 			con responsabilidad implica leer la ficha metodológica de cada capa, reconocer sus
 			limitaciones, y completarla siempre con trabajo situado y escucha activa.
 		</p>
-		<p class="note">
-			Quien utilice nealab en un contexto de gestión, inversión, investigación o política pública
-			asume la responsabilidad de ese uso.
-		</p>
+		<div class="liability-block">
+			<p class="liability-text">
+				<strong>Responsabilidad.</strong> Bajo ninguna circunstancia el autor, CONICET ni UNaM
+				serán responsables por daños directos, indirectos, incidentales o consecuentes derivados
+				del uso de nealab. Quien utilice esta plataforma en un contexto de gestión, inversión,
+				investigación o política pública asume la responsabilidad de ese uso y debe
+				complementarlo con validación profesional independiente.
+			</p>
+			<a class="terms-link" href="/terminos">Leer términos y condiciones completos →</a>
+		</div>
 	</section>
 
 	<section class="section">
@@ -425,11 +439,35 @@
 	}
 	.list li strong { color: #ffffff; font-weight: 700; }
 
-	.note {
-		font-size: 12px;
-		color: rgba(255,255,255,0.55);
-		font-style: italic;
+	.liability-block {
+		margin-top: 20px;
+		padding: 20px;
+		border: 1px solid rgba(255,255,255,0.2);
+		background: rgba(255,255,255,0.03);
 	}
+
+	.liability-text {
+		font-size: 12px;
+		color: rgba(255,255,255,0.8);
+		margin: 0 0 12px;
+		text-align: justify;
+		hyphens: auto;
+	}
+
+	.liability-text strong { color: #ffffff; }
+
+	.terms-link {
+		display: inline-block;
+		font-size: 11px;
+		color: rgba(255,255,255,0.55);
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 3px;
+		letter-spacing: 0.02em;
+		transition: color 0.15s;
+	}
+
+	.terms-link:hover { color: #ffffff; }
 
 	.footer {
 		margin-top: 64px;

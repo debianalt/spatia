@@ -22,4 +22,4 @@ Disallow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://www.spatia.ar/sitemap.xml
+Sitemap: https://spatia.ar/sitemap.xml
