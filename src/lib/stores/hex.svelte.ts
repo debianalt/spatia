@@ -2,6 +2,7 @@ import { query, isReady } from '$lib/stores/duckdb';
 import { PARQUETS, HEX_LAYER_REGISTRY, getFloodDptoUrl, getScoresDptoUrl, getSatDptoUrl, getSatGlobalUrl, getTemporalCol, type HexLayerConfig, type HexVariable, type TemporalMode } from '$lib/config';
 import { pointInPolygon } from '$lib/utils/geometry';
 import { isInsideMisiones } from '$lib/utils/misiones-pip';
+import { isInsideItapua } from '$lib/utils/itapua-pip';
 import { i18n } from '$lib/stores/i18n.svelte';
 import { cellToLatLng, cellToBoundary } from 'h3-js';
 
@@ -187,7 +188,10 @@ export class HexStore {
 				const h3index = String(h3indexVec!.get(i));
 				try {
 					const [lat, lng] = cellToLatLng(h3index);
-					if (!isInsideMisiones(lat, lng)) continue;
+					const inTerritory = this.territoryPrefix === 'itapua_py/'
+						? isInsideItapua(lat, lng)
+						: isInsideMisiones(lat, lng);
+					if (!inTerritory) continue;
 					const values: Record<string, any> = {};
 					for (const col of resultCols) {
 						const val = colVecs[col]?.get(i);
