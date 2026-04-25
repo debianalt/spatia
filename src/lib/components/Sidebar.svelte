@@ -131,6 +131,7 @@
 				<div>{i18n.t('side.welcome.footer.author')}</div>
 				<div>{i18n.t('side.welcome.footer.affiliation')}</div>
 				<div>{i18n.t('side.welcome.footer.partner')}</div>
+				<a href="/terminos" class="welcome-terms-link">Términos y condiciones de uso →</a>
 			</div>
 
 			<CTADiagnostic />
@@ -263,6 +264,8 @@
 	.welcome-step { font-size: 13px; color: rgba(255,255,255,0.75); line-height: 1.5; font-weight: 300; }
 	.step-n { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); font-size: 11px; font-weight: 700; margin-right: 6px; }
 	.welcome-footer { font-size: 12px; color: rgba(255,255,255,0.45); line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; font-weight: 400; }
+	.welcome-terms-link { display: inline-block; margin-top: 6px; color: rgba(255,255,255,0.3); font-size: 11px; text-decoration: none; border-bottom: 1px solid transparent; transition: all 0.15s; }
+	.welcome-terms-link:hover { color: rgba(255,255,255,0.6); border-bottom-color: rgba(255,255,255,0.3); }
 	.welcome-services-link { display: block; text-align: center; padding: 8px 12px; margin: 14px 0 4px; background: transparent; border: 1px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.75); font-size: 11px; font-weight: 500; text-decoration: none; letter-spacing: 0.02em; transition: all 0.15s; }
 	.welcome-services-link:hover { border-color: #ffffff; color: #ffffff; }
 	.dashboard-link { display: block; font-size: 12px; color: rgba(255,255,255,0.55); line-height: 1.6; text-decoration: none; font-weight: 300; }
