@@ -33,6 +33,7 @@
 	function compute() {
 		computing = true;
 		result = null;
+		if (lisaMode) { lisaMode = false; onShowLisa([]); }
 
 		requestAnimationFrame(() => {
 			const vals = new Map<string, number>();
@@ -117,7 +118,6 @@
 		if (!result || !container) return;
 		brushCount = 0;
 		onBrushSelect([]);
-		if (lisaMode) { lisaMode = false; onShowLisa([]); }
 		const { I, points } = result;
 
 		const W = container.clientWidth;
