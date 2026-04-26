@@ -414,7 +414,32 @@
 	});
 
 	function handleShowLisa(entries: { h3index: string; value: number; boundary?: number[][] }[]) {
-		mapComponent?.setHexChoropleth(entries, 'categorical');
+		if (entries.length === 0) {
+			prevDataVersion = 0; // reset so next data version change re-triggers the effect
+			// Directly re-apply choropleth — can't rely on the effect since no dep has changed
+			const layer = hexStore.activeLayer;
+			const cEntries = hexStore.choroplethEntries;
+			if (!layer?.perDepartment && cEntries.length > 0) {
+				let cs: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = layer?.colorScale ?? 'flood';
+				if (layer?.temporal && hexStore.temporalMode === 'delta') cs = 'diverging';
+				mapComponent?.setHexChoropleth(cEntries, cs, hexStore.colorDomain ?? undefined);
+			} else if (cEntries.length === 0) {
+				mapComponent?.clearHexChoropleth();
+			}
+			return;
+		}
+		mapComponent?.setHexChoropleth(entries, 'lisa');
+	}
+
+	function handleMoranBrush(h3s: string[]) {
+		if (h3s.length === 0) {
+			mapComponent?.clearHexZoneHighlight();
+			return;
+		}
+		mapComponent?.setHexZoneHighlight(
+			[{ h3indices: h3s, color: '#fbbf24' }],
+			hexStore.boundaryCache
+		);
 	}
 
 	// ── Compare choropleth: render compare dept hexes when compareDataVersion changes ──
@@ -996,6 +1021,7 @@
 			onDownloadRadioGeoJson={downloadRadioGeoJson}
 			onDownloadRadiosSummary={downloadRadiosSummary}
 			onShowLisa={handleShowLisa}
+			onMoranBrush={handleMoranBrush}
 			/>
 		</div>
 	</div>

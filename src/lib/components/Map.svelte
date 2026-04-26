@@ -1250,7 +1250,11 @@
 	const CATEGORICAL_PALETTE = ['#1565c0', '#7e57c2', '#4db6ac', '#66bb6a', '#c0ca33', '#ffb74d', '#e65100', '#78909c'];
 
 	function computeHexColor(value: number, colorScale: string, minVal: number, maxVal: number, range: number): string {
-		if (value === 0 && colorScale !== 'diverging' && colorScale !== 'categorical') return 'rgb(55,65,81)';
+		if (value === 0 && colorScale !== 'diverging' && colorScale !== 'categorical' && colorScale !== 'lisa') return 'rgb(55,65,81)';
+		if (colorScale === 'lisa') {
+			const LISA: Record<number, string> = { 1: '#3b82f6', 2: '#60a5fa', 3: '#f97316', 4: '#ef4444' };
+			return LISA[Math.round(value)] ?? 'rgb(55,65,81)';
+		}
 		if (colorScale === 'categorical') {
 			const idx = Math.round(value) - 1;
 			if (idx < 0) return 'rgb(55,65,81)';
@@ -1290,7 +1294,7 @@
 		return `rgb(${r},${g},${b})`;
 	}
 
-	export function setHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = 'flood', domain?: [number, number]) {
+	export function setHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' | 'lisa' = 'flood', domain?: [number, number]) {
 		if (!map) return;
 		const src = map.getSource('hexagons') as maplibregl.GeoJSONSource | undefined;
 		if (!src) return;

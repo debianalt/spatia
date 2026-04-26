@@ -7,6 +7,7 @@
 		variable = '',
 		boundaryCache = new Map() as Map<string, number[][]>,
 		onShowLisa = (_entries: { h3index: string; value: number; boundary?: number[][] }[]) => {},
+		onBrushSelect = (_h3s: string[]) => {},
 	} = $props();
 
 	const allH3s = $derived([...data.keys()]);
@@ -14,6 +15,8 @@
 	let container: HTMLDivElement;
 	let open = $state(false);
 	let computing = $state(false);
+	let brushCount = $state(0);
+	let lisaMode = $state(false);
 	let result = $state<{
 		I: number; expected: number; variance: number; z: number; p: number; n: number;
 		points: { h3: string; std: number; lag: number; quad: string }[];
@@ -21,6 +24,10 @@
 
 	$effect(() => {
 		if (open && variable && data.size > 0 && allH3s.length > 0) compute();
+	});
+
+	$effect(() => {
+		if (result && container) draw();
 	});
 
 	function compute() {
@@ -89,8 +96,6 @@
 
 			result = { I, expected, variance: varI, z, p, n, points };
 			computing = false;
-
-			requestAnimationFrame(() => { if (container) draw(); });
 		});
 	}
 
@@ -110,6 +115,9 @@
 
 	function draw() {
 		if (!result || !container) return;
+		brushCount = 0;
+		onBrushSelect([]);
+		if (lisaMode) { lisaMode = false; onShowLisa([]); }
 		const { I, points } = result;
 
 		const W = container.clientWidth;
@@ -153,7 +161,7 @@
 			.attr('stroke', '#f59e0b').attr('stroke-width', 1.5)
 			.attr('stroke-dasharray', '6,4').attr('opacity', 0.7);
 
-		g.selectAll('circle').data(sample).join('circle')
+		const dots = g.selectAll('circle').data(sample).join('circle')
 			.attr('cx', d => x(d.std)).attr('cy', d => y(d.lag))
 			.attr('r', 2).attr('fill', d => QUAD_COLORS[d.quad]).attr('opacity', 0.5);
 
@@ -181,9 +189,87 @@
 			.call(d3.axisLeft(y).ticks(5))
 			.call(g => g.selectAll('text').attr('fill', '#a3a3a3').attr('font-size', '8px'))
 			.call(g => g.selectAll('line,path').attr('stroke', '#334155'));
+
+		// Manual brush — d3.brush can be blocked by overflow:auto scroll containers
+		let bx0 = 0, by0 = 0, bx1 = 0, by1 = 0;
+		const brushRect = g.append('rect')
+			.attr('class', 'brush-rect')
+			.attr('fill', 'rgba(251,191,36,0.1)')
+			.attr('stroke', '#fbbf24')
+			.attr('stroke-width', 0.8)
+			.attr('pointer-events', 'none')
+			.style('display', 'none');
+
+		g.append('rect')
+			.attr('class', 'brush-overlay')
+			.attr('x', 0).attr('y', 0)
+			.attr('width', w).attr('height', h)
+			.attr('fill', 'none')
+			.attr('pointer-events', 'all')
+			.attr('cursor', 'crosshair')
+			.on('mousedown', function(event: MouseEvent) {
+				event.preventDefault();
+				[bx0, by0] = d3.pointer(event);
+				bx1 = bx0; by1 = by0;
+				brushRect.style('display', null).attr('x', bx0).attr('y', by0).attr('width', 0).attr('height', 0);
+
+				function onMove(e: MouseEvent) {
+					const [mx, my] = d3.pointer(e, g.node()!);
+					bx1 = Math.max(0, Math.min(w, mx));
+					by1 = Math.max(0, Math.min(h, my));
+					brushRect
+						.attr('x', Math.min(bx0, bx1)).attr('y', Math.min(by0, by1))
+						.attr('width', Math.abs(bx1 - bx0)).attr('height', Math.abs(by1 - by0));
+				}
+
+				function onUp() {
+					window.removeEventListener('mousemove', onMove);
+					window.removeEventListener('mouseup', onUp);
+					if (Math.abs(bx1 - bx0) < 3 && Math.abs(by1 - by0) < 3) {
+						brushRect.style('display', 'none');
+						dots.attr('opacity', 0.5).attr('r', 2);
+						brushCount = 0;
+						onBrushSelect([]);
+						return;
+					}
+					const x0 = x.invert(Math.min(bx0, bx1));
+					const x1 = x.invert(Math.max(bx0, bx1));
+					const y0 = y.invert(Math.max(by0, by1));
+					const y1 = y.invert(Math.min(by0, by1));
+					const selectedSet = new Set(
+						result!.points
+							.filter(p => p.std >= x0 && p.std <= x1 && p.lag >= y0 && p.lag <= y1)
+							.map(p => p.h3)
+					);
+					dots.each(function(d: any) {
+						const inside = selectedSet.has(d.h3);
+						d3.select(this).attr('opacity', inside ? 1 : 0.08).attr('r', inside ? 3 : 2);
+					});
+					brushCount = selectedSet.size;
+					onBrushSelect([...selectedSet]);
+				}
+
+				window.addEventListener('mousemove', onMove);
+				window.addEventListener('mouseup', onUp);
+			});
 	}
 
-	function showLisaOnMap() {
+	function clearBrush() {
+		if (container) {
+			d3.select(container).selectAll<SVGCircleElement, unknown>('circle')
+				.attr('opacity', 0.5).attr('r', 2);
+			d3.select(container).select('.brush-rect').style('display', 'none');
+			brushCount = 0;
+			onBrushSelect([]);
+		}
+	}
+
+	function toggleLisa() {
+		if (lisaMode) {
+			lisaMode = false;
+			onShowLisa([]);
+			return;
+		}
 		if (!result) return;
 		const LISA_COLORS: Record<string, number> = { 'HH': 4, 'LL': 1, 'HL': 3, 'LH': 2 };
 		const entries = result.points.map(p => ({
@@ -191,6 +277,7 @@
 			value: LISA_COLORS[p.quad] ?? 0,
 			boundary: boundaryCache.get(p.h3),
 		}));
+		lisaMode = true;
 		onShowLisa(entries);
 	}
 
@@ -235,8 +322,22 @@
 					<span class="moran-dim">z = {result.z.toFixed(2)}</span>
 					<span class="{result.p < 0.05 ? 'moran-sig' : 'moran-insig'}">p {result.p < 0.001 ? '< 0.001' : '= ' + result.p.toFixed(3)}</span>
 					<span class="moran-dim">n = {result.n}</span>
+					{#if brushCount > 0}
+						<span class="moran-sel">{brushCount} sel.</span>
+						<button class="moran-btn-clear" onclick={clearBrush}>✕</button>
+					{/if}
 					<button class="moran-btn-csv" onclick={exportCSV}>CSV</button>
-					<button class="moran-btn-lisa" onclick={showLisaOnMap}>LISA ↗</button>
+				</div>
+				<div class="moran-mapview">
+					<span class="moran-dim">Mapa:</span>
+					<button class="moran-view-btn" class:moran-view-btn-active={!lisaMode}
+						onclick={() => { if (lisaMode) { lisaMode = false; onShowLisa([]); } }}>
+						coropleta
+					</button>
+					<button class="moran-view-btn" class:moran-view-btn-active={lisaMode}
+						onclick={() => { if (!lisaMode) toggleLisa(); }}>
+						LISA
+					</button>
 				</div>
 				<div bind:this={container} class="moran-plot"></div>
 				<div class="moran-quads">
@@ -316,6 +417,17 @@
 	.moran-dim { color: #737373; }
 	.moran-sig { color: #4ade80; }
 	.moran-insig { color: #f87171; }
+	.moran-sel { color: #fbbf24; font-size: 9px; }
+	.moran-btn-clear {
+		font-size: 9px;
+		color: #fbbf24;
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 0 2px;
+		transition: color 0.15s;
+	}
+	.moran-btn-clear:hover { color: #fde68a; }
 	.moran-btn-csv {
 		margin-left: auto;
 		font-size: 9px;
@@ -327,19 +439,32 @@
 		transition: color 0.15s;
 	}
 	.moran-btn-csv:hover { color: #6366f1; }
-	.moran-btn-lisa {
-		font-size: 9px;
-		color: #6366f1;
-		background: none;
-		border: none;
-		cursor: pointer;
-		padding: 0 2px;
-		transition: color 0.15s;
+	.moran-mapview {
+		display: flex;
+		align-items: center;
+		gap: 5px;
 	}
-	.moran-btn-lisa:hover { color: #a5b4fc; }
+	.moran-view-btn {
+		font-size: 9px;
+		padding: 2px 8px;
+		border: 1px solid #334155;
+		border-radius: 3px;
+		background: none;
+		color: #737373;
+		cursor: pointer;
+		font-family: monospace;
+		transition: all 0.12s;
+	}
+	.moran-view-btn:hover { color: #d4d4d4; border-color: #4b5563; }
+	.moran-view-btn-active {
+		background: rgba(99,102,241,0.15);
+		border-color: #6366f1;
+		color: #a5b4fc;
+	}
 	.moran-plot {
 		width: 100%;
 		height: 180px;
+		user-select: none;
 	}
 	.moran-quads {
 		display: flex;

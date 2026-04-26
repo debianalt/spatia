@@ -43,6 +43,7 @@
 		onDownloadRadioGeoJson,
 		onDownloadRadiosSummary,
 		onShowLisa,
+		onMoranBrush,
 	}: {
 		mapStore: MapStore;
 		lensStore: LensStore;
@@ -66,6 +67,7 @@
 		onDownloadRadioGeoJson?: (redcode: string, properties: Record<string, any>) => void;
 		onDownloadRadiosSummary?: () => void;
 		onShowLisa?: (entries: { h3index: string; value: number; boundary?: number[][] }[]) => void;
+		onMoranBrush?: (h3s: string[]) => void;
 	} = $props();
 
 	let collapsed = $state(true);
@@ -169,6 +171,7 @@
 						variable={hexStore.activeLayer.primaryVariable}
 						boundaryCache={hexStore.boundaryCache}
 						onShowLisa={onShowLisa ?? (() => {})}
+						onBrushSelect={onMoranBrush ?? (() => {})}
 					/>
 				{/if}
 			</div>
