@@ -415,17 +415,13 @@
 
 	function handleShowLisa(entries: { h3index: string; value: number; boundary?: number[][] }[]) {
 		if (entries.length === 0) {
-			prevDataVersion = 0; // reset so next data version change re-triggers the effect
-			// Directly re-apply choropleth — can't rely on the effect since no dep has changed
+			prevDataVersion = 0;
 			const layer = hexStore.activeLayer;
 			const cEntries = hexStore.choroplethEntries;
-			if (!layer?.perDepartment && cEntries.length > 0) {
-				let cs: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = layer?.colorScale ?? 'flood';
-				if (layer?.temporal && hexStore.temporalMode === 'delta') cs = 'diverging';
-				mapComponent?.setHexChoropleth(cEntries, cs, hexStore.colorDomain ?? undefined);
-			} else if (cEntries.length === 0) {
-				mapComponent?.clearHexChoropleth();
-			}
+			if (cEntries.length === 0) { mapComponent?.clearHexChoropleth(); return; }
+			let cs: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = layer?.colorScale ?? 'flood';
+			if (layer?.temporal && hexStore.temporalMode === 'delta') cs = 'diverging';
+			mapComponent?.setHexChoropleth(cEntries, cs, hexStore.colorDomain ?? undefined);
 			return;
 		}
 		mapComponent?.setHexChoropleth(entries, 'lisa');
