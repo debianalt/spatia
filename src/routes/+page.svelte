@@ -14,6 +14,7 @@
 	import { initDuckDB, query, isReady, getInitError } from '$lib/stores/duckdb';
 	import { cellToLatLng } from 'h3-js';
 	import { isInsideMisiones } from '$lib/utils/misiones-pip';
+	import { isInsideItapua } from '$lib/utils/itapua-pip';
 	import { PARQUETS, MAP_INIT, HEX_LAYER_REGISTRY, getAnalysisById, getAnalysesForLens, type AnalysisConfig, type LensId } from '$lib/config';
 	import { i18n, type Locale } from '$lib/stores/i18n.svelte';
 	import { page } from '$app/stores';
@@ -411,6 +412,10 @@
 		mapComponent?.setHexChoropleth(entries, colorScale, hexStore.colorDomain ?? undefined);
 		analysisDataLoaded = true;
 	});
+
+	function handleShowLisa(entries: { h3index: string; value: number; boundary?: number[][] }[]) {
+		mapComponent?.setHexChoropleth(entries, 'categorical');
+	}
 
 	// ── Compare choropleth: render compare dept hexes when compareDataVersion changes ──
 	$effect(() => {
@@ -861,7 +866,9 @@
 			const allEntries = hexStore.choroplethEntries;
 			const entries = allEntries.filter(e => {
 				const [lat, lng] = cellToLatLng(e.h3index);
-				return isInsideMisiones(lat, lng);
+				return hexStore.territoryPrefix === 'itapua_py/'
+					? isInsideItapua(lat, lng)
+					: isInsideMisiones(lat, lng);
 			});
 			if (entries.length > 0) {
 				let colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' = hexStore.activeLayer?.colorScale ?? 'flood';
@@ -988,6 +995,7 @@
 			onDownloadRadioCsv={downloadRadioCsv}
 			onDownloadRadioGeoJson={downloadRadioGeoJson}
 			onDownloadRadiosSummary={downloadRadiosSummary}
+			onShowLisa={handleShowLisa}
 			/>
 		</div>
 	</div>

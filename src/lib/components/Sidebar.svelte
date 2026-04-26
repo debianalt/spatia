@@ -18,6 +18,7 @@
 	import { LENS_CONFIG, type AnalysisConfig, type LensId } from '$lib/config';
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import CTADiagnostic from './CTADiagnostic.svelte';
+	import MoranPanel from './MoranPanel.svelte';
 
 	let {
 		mapStore,
@@ -41,6 +42,7 @@
 		onDownloadRadioCsv,
 		onDownloadRadioGeoJson,
 		onDownloadRadiosSummary,
+		onShowLisa,
 	}: {
 		mapStore: MapStore;
 		lensStore: LensStore;
@@ -63,6 +65,7 @@
 		onDownloadRadioCsv?: (redcode: string) => void;
 		onDownloadRadioGeoJson?: (redcode: string, properties: Record<string, any>) => void;
 		onDownloadRadiosSummary?: () => void;
+		onShowLisa?: (entries: { h3index: string; value: number; boundary?: number[][] }[]) => void;
 	} = $props();
 
 	let collapsed = $state(true);
@@ -160,6 +163,14 @@
 		{#if !territoryStore.compareModeActive}
 			<div class="chart-scroll">
 				<AnalysisView {lensStore} {mapStore} {hexStore} onBack={handleBack} {onRemoveRadio} {onSelectFloodDpto} {onSelectFloodCatastroDpto} {onSelectCatastroDpto} {onSelectScoresCatastroDpto} {onSelectRadioAnalysisDpto} />
+				{#if hexStore.visibleData.size > 0 && hexStore.activeLayer?.primaryVariable}
+					<MoranPanel
+						data={hexStore.visibleData}
+						variable={hexStore.activeLayer.primaryVariable}
+						boundaryCache={hexStore.boundaryCache}
+						onShowLisa={onShowLisa ?? (() => {})}
+					/>
+				{/if}
 			</div>
 		{/if}
 	{:else if mapStore.selectedRadios.size > 0}
