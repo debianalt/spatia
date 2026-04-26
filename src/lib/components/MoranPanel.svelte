@@ -33,7 +33,6 @@
 	function compute() {
 		computing = true;
 		result = null;
-		if (lisaMode) { lisaMode = false; onShowLisa([]); }
 
 		requestAnimationFrame(() => {
 			const vals = new Map<string, number>();
