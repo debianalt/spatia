@@ -68,6 +68,7 @@ export function getParquetUrl(name: string): string {
 		sat_deforestation_dynamics: '?v=5',
 		sat_productive_activity: '?v=8',
 		sat_land_use: '?v=2',
+		sat_soil_water: '?v=1',
 		overture_scores: '?v=26',
 		emsa_powerlines: '?v=20',
 	};
@@ -149,6 +150,7 @@ export const PARQUETS = {
 	get sat_accessibility() { return getParquetUrl('sat_accessibility'); },
 	get sat_climate_vulnerability() { return getParquetUrl('sat_climate_vulnerability'); },
 	get sat_carbon_stock() { return getParquetUrl('sat_carbon_stock'); },
+	get sat_soil_water() { return getParquetUrl('sat_soil_water'); },
 	// Public infrastructure (datos.gob.ar)
 	get emsa_powerlines() { return getParquetUrl('emsa_powerlines'); },
 	// EUDR deforestation (H3 res-7, 10 provinces)
@@ -537,6 +539,24 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.forestH.low',
 		legendHighKey: 'legend.forestH.high',
+		coverage: { itapua_py: 'available' },
+	},
+	soil_water: {
+		id: 'soil_water',
+		parquet: 'sat_soil_water',
+		variables: [
+			{ col: 'c_soil_moisture', labelKey: 'sat.soilW.soilMoisture', aggregation: 'mean', unit: 'm³/m³' },
+			{ col: 'c_dry_season',    labelKey: 'sat.soilW.drySeason',    aggregation: 'mean', unit: 'm³/m³' },
+			{ col: 'c_precipitation', labelKey: 'sat.soilW.precipitation', aggregation: 'mean', unit: 'mm/yr' },
+			{ col: 'c_actual_et',     labelKey: 'sat.soilW.actualEt',     aggregation: 'mean', unit: 'mm/8d' },
+		],
+		primaryVariable: 'score',
+		colorScale: 'flood',
+		aggregation: 'mean',
+		titleKey: 'sat.soilW.title',
+		perDepartment: true,
+		legendLowKey: 'legend.soilW.low',
+		legendHighKey: 'legend.soilW.high',
 		coverage: { itapua_py: 'available' },
 	},
 	forestry_aptitude: {
@@ -1225,6 +1245,17 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
+	// ── Soil Water ──
+	{
+		id: 'soil_water',
+		lensId: 'producir',
+		titleKey: 'sat.soilW.title',
+		descKey: 'sat.soilW.desc',
+		coverage: { itapua_py: 'available' },
+		comparable: true,
+		status: 'available',
+		spatialUnit: 'hexagon',
+	},
 	// ── Climate Vulnerability ──
 	{
 		id: 'climate_vulnerability',
@@ -1562,6 +1593,7 @@ export const DATA_FRESHNESS: Record<string, { dataDate: string; processedDate: s
 	sat_economic_activity: { dataDate: 'Censo 2022 + VIIRS 2022-2024 + GBA 2025', processedDate: '29/03/2026', sourceKey: 'data.source.satellite' },
 	sat_accessibility: { dataDate: 'Nelson 2019 / Oxford MAP 2019 / OSM', processedDate: '02/04/2026', sourceKey: 'data.source.satellite' },
 	sat_carbon_stock: { dataDate: 'ESA CCI Biomass / GEDI / SoilGrids / MODIS NPP', processedDate: '20/04/2026', sourceKey: 'data.source.satellite' },
+	sat_soil_water: { dataDate: 'ERA5-Land / CHIRPS / MODIS MOD16A2GF 2019-2024', processedDate: '28/04/2026', sourceKey: 'data.source.satellite' },
 	sat_climate_vulnerability: { dataDate: 'IPCC AR5: MODIS/CHIRPS/Hansen/Censo 2022', processedDate: '20/04/2026', sourceKey: 'data.source.satellite' },
 	eudr_deforestation: { dataDate: 'Hansen GFC v1.12 + MODIS MCD64A1 (cutoff 31/12/2020)', processedDate: '27/03/2026', sourceKey: 'data.source.satellite' },
 };

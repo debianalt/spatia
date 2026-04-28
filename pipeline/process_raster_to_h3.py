@@ -106,6 +106,12 @@ ANALYSIS_COMPONENTS = {
         ('c_no2', 'c_no2', 0.35, False),       # NO2 mol/m² — higher = worse
         ('c_aod', 'c_aod', 0.25, False),       # AOD 470nm — higher = worse
     ],
+    'soil_water': [
+        ('c_soil_moisture', 'c_soil_moisture', 0.30, False),  # ERA5 annual mean root-zone
+        ('c_dry_season',    'c_dry_season',    0.25, False),  # ERA5 Jun-Aug mean
+        ('c_precipitation',  'c_precipitation',  0.25, False),  # CHIRPS annual mean (mm/yr)
+        ('c_actual_et',     'c_actual_et',     0.20, False),  # MODIS MOD16 mean actual ET
+    ],
 }
 
 PIXEL_ANALYSES = list(ANALYSIS_COMPONENTS.keys())

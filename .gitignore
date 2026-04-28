@@ -17,10 +17,16 @@ pipeline/output/**/*.tif
 pipeline/output/**/*.geojson
 pipeline/output/**/*.pmtiles
 pipeline/output/**/*.parquet
+pipeline/output/**/*.pbf
+pipeline/output/**/*.csv
+pipeline/output/**/*.json
 pipeline/output/*.tif
 pipeline/output/*.geojson
 pipeline/output/*.pmtiles
 pipeline/output/*.parquet
+pipeline/output/*.pbf
+pipeline/output/*.csv
+pipeline/output/*.json
 
 # DB seed (auto-generated, 7MB)
 db/seed.sql

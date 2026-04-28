@@ -35,7 +35,7 @@ ALL_ANALYSES = [
     "change_pressure", "location_value", "agri_potential",
     "forest_health", "forestry_aptitude",
     "territorial_gap", "health_access", "education_gap", "land_use",
-    "territorial_scores",
+    "territorial_scores", "soil_water",
 ]
 
 

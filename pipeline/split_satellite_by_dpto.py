@@ -44,6 +44,7 @@ ALL_ANALYSES = [
     "pm25_predicted",
     "deforestation_dynamics",
     "productive_activity",
+    "soil_water",
 ]
 
 
