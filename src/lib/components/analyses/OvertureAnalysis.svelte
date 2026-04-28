@@ -63,6 +63,7 @@
 		pm25_drivers: () => import('$lib/data/sat_pm25_drivers_dept_summary.json'),
 		productive_activity: () => import('$lib/data/sat_productive_activity_dept_summary.json'),
 		deforestation_dynamics: () => import('$lib/data/sat_deforestation_dynamics_dept_summary.json'),
+		soil_water:             () => import('$lib/data/sat_soil_water_dept_summary.json'),
 	};
 
 	// Bundled summaries for Itapúa (distritos, admin_col='distrito')
@@ -83,6 +84,7 @@
 		land_use:                () => import('$lib/data/itapua_py_sat_land_use_summary.json'),
 		accessibility:           () => import('$lib/data/itapua_py_sat_accessibility_summary.json'),
 		territorial_scores:      () => import('$lib/data/itapua_py_scores_dept_summary.json'),
+		soil_water:              () => import('$lib/data/itapua_py_sat_soil_water_summary.json'),
 	};
 
 	// Lookup: territory prefix → summaries dict (add new territories here)
