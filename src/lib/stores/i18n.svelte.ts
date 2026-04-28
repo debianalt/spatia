@@ -447,7 +447,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'sat.forestH.type': { es: 'Tipo de integridad', en: 'Integrity type', gn: 'Laja' },
 	'sat.forestH.typeLabel': { es: 'Clasificación', en: 'Classification', gn: 'Clasificación' },
 	'sat.soilW.title': { es: '¿Cuánta agua tiene el suelo?', en: 'How much water does the soil hold?', gn: "Mbovy y oĩ yvýpe?" },
-	'sat.soilW.desc': { es: 'Disponibilidad de agua en el suelo: humedad media, estrés en época seca, balance hídrico climático y capacidad de retención. Fuentes: ERA5-Land + SoilGrids v2. Cubre Misiones e Itapúa.', en: 'Soil water availability: mean soil moisture, dry-season stress, climatic water balance and water holding capacity. Sources: ERA5-Land + SoilGrids v2. Covers Misiones and Itapúa.', gn: "Yvy y" },
+	'sat.soilW.desc': { es: 'Disponibilidad de agua en el suelo: humedad del suelo (ERA5-Land), precipitación media anual (CHIRPS) y evapotranspiración real (MODIS MOD16). Período 2019-2024. Cubre Misiones e Itapúa.', en: 'Soil water availability: soil moisture (ERA5-Land), mean annual precipitation (CHIRPS) and actual evapotranspiration (MODIS MOD16). Period 2019-2024. Covers Misiones and Itapúa.', gn: "Yvy y" },
 	'sat.soilW.score': { es: 'Score de disponibilidad hídrica', en: 'Water availability score', gn: 'Score' },
 	'sat.soilW.soilMoisture': { es: 'Humedad media del suelo', en: 'Mean soil moisture', gn: "Yvy yvytu" },
 	'sat.soilW.drySeason': { es: 'Humedad en época seca (jun-ago)', en: 'Dry season soil moisture (Jun-Aug)', gn: "Yvytu kyrépe" },
