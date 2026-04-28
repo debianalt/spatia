@@ -27,6 +27,7 @@ const SAT_SUMMARIES: Record<string, () => Promise<any>> = {
 	pm25_drivers:         () => import('$lib/data/sat_pm25_drivers_dept_summary.json'),
 	productive_activity:  () => import('$lib/data/sat_productive_activity_dept_summary.json'),
 	deforestation_dynamics: () => import('$lib/data/sat_deforestation_dynamics_dept_summary.json'),
+	soil_water:             () => import('$lib/data/sat_soil_water_dept_summary.json'),
 };
 
 const ITAPUA_SUMMARIES: Record<string, () => Promise<any>> = {
@@ -46,6 +47,7 @@ const ITAPUA_SUMMARIES: Record<string, () => Promise<any>> = {
 	accessibility:          () => import('$lib/data/itapua_py_sat_accessibility_summary.json'),
 	flood_risk:             () => import('$lib/data/itapua_py_flood_dept_summary.json'),
 	territorial_scores:     () => import('$lib/data/itapua_py_scores_dept_summary.json'),
+	soil_water:             () => import('$lib/data/itapua_py_sat_soil_water_summary.json'),
 };
 
 const TERRITORY_SUMMARIES: Record<string, Record<string, () => Promise<any>>> = {
