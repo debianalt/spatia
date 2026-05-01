@@ -14,9 +14,6 @@ jobs:
   update:
     runs-on: ubuntu-latest
     timeout-minutes: 120
-    permissions:
-      contents: read
-      secrets: write
 
     steps:
       - uses: actions/checkout@v5
@@ -36,24 +33,6 @@ jobs:
           pip install -r pipeline/requirements.txt
           npm install -g wrangler
 
-      - name: Refresh Cloudflare auth
-        run: |
-          RESP=$(curl -sf -X POST "https://dash.cloudflare.com/oauth2/token" \
-            -H "Content-Type: application/x-www-form-urlencoded" \
-            --data-urlencode "grant_type=refresh_token" \
-            --data-urlencode "refresh_token=${{ secrets.WRANGLER_REFRESH_TOKEN }}" \
-            --data-urlencode "client_id=54d11594-84e4-41aa-b438-e81b8fa78ee7")
-          ACCESS=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
-          NEW_REFRESH=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['refresh_token'])")
-          echo "::add-mask::$ACCESS"
-          echo "::add-mask::$NEW_REFRESH"
-          EXPIRES=$(date -u -d '+59 minutes' '+%Y-%m-%dT%H:%M:%S.000Z')
-          mkdir -p ~/.wrangler/config
-          printf 'oauth_token = "%s"\nexpiration_time = "%s"\n' "$ACCESS" "$EXPIRES" > ~/.wrangler/config/default.toml
-          echo "$NEW_REFRESH" | gh secret set WRANGLER_REFRESH_TOKEN --repo debianalt/nealab
-        env:
-          GH_TOKEN: ${{ github.token }}
-
       - name: Generate H3 grid (if needed)
         run: |
           if [ ! -f pipeline/output/hexagons-lite.geojson ]; then
@@ -70,6 +49,7 @@ jobs:
             npx wrangler r2 object get "neahub/data/radio_data/${table}.parquet" --file "pipeline/output/radio_data/${table}.parquet" --remote 2>/dev/null || true
           done
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Run pixel update pipeline
@@ -78,6 +58,7 @@ jobs:
             --analyses ${{ github.event.inputs.analyses || 'change_pressure,agri_potential,forest_health' }}
         env:
           GEE_SERVICE_ACCOUNT_KEY: ${{ secrets.GEE_SERVICE_ACCOUNT_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Recompute composite scores (PCA + geometric mean)
@@ -97,6 +78,7 @@ jobs:
             done
           done
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Upload artifacts
