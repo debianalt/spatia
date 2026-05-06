@@ -37,6 +37,16 @@ jobs:
             python pipeline/simplify_geojson.py
           fi
 
+      - name: Download crosswalk from R2
+        run: |
+          for f in h3_parent_crosswalk h3_radio_crosswalk_areal; do
+            npx wrangler r2 object get "neahub/data/${f}.parquet" \
+              --file "pipeline/output/${f}.parquet" --remote
+          done
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       - name: Export Hansen loss year from GEE
         run: python pipeline/gee_export_hansen_loss.py
         env:
