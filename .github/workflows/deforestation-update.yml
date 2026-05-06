@@ -37,15 +37,28 @@ jobs:
             python pipeline/simplify_geojson.py
           fi
 
-      - name: Download crosswalk from R2
+      - name: Download crosswalk from R2 and static files from GCS
         run: |
+          mkdir -p pipeline/output
           for f in h3_parent_crosswalk h3_radio_crosswalk_areal; do
             npx wrangler r2 object get "neahub/data/${f}.parquet" \
               --file "pipeline/output/${f}.parquet" --remote
           done
+          python -c "
+import json, os
+from google.cloud import storage
+from google.oauth2 import service_account
+key = json.loads(os.environ['GEE_SERVICE_ACCOUNT_KEY'])
+creds = service_account.Credentials.from_service_account_info(key)
+client = storage.Client(credentials=creds, project=key['project_id'])
+bucket = client.bucket('spatia-satellite')
+bucket.blob('static/radio_stats_master.parquet').download_to_filename('pipeline/output/radio_stats_master.parquet')
+print('Downloaded radio_stats_master.parquet from GCS')
+"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GEE_SERVICE_ACCOUNT_KEY: ${{ secrets.GEE_SERVICE_ACCOUNT_KEY }}
 
       - name: Export Hansen loss year from GEE
         run: python pipeline/gee_export_hansen_loss.py
