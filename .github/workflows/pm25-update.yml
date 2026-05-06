@@ -41,7 +41,7 @@ jobs:
       - name: Download crosswalks and radio data from R2 and GCS
         run: |
           mkdir -p pipeline/output/radio_data
-          for f in h3_parent_crosswalk h3_radio_crosswalk_areal; do
+          for f in h3_parent_crosswalk h3_radio_crosswalk_areal h3_admin_crosswalk; do
             npx wrangler r2 object get "neahub/data/${f}.parquet" \
               --file "pipeline/output/${f}.parquet" --remote
           done
