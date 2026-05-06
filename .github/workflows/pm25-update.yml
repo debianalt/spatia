@@ -28,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r pipeline/requirements.txt
-          pip install shap optuna
+          pip install shap optuna lightgbm
           npm install -g wrangler
 
       - name: Generate H3 grid (if needed)
