@@ -53,11 +53,10 @@ jobs:
           GEE_SERVICE_ACCOUNT_KEY: ${{ secrets.GEE_SERVICE_ACCOUNT_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
-      - name: Recompute composite scores (PCA + geometric mean)
+      - name: Compute typologies and split by department
         working-directory: pipeline
         run: |
           ANALYSES="${{ github.event.inputs.analyses || 'environmental_risk,climate_comfort,green_capital' }}"
-          python compute_satellite_scores.py --only "$ANALYSES" --diagnostics
           python compute_analysis_typologies.py --only "$ANALYSES"
           python split_satellite_by_dpto.py --only "$ANALYSES"
 
