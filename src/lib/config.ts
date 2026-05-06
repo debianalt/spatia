@@ -227,7 +227,7 @@ export const TERRITORY_REGISTRY: Record<string, TerritoryConfig> = {
 	corrientes: {
 		id: 'corrientes', label: 'Corrientes', shortLabel: 'CTE', country: 'ar',
 		bbox: [-59.50, -30.00, -56.00, -27.00],
-		parquetPrefix: 'corrientes/', flag: '🇦🇷', available: false,
+		parquetPrefix: 'corrientes/', flag: '🇦🇷', available: true,
 	},
 	chaco: {
 		id: 'chaco', label: 'Chaco', shortLabel: 'CHA', country: 'ar',
