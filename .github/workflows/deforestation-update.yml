@@ -44,17 +44,7 @@ jobs:
             npx wrangler r2 object get "neahub/data/${f}.parquet" \
               --file "pipeline/output/${f}.parquet" --remote
           done
-          python -c "
-import json, os
-from google.cloud import storage
-from google.oauth2 import service_account
-key = json.loads(os.environ['GEE_SERVICE_ACCOUNT_KEY'])
-creds = service_account.Credentials.from_service_account_info(key)
-client = storage.Client(credentials=creds, project=key['project_id'])
-bucket = client.bucket('spatia-satellite')
-bucket.blob('static/radio_stats_master.parquet').download_to_filename('pipeline/output/radio_stats_master.parquet')
-print('Downloaded radio_stats_master.parquet from GCS')
-"
+          python -c "import json,os; from google.cloud import storage; from google.oauth2 import service_account; key=json.loads(os.environ['GEE_SERVICE_ACCOUNT_KEY']); creds=service_account.Credentials.from_service_account_info(key); client=storage.Client(credentials=creds,project=key['project_id']); bucket=client.bucket('spatia-satellite'); bucket.blob('static/radio_stats_master.parquet').download_to_filename('pipeline/output/radio_stats_master.parquet'); print('Downloaded radio_stats_master.parquet from GCS')"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
