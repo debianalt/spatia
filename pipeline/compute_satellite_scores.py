@@ -418,11 +418,13 @@ ANALYSIS_DEFS = [
 ]
 
 
-def create_duckdb_conn() -> duckdb.DuckDBPyConnection:
+def create_duckdb_conn(tables: list[str] | None = None) -> duckdb.DuckDBPyConnection:
     """Create DuckDB connection with all radio tables loaded from parquets."""
+    if tables is None:
+        tables = RADIO_TABLES
     conn = duckdb.connect()
     loaded = 0
-    for table_name in RADIO_TABLES:
+    for table_name in tables:
         path = os.path.join(RADIO_DATA_DIR, f"{table_name}.parquet")
         if os.path.exists(path):
             conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_parquet('{path}')")
@@ -430,7 +432,7 @@ def create_duckdb_conn() -> duckdb.DuckDBPyConnection:
         else:
             # Create empty table so queries don't fail
             conn.execute(f"CREATE TABLE {table_name} (redcode VARCHAR)")
-    print(f"  Loaded {loaded}/{len(RADIO_TABLES)} radio tables from parquets")
+    print(f"  Loaded {loaded}/{len(tables)} radio tables from parquets")
     return conn
 
 
@@ -605,12 +607,16 @@ def main():
         description="Compute satellite composite scores at H3 res-9 (PCA + geometric mean)"
     )
     parser.add_argument(
+        "--territory", default="misiones",
+        help="Territory ID (default: misiones). Controls radio table and crosswalk paths."
+    )
+    parser.add_argument(
         "--only", default=None,
         help="Comma-separated list of analysis IDs to compute (default: all)"
     )
     parser.add_argument(
-        "--output-dir", default=OUTPUT_DIR,
-        help=f"Output directory (default: {OUTPUT_DIR})"
+        "--output-dir", default=None,
+        help="Output directory (default: OUTPUT_DIR or OUTPUT_DIR/<territory>)"
     )
     parser.add_argument(
         "--diagnostics", action="store_true",
@@ -625,6 +631,25 @@ def main():
         help="comparable: fixed goalpost normalization (cross-territory). local: percentile rank within territory (default)."
     )
     args = parser.parse_args()
+
+    # ── Territory-aware paths ─────────────────────────────────────────────
+    territory_id = args.territory
+    RADIO_TABLE = f"radios_{territory_id}"
+
+    if territory_id == 'misiones':
+        crosswalk_path = CROSSWALK_PATH
+        areal_crosswalk_path = AREAL_CROSSWALK_PATH
+        output_dir = args.output_dir or OUTPUT_DIR
+    else:
+        t_dir = os.path.join(OUTPUT_DIR, territory_id)
+        crosswalk_path = os.path.join(t_dir, "h3_radio_crosswalk.parquet")
+        areal_crosswalk_path = os.path.join(t_dir, "h3_radio_crosswalk_areal.parquet")
+        output_dir = args.output_dir or t_dir
+
+    # Patch SQL strings and radio table list for this territory
+    for a_def in ANALYSIS_DEFS:
+        a_def["sql"] = a_def["sql"].replace("radios_misiones", RADIO_TABLE)
+    radio_tables = [RADIO_TABLE if t == "radios_misiones" else t for t in RADIO_TABLES]
 
     goalposts = load_goalposts() if args.mode == "comparable" else None
     if goalposts:
@@ -653,19 +678,20 @@ def main():
 
     print("=" * 60)
     print("  Compute Satellite Composite Scores")
+    print(f"  Territory: {territory_id}  (table: {RADIO_TABLE})")
     print(f"  Analyses: {len(analyses)}")
     print("=" * 60)
 
     # Load crosswalks
     print("\nLoading crosswalks...")
-    crosswalk = pd.read_parquet(CROSSWALK_PATH)
+    crosswalk = pd.read_parquet(crosswalk_path)
     print(f"  Dasymetric: {len(crosswalk):,} rows, {crosswalk['h3index'].nunique():,} unique hexagons")
-    areal_crosswalk = pd.read_parquet(AREAL_CROSSWALK_PATH)
+    areal_crosswalk = pd.read_parquet(areal_crosswalk_path)
     print(f"  Areal: {len(areal_crosswalk):,} rows, {areal_crosswalk['h3index'].nunique():,} unique hexagons")
 
     # Load radio data tables into DuckDB
     print("Loading radio tables into DuckDB...")
-    conn = create_duckdb_conn()
+    conn = create_duckdb_conn(tables=radio_tables)
 
     t0 = time.time()
     results = {}
@@ -692,11 +718,11 @@ def main():
                 areal_crosswalk=areal_crosswalk if use_areal_fallback else None,
                 emit_diagnostics=args.diagnostics,
                 emit_legacy=args.legacy,
-                output_dir=args.output_dir,
+                output_dir=output_dir,
                 mode=args.mode,
                 goalposts=goalposts,
             )
-            out_path = os.path.join(args.output_dir, f"sat_{aid}.parquet")
+            out_path = os.path.join(output_dir, f"sat_{aid}.parquet")
             result.to_parquet(out_path, index=False)
             size_kb = os.path.getsize(out_path) / 1024
             print(f"    Output: {out_path} ({size_kb:.0f} KB)")

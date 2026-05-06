@@ -41,6 +41,18 @@ TERRITORY_CONFIGS: dict[str, dict] = {
         'output_prefix': 'itapua_py/',               # R2: data/itapua_py/sat_*.parquet
         'export_scale': 100,
     },
+    'corrientes': {
+        'id': 'corrientes',
+        'label': 'Corrientes',
+        'country': 'ar',
+        'bbox': [-59.50, -30.00, -56.00, -27.00],
+        'admin_level': 'departamento',
+        'admin_col': 'dpto',
+        'admin_collection': None,                    # uses local ARG_adm2.shp (same as Misiones)
+        'admin_filter': None,
+        'output_prefix': 'corrientes/',              # R2: data/corrientes/sat_*.parquet
+        'export_scale': 100,
+    },
 }
 
 def get_territory(territory_id: str) -> dict:
