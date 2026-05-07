@@ -43,8 +43,9 @@ from scoring import run_full_diagnostics, geometric_mean_score, load_goalposts, 
 _GCLOUD = 'gcloud.cmd' if platform.system() == 'Windows' else 'gcloud'
 
 CAPITAL_COORDS = {
-    'misiones':  (-27.367, -55.896),   # Posadas (lat, lng)
-    'itapua_py': (-27.336, -55.869),   # Encarnación (lat, lng)
+    'misiones':   (-27.367,  -55.896),   # Posadas (lat, lng)
+    'itapua_py':  (-27.336,  -55.869),   # Encarnación (lat, lng)
+    'corrientes': (-27.4676, -58.8341),  # Corrientes capital (lat, lng)
 }
 
 TYPE_LABELS = {

@@ -131,6 +131,7 @@ def main():
     parser.add_argument("--territory", default="misiones", help="Territory ID (default: misiones)")
     parser.add_argument("--gcs", action="store_true", help="Force export to GCS")
     parser.add_argument("--scale", type=int, default=EXPORT_SCALE)
+    parser.add_argument("--no-wait", action="store_true", help="Submit task and exit without polling")
     args = parser.parse_args()
 
     territory = get_territory(args.territory)
@@ -164,6 +165,11 @@ def main():
             crs='EPSG:4326', maxPixels=1e9)
     task.start()
     print(f"  Export started: {file_name} -> {'GCS' if use_gcs else 'Drive'}")
+    print(f"  Task ID: {task.id}")
+
+    if args.no_wait:
+        print("  --no-wait: exiting. Monitor at https://code.earthengine.google.com/tasks")
+        return 0
 
     print("\nWaiting for export to complete...")
     while True:
