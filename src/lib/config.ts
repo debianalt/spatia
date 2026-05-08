@@ -4,13 +4,14 @@ function getBase(): string {
 	return R2_PROD;
 }
 
-export function getTilesUrl(name: 'buildings' | 'itapua_buildings' | 'corrientes_buildings' | 'radios' | 'terrain' | 'hexagons' | 'catastro'): string {
+export function getTilesUrl(name: 'buildings' | 'itapua_buildings' | 'itapua_districts' | 'corrientes_buildings' | 'radios' | 'terrain' | 'hexagons' | 'catastro'): string {
 	if (name === 'terrain') {
 		return '/api/terrain/{z}/{x}/{y}.png';
 	}
 	const files = {
 		buildings: 'tiles/buildings-v5.pmtiles',
 		itapua_buildings: 'tiles/itapua_buildings.pmtiles',
+		itapua_districts: 'data/tiles/itapua_districts.pmtiles',
 		corrientes_buildings: 'data/tiles/corrientes_buildings.pmtiles',
 		radios: 'data/tiles/radios-v3.pmtiles',
 		hexagons: 'tiles/hexagons-v2.pmtiles',
@@ -157,6 +158,8 @@ export const PARQUETS = {
 	get emsa_powerlines() { return getParquetUrl('emsa_powerlines'); },
 	// EUDR deforestation (H3 res-7, 10 provinces)
 	get eudr_deforestation() { return getEudrParquetUrl('eudr_deforestation'); },
+	// Itapua district-level satellite scores
+	get district_stats_itapua() { return `${getBase()}/data/itapua_py/district_stats_itapua.parquet`; },
 };
 
 export const BASEMAP = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';

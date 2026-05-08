@@ -39,11 +39,18 @@ export type ScoresParcelData = {
 	components: Record<string, number>;
 };
 
+export type DistrictData = {
+	color: string;
+	personas: number;
+	enriched: Record<string, any> | null;
+};
+
 const FLOOD_PARCEL_COLORS = ['#60a5fa', '#f97316', '#22c55e', '#a855f7', '#ef4444', '#eab308'];
 const SCORES_PARCEL_COLORS = ['#60a5fa', '#f97316', '#22c55e', '#a855f7', '#ef4444', '#eab308'];
 
 export class MapStore {
 	selectedRadios: Map<string, RadioData> = $state(new Map());
+	selectedDistricts: Map<string, DistrictData> = $state(new Map());
 	pitch: number = $state(31);
 	bearing: number = $state(-15);
 	activeHexLayer: string | null = $state(null);
@@ -55,6 +62,7 @@ export class MapStore {
 	private floodParcelColorIndex = 0;
 	private scoresParcelColorIndex = 0;
 	private colorIndex = 0;
+	private districtColorIndex = 0;
 
 	get currentRamp() {
 		return COLOR_RAMPS.population;
@@ -102,6 +110,39 @@ export class MapStore {
 	clearRadios() {
 		this.selectedRadios = new Map();
 		this.colorIndex = 0;
+	}
+
+	addDistrict(distrito: string, personas: number, colorOverride?: string) {
+		if (this.selectedDistricts.has(distrito)) return;
+		const color = colorOverride || RADIO_COLORS[this.districtColorIndex % RADIO_COLORS.length];
+		if (!colorOverride) this.districtColorIndex++;
+		const updated = new Map(this.selectedDistricts);
+		updated.set(distrito, { color, personas, enriched: null });
+		this.selectedDistricts = updated;
+	}
+
+	removeDistrict(distrito: string) {
+		const updated = new Map(this.selectedDistricts);
+		updated.delete(distrito);
+		this.selectedDistricts = updated;
+		if (updated.size === 0) this.districtColorIndex = 0;
+	}
+
+	hasDistrict(d: string): boolean {
+		return this.selectedDistricts.has(d);
+	}
+
+	clearDistricts() {
+		this.selectedDistricts = new Map();
+		this.districtColorIndex = 0;
+	}
+
+	updateDistrictEnriched(distrito: string, enriched: Record<string, any>) {
+		const existing = this.selectedDistricts.get(distrito);
+		if (!existing) return;
+		const updated = new Map(this.selectedDistricts);
+		updated.set(distrito, { ...existing, enriched });
+		this.selectedDistricts = updated;
 	}
 
 	updateEnriched(redcode: string, enriched: Record<string, any>) {

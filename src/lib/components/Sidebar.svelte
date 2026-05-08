@@ -2,6 +2,7 @@
 	import { fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import ComparisonChart from './ComparisonChart.svelte';
+	import DistrictComparisonChart from './DistrictComparisonChart.svelte';
 	import AnalysisMenu from './AnalysisMenu.svelte';
 	import AnalysisView from './AnalysisView.svelte';
 	import ZoneComparison from './ZoneComparison.svelte';
@@ -29,6 +30,8 @@
 		showAbout = false,
 		onRemoveRadio,
 		onClearRadios,
+		onRemoveDistrict,
+		onClearDistricts,
 		onSelectAnalysis,
 		onRemoveZone,
 		onClearZones,
@@ -53,6 +56,8 @@
 		showAbout?: boolean;
 		onRemoveRadio: (redcode: string) => void;
 		onClearRadios: () => void;
+		onRemoveDistrict: (distrito: string) => void;
+		onClearDistricts: () => void;
 		onSelectAnalysis: (analysis: AnalysisConfig) => void;
 		onRemoveZone: (id: string) => void;
 		onClearZones: () => void;
@@ -80,7 +85,8 @@
 			lassoStore.zones.length > 0 ||
 			hexStore.selectedHexes.size > 0 ||
 			(lensStore.activeLens && lensStore.activeAnalysis) ||
-			mapStore.selectedRadios.size > 0;
+			mapStore.selectedRadios.size > 0 ||
+			mapStore.selectedDistricts.size > 0;
 		if (hasContent) collapsed = false;
 	});
 
@@ -178,6 +184,15 @@
 				{/if}
 			</div>
 		{/if}
+	{:else if mapStore.selectedDistricts.size > 0}
+		<!-- Itapúa: districts selected -->
+		<div class="chart-scroll">
+			<DistrictComparisonChart
+				districts={mapStore.selectedDistricts}
+				{onRemoveDistrict}
+				{onClearDistricts}
+			/>
+		</div>
 	{:else if mapStore.selectedRadios.size > 0}
 		<!-- No lens, radios selected: comparison chart -->
 		<div class="chart-scroll">

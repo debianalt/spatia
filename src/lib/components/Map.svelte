@@ -242,6 +242,48 @@
 				}
 			});
 
+			// Itapúa district polygons (31 GAUL distritos, hidden until territory switch)
+			map.addSource('itapua-districts', { type: 'vector', url: getTilesUrl('itapua_districts') });
+			const emptyDistrictFilter: any = ['==', ['get', 'district'], ''];
+			map.addLayer({
+				id: 'itapua-district-fill',
+				type: 'fill',
+				source: 'itapua-districts',
+				'source-layer': 'districts',
+				layout: { visibility: 'none' },
+				paint: { 'fill-color': '#60a5fa', 'fill-opacity': 0.06 }
+			});
+			map.addLayer({
+				id: 'itapua-district-line',
+				type: 'line',
+				source: 'itapua-districts',
+				'source-layer': 'districts',
+				layout: { visibility: 'none' },
+				paint: {
+					'line-color': '#d4d4d4',
+					'line-width': ['interpolate', ['linear'], ['zoom'], 6, 1.2, 10, 0.6, 14, 0.3],
+					'line-opacity': ['interpolate', ['linear'], ['zoom'], 6, 0.3, 10, 0.25, 14, 0.15]
+				}
+			});
+			map.addLayer({
+				id: 'itapua-district-selected-fill',
+				type: 'fill',
+				source: 'itapua-districts',
+				'source-layer': 'districts',
+				layout: { visibility: 'none' },
+				paint: { 'fill-color': '#60a5fa', 'fill-opacity': 0.45 },
+				filter: emptyDistrictFilter
+			});
+			map.addLayer({
+				id: 'itapua-district-selected-line',
+				type: 'line',
+				source: 'itapua-districts',
+				'source-layer': 'districts',
+				layout: { visibility: 'none' },
+				paint: { 'line-color': '#60a5fa', 'line-width': 3, 'line-opacity': 1 },
+				filter: emptyDistrictFilter
+			});
+
 			// Corrientes buildings (pre-created, hidden until territory switch)
 			map.addSource('corrientes-buildings', { type: 'vector', url: getTilesUrl('corrientes_buildings') });
 			map.addLayer({
@@ -575,7 +617,10 @@
 			const p = e.features![0].properties!;
 			const h = p.best_height_m != null ? parseFloat(p.best_height_m).toFixed(1) : '?';
 			const a = p.area_m2 != null ? Math.round(p.area_m2).toLocaleString() : '?';
-			tooltip.innerHTML = `<b style="color:#60a5fa">${i18n.t('tip.building')}</b> ${i18n.t('tip.height')} ${h} m | ${i18n.t('tip.area')} ${a} m\u00B2`;
+			const res = p.is_residential ? 'residencial' : (p.subtype || 'no residencial');
+			const dist = p.distrito || '';
+			const est = p.est_personas > 0 ? ` | ~${p.est_personas} pers.` : '';
+			tooltip.innerHTML = `<b style="color:#60a5fa">${i18n.t('tip.building')}</b> ${h} m | ${a} m\u00B2 | ${res}${est}${dist ? ` | ${dist}` : ''}`;
 			tooltip.style.display = 'block';
 			tooltip.style.left = (e.originalEvent.clientX + 14) + 'px';
 			tooltip.style.top = (e.originalEvent.clientY + 14) + 'px';
@@ -649,6 +694,16 @@
 					detail: { redcode, selected, census: e.features![0].properties! }
 				}));
 			}
+		});
+
+		// Itapúa district click: select/deselect district
+		map.on('click', 'itapua-district-fill', (e) => {
+			if (lassoActive || mapStore.activeHexLayer) return;
+			const distrito = e.features![0].properties!.district;
+			const personas = e.features![0].properties!.personas ?? 0;
+			if (!distrito) return;
+			const event = mapStore.hasDistrict(distrito) ? 'district-deselect' : 'district-select';
+			container.dispatchEvent(new CustomEvent(event, { bubbles: true, detail: { distrito, personas } }));
 		});
 
 		// Click on hexagon: emit hex-select event
@@ -801,6 +856,30 @@
 		map.setFilter('selected-line', emptyFilter);
 	}
 
+	export function setDistrictHighlight(districts: Array<{distrito: string, color: string}>) {
+		if (!map) return;
+		const emptyFilter: any = ['==', ['get', 'district'], ''];
+		const fillId = 'itapua-district-selected-fill';
+		const lineId = 'itapua-district-selected-line';
+		if (!map.getLayer(fillId)) return;
+		if (districts.length === 0) {
+			map.setFilter(fillId, emptyFilter);
+			map.setFilter(lineId, emptyFilter);
+			return;
+		}
+		const names = districts.map(d => d.distrito);
+		const matchExpr: any[] = ['match', ['get', 'district']];
+		for (const d of districts) {
+			matchExpr.push(d.distrito, d.color);
+		}
+		matchExpr.push('#60a5fa'); // fallback
+		map.setPaintProperty(fillId, 'fill-color', matchExpr);
+		map.setPaintProperty(fillId, 'fill-opacity', 0.45);
+		map.setFilter(fillId, ['in', ['get', 'district'], ['literal', names]]);
+		map.setPaintProperty(lineId, 'line-color', matchExpr);
+		map.setFilter(lineId, ['in', ['get', 'district'], ['literal', names]]);
+	}
+
 	export function flyToCoords(lat: number, lng: number, zoom?: number) {
 		map?.flyTo({
 			center: [lng, lat],
@@ -887,6 +966,11 @@
 		if (map.getLayer('corrientes-border')) {
 			map.setLayoutProperty('corrientes-border', 'visibility', isCorrientes ? 'visible' : 'none');
 		}
+		// Itapúa district polygons: show only in Itapúa territory
+		for (const l of ['itapua-district-fill', 'itapua-district-line', 'itapua-district-selected-fill', 'itapua-district-selected-line']) {
+			if (map.getLayer(l)) map.setLayoutProperty(l, 'visibility', isItapua ? 'visible' : 'none');
+		}
+
 		// Buildings: show only the active territory's layer, hide the other two
 		const activeLayer = isCorrientes ? 'corrientes-buildings-3d'
 		                  : isItapua     ? 'itapua-buildings-3d'

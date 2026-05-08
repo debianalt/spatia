@@ -60,6 +60,9 @@
 		hexStore.loadVisibleData();
 		// Reset selected dept since admin units differ per territory
 		hexStore.selectedDpto = null;
+		// Clear district selections when switching territory
+		mapStore.clearDistricts();
+		mapComponent?.setDistrictHighlight([]);
 	});
 
 	onMount(() => {
@@ -109,6 +112,20 @@
 			const { redcode } = e.detail;
 			mapStore.removeRadio(redcode);
 			mapComponent?.setRadioHighlight(getRadioHighlightEntries());
+		}) as EventListener);
+
+		mapContainer?.addEventListener('district-select', ((e: CustomEvent) => {
+			showAbout = false;
+			const { distrito, personas } = e.detail;
+			mapStore.addDistrict(distrito, personas);
+			mapComponent?.setDistrictHighlight(getDistrictHighlightEntries());
+			fetchDistrictEnrichment(distrito);
+		}) as EventListener);
+
+		mapContainer?.addEventListener('district-deselect', ((e: CustomEvent) => {
+			const { distrito } = e.detail;
+			mapStore.removeDistrict(distrito);
+			mapComponent?.setDistrictHighlight(getDistrictHighlightEntries());
 		}) as EventListener);
 
 		mapContainer?.addEventListener('compare-hex-select', ((e: CustomEvent) => {
@@ -661,6 +678,32 @@
 		return [...mapStore.selectedRadios.entries()].map(([rc, d]) => ({redcode: rc, color: d.color}));
 	}
 
+	function getDistrictHighlightEntries(): Array<{distrito: string, color: string}> {
+		return [...mapStore.selectedDistricts.entries()].map(([d, data]) => ({distrito: d, color: data.color}));
+	}
+
+	async function fetchDistrictEnrichment(distrito: string): Promise<void> {
+		try {
+			await initDuckDB();
+			const result = await query(`SELECT * FROM '${PARQUETS.district_stats_itapua}' WHERE distrito = '${distrito.replace(/'/g, "''")}' LIMIT 1`);
+			if (result.numRows > 0) {
+				mapStore.updateDistrictEnriched(distrito, result.get(0)!.toJSON() as Record<string, any>);
+			}
+		} catch (e) {
+			console.warn('District enrichment fetch failed:', e);
+		}
+	}
+
+	function handleRemoveDistrict(distrito: string) {
+		mapStore.removeDistrict(distrito);
+		mapComponent?.setDistrictHighlight(getDistrictHighlightEntries());
+	}
+
+	function handleClearDistricts() {
+		mapStore.clearDistricts();
+		mapComponent?.setDistrictHighlight([]);
+	}
+
 	function handleRemoveRadio(redcode: string) {
 		mapStore.removeRadio(redcode);
 		mapComponent?.setRadioHighlight(getRadioHighlightEntries());
@@ -919,12 +962,14 @@
 
 	function clearAll() {
 		mapStore.clearRadios();
+		mapStore.clearDistricts();
 		mapStore.clearHexState();
 		mapComponent?.setHexLayerInfo('', false);
 		mapStore.clearFloodParcelState();
 		mapStore.clearScoresParcelState();
 		hexStore.clearAll();
 		mapComponent?.clearRadioHighlight();
+		mapComponent?.setDistrictHighlight([]);
 		mapComponent?.clearAnalysisChoropleth();
 		mapComponent?.clearHexChoropleth();
 		mapComponent?.clearHexZoneHighlight();
@@ -1030,6 +1075,8 @@
 			onDownloadRadiosSummary={downloadRadiosSummary}
 			onShowLisa={handleShowLisa}
 			onMoranBrush={handleMoranBrush}
+			onRemoveDistrict={handleRemoveDistrict}
+			onClearDistricts={handleClearDistricts}
 			/>
 		</div>
 	</div>
