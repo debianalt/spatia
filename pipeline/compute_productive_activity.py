@@ -15,6 +15,7 @@ Variables:
 
 Usage:
   python pipeline/compute_productive_activity.py
+  python pipeline/compute_productive_activity.py --territory corrientes --mode comparable
 """
 
 import argparse
@@ -26,7 +27,6 @@ from config import OUTPUT_DIR
 from scoring import load_goalposts, score_with_goalposts
 
 RADIO_DATA = os.path.join(OUTPUT_DIR, "radio_data")
-OUTPUT_PATH = os.path.join(OUTPUT_DIR, "sat_productive_activity.parquet")
 
 
 def pctile(s):
@@ -59,14 +59,25 @@ def aggregate_to_h3(radio_df, cols, xw):
 
 def main():
     parser = argparse.ArgumentParser(description="Compute productive activity layer")
+    parser.add_argument("--territory", default="misiones", help="Territory ID (default: misiones)")
     parser.add_argument("--mode", choices=['comparable', 'local'], default='local',
                         help="comparable: goalpost normalization. local: percentile rank (default).")
     args = parser.parse_args()
 
     goalposts = load_goalposts() if args.mode == 'comparable' else None
 
+    t_id = args.territory
+    if t_id == "misiones":
+        t_dir = OUTPUT_DIR
+        xw_path = os.path.join(OUTPUT_DIR, "h3_radio_crosswalk_areal.parquet")
+    else:
+        t_dir = os.path.join(OUTPUT_DIR, t_id)
+        xw_path = os.path.join(t_dir, f"h3_radio_crosswalk_{t_id}.parquet")
+
+    output_path = os.path.join(t_dir, "sat_productive_activity.parquet")
+
     t0 = time.time()
-    xw = pd.read_parquet(os.path.join(OUTPUT_DIR, "h3_radio_crosswalk_areal.parquet"))
+    xw = pd.read_parquet(xw_path)
 
     # --- 1. VIIRS (2014-2017 baseline, 2022-2025 current) -----------------
     print("1. VIIRS nightlights...")
@@ -103,7 +114,7 @@ def main():
     # pixels lost per year inside the hex polygon (not a 0/1 centroid sample),
     # plus a 'hex_pixel_count' column. Convert to percentage of hex area lost.
     print("5. Hansen forest loss (zonal % of hex area)...")
-    hansen_path = os.path.join(OUTPUT_DIR, "hansen_h3_annual.parquet")
+    hansen_path = os.path.join(t_dir, "hansen_h3_annual.parquet")
     if os.path.exists(hansen_path):
         hansen_h3 = pd.read_parquet(hansen_path)
         bl_px = hansen_h3[hansen_h3.year.between(2001, 2012)].groupby('h3index')['lost'].sum()
@@ -204,9 +215,10 @@ def main():
     print(f"  Types: {result.type.value_counts().sort_index().to_dict()}")
     print(f"  Built in {elapsed:.0f}s")
 
-    result.to_parquet(OUTPUT_PATH, index=False)
-    size_mb = os.path.getsize(OUTPUT_PATH) / (1024 * 1024)
-    print(f"  Saved: {OUTPUT_PATH} ({size_mb:.1f} MB)")
+    os.makedirs(t_dir, exist_ok=True)
+    result.to_parquet(output_path, index=False)
+    size_mb = os.path.getsize(output_path) / (1024 * 1024)
+    print(f"  Saved: {output_path} ({size_mb:.1f} MB)")
     print(f"{'=' * 60}")
 
 

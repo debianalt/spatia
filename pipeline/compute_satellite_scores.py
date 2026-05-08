@@ -418,14 +418,21 @@ ANALYSIS_DEFS = [
 ]
 
 
-def create_duckdb_conn(tables: list[str] | None = None) -> duckdb.DuckDBPyConnection:
-    """Create DuckDB connection with all radio tables loaded from parquets."""
+def create_duckdb_conn(
+    tables: list[str] | None = None,
+    overrides: dict[str, str] | None = None,
+) -> duckdb.DuckDBPyConnection:
+    """Create DuckDB connection with all radio tables loaded from parquets.
+
+    overrides: optional {table_name: absolute_path} to use instead of RADIO_DATA_DIR.
+    """
     if tables is None:
         tables = RADIO_TABLES
+    overrides = overrides or {}
     conn = duckdb.connect()
     loaded = 0
     for table_name in tables:
-        path = os.path.join(RADIO_DATA_DIR, f"{table_name}.parquet")
+        path = overrides.get(table_name) or os.path.join(RADIO_DATA_DIR, f"{table_name}.parquet")
         if os.path.exists(path):
             conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_parquet('{path}')")
             loaded += 1
@@ -640,16 +647,37 @@ def main():
         crosswalk_path = CROSSWALK_PATH
         areal_crosswalk_path = AREAL_CROSSWALK_PATH
         output_dir = args.output_dir or OUTPUT_DIR
+        radio_data_overrides = {}
     else:
         t_dir = os.path.join(OUTPUT_DIR, territory_id)
-        crosswalk_path = os.path.join(t_dir, "h3_radio_crosswalk.parquet")
-        areal_crosswalk_path = os.path.join(t_dir, "h3_radio_crosswalk_areal.parquet")
+        # Crosswalk naming convention: h3_radio_crosswalk_{territory_id}.parquet
+        crosswalk_path = os.path.join(t_dir, f"h3_radio_crosswalk_{territory_id}.parquet")
+        # No separate areal crosswalk for non-Misiones territories; use dasymetric for fallback
+        areal_crosswalk_path = crosswalk_path
         output_dir = args.output_dir or t_dir
+        # Override paths for files that live in t_dir, not radio_data/
+        radio_data_overrides = {
+            RADIO_TABLE: os.path.join(t_dir, f"radios_{territory_id}.parquet"),
+            f"censo2022_variables_{territory_id}": os.path.join(
+                t_dir, f"censo2022_variables_{territory_id}.parquet"
+            ),
+            "oxford_accessibility": os.path.join(
+                t_dir, f"oxford_accessibility_{territory_id}.parquet"
+            ),
+            "road_access": os.path.join(t_dir, f"road_access_{territory_id}.parquet"),
+        }
 
     # Patch SQL strings and radio table list for this territory
+    censo_table = "censo2022_variables" if territory_id == 'misiones' else f"censo2022_variables_{territory_id}"
     for a_def in ANALYSIS_DEFS:
         a_def["sql"] = a_def["sql"].replace("radios_misiones", RADIO_TABLE)
-    radio_tables = [RADIO_TABLE if t == "radios_misiones" else t for t in RADIO_TABLES]
+        if territory_id != 'misiones':
+            a_def["sql"] = a_def["sql"].replace("censo2022_variables", censo_table)
+    radio_tables = [
+        RADIO_TABLE if t == "radios_misiones" else
+        censo_table if t == "censo2022_variables" and territory_id != 'misiones' else t
+        for t in RADIO_TABLES
+    ]
 
     goalposts = load_goalposts() if args.mode == "comparable" else None
     if goalposts:
@@ -691,7 +719,7 @@ def main():
 
     # Load radio data tables into DuckDB
     print("Loading radio tables into DuckDB...")
-    conn = create_duckdb_conn(tables=radio_tables)
+    conn = create_duckdb_conn(tables=radio_tables, overrides=radio_data_overrides)
 
     t0 = time.time()
     results = {}
