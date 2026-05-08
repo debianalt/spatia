@@ -1,12 +1,16 @@
 """
-Build Itapúa (Paraguay) buildings PMTiles from Overture Maps.
+Build Itapúa (Paraguay) buildings PMTiles from Overture Maps with census enrichment.
 
-Uses the overturemaps Python library to stream building footprints within Itapúa's
-bounding box, then generates a PMTiles archive using the same tile encoding pipeline
-as rebuild_buildings_tiles.py.
+Pipeline:
+  1. Fetch building footprints from Overture Maps API
+  2. Classify residential vs non-residential (Overture subtype/class + area heuristic)
+  3. Spatial join buildings → distritos (from itapua_py_gaul_distritos.geojson)
+  4. Area-proportional population distribution using DGEEC Censo 2022 district totals
+  5. Generate PMTiles with enriched properties
 
-No census enrichment (no PY census data available) — properties: best_height_m, area_m2.
-Layer name 'buildings' matches the source-layer used by Map.svelte's itapua-buildings-3d.
+Properties per building in output tiles:
+  best_height_m, area_m2, is_residential (0/1), subtype, est_personas,
+  distrito, distrito_pop, distrito_hog
 
 Usage:
   python pipeline/build_itapua_buildings.py
@@ -28,19 +32,24 @@ from collections import defaultdict
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+import geopandas as gpd
 import overturemaps
 import mapbox_vector_tile as mvt
+import pandas as pd
 from pmtiles.tile import TileType, zxy_to_tileid
 from pmtiles.writer import Compression, Writer as PMTilesWriter
 from pyproj import Transformer
 from shapely.geometry import mapping
 from shapely.ops import clip_by_rect
 from shapely.ops import transform as shapely_transform
+from shapely.strtree import STRtree
 from shapely import wkb as shapely_wkb
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(SCRIPT_DIR, "output")
 OUTPUT = os.path.join(OUTPUT_DIR, "itapua_buildings.pmtiles")
+CENSO_CSV = os.path.join(SCRIPT_DIR, "data", "itapua_censo_2022.csv")
+DISTRITOS_GEOJSON = os.path.join(OUTPUT_DIR, "itapua_py_gaul_distritos.geojson")
 
 # Itapúa, Paraguay — slightly padded to capture border buildings
 BBOX = {"west": -57.40, "south": -27.70, "east": -55.00, "north": -26.40}
@@ -53,6 +62,22 @@ EXTENT = 4096
 # UTM zone 20S (EPSG:32720) — correct projection for Paraguay area calculations
 _proj = Transformer.from_crs("EPSG:4326", "EPSG:32720", always_xy=True)
 
+# Residential classification sets
+_RES_CLASSES = {
+    'house', 'apartments', 'detached', 'dormitory', 'bungalow', 'cabin',
+    'terrace', 'residential', 'semidetached_house', 'static_caravan',
+}
+_NON_RES_SUBTYPES = {
+    'commercial', 'industrial', 'civic', 'education', 'medical', 'religious',
+    'entertainment', 'military', 'agricultural', 'transportation', 'service', 'outbuilding',
+}
+_NON_RES_CLASSES = {
+    'commercial', 'industrial', 'retail', 'warehouse', 'office', 'school',
+    'university', 'hospital', 'church', 'mosque', 'hotel', 'garage', 'farm',
+    'barn', 'factory', 'greenhouse', 'hangar', 'civic', 'education', 'medical',
+    'religious', 'service', 'outbuilding',
+}
+
 
 def area_m2(geom):
     """Compute polygon area in m² using UTM 20S projection."""
@@ -62,7 +87,24 @@ def area_m2(geom):
         return 0.0
 
 
-# ── Tile math (identical to rebuild_buildings_tiles.py) ──────────────────────
+def classify_residential(subtype, bclass, a):
+    """Return (is_residential bool, label str).
+
+    Priority: explicit Overture subtype/class → area heuristic (>700m²) → default residential.
+    """
+    label = bclass or subtype or ""
+
+    if subtype == 'residential' or bclass in _RES_CLASSES:
+        return True, label
+    if subtype in _NON_RES_SUBTYPES or bclass in _NON_RES_CLASSES:
+        return False, label
+    # Large unclassified building — likely non-residential
+    if a > 700:
+        return False, label
+    return True, label
+
+
+# ── Tile math ──────────────────────────────────────────────────────────────
 
 def lng_lat_to_tile(lng, lat, zoom):
     n = 2 ** zoom
@@ -108,18 +150,33 @@ def features_to_mvt(features, tile_bounds_wsen, layer_name, extent=4096):
     return mvt.encode([layer], quantize_bounds=(w, s, e, n), extents=extent)
 
 
-# ── Step 1: Fetch buildings from Overture Maps ───────────────────────────────
+# ── Step 0: Load census data + distrito polygons ──────────────────────────
+
+def load_censo():
+    """Return dict: distrito_name → {personas, hogares}."""
+    df = pd.read_csv(CENSO_CSV)
+    return {
+        row.distrito: {"personas": int(row.total_personas), "hogares": int(row.total_hogares)}
+        for _, row in df.iterrows()
+    }
+
+
+def load_distritos():
+    """Return (gdf with ADM2_NAME, list of Shapely geometries, list of names)."""
+    gdf = gpd.read_file(DISTRITOS_GEOJSON)
+    return gdf, list(gdf.geometry), list(gdf["ADM2_NAME"])
+
+
+# ── Step 1: Fetch + classify buildings from Overture ─────────────────────
 
 def load_buildings():
+    """Fetch from Overture Maps and classify each building."""
     print("Step 1: Querying Overture Maps API...")
     west, south, east, north = BBOX["west"], BBOX["south"], BBOX["east"], BBOX["north"]
     print(f"  bbox: {west},{south} to {east},{north}")
 
     t0 = time.time()
-    reader = overturemaps.record_batch_reader(
-        'building',
-        bbox=(west, south, east, north),
-    )
+    reader = overturemaps.record_batch_reader("building", bbox=(west, south, east, north))
     if reader is None:
         print("  ERROR: record_batch_reader returned None")
         return []
@@ -127,14 +184,18 @@ def load_buildings():
     features = []
     skipped = 0
     total_rows = 0
+    n_residential = 0
 
     for batch in reader:
         rows = batch.to_pydict()
-        n = len(rows['geometry'])
+        n = len(rows["geometry"])
         total_rows += n
+
+        subtype_col = rows.get("subtype", [None] * n)
+        class_col   = rows.get("class",   [None] * n)
+
         for i in range(n):
-            geom_bytes = rows['geometry'][i]
-            height = rows['height'][i]
+            geom_bytes = rows["geometry"][i]
             if geom_bytes is None:
                 skipped += 1
                 continue
@@ -146,27 +207,120 @@ def load_buildings():
             if geom is None or geom.is_empty:
                 skipped += 1
                 continue
+
+            height   = rows["height"][i]
+            subtype  = subtype_col[i]
+            bclass   = class_col[i]
+            a        = area_m2(geom)
+            is_res, label = classify_residential(subtype, bclass, a)
+
+            if is_res:
+                n_residential += 1
+
             features.append({
-                "geometry": geom,
-                "properties": {
-                    "best_height_m": round(float(height), 1) if height is not None else 5.0,
-                    "area_m2": area_m2(geom),
-                },
+                "geometry":      geom,
+                "best_height_m": round(float(height), 1) if height is not None else 5.0,
+                "area_m2":       a,
+                "is_residential": is_res,
+                "subtype":       label,
+                # filled in later
+                "distrito":      "",
+                "est_personas":  0,
+                "distrito_pop":  0,
+                "distrito_hog":  0,
             })
 
-    print(f"  {total_rows:,} rows in {time.time()-t0:.1f}s -> {len(features):,} valid ({skipped} skipped)")
+    print(f"  {total_rows:,} rows -> {len(features):,} valid ({skipped} skipped)")
+    print(f"  Residential: {n_residential:,} ({100*n_residential/max(1,len(features)):.1f}%)")
+    print(f"  Time: {time.time()-t0:.1f}s")
     return features
 
 
-# ── Step 2: Generate PMTiles ─────────────────────────────────────────────────
+# ── Step 2: Spatial join buildings → distritos ────────────────────────────
+
+def assign_districts(features, dist_geoms, dist_names):
+    """Bulk point-in-polygon using STRtree: assign distrito to each building."""
+    print("\nStep 2: Spatial join buildings -> distritos...")
+    t0 = time.time()
+
+    tree = STRtree(dist_geoms)
+    centroids = [feat["geometry"].centroid for feat in features]
+
+    # Returns (input_indices, tree_indices) for all within relationships
+    result = tree.query(centroids, predicate="within")
+
+    assigned = 0
+    if len(result[0]) > 0:
+        for ci, di in zip(result[0], result[1]):
+            features[ci]["distrito"] = dist_names[di]
+            assigned += 1
+
+    print(f"  Assigned: {assigned:,} / {len(features):,} buildings  ({time.time()-t0:.1f}s)")
+
+
+# ── Step 3: Area-proportional population distribution ─────────────────────
+
+def distribute_population(features, censo):
+    """For each distrito, distribute population to residential buildings by area."""
+    print("\nStep 3: Distributing population...")
+    t0 = time.time()
+
+    dist_res_area = defaultdict(float)
+    for feat in features:
+        if feat["is_residential"] and feat["distrito"]:
+            dist_res_area[feat["distrito"]] += feat["area_m2"]
+
+    total_est = 0
+    for feat in features:
+        d = feat["distrito"]
+        dist_data = censo.get(d, {"personas": 0, "hogares": 0})
+        feat["distrito_pop"] = dist_data["personas"]
+        feat["distrito_hog"] = dist_data["hogares"]
+
+        if feat["is_residential"] and d and dist_res_area[d] > 0 and dist_data["personas"] > 0:
+            est = max(0, round(dist_data["personas"] * feat["area_m2"] / dist_res_area[d]))
+            feat["est_personas"] = est
+            total_est += est
+
+    print(f"  Total est_personas assigned: {total_est:,}  ({time.time()-t0:.1f}s)")
+
+    # Quick sanity check per district
+    by_dist = defaultdict(int)
+    for feat in features:
+        if feat["est_personas"] > 0:
+            by_dist[feat["distrito"]] += feat["est_personas"]
+    print("  District totals (top 5):")
+    for d, v in sorted(by_dist.items(), key=lambda x: -x[1])[:5]:
+        expected = censo.get(d, {}).get("personas", "?")
+        print(f"    {d}: est={v:,}  census={expected:,}")
+
+
+# ── Step 4: Generate PMTiles ──────────────────────────────────────────────
 
 def generate_pmtiles(features):
-    print(f"\nStep 2: Generating PMTiles (zoom {MIN_ZOOM}-{MAX_ZOOM})...")
+    print(f"\nStep 4: Generating PMTiles (zoom {MIN_ZOOM}-{MAX_ZOOM})...")
     t0 = time.time()
+
+    # Build PMTiles-ready feature list (geometry + properties only)
+    tile_features = []
+    for feat in features:
+        tile_features.append({
+            "geometry": feat["geometry"],
+            "properties": {
+                "best_height_m":  feat["best_height_m"],
+                "area_m2":        int(feat["area_m2"]),
+                "is_residential": 1 if feat["is_residential"] else 0,
+                "subtype":        feat["subtype"],
+                "est_personas":   feat["est_personas"],
+                "distrito":       feat["distrito"],
+                "distrito_pop":   feat["distrito_pop"],
+                "distrito_hog":   feat["distrito_hog"],
+            },
+        })
 
     print("  Building spatial index...")
     grid = defaultdict(list)
-    for i, feat in enumerate(features):
+    for i, feat in enumerate(tile_features):
         c = feat["geometry"].centroid
         tx, ty = lng_lat_to_tile(c.x, c.y, MAX_ZOOM)
         grid[(tx, ty)].append(i)
@@ -195,7 +349,7 @@ def generate_pmtiles(features):
                 continue
 
             tile_bytes = features_to_mvt(
-                [features[i] for i in candidate_indices], bounds, LAYER_NAME, EXTENT
+                [tile_features[i] for i in candidate_indices], bounds, LAYER_NAME, EXTENT
             )
             if tile_bytes:
                 compressed = gzip.compress(tile_bytes)
@@ -227,10 +381,19 @@ def generate_pmtiles(features):
             },
             {
                 "name": "itapua_buildings",
-                "description": "Building footprints for Itapúa, Paraguay (Overture Maps 2024-11)",
+                "description": "Building footprints for Itapúa, Paraguay (Overture Maps) with DGEEC Censo 2022",
                 "vector_layers": [{
                     "id": LAYER_NAME,
-                    "fields": {"best_height_m": "Number", "area_m2": "Number"},
+                    "fields": {
+                        "best_height_m":  "Number",
+                        "area_m2":        "Number",
+                        "is_residential": "Number",
+                        "subtype":        "String",
+                        "est_personas":   "Number",
+                        "distrito":       "String",
+                        "distrito_pop":   "Number",
+                        "distrito_hog":   "Number",
+                    },
                     "minzoom": MIN_ZOOM,
                     "maxzoom": MAX_ZOOM,
                 }],
@@ -245,20 +408,29 @@ def generate_pmtiles(features):
     print(f"    --file {OUTPUT} --remote")
 
 
-# ── Main ─────────────────────────────────────────────────────────────────────
+# ── Main ──────────────────────────────────────────────────────────────────
 
 def main():
     t_start = time.time()
     print("=" * 60)
-    print("BUILD ITAPÚA BUILDINGS PMTILES (Overture Maps)")
+    print("BUILD ITAPÚA BUILDINGS PMTILES (Overture Maps + DGEEC 2022)")
     print("=" * 60)
+
+    print("\nStep 0: Loading censo + distrito boundaries...")
+    censo = load_censo()
+    print(f"  Census: {len(censo)} distritos loaded")
+    gdf, dist_geoms, dist_names = load_distritos()
+    print(f"  Distritos: {len(dist_names)} polygons")
 
     features = load_buildings()
     if not features:
-        print("ERROR: no features loaded — check DuckDB httpfs / S3 access")
+        print("ERROR: no features loaded")
         return
 
+    assign_districts(features, dist_geoms, dist_names)
+    distribute_population(features, censo)
     generate_pmtiles(features)
+
     print(f"\nDone in {time.time()-t_start:.0f}s")
 
 
