@@ -72,6 +72,9 @@ const CORRIENTES_SUMMARIES: Record<string, () => Promise<any>> = {
 	health_access:          () => import('$lib/data/corrientes_sat_health_access_summary.json'),
 	education_capital:      () => import('$lib/data/corrientes_sat_education_capital_summary.json'),
 	education_flow:         () => import('$lib/data/corrientes_sat_education_flow_summary.json'),
+	productive_activity:    () => import('$lib/data/corrientes_sat_productive_activity_summary.json'),
+	deforestation_dynamics: () => import('$lib/data/corrientes_sat_deforestation_dynamics_summary.json'),
+	forestry_aptitude:      () => import('$lib/data/corrientes_sat_forestry_aptitude_summary.json'),
 };
 
 const TERRITORY_SUMMARIES: Record<string, Record<string, () => Promise<any>>> = {

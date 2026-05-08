@@ -200,7 +200,10 @@ def main():
     # - Other territories: polygon crosswalk always
     crosswalk_path = os.path.join(t_dir, 'h3_admin_crosswalk.parquet')
     use_corrientes_census = (t_id == 'corrientes') and any(a in AR_CENSUS_ANALYSES for a in analyses)
-    use_polygon = (t_id not in ('misiones', 'corrientes')) or (args.sat_only and os.path.exists(crosswalk_path))
+    # Corrientes SAT analyses use polygon crosswalk (h3_admin_crosswalk.parquet)
+    use_polygon = (t_id not in ('misiones', 'corrientes')) or \
+                  (t_id == 'corrientes' and not use_corrientes_census) or \
+                  (t_id == 'misiones' and args.sat_only and os.path.exists(crosswalk_path))
 
     if use_corrientes_census:
         h3_admin = build_crosswalk_corrientes(t_dir)
