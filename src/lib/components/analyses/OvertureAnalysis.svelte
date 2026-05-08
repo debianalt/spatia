@@ -5,6 +5,7 @@
 	import PetalChart from '$lib/components/PetalChart.svelte';
 	import TemporalToggle from '$lib/components/TemporalToggle.svelte';
 	import { HEX_LAYER_REGISTRY, DATA_FRESHNESS, getSatDptoUrl, getFloodDptoUrl, getScoresDptoUrl, getReportUrl, getTemporalCol, getDeptSummaryUrl, type AnalysisConfig, type TemporalMode } from '$lib/config';
+	import { loadDeptSummary } from '$lib/utils/deptSummaries';
 	import { query } from '$lib/stores/duckdb';
 	import { downloadCsvFromQuery, downloadGeoJsonFromHexQuery } from '$lib/utils/data-export';
 	import { ANALYSIS_CONTENT } from '$lib/content/methodology';
@@ -37,82 +38,11 @@
 	// Department summaries for perDepartment layers
 	let deptSummary = $state<any>(null);
 
-	const SAT_SUMMARIES: Record<string, () => Promise<any>> = {
-		environmental_risk: () => import('$lib/data/sat_environmental_risk_dept_summary.json'),
-		climate_comfort: () => import('$lib/data/sat_climate_comfort_dept_summary.json'),
-		green_capital: () => import('$lib/data/sat_green_capital_dept_summary.json'),
-		change_pressure: () => import('$lib/data/sat_change_pressure_dept_summary.json'),
-		location_value: () => import('$lib/data/sat_location_value_dept_summary.json'),
-		agri_potential: () => import('$lib/data/sat_agri_potential_dept_summary.json'),
-		forest_health: () => import('$lib/data/sat_forest_health_dept_summary.json'),
-		forestry_aptitude: () => import('$lib/data/sat_forestry_aptitude_dept_summary.json'),
-		service_deprivation: () => import('$lib/data/sat_service_deprivation_dept_summary.json'),
-		territorial_isolation: () => import('$lib/data/sat_territorial_isolation_dept_summary.json'),
-		health_access: () => import('$lib/data/sat_health_access_dept_summary.json'),
-		education_capital: () => import('$lib/data/sat_education_capital_dept_summary.json'),
-		education_flow: () => import('$lib/data/sat_education_flow_dept_summary.json'),
-		land_use: () => import('$lib/data/sat_land_use_dept_summary.json'),
-		territorial_types: () => import('$lib/data/sat_territorial_types_dept_summary.json'),
-		flood_risk: () => import('$lib/data/flood_dept_summary.json'),
-		territorial_scores: () => import('$lib/data/scores_dept_summary.json'),
-		sociodemographic: () => import('$lib/data/sat_sociodemographic_dept_summary.json'),
-		economic_activity: () => import('$lib/data/sat_economic_activity_dept_summary.json'),
-		accessibility: () => import('$lib/data/sat_accessibility_dept_summary.json'),
-		climate_vulnerability: () => import('$lib/data/sat_climate_vulnerability_dept_summary.json'),
-		carbon_stock: () => import('$lib/data/sat_carbon_stock_dept_summary.json'),
-		pm25_drivers: () => import('$lib/data/sat_pm25_drivers_dept_summary.json'),
-		productive_activity: () => import('$lib/data/sat_productive_activity_dept_summary.json'),
-		deforestation_dynamics: () => import('$lib/data/sat_deforestation_dynamics_dept_summary.json'),
-		soil_water:             () => import('$lib/data/sat_soil_water_dept_summary.json'),
-	};
-
-	// Bundled summaries for Itapúa (distritos, admin_col='distrito')
-	const ITAPUA_SUMMARIES: Record<string, () => Promise<any>> = {
-		environmental_risk:      () => import('$lib/data/itapua_py_sat_environmental_risk_summary.json'),
-		climate_comfort:         () => import('$lib/data/itapua_py_sat_climate_comfort_summary.json'),
-		green_capital:           () => import('$lib/data/itapua_py_sat_green_capital_summary.json'),
-		change_pressure:         () => import('$lib/data/itapua_py_sat_change_pressure_summary.json'),
-		forest_health:           () => import('$lib/data/itapua_py_sat_forest_health_summary.json'),
-		agri_potential:          () => import('$lib/data/itapua_py_sat_agri_potential_summary.json'),
-		carbon_stock:            () => import('$lib/data/itapua_py_sat_carbon_stock_summary.json'),
-		climate_vulnerability:   () => import('$lib/data/itapua_py_sat_climate_vulnerability_summary.json'),
-		deforestation_dynamics:  () => import('$lib/data/itapua_py_sat_deforestation_dynamics_summary.json'),
-		forestry_aptitude:       () => import('$lib/data/itapua_py_sat_forestry_aptitude_summary.json'),
-		pm25_drivers:            () => import('$lib/data/itapua_py_sat_pm25_drivers_summary.json'),
-		productive_activity:     () => import('$lib/data/itapua_py_sat_productive_activity_summary.json'),
-		flood_risk:              () => import('$lib/data/itapua_py_flood_dept_summary.json'),
-		land_use:                () => import('$lib/data/itapua_py_sat_land_use_summary.json'),
-		accessibility:           () => import('$lib/data/itapua_py_sat_accessibility_summary.json'),
-		territorial_scores:      () => import('$lib/data/itapua_py_scores_dept_summary.json'),
-		soil_water:              () => import('$lib/data/itapua_py_sat_soil_water_summary.json'),
-	};
-
-	// Bundled summaries for Corrientes (departamentos, admin_col='dpto')
-	const CORRIENTES_SUMMARIES: Record<string, () => Promise<any>> = {
-		environmental_risk:  () => import('$lib/data/corrientes_sat_environmental_risk_summary.json'),
-		climate_comfort:     () => import('$lib/data/corrientes_sat_climate_comfort_summary.json'),
-		green_capital:       () => import('$lib/data/corrientes_sat_green_capital_summary.json'),
-		change_pressure:     () => import('$lib/data/corrientes_sat_change_pressure_summary.json'),
-		forest_health:       () => import('$lib/data/corrientes_sat_forest_health_summary.json'),
-		agri_potential:      () => import('$lib/data/corrientes_sat_agri_potential_summary.json'),
-	};
-
-	// Lookup: territory prefix → summaries dict (add new territories here)
-	const TERRITORY_SUMMARIES: Record<string, Record<string, () => Promise<any>>> = {
-		'itapua_py/': ITAPUA_SUMMARIES,
-		'corrientes/': CORRIENTES_SUMMARIES,
-	};
-
 	$effect(() => {
 		if (!isPerDept || !layerCfg) return;
 		const prefix = hexStore.territoryPrefix;
 		deptSummary = null;
-		const summaries = prefix ? TERRITORY_SUMMARIES[prefix] : SAT_SUMMARIES;
-		if (!summaries) return; // unknown territory, no dept summaries yet
-		const loader = summaries[layerCfg.id];
-		if (loader) {
-			loader().then(mod => { deptSummary = mod.default; }).catch(() => {});
-		}
+		loadDeptSummary(layerCfg.id, prefix).then(s => { deptSummary = s; });
 	});
 
 	const deptList = $derived.by(() => {
