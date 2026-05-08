@@ -1,34 +1,32 @@
 [
   {
-    "analysis": "green_capital",
+    "analysis": "soil_water",
     "k": 3,
-    "silhouette": 0.4517,
-    "calinski_harabasz": 492453.0,
-    "n_hexagons": 315415,
-    "n_vars": 5,
+    "silhouette": 0.4485,
+    "calinski_harabasz": 337144.0,
+    "n_hexagons": 313323,
+    "n_vars": 4,
     "variables": [
-      "c_ndvi",
-      "c_treecover",
-      "c_npp",
-      "c_lai",
-      "c_vcf"
+      "c_soil_moisture",
+      "c_dry_season",
+      "c_precipitation",
+      "c_actual_et"
     ],
     "pca_variance": [
-      0.7379,
-      0.1614,
-      0.0623,
-      0.0327,
-      0.0057
+      0.5699,
+      0.2728,
+      0.1234,
+      0.0338
     ],
     "type_labels": {
-      "1": "npp alto",
-      "2": "vcf alto",
-      "3": "lai bajo"
+      "1": "soil_moisture alto",
+      "2": "actual_et bajo",
+      "3": "actual_et alto"
     },
     "type_distribution": {
-      "1": 109367,
-      "2": 129295,
-      "3": 76753
+      "1": 136170,
+      "2": 82643,
+      "3": 94510
     }
   }
 ]

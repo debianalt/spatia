@@ -1,0 +1,260 @@
+{
+  "territory": "corrientes",
+  "province": {
+    "total_hexes": 1033548,
+    "avg_score": 42.4,
+    "unassigned": 0
+  },
+  "departments": [
+    {
+      "dpto": "Santo Tomé",
+      "parquetKey": "santo_tome",
+      "avg_score": 58.3,
+      "hex_count": 82588,
+      "centroid": [
+        -56.248,
+        -28.2257
+      ]
+    },
+    {
+      "dpto": "Paso de los Libres",
+      "parquetKey": "paso_de_los_libres",
+      "avg_score": 55.9,
+      "hex_count": 58737,
+      "centroid": [
+        -57.3264,
+        -29.599
+      ]
+    },
+    {
+      "dpto": "General Alvear",
+      "parquetKey": "general_alvear",
+      "avg_score": 55.0,
+      "hex_count": 22565,
+      "centroid": [
+        -56.5245,
+        -28.7791
+      ]
+    },
+    {
+      "dpto": "San Martín",
+      "parquetKey": "san_martin",
+      "avg_score": 52.6,
+      "hex_count": 76885,
+      "centroid": [
+        -56.9513,
+        -28.8303
+      ]
+    },
+    {
+      "dpto": "Monte Caseros",
+      "parquetKey": "monte_caseros",
+      "avg_score": 50.8,
+      "hex_count": 31149,
+      "centroid": [
+        -57.871,
+        -30.2487
+      ]
+    },
+    {
+      "dpto": "Mercedes",
+      "parquetKey": "mercedes",
+      "avg_score": 45.2,
+      "hex_count": 116648,
+      "centroid": [
+        -57.8356,
+        -29.0512
+      ]
+    },
+    {
+      "dpto": "Ituzaingó",
+      "parquetKey": "ituzaingo",
+      "avg_score": 44.9,
+      "hex_count": 103935,
+      "centroid": [
+        -56.8203,
+        -27.9285
+      ]
+    },
+    {
+      "dpto": "Sauce",
+      "parquetKey": "sauce",
+      "avg_score": 44.3,
+      "hex_count": 29344,
+      "centroid": [
+        -58.8097,
+        -30.0011
+      ]
+    },
+    {
+      "dpto": "San Miguel",
+      "parquetKey": "san_miguel",
+      "avg_score": 42.9,
+      "hex_count": 33285,
+      "centroid": [
+        -57.4252,
+        -27.8708
+      ]
+    },
+    {
+      "dpto": "Curuzú Cuatiá",
+      "parquetKey": "curuzu_cuatia",
+      "avg_score": 42.1,
+      "hex_count": 98250,
+      "centroid": [
+        -58.3336,
+        -29.7068
+      ]
+    },
+    {
+      "dpto": "Mburucuyá",
+      "parquetKey": "mburucuya",
+      "avg_score": 40.9,
+      "hex_count": 11407,
+      "centroid": [
+        -58.1721,
+        -28.0052
+      ]
+    },
+    {
+      "dpto": "Concepción",
+      "parquetKey": "concepcion",
+      "avg_score": 40.1,
+      "hex_count": 59287,
+      "centroid": [
+        -58.0479,
+        -28.4115
+      ]
+    },
+    {
+      "dpto": "General Paz",
+      "parquetKey": "general_paz",
+      "avg_score": 35.3,
+      "hex_count": 29303,
+      "centroid": [
+        -57.8035,
+        -27.7136
+      ]
+    },
+    {
+      "dpto": "Esquina",
+      "parquetKey": "esquina",
+      "avg_score": 34.8,
+      "hex_count": 46922,
+      "centroid": [
+        -59.2457,
+        -29.9916
+      ]
+    },
+    {
+      "dpto": "Berón de Astrada",
+      "parquetKey": "beron_de_astrada",
+      "avg_score": 33.8,
+      "hex_count": 8324,
+      "centroid": [
+        -57.6317,
+        -27.472
+      ]
+    },
+    {
+      "dpto": "Saladas",
+      "parquetKey": "saladas",
+      "avg_score": 31.7,
+      "hex_count": 21912,
+      "centroid": [
+        -58.602,
+        -28.2037
+      ]
+    },
+    {
+      "dpto": "San Roque",
+      "parquetKey": "san_roque",
+      "avg_score": 31.3,
+      "hex_count": 29031,
+      "centroid": [
+        -58.603,
+        -28.7144
+      ]
+    },
+    {
+      "dpto": "Goya",
+      "parquetKey": "goya",
+      "avg_score": 30.4,
+      "hex_count": 58352,
+      "centroid": [
+        -59.2704,
+        -29.4647
+      ]
+    },
+    {
+      "dpto": "San Luis del Palmar",
+      "parquetKey": "san_luis_del_palmar",
+      "avg_score": 28.0,
+      "hex_count": 29721,
+      "centroid": [
+        -58.2668,
+        -27.6004
+      ]
+    },
+    {
+      "dpto": "Empedrado",
+      "parquetKey": "empedrado",
+      "avg_score": 27.4,
+      "hex_count": 23792,
+      "centroid": [
+        -58.6717,
+        -27.893
+      ]
+    },
+    {
+      "dpto": "Lavalle",
+      "parquetKey": "lavalle",
+      "avg_score": 27.3,
+      "hex_count": 18006,
+      "centroid": [
+        -58.9267,
+        -28.9976
+      ]
+    },
+    {
+      "dpto": "San Cosme",
+      "parquetKey": "san_cosme",
+      "avg_score": 25.7,
+      "hex_count": 6926,
+      "centroid": [
+        -58.5137,
+        -27.3768
+      ]
+    },
+    {
+      "dpto": "Capital",
+      "parquetKey": "capital",
+      "avg_score": 25.6,
+      "hex_count": 6125,
+      "centroid": [
+        -58.7619,
+        -27.5213
+      ]
+    },
+    {
+      "dpto": "Itatí",
+      "parquetKey": "itati",
+      "avg_score": 24.7,
+      "hex_count": 8810,
+      "centroid": [
+        -58.0869,
+        -27.3361
+      ]
+    },
+    {
+      "dpto": "Bella Vista",
+      "parquetKey": "bella_vista",
+      "avg_score": 20.1,
+      "hex_count": 22244,
+      "centroid": [
+        -58.9292,
+        -28.4852
+      ]
+    }
+  ]
+}

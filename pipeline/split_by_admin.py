@@ -43,8 +43,8 @@ SAT_ANALYSES = [
     "land_use", "accessibility", "soil_water",
 ]
 
-# Analyses that only work for Misiones (AR census data)
-MISIONES_ONLY = {
+# Analyses based on AR census data (Misiones + Corrientes + other AR provinces)
+AR_CENSUS_ANALYSES = {
     "service_deprivation", "territorial_isolation",
     "health_access", "education_capital", "education_flow",
     "territorial_gap", "education_gap",
@@ -63,6 +63,32 @@ def h3_to_latlng(h3index: str) -> tuple[float, float]:
         return h3.h3_to_geo(h3index)
     except (ImportError, AttributeError):
         raise ImportError("h3 library required: pip install h3")
+
+
+def build_crosswalk_corrientes(t_dir: str) -> dict[str, str]:
+    """Build h3→dpto lookup for Corrientes from radio areal crosswalk."""
+    crosswalk_path = os.path.join(t_dir, "h3_radio_crosswalk_corrientes.parquet")
+    stats_path = os.path.join(t_dir, "radio_stats_corrientes.parquet")
+
+    if not os.path.exists(crosswalk_path):
+        raise FileNotFoundError(
+            f"Corrientes crosswalk not found: {crosswalk_path}\n"
+            "Run: python pipeline/build_crosswalk_corrientes.py"
+        )
+
+    xwalk = pd.read_parquet(crosswalk_path)
+    stats = pd.read_parquet(stats_path, columns=["redcode", "dpto"])
+    merged = xwalk.merge(stats, on="redcode", how="inner")
+
+    hex_dpto = (merged.groupby(["h3index", "dpto"])["weight"].sum()
+                      .reset_index()
+                      .sort_values(["h3index", "weight"], ascending=[True, False])
+                      .drop_duplicates("h3index", keep="first")
+                      .set_index("h3index")["dpto"]
+                      .to_dict())
+
+    print(f"  Corrientes: {len(hex_dpto):,} hexes -> {len(set(hex_dpto.values()))} dptos (areal crosswalk)")
+    return hex_dpto
 
 
 def build_crosswalk_misiones() -> dict[str, str]:
@@ -147,7 +173,9 @@ def main():
     if t_id == 'misiones' and args.sat_only:
         all_analyses = SAT_ANALYSES  # polygon crosswalk mode: comparable layers only
     elif t_id == 'misiones':
-        all_analyses = SAT_ANALYSES + list(MISIONES_ONLY)
+        all_analyses = SAT_ANALYSES + list(AR_CENSUS_ANALYSES)
+    elif t_id == 'corrientes':
+        all_analyses = SAT_ANALYSES + list(AR_CENSUS_ANALYSES)
     else:
         all_analyses = SAT_ANALYSES  # GEE-only for non-AR territories
 
@@ -167,12 +195,16 @@ def main():
 
     # Crosswalk selection:
     # - Misiones --sat-only: polygon crosswalk (h3_admin_crosswalk.parquet) + fill_missing
-    # - Misiones default: dasymetric census crosswalk (MISIONES_ONLY layers need census radios)
+    # - Misiones default: dasymetric census crosswalk (AR_CENSUS_ANALYSES layers need census radios)
+    # - Corrientes census analyses: radio areal crosswalk (h3_radio_crosswalk_corrientes.parquet)
     # - Other territories: polygon crosswalk always
     crosswalk_path = os.path.join(t_dir, 'h3_admin_crosswalk.parquet')
-    use_polygon = (t_id != 'misiones') or (args.sat_only and os.path.exists(crosswalk_path))
+    use_corrientes_census = (t_id == 'corrientes') and any(a in AR_CENSUS_ANALYSES for a in analyses)
+    use_polygon = (t_id not in ('misiones', 'corrientes')) or (args.sat_only and os.path.exists(crosswalk_path))
 
-    if use_polygon:
+    if use_corrientes_census:
+        h3_admin = build_crosswalk_corrientes(t_dir)
+    elif use_polygon:
         h3_admin = build_crosswalk_territory(territory)
         if t_id == 'misiones':
             print("  Using polygon crosswalk (comparable layers — parity with Itapua)")

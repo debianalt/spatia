@@ -50,8 +50,28 @@ const ITAPUA_SUMMARIES: Record<string, () => Promise<any>> = {
 	soil_water:             () => import('$lib/data/itapua_py_sat_soil_water_summary.json'),
 };
 
+const CORRIENTES_SUMMARIES: Record<string, () => Promise<any>> = {
+	environmental_risk:     () => import('$lib/data/corrientes_sat_environmental_risk_summary.json'),
+	climate_comfort:        () => import('$lib/data/corrientes_sat_climate_comfort_summary.json'),
+	green_capital:          () => import('$lib/data/corrientes_sat_green_capital_summary.json'),
+	change_pressure:        () => import('$lib/data/corrientes_sat_change_pressure_summary.json'),
+	agri_potential:         () => import('$lib/data/corrientes_sat_agri_potential_summary.json'),
+	forest_health:          () => import('$lib/data/corrientes_sat_forest_health_summary.json'),
+	accessibility:          () => import('$lib/data/corrientes_sat_accessibility_summary.json'),
+	carbon_stock:           () => import('$lib/data/corrientes_sat_carbon_stock_summary.json'),
+	climate_vulnerability:  () => import('$lib/data/corrientes_sat_climate_vulnerability_summary.json'),
+	pm25_drivers:           () => import('$lib/data/corrientes_sat_pm25_drivers_summary.json'),
+	land_use:               () => import('$lib/data/corrientes_sat_land_use_summary.json'),
+	soil_water:             () => import('$lib/data/corrientes_sat_soil_water_summary.json'),
+	sociodemographic:       () => import('$lib/data/corrientes_sat_sociodemographic_summary.json'),
+	economic_activity:      () => import('$lib/data/corrientes_sat_economic_activity_summary.json'),
+	flood_risk:             () => import('$lib/data/corrientes_flood_dept_summary.json'),
+	territorial_scores:     () => import('$lib/data/corrientes_scores_dept_summary.json'),
+};
+
 const TERRITORY_SUMMARIES: Record<string, Record<string, () => Promise<any>>> = {
 	'itapua_py/': ITAPUA_SUMMARIES,
+	'corrientes/': CORRIENTES_SUMMARIES,
 };
 
 export async function loadDeptSummary(analysisId: string, territoryPrefix: string): Promise<any> {

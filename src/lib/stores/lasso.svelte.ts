@@ -83,14 +83,20 @@ export class LassoStore {
 		const id = ZONE_LABELS[idx] || String.fromCharCode(65 + this.zones.length);
 		const color = ZONE_COLORS[idx];
 
-		const cols = PETAL_VARS.map(v => v.col).join(', ');
 		const inClause = redcodes.map(r => `'${r}'`).join(',');
+		const isCorrientes = redcodes[0]?.startsWith('18');
+
+		// Corrientes lacks pct_agua_red — substitute 0 so petal var count stays consistent
+		const cols = isCorrientes
+			? PETAL_VARS.map(v => v.col === 'pct_agua_red' ? '0 as pct_agua_red' : v.col).join(', ')
+			: PETAL_VARS.map(v => v.col).join(', ');
+		const parquet = isCorrientes ? PARQUETS.radio_stats_corrientes : PARQUETS.radio_stats_master;
 
 		try {
 			// Fetch provincial averages (cached after first call)
 			const provAvg = await getProvincialAvg();
 
-			const sql = `SELECT redcode, total_personas, ${cols}, area_km2 FROM '${PARQUETS.radio_stats_master}' WHERE redcode IN (${inClause})`;
+			const sql = `SELECT redcode, total_personas, ${cols}, area_km2 FROM '${parquet}' WHERE redcode IN (${inClause})`;
 			const result = await query(sql);
 
 			let totalPop = 0;

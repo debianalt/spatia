@@ -10,6 +10,8 @@
 	import misionesMask from '$lib/data/misiones_mask.json';
 	import itapuaBoundary from '$lib/data/itapua_boundary.json';
 	import itapuaMask from '$lib/data/itapua_mask.json';
+	import corrientesBoundary from '$lib/data/corrientes_boundary.json';
+	import corrientesMask from '$lib/data/corrientes_mask.json';
 
 	let { mapStore }: { mapStore: MapStore } = $props();
 
@@ -173,6 +175,40 @@
 				layout: { 'line-join': 'round', 'line-cap': 'round' }
 			});
 
+			// Corrientes mask + border (hidden until territory switches)
+			map.addSource('corrientes-mask', { type: 'geojson', data: corrientesMask as any });
+			// Insert before province-fill so census radios render on top (same pattern as Misiones mask)
+			map.addLayer({
+				id: 'corrientes-mask-fill',
+				type: 'fill',
+				source: 'corrientes-mask',
+				layout: { visibility: 'none' },
+				paint: { 'fill-color': '#1a1a2e', 'fill-opacity': 0.75 }
+			}, 'province-fill');
+			map.addSource('corrientes-boundary', { type: 'geojson', data: corrientesBoundary as any });
+			map.addLayer({
+				id: 'corrientes-border',
+				type: 'line',
+				source: 'corrientes-boundary',
+				layout: { visibility: 'none', 'line-join': 'round', 'line-cap': 'round' },
+				paint: {
+					'line-color': '#f472b6',
+					'line-width': [
+						'interpolate', ['linear'], ['zoom'],
+						6, 1.2,
+						9, 1.0,
+						12, 0.8,
+						16, 0.5
+					],
+					'line-opacity': [
+						'interpolate', ['linear'], ['zoom'],
+						6, 0.7,
+						12, 0.5,
+						16, 0.3
+					]
+				}
+			});
+
 			// Buildings source (PMTiles)
 			map.addSource('buildings', { type: 'vector', url: getTilesUrl('buildings') });
 
@@ -203,6 +239,22 @@
 					'fill-extrusion-base': 0,
 					'fill-extrusion-color': mapStore.getHeightColorExpr() as any,
 					'fill-extrusion-opacity': 0.92
+				}
+			});
+
+			// Corrientes buildings (pre-created, hidden until territory switch)
+			map.addSource('corrientes-buildings', { type: 'vector', url: getTilesUrl('corrientes_buildings') });
+			map.addLayer({
+				id: 'corrientes-buildings-3d',
+				type: 'fill-extrusion',
+				source: 'corrientes-buildings',
+				'source-layer': 'buildings',
+				layout: { visibility: 'none' },
+				paint: {
+					'fill-extrusion-height': ['max', ['coalesce', ['get', 'best_height_m'], 5], 5],
+					'fill-extrusion-base': 0,
+					'fill-extrusion-color': mapStore.getColorExpr() as any,
+					'fill-extrusion-opacity': 0.85
 				}
 			});
 
@@ -260,6 +312,14 @@
 				paint: { 'line-color': '#60a5fa', 'line-width': 4.5, 'line-opacity': 0.8 },
 				filter: emptyFilter
 			});
+			map.addLayer({
+				id: 'radio-highlight-corrientes',
+				type: 'line',
+				source: 'corrientes-buildings',
+				'source-layer': 'buildings',
+				paint: { 'line-color': '#60a5fa', 'line-width': 4.5, 'line-opacity': 0.8 },
+				filter: emptyFilter
+			});
 
 			// ── Lasso draw layers ──────────────────────────────────────────
 			map.addSource('lasso-draw', {
@@ -301,6 +361,14 @@
 				id: 'zone-buildings',
 				type: 'line',
 				source: 'buildings',
+				'source-layer': 'buildings',
+				paint: { 'line-color': '#60a5fa', 'line-width': 3, 'line-opacity': 0.85 },
+				filter: emptyFilter
+			});
+			map.addLayer({
+				id: 'zone-buildings-corrientes',
+				type: 'line',
+				source: 'corrientes-buildings',
 				'source-layer': 'buildings',
 				paint: { 'line-color': '#60a5fa', 'line-width': 3, 'line-opacity': 0.85 },
 				filter: emptyFilter
@@ -462,6 +530,43 @@
 			}, 80);
 		});
 
+		// Corrientes buildings tooltip (same census data as Misiones)
+		map.on('mousemove', 'corrientes-buildings-3d', (e) => {
+			if (lassoActive) return;
+			if (leaveTimeout) { clearTimeout(leaveTimeout); leaveTimeout = null; }
+			map.getCanvas().style.cursor = 'pointer';
+			const p = e.features![0].properties!;
+
+			const pers = parseInt(p.est_personas) || 0;
+			const h = p.best_height_m != null ? parseFloat(p.best_height_m).toFixed(1) : '?';
+			const a = p.area_m2 != null ? Math.round(p.area_m2).toLocaleString() : '?';
+			const redcode = p.redcode || null;
+			const radioPop = parseInt(p.radio_personas) || 0;
+			const radioDens = p.densidad_hab_km2 != null ? Math.round(p.densidad_hab_km2).toLocaleString() : '?';
+			const radioViv = parseInt(p.radio_viviendas) || 0;
+			const radioHog = parseInt(p.radio_hogares) || 0;
+			const radioAreaKm2 = p.radio_area_km2 != null ? parseFloat(p.radio_area_km2).toFixed(1) : '?';
+
+			let html = `<b style="color:#60a5fa">${i18n.t('tip.building')}</b> ${i18n.t('tip.height')} ${h} m | ${i18n.t('tip.area')} ${a} m²<br>` +
+				`<b style="color:#60a5fa">${i18n.t('tip.estPersons')}</b> <span style="color:#60a5fa;font-weight:600">${pers}</span>`;
+			if (redcode) {
+				html += `<br><span style="color:#a3a3a3">───</span><br>` +
+					`<b style="color:#d4d4d4">${i18n.t('tip.radio')}</b> <span style="color:#d4d4d4">${redcode}</span><br>` +
+					`<b style="color:#d4d4d4">${i18n.t('tip.pop')}</b> ${radioPop.toLocaleString()} &nbsp; <b style="color:#d4d4d4">${i18n.t('tip.density')}</b> ${radioDens} hab/km²<br>` +
+					`<b style="color:#d4d4d4">${i18n.t('label.dwellings')}:</b> ${radioViv.toLocaleString()} &nbsp; <b style="color:#d4d4d4">${i18n.t('label.households')}:</b> ${radioHog.toLocaleString()} &nbsp; <b style="color:#d4d4d4">${i18n.t('label.area')}:</b> ${radioAreaKm2} km²`;
+			}
+			tooltip.innerHTML = html;
+			tooltip.style.display = 'block';
+			tooltip.style.left = (e.originalEvent.clientX + 14) + 'px';
+			tooltip.style.top = (e.originalEvent.clientY + 14) + 'px';
+		});
+		map.on('mouseleave', 'corrientes-buildings-3d', () => {
+			leaveTimeout = setTimeout(() => {
+				if (!lassoActive) map.getCanvas().style.cursor = '';
+				tooltip.style.display = 'none';
+			}, 80);
+		});
+
 		// Itapúa buildings tooltip (height + area only, no census data)
 		map.on('mousemove', 'itapua-buildings-3d', (e) => {
 			if (lassoActive) return;
@@ -508,6 +613,37 @@
 					selected.push(f.properties!);
 				}
 
+				container.dispatchEvent(new CustomEvent('radio-select', {
+					bubbles: true,
+					detail: { redcode, selected, census: e.features![0].properties! }
+				}));
+			}
+		});
+
+		// Corrientes buildings: click-to-select radio (same behavior as buildings-3d)
+		map.on('click', 'corrientes-buildings-3d', (e) => {
+			if (lassoActive) return;
+			if (mapStore.activeHexLayer) return;
+			if (catastroClickMode !== 'none') return;
+			const redcode = e.features![0].properties!.redcode;
+			if (!redcode) return;
+
+			if (mapStore.hasRadio(redcode)) {
+				container.dispatchEvent(new CustomEvent('radio-deselect', { bubbles: true, detail: { redcode } }));
+			} else {
+				const canvas = map.getCanvas();
+				const allFeatures = map.queryRenderedFeatures(
+					[[0, 0], [canvas.width, canvas.height]],
+					{ layers: ['corrientes-buildings-3d'] }
+				);
+				const selected: Record<string, any>[] = [];
+				const seen = new Set<string | number>();
+				for (const f of allFeatures) {
+					const id = f.id ?? `${f.properties?.area_m2}_${f.properties?.est_personas}`;
+					if (f.properties?.redcode !== redcode || seen.has(id)) continue;
+					seen.add(id as string | number);
+					selected.push(f.properties!);
+				}
 				container.dispatchEvent(new CustomEvent('radio-select', {
 					bubbles: true,
 					detail: { redcode, selected, census: e.features![0].properties! }
@@ -610,11 +746,13 @@
 
 
 	function showBuildingsForActiveTerritory() {
-		const layer = activeTerritoryId === 'itapua_py' ? 'itapua-buildings-3d' : 'buildings-3d';
-		const opacity = activeTerritoryId === 'itapua_py' ? 0.92 : 0.85;
-		const colorExpr = activeTerritoryId === 'itapua_py'
-			? mapStore.getHeightColorExpr()
-			: mapStore.getColorExpr();
+		const isCorrientes = activeTerritoryId === 'corrientes';
+		const isItapua = activeTerritoryId === 'itapua_py';
+		const layer = isCorrientes ? 'corrientes-buildings-3d'
+		            : isItapua    ? 'itapua-buildings-3d'
+		            :               'buildings-3d';
+		const opacity = isItapua ? 0.92 : 0.85;
+		const colorExpr = isItapua ? mapStore.getHeightColorExpr() : mapStore.getColorExpr();
 		if (map?.getLayer(layer)) {
 			map.setLayoutProperty(layer, 'visibility', 'visible');
 			map.setPaintProperty(layer, 'fill-extrusion-color', colorExpr as any);
@@ -623,26 +761,34 @@
 	}
 
 	export function updateColorExpr() {
+		const colorExpr = mapStore.getColorExpr() as any;
 		if (map?.getLayer('buildings-3d')) {
-			map.setPaintProperty('buildings-3d', 'fill-extrusion-color', mapStore.getColorExpr() as any);
+			map.setPaintProperty('buildings-3d', 'fill-extrusion-color', colorExpr);
+		}
+		if (map?.getLayer('corrientes-buildings-3d')) {
+			map.setPaintProperty('corrientes-buildings-3d', 'fill-extrusion-color', colorExpr);
 		}
 	}
 
 	export function setRadioHighlight(radios: Array<{redcode: string, color: string}>) {
-		if (!map?.getLayer('radio-highlight')) return;
+		const isCorrientes = activeTerritoryId === 'corrientes';
+		const activeLayer  = isCorrientes ? 'radio-highlight-corrientes' : 'radio-highlight';
+		const inactiveLayer = isCorrientes ? 'radio-highlight' : 'radio-highlight-corrientes';
+		const emptyFilter: any = ['==', ['get', 'redcode'], ''];
+		if (map?.getLayer(inactiveLayer)) map.setFilter(inactiveLayer, emptyFilter);
+		if (!map?.getLayer(activeLayer)) return;
 		if (radios.length === 0) {
-			map.setFilter('radio-highlight', ['==', ['get', 'redcode'], '']);
+			map.setFilter(activeLayer, emptyFilter);
 		} else {
 			const redcodes = radios.map(r => r.redcode);
-			// Build match expression for per-radio colors
 			const matchExpr: any[] = ['match', ['get', 'redcode']];
 			for (const r of radios) {
 				matchExpr.push(r.redcode, r.color);
 			}
 			matchExpr.push('#60a5fa'); // fallback
-			map.setPaintProperty('radio-highlight', 'line-color', matchExpr);
-			map.setPaintProperty('radio-highlight', 'line-width', 4.5);
-			map.setFilter('radio-highlight', ['in', ['get', 'redcode'], ['literal', redcodes]]);
+			map.setPaintProperty(activeLayer, 'line-color', matchExpr);
+			map.setPaintProperty(activeLayer, 'line-width', 4.5);
+			map.setFilter(activeLayer, ['in', ['get', 'redcode'], ['literal', redcodes]]);
 		}
 	}
 
@@ -650,6 +796,7 @@
 		if (!map) return;
 		const emptyFilter: any = ['==', ['get', 'redcode'], ''];
 		map.setFilter('radio-highlight', emptyFilter);
+		if (map.getLayer('radio-highlight-corrientes')) map.setFilter('radio-highlight-corrientes', emptyFilter);
 		map.setFilter('selected-fill', emptyFilter);
 		map.setFilter('selected-line', emptyFilter);
 	}
@@ -710,28 +857,49 @@
 
 	function applyTerritoryVisibility() {
 		if (!map) return;
+		const isMisiones = activeTerritoryId === 'misiones';
 		const isItapua = activeTerritoryId === 'itapua_py';
+		const isCorrientes = activeTerritoryId === 'corrientes';
 
-		// Misiones-only layers: mask + census radios + province boundary
-		for (const layerId of ['mask-fill', 'province-fill', 'province-line', 'province-border']) {
+		// Province outline (radios): visible for Misiones + Corrientes, filtered by codprov
+		for (const layerId of ['province-fill', 'province-line']) {
 			if (map.getLayer(layerId)) {
-				map.setLayoutProperty(layerId, 'visibility', isItapua ? 'none' : 'visible');
+				map.setLayoutProperty(layerId, 'visibility', (isMisiones || isCorrientes) ? 'visible' : 'none');
+				if (isMisiones || isCorrientes) {
+					map.setFilter(layerId, ['==', ['get', 'codprov'], isCorrientes ? '18' : '54']);
+				}
 			}
 		}
-		// Itapúa mask (same dark fog, swapped in when territory is Itapúa)
+		// Misiones-only: fog mask + province border polygon
+		for (const layerId of ['mask-fill', 'province-border']) {
+			if (map.getLayer(layerId)) {
+				map.setLayoutProperty(layerId, 'visibility', isMisiones ? 'visible' : 'none');
+			}
+		}
+		// Itapúa fog mask
 		if (map.getLayer('itapua-mask-fill')) {
 			map.setLayoutProperty('itapua-mask-fill', 'visibility', isItapua ? 'visible' : 'none');
 		}
-		// Buildings: swap visibility
-		const hide = isItapua ? 'buildings-3d' : 'itapua-buildings-3d';
-		const show = isItapua ? 'itapua-buildings-3d' : 'buildings-3d';
-		if (map.getLayer(hide)) map.setLayoutProperty(hide, 'visibility', 'none');
-		if (map.getLayer(show)) {
-			map.setLayoutProperty(show, 'visibility', 'visible');
-			const colorExpr = show === 'itapua-buildings-3d'
-				? mapStore.getHeightColorExpr()
-				: mapStore.getColorExpr();
-			map.setPaintProperty(show, 'fill-extrusion-color', colorExpr as any);
+		// Corrientes fog mask + border
+		if (map.getLayer('corrientes-mask-fill')) {
+			map.setLayoutProperty('corrientes-mask-fill', 'visibility', isCorrientes ? 'visible' : 'none');
+		}
+		if (map.getLayer('corrientes-border')) {
+			map.setLayoutProperty('corrientes-border', 'visibility', isCorrientes ? 'visible' : 'none');
+		}
+		// Buildings: show only the active territory's layer, hide the other two
+		const activeLayer = isCorrientes ? 'corrientes-buildings-3d'
+		                  : isItapua     ? 'itapua-buildings-3d'
+		                  :               'buildings-3d';
+		const otherLayers = ['buildings-3d', 'itapua-buildings-3d', 'corrientes-buildings-3d']
+			.filter(l => l !== activeLayer);
+		for (const l of otherLayers) {
+			if (map.getLayer(l)) map.setLayoutProperty(l, 'visibility', 'none');
+		}
+		if (map.getLayer(activeLayer)) {
+			map.setLayoutProperty(activeLayer, 'visibility', 'visible');
+			const colorExpr = isItapua ? mapStore.getHeightColorExpr() : mapStore.getColorExpr();
+			map.setPaintProperty(activeLayer, 'fill-extrusion-color', colorExpr as any);
 		}
 	}
 
@@ -793,7 +961,7 @@
 		}
 
 		// Hide 3D buildings — add flat 2D fill BELOW catastro
-		for (const layer of ['buildings-3d', 'itapua-buildings-3d']) {
+		for (const layer of ['buildings-3d', 'itapua-buildings-3d', 'corrientes-buildings-3d']) {
 			if (map.getLayer(layer)) map.setLayoutProperty(layer, 'visibility', 'none');
 		}
 		if (!map.getLayer('buildings-flat') && map.getSource('buildings')) {
@@ -1519,10 +1687,15 @@
 	export function setZoneHighlight(zones: { redcodes: string[]; color: string }[]) {
 		if (!map) return;
 		const emptyFilter: any = ['==', ['get', 'redcode'], ''];
+		const isCorrientes = activeTerritoryId === 'corrientes';
+		const buildingsZoneLayer = isCorrientes ? 'zone-buildings-corrientes' : 'zone-buildings';
+		const hiddenZoneLayer    = isCorrientes ? 'zone-buildings'            : 'zone-buildings-corrientes';
+
 		if (zones.length === 0) {
 			if (map.getLayer('zone-fill')) map.setFilter('zone-fill', emptyFilter);
 			if (map.getLayer('zone-line')) map.setFilter('zone-line', emptyFilter);
-			if (map.getLayer('zone-buildings')) map.setFilter('zone-buildings', emptyFilter);
+			if (map.getLayer(buildingsZoneLayer)) map.setFilter(buildingsZoneLayer, emptyFilter);
+			if (map.getLayer(hiddenZoneLayer))    map.setFilter(hiddenZoneLayer, emptyFilter);
 			return;
 		}
 
@@ -1547,11 +1720,12 @@
 			map.setPaintProperty('zone-line', 'line-color', matchExpr);
 			map.setFilter('zone-line', filter);
 		}
-		// Building outlines: same match expression, same filter
-		if (map.getLayer('zone-buildings')) {
-			map.setPaintProperty('zone-buildings', 'line-color', matchExpr);
-			map.setFilter('zone-buildings', filter);
+		// Building outlines: territory-aware layer
+		if (map.getLayer(buildingsZoneLayer)) {
+			map.setPaintProperty(buildingsZoneLayer, 'line-color', matchExpr);
+			map.setFilter(buildingsZoneLayer, filter);
 		}
+		if (map.getLayer(hiddenZoneLayer)) map.setFilter(hiddenZoneLayer, emptyFilter);
 	}
 
 	export function clearZoneHighlight() {
@@ -1560,6 +1734,7 @@
 		if (map.getLayer('zone-fill')) map.setFilter('zone-fill', emptyFilter);
 		if (map.getLayer('zone-line')) map.setFilter('zone-line', emptyFilter);
 		if (map.getLayer('zone-buildings')) map.setFilter('zone-buildings', emptyFilter);
+		if (map.getLayer('zone-buildings-corrientes')) map.setFilter('zone-buildings-corrientes', emptyFilter);
 	}
 
 	export function getLassoActive(): boolean {

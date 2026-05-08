@@ -15,6 +15,7 @@
 	import { cellToLatLng } from 'h3-js';
 	import { isInsideMisiones } from '$lib/utils/misiones-pip';
 	import { isInsideItapua } from '$lib/utils/itapua-pip';
+	import { isInsideCorrientes } from '$lib/utils/corrientes-pip';
 	import { PARQUETS, MAP_INIT, HEX_LAYER_REGISTRY, getAnalysisById, getAnalysesForLens, type AnalysisConfig, type LensId } from '$lib/config';
 	import { i18n, type Locale } from '$lib/stores/i18n.svelte';
 	import { page } from '$app/stores';
@@ -568,13 +569,22 @@
 		await initDuckDB();
 		if (!/^\d{9}$/.test(redcode)) return;
 		try {
-			const ENRICHMENT_COLS = 'redcode, total_personas, area_km2, tasa_actividad, tasa_empleo, pct_universitario, pct_nbi, pct_hacinamiento, pct_agua_red';
-			const result = await query(
-				`SELECT ${ENRICHMENT_COLS} FROM '${PARQUETS.radio_stats_master}' WHERE redcode = '${redcode}' LIMIT 1`
-			);
-			if (result.numRows === 0) return;
-			const row = result.get(0)!;
-			mapStore.updateEnriched(redcode, row.toJSON());
+			const isCorrientes = redcode.startsWith('18');
+			if (isCorrientes) {
+				const CORRIENTES_COLS = 'redcode, total_personas, area_km2, tasa_actividad, tasa_empleo, pct_universitario, pct_nbi, pct_hacinamiento';
+				const result = await query(
+					`SELECT ${CORRIENTES_COLS} FROM '${PARQUETS.radio_stats_corrientes}' WHERE redcode = '${redcode}' LIMIT 1`
+				);
+				if (result.numRows === 0) return;
+				mapStore.updateEnriched(redcode, result.get(0)!.toJSON());
+			} else {
+				const ENRICHMENT_COLS = 'redcode, total_personas, area_km2, tasa_actividad, tasa_empleo, pct_universitario, pct_nbi, pct_hacinamiento, pct_agua_red';
+				const result = await query(
+					`SELECT ${ENRICHMENT_COLS} FROM '${PARQUETS.radio_stats_master}' WHERE redcode = '${redcode}' LIMIT 1`
+				);
+				if (result.numRows === 0) return;
+				mapStore.updateEnriched(redcode, result.get(0)!.toJSON());
+			}
 		} catch (e) {
 			console.warn('DuckDB enrichment failed:', e);
 		}
@@ -889,6 +899,8 @@
 				const [lat, lng] = cellToLatLng(e.h3index);
 				return hexStore.territoryPrefix === 'itapua_py/'
 					? isInsideItapua(lat, lng)
+					: hexStore.territoryPrefix === 'corrientes/'
+					? isInsideCorrientes(lat, lng)
 					: isInsideMisiones(lat, lng);
 			});
 			if (entries.length > 0) {

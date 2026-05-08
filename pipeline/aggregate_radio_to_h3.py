@@ -8,6 +8,7 @@ Usage:
   python pipeline/aggregate_radio_to_h3.py
 """
 
+import argparse
 import json
 import os
 import sys
@@ -43,6 +44,18 @@ ANALYSES = {
     },
 }
 
+# Corrientes: census-only variables (no satellite, no accessibility)
+ANALYSES_CORRIENTES = {
+    'sociodemographic': {
+        'cols': ['densidad_hab_km2', 'pct_nbi', 'pct_hacinamiento', 'pct_propietario', 'tamano_medio_hogar', 'pct_computadora'],
+        'invert': ['densidad_hab_km2', 'pct_propietario', 'pct_computadora'],
+    },
+    'economic_activity': {
+        'cols': ['tasa_empleo', 'tasa_actividad', 'pct_universitario'],
+        'invert': [],
+    },
+}
+
 
 def auto_label(cluster_means, global_means, var_names, used_labels=None):
     deviation = cluster_means - global_means
@@ -65,16 +78,34 @@ def auto_label(cluster_means, global_means, var_names, used_labels=None):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Aggregate radio stats to H3 via crosswalk + PCA/k-means")
+    parser.add_argument("--territory", default="misiones", choices=["misiones", "corrientes"],
+                        help="Territory to process (default: misiones)")
+    args = parser.parse_args()
+
+    if args.territory == "corrientes":
+        t_dir = os.path.join(OUTPUT_DIR, "corrientes")
+        crosswalk_path = os.path.join(t_dir, "h3_radio_crosswalk_corrientes.parquet")
+        stats_path = os.path.join(t_dir, "radio_stats_corrientes.parquet")
+        analyses = ANALYSES_CORRIENTES
+        out_dir = t_dir
+    else:
+        t_dir = OUTPUT_DIR
+        crosswalk_path = CROSSWALK_PATH
+        stats_path = RADIO_STATS_PATH
+        analyses = ANALYSES
+        out_dir = OUTPUT_DIR
+
     t0 = time.time()
 
     print("=" * 60)
-    print("  Aggregate Radio -> H3 + PCA + k-means")
+    print(f"  Aggregate Radio -> H3 + PCA + k-means [{args.territory}]")
     print("=" * 60)
 
     # Load crosswalk and radio stats
     print("Loading crosswalk and radio stats...")
-    xwalk = pd.read_parquet(CROSSWALK_PATH)
-    radio = pd.read_parquet(RADIO_STATS_PATH)
+    xwalk = pd.read_parquet(crosswalk_path)
+    radio = pd.read_parquet(stats_path)
 
     print(f"  Crosswalk: {len(xwalk):,} rows")
     print(f"  Radio stats: {len(radio):,} rows, {len(radio.columns)} cols")
@@ -83,7 +114,7 @@ def main():
     merged = xwalk.merge(radio, on='redcode', how='inner')
     print(f"  Merged: {len(merged):,} rows")
 
-    for aid, cfg in ANALYSES.items():
+    for aid, cfg in analyses.items():
         print(f"\n{'=' * 60}")
         print(f"  {aid}")
         print(f"{'=' * 60}")
@@ -95,15 +126,14 @@ def main():
 
         print(f"  Variables: {cols}")
 
-        # Weighted aggregation to H3
+        # Weighted aggregation to H3 (vectorized: avoids slow groupby.apply)
         agg_data = []
         for col in cols:
             valid = merged[['h3index', 'weight', col]].dropna(subset=[col])
-            weighted = valid.groupby('h3index').apply(
-                lambda g: np.average(g[col], weights=g['weight']),
-                include_groups=False
-            )
-            agg_data.append(weighted.rename(col))
+            num = (valid['weight'] * valid[col]).groupby(valid['h3index']).sum()
+            den = valid['weight'].groupby(valid['h3index']).sum()
+            weighted = (num / den).rename(col)
+            agg_data.append(weighted)
 
         df = pd.concat(agg_data, axis=1).reset_index()
         df = df.rename(columns={'index': 'h3index'}) if 'index' in df.columns else df
@@ -191,7 +221,7 @@ def main():
                 score_cols.append(result[col])
         result['score'] = pd.concat(score_cols, axis=1).mean(axis=1).round(1)
 
-        out_path = os.path.join(OUTPUT_DIR, f"sat_{aid}.parquet")
+        out_path = os.path.join(out_dir, f"sat_{aid}.parquet")
         result.to_parquet(out_path, index=False)
         size_kb = os.path.getsize(out_path) / 1024
         print(f"  Output: {out_path} ({size_kb:.0f} KB, {len(result):,} rows)")

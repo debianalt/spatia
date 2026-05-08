@@ -3,6 +3,7 @@ import { PARQUETS, HEX_LAYER_REGISTRY, getFloodDptoUrl, getScoresDptoUrl, getSat
 import { pointInPolygon } from '$lib/utils/geometry';
 import { isInsideMisiones } from '$lib/utils/misiones-pip';
 import { isInsideItapua } from '$lib/utils/itapua-pip';
+import { isInsideCorrientes } from '$lib/utils/corrientes-pip';
 import { i18n } from '$lib/stores/i18n.svelte';
 import { cellToLatLng, cellToBoundary } from 'h3-js';
 
@@ -142,7 +143,9 @@ export class HexStore {
 	private layerGlobalUrl(layer: HexLayerConfig): string | undefined {
 		const url = PARQUETS[layer.parquet as keyof typeof PARQUETS];
 		if (!url) return undefined;
-		return this.territoryPrefix ? url.replace('/data/', `/data/${this.territoryPrefix}`) : url;
+		// Only sat_* parquets are territory-specific; EUDR, emsa, etc. use a fixed global URL
+		if (!this.territoryPrefix || !layer.parquet?.startsWith('sat_')) return url;
+		return url.replace('/data/', `/data/${this.territoryPrefix}`);
 	}
 
 	async loadDepartment(dpto: string, parquetKey: string) {
@@ -190,6 +193,8 @@ export class HexStore {
 					const [lat, lng] = cellToLatLng(h3index);
 					const inTerritory = this.territoryPrefix === 'itapua_py/'
 						? isInsideItapua(lat, lng)
+						: this.territoryPrefix === 'corrientes/'
+						? isInsideCorrientes(lat, lng)
 						: isInsideMisiones(lat, lng);
 					if (!inTerritory) continue;
 					const values: Record<string, any> = {};

@@ -49,7 +49,7 @@ TERRITORY_CONFIGS: dict[str, dict] = {
         'admin_level': 'departamento',
         'admin_col': 'dpto',
         'admin_collection': None,                    # uses local ARG_adm2.shp (same as Misiones)
-        'admin_filter': None,
+        'admin_filter': ('NAME_1', 'Corrientes'),   # GADM: filter province by NAME_1
         'output_prefix': 'corrientes/',              # R2: data/corrientes/sat_*.parquet
         'export_scale': 100,
     },

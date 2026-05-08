@@ -4,14 +4,15 @@ function getBase(): string {
 	return R2_PROD;
 }
 
-export function getTilesUrl(name: 'buildings' | 'itapua_buildings' | 'radios' | 'terrain' | 'hexagons' | 'catastro'): string {
+export function getTilesUrl(name: 'buildings' | 'itapua_buildings' | 'corrientes_buildings' | 'radios' | 'terrain' | 'hexagons' | 'catastro'): string {
 	if (name === 'terrain') {
 		return '/api/terrain/{z}/{x}/{y}.png';
 	}
 	const files = {
 		buildings: 'tiles/buildings-v5.pmtiles',
 		itapua_buildings: 'tiles/itapua_buildings.pmtiles',
-		radios: 'tiles/radios-v2.pmtiles',
+		corrientes_buildings: 'data/tiles/corrientes_buildings.pmtiles',
+		radios: 'data/tiles/radios-v3.pmtiles',
 		hexagons: 'tiles/hexagons-v2.pmtiles',
 		catastro: 'tiles/catastro.pmtiles?v=3'
 	};
@@ -59,8 +60,8 @@ export function getParquetUrl(name: string): string {
 		sat_education_capital: '?v=25',
 		sat_education_flow: '?v=25',
 		sat_territorial_types: '?v=25',
-		sat_sociodemographic: '?v=22',
-		sat_economic_activity: '?v=22',
+		sat_sociodemographic: '?v=23',
+		sat_economic_activity: '?v=23',
 		sat_accessibility: '?v=26',
 		sat_climate_vulnerability: '?v=7',
 		sat_carbon_stock: '?v=8',
@@ -119,6 +120,7 @@ export const PARQUETS = {
 	get ndvi_annual() { return getParquetUrl('ndvi_annual'); },
 	get buildings_stats() { return getParquetUrl('buildings_stats'); },
 	get radio_stats_master() { return getParquetUrl('radio_stats_master'); },
+	get radio_stats_corrientes() { return `${getBase()}/data/corrientes/radio_stats_corrientes.parquet`; },
 	get hex_flood_risk() { return getParquetUrl('hex_flood_risk'); },
 	get h3_radio_crosswalk() { return getParquetUrl('h3_radio_crosswalk'); },
 	get h3_parent_crosswalk() { return getParquetUrl('h3_parent_crosswalk'); },
@@ -226,7 +228,7 @@ export const TERRITORY_REGISTRY: Record<string, TerritoryConfig> = {
 	// ── Argentina — próximamente ─────────────────────────────────────────────
 	corrientes: {
 		id: 'corrientes', label: 'Corrientes', shortLabel: 'CTE', country: 'ar',
-		bbox: [-59.50, -30.00, -56.00, -27.00],
+		bbox: [-59.80, -30.80, -55.60, -27.20],
 		parquetPrefix: 'corrientes/', flag: '🇦🇷', available: true,
 	},
 	chaco: {
@@ -373,7 +375,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.flood.low',
 		legendHighKey: 'legend.flood.high',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 	},
 	// ── EMSA: Infraestructura eléctrica ──
 	powerline_density: {
@@ -415,7 +417,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.envRisk.low',
 		legendHighKey: 'legend.envRisk.high',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 	},
 	climate_comfort: {
 		id: 'climate_comfort',
@@ -434,7 +436,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.comfort.low',
 		legendHighKey: 'legend.comfort.high',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 	},
 	green_capital: {
 		id: 'green_capital',
@@ -456,7 +458,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.green.low',
 		legendHighKey: 'legend.green.high',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 	},
 	change_pressure: {
 		id: 'change_pressure',
@@ -477,7 +479,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.change.low',
 		legendHighKey: 'legend.change.high',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 	},
 	location_value: {
 		id: 'location_value',
@@ -520,7 +522,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.agri.low',
 		legendHighKey: 'legend.agri.high',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 	},
 	forest_health: {
 		id: 'forest_health',
@@ -539,7 +541,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.forestH.low',
 		legendHighKey: 'legend.forestH.high',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 	},
 	soil_water: {
 		id: 'soil_water',
@@ -557,7 +559,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.soilW.low',
 		legendHighKey: 'legend.soilW.high',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 	},
 	forestry_aptitude: {
 		id: 'forestry_aptitude',
@@ -711,7 +713,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.landUse.low',
 		legendHighKey: 'legend.landUse.high',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 	},
 	// ── Territorial classification (PCA + metabolic clustering) ──
 	territorial_types: {
@@ -788,7 +790,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'analysis.socio.title',
 		perDepartment: true,
-		coverage: { itapua_py: 'unavailable', corrientes: 'pending' },
+		coverage: { itapua_py: 'unavailable', corrientes: 'available' },
 	},
 	economic_activity: {
 		id: 'economic_activity',
@@ -808,7 +810,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		aggregation: 'mean',
 		titleKey: 'analysis.economic.title',
 		perDepartment: true,
-		coverage: { itapua_py: 'unavailable', corrientes: 'pending' },
+		coverage: { itapua_py: 'unavailable', corrientes: 'available' },
 	},
 	accessibility: {
 		id: 'accessibility',
@@ -829,7 +831,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		titleKey: 'analysis.accessibility.title',
 		perDepartment: true,
 		comparable: true,
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 	},
 	// ── Carbon Stock & Balance ──
 	carbon_stock: {
@@ -866,7 +868,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		temporalPeriods: { current: '2022–2024', baseline: '2018–2020', source: 'ESA CCI · MODIS · Hansen' },
 		legendLowKey: 'legend.carbon.low',
 		legendHighKey: 'legend.carbon.high',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 	},
 	// ── Climate Vulnerability (IPCC AR5 meta-analysis) ──
 	climate_vulnerability: {
@@ -904,7 +906,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.climVuln.low',
 		legendHighKey: 'legend.climVuln.high',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 	},
 	// ── PM2.5 Drivers (25-year ML decomposition) ──
 	pm25_drivers: {
@@ -934,7 +936,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		temporalPeriods: { current: '2013–2022', baseline: '2001–2010', source: 'ACAG V6' },
 		legendLowKey: 'legend.pm25.low',
 		legendHighKey: 'legend.pm25.high',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 	},
 	// ── Productive Activity (raw values, VIIRS + NPP + NDVI + GHSL + Hansen + LST) ──
 	productive_activity: {
@@ -1055,7 +1057,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'analysis.floodRisk.title',
 		descKey: 'analysis.floodRisk.desc',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
@@ -1070,7 +1072,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		status: 'available',
 		spatialUnit: 'hexagon',
 		comparable: true,
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 	},
 	// ── Radio-based analyses (radio_stats_master via crosswalk) ──
 	// investment_value removed — re_median_usd_m2 only covers 26% of radios
@@ -1079,7 +1081,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'analysis.socio.title',
 		descKey: 'analysis.socio.desc',
-
+		coverage: { itapua_py: 'unavailable', corrientes: 'available' },
 		status: 'available',
 		spatialUnit: 'hexagon',
 	},
@@ -1096,7 +1098,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		status: 'available',
 		spatialUnit: 'hexagon',
 		comparable: true,
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 	},
 	// natural_risks hidden — covered by environmental_risk (H3)
 	// ── Satellite H3 analyses ──
@@ -1105,7 +1107,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'sat.envRisk.title',
 		descKey: 'sat.envRisk.desc',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
@@ -1115,7 +1117,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'sat.climate.title',
 		descKey: 'sat.climate.desc',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
@@ -1125,7 +1127,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'sat.green.title',
 		descKey: 'sat.green.desc',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
@@ -1135,7 +1137,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'invertir',
 		titleKey: 'sat.change.title',
 		descKey: 'sat.change.desc',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
@@ -1155,7 +1157,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'sat.agri.title',
 		descKey: 'sat.agri.desc',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
@@ -1174,7 +1176,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'sat.forestH.title',
 		descKey: 'sat.forestH.desc',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
@@ -1240,7 +1242,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'sat.carbon.title',
 		descKey: 'sat.carbon.desc',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
@@ -1251,7 +1253,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'sat.soilW.title',
 		descKey: 'sat.soilW.desc',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
@@ -1262,7 +1264,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'servir',
 		titleKey: 'sat.climVuln.title',
 		descKey: 'sat.climVuln.desc',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 		comparable: false,
 		status: 'available',
 		spatialUnit: 'hexagon',
@@ -1295,7 +1297,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'vivir',
 		titleKey: 'sat.pm25.title',
 		descKey: 'sat.pm25.desc',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
@@ -1306,7 +1308,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'producir',
 		titleKey: 'sat.landUse.title',
 		descKey: 'sat.landUse.desc',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',

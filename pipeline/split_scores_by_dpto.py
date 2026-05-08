@@ -149,14 +149,18 @@ def safe_filename(dpto: str) -> str:
             .replace("ü", "u"))
 
 
-def assign_hexes_itapua(scores: pd.DataFrame, crosswalk_path: str) -> pd.DataFrame:
-    """Assign each hex to a distrito using the prebuilt crosswalk parquet."""
-    print("Assigning hexes to distritos via crosswalk...")
-    crosswalk = pd.read_parquet(crosswalk_path, columns=["h3index", "distrito"])
+def assign_hexes_itapua(scores: pd.DataFrame, crosswalk_path: str) -> tuple[pd.DataFrame, str]:
+    """Assign each hex to an admin unit using the prebuilt crosswalk parquet.
+    Returns (merged_df, admin_col_name) — col is 'distrito' or 'dpto' depending on crosswalk."""
+    import pyarrow.parquet as pq
+    schema_cols = pq.read_schema(crosswalk_path).names
+    admin_col = "distrito" if "distrito" in schema_cols else "dpto"
+    print(f"Assigning hexes to {admin_col}s via crosswalk...")
+    crosswalk = pd.read_parquet(crosswalk_path, columns=["h3index", admin_col])
     scores = scores.merge(crosswalk, on="h3index", how="left")
-    no_match = scores["distrito"].isna().sum()
+    no_match = scores[admin_col].isna().sum()
     print(f"  Matched: {len(scores) - no_match:,}/{len(scores):,}, unmatched: {no_match:,}")
-    return scores
+    return scores, admin_col
 
 
 def split_and_save(scores: pd.DataFrame, admin_col: str, output_dir: str,
@@ -256,10 +260,10 @@ def main():
         if not os.path.exists(crosswalk_path):
             print(f"ERROR: Missing crosswalk: {crosswalk_path}")
             return 1
-        scores = assign_hexes_itapua(scores, crosswalk_path)
-        scores_assigned = scores.dropna(subset=["distrito"])
+        scores, admin_col = assign_hexes_itapua(scores, crosswalk_path)
+        scores_assigned = scores.dropna(subset=[admin_col])
         summary_path = os.path.join(SRC_DATA_DIR, f"{args.territory}_scores_dept_summary.json")
-        n_units = split_and_save(scores_assigned, "distrito", dpto_output_dir, summary_path, "distrito")
+        n_units = split_and_save(scores_assigned, admin_col, dpto_output_dir, summary_path, admin_col)
 
     elapsed = time.time() - t0
     print(f"\n{'=' * 60}")
