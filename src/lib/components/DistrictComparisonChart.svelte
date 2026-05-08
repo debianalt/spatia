@@ -12,13 +12,12 @@
 		onClearDistricts: () => void;
 	} = $props();
 
+	// 4 NBI components from CNPV 2022 — higher = more deprived (same direction as Misiones pct_nbi)
 	const DISTRICT_PETAL_VARS = [
-		{ col: 'env_risk_score',         label: 'Riesgo ambiental' },
-		{ col: 'climate_comfort_score',  label: 'Confort climático' },
-		{ col: 'accessibility_score',    label: 'Accesibilidad' },
-		{ col: 'agri_potential_score',   label: 'Potencial agrícola' },
-		{ col: 'forest_health_score',    label: 'Salud forestal' },
-		{ col: 'flood_risk_score',       label: 'Riesgo hídrico' },
+		{ col: 'pct_vivienda',     label: 'Calidad vivienda' },
+		{ col: 'pct_sanitario',    label: 'Infra. sanitaria' },
+		{ col: 'pct_educacion',    label: 'Acceso educación' },
+		{ col: 'pct_subsistencia', label: 'Cap. subsistencia' },
 	];
 
 	const fmt = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 0 });
@@ -30,6 +29,7 @@
 		rawValues: number[];
 		normalizedValues: number[];
 		n_hexes: number;
+		pct_nbi: number | null;
 	};
 
 	function normalizeValues(rawValues: number[], means: number[]): number[] {
@@ -58,6 +58,7 @@
 				const val = d.enriched![v.col];
 				return val != null && !isNaN(Number(val)) ? Number(val) : 0;
 			});
+			const pct_nbi_raw = d.enriched!.pct_nbi;
 			return {
 				distrito,
 				color: d.color,
@@ -65,6 +66,7 @@
 				rawValues,
 				normalizedValues: normalizeValues(rawValues, means),
 				n_hexes: Number(d.enriched!.n_hexes ?? 0),
+				pct_nbi: pct_nbi_raw != null && !isNaN(Number(pct_nbi_raw)) ? Number(pct_nbi_raw) : null,
 			};
 		});
 	});
@@ -104,7 +106,7 @@
 
 	<!-- Petal chart -->
 	{#if petalLayers.length > 0}
-		<p class="ref-note">50 = promedio de distritos seleccionados</p>
+		<p class="ref-note">NBI 2022 — 50 = promedio seleccionado · mayor = más privación</p>
 		<PetalChart layers={petalLayers} labels={petalLabels} size={300} />
 	{/if}
 
@@ -114,7 +116,7 @@
 			<div class="r-table-header">
 				<span class="rt-col rt-zone">Distrito</span>
 				<span class="rt-col rt-num">Personas</span>
-				<span class="rt-col rt-num">Hexs.</span>
+				<span class="rt-col rt-num">NBI %</span>
 			</div>
 			{#each entries as entry}
 				<div class="r-table-row">
@@ -123,7 +125,13 @@
 						{entry.distrito}
 					</span>
 					<span class="rt-col rt-num">{fmt(entry.personas)}</span>
-					<span class="rt-col rt-num">{fmt(entry.n_hexes)}</span>
+					<span class="rt-col rt-num">
+						{#if entry.pct_nbi != null}
+							{entry.pct_nbi.toFixed(1)}%
+						{:else}
+							—
+						{/if}
+					</span>
 				</div>
 			{/each}
 		</div>
@@ -131,8 +139,7 @@
 
 	<div class="sources">
 		<span class="sources-title">Fuentes</span>
-		<span>DGEEC Paraguay — CNPV 2022</span>
-		<span>Spatia análisis satelital (H3 res-9)</span>
+		<span>INE Paraguay — CNPV 2022 (NBI por distrito)</span>
 		<span>Overture Maps Buildings</span>
 	</div>
 </div>
