@@ -853,6 +853,11 @@
 		if (!map?.getLayer(activeLayer)) return;
 		if (radios.length === 0) {
 			map.setFilter(activeLayer, emptyFilter);
+			// In regional mode: also clear census polygon highlights
+			if (regionalModeActive) {
+				if (map.getLayer('selected-fill')) map.setFilter('selected-fill', emptyFilter);
+				if (map.getLayer('selected-line')) map.setFilter('selected-line', emptyFilter);
+			}
 		} else {
 			const redcodes = radios.map(r => r.redcode);
 			const matchExpr: any[] = ['match', ['get', 'redcode']];
@@ -863,6 +868,20 @@
 			map.setPaintProperty(activeLayer, 'line-color', matchExpr);
 			map.setPaintProperty(activeLayer, 'line-width', 4.5);
 			map.setFilter(activeLayer, ['in', ['get', 'redcode'], ['literal', redcodes]]);
+			// In regional mode: also highlight census radio polygons for all territories
+			if (regionalModeActive) {
+				const polyFilter: any = ['in', ['get', 'redcode'], ['literal', redcodes]];
+				if (map.getLayer('selected-fill')) {
+					map.setPaintProperty('selected-fill', 'fill-color', matchExpr);
+					map.setPaintProperty('selected-fill', 'fill-opacity', 0.30);
+					map.setFilter('selected-fill', polyFilter);
+				}
+				if (map.getLayer('selected-line')) {
+					map.setPaintProperty('selected-line', 'line-color', matchExpr);
+					map.setPaintProperty('selected-line', 'line-width', 2.5);
+					map.setFilter('selected-line', polyFilter);
+				}
+			}
 		}
 	}
 
@@ -1028,6 +1047,20 @@
 		applyTerritoryVisibility();
 	}
 
+	function regionalProvinceClickHandler(e: any) {
+		if (lassoActive || mapStore.activeHexLayer) return;
+		const redcode = e.features?.[0]?.properties?.redcode;
+		if (!redcode) return;
+		if (mapStore.hasRadio(redcode)) {
+			container.dispatchEvent(new CustomEvent('radio-deselect', { bubbles: true, detail: { redcode } }));
+		} else {
+			container.dispatchEvent(new CustomEvent('radio-select', {
+				bubbles: true,
+				detail: { redcode, selected: [], census: e.features![0].properties! }
+			}));
+		}
+	}
+
 	export function setRegionalMapMode(active: boolean) {
 		if (!map) return;
 		regionalModeActive = active;
@@ -1051,7 +1084,10 @@
 			for (const id of ['itapua-district-fill', 'itapua-district-line', 'itapua-district-selected-fill', 'itapua-district-selected-line']) {
 				if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible');
 			}
+			// Enable radio selection by clicking directly on census radio polygons
+			map.on('click', 'province-fill', regionalProvinceClickHandler);
 		} else {
+			map.off('click', 'province-fill', regionalProvinceClickHandler);
 			// Full restore via standard territory visibility logic
 			applyTerritoryVisibility();
 		}
