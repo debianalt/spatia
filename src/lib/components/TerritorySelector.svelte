@@ -51,6 +51,17 @@
 		</div>
 	{/each}
 
+	<div class="regional-row">
+		<button
+			class="regional-btn"
+			class:active={territoryStore.regionalMode}
+			onclick={() => territoryStore.regionalMode ? territoryStore.exitRegionalMode() : territoryStore.enterRegionalMode()}
+		>
+			<span class="r-dot">{territoryStore.regionalMode ? '◉' : '◎'}</span>
+			Vista Regional NEA
+		</button>
+	</div>
+
 </div>
 
 <style>
@@ -139,5 +150,41 @@
 		color: rgba(255, 255, 255, 0.25);
 		font-style: italic;
 	}
+
+	.regional-row {
+		margin-top: 6px;
+		padding-top: 6px;
+		border-top: 1px solid rgba(255, 255, 255, 0.06);
+	}
+
+	.regional-btn {
+		display: flex;
+		align-items: center;
+		gap: 5px;
+		padding: 5px 6px;
+		background: none;
+		border: 1px solid transparent;
+		border-radius: 3px;
+		cursor: pointer;
+		width: 100%;
+		font-size: 10px;
+		font-weight: 500;
+		color: rgba(255, 255, 255, 0.55);
+		transition: all 0.15s;
+		text-align: left;
+	}
+
+	.regional-btn:hover {
+		background: rgba(167, 139, 250, 0.08);
+		color: rgba(255, 255, 255, 0.8);
+	}
+
+	.regional-btn.active {
+		background: rgba(167, 139, 250, 0.12);
+		border-color: rgba(167, 139, 250, 0.3);
+		color: #a78bfa;
+	}
+
+	.r-dot { font-size: 8px; }
 
 </style>

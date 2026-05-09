@@ -60,6 +60,11 @@ export class HexStore {
 	compareDpto: string | null = $state(null);
 	compareDataVersion: number = $state(0);
 
+	// ── Regional mode (3rd territory hex slot) ───────────────────────────
+	regionalVisibleData: Map<string, Record<string, any>> = $state(new Map());
+	private regionalBoundaryCache: Map<string, number[][]> = new Map();
+	regionalDataVersion: number = $state(0);
+
 	// Bounding boxes for dept highlight outlines on map
 	deptBbox: [number, number, number, number] | null = $state(null);
 	compareDeptBbox: [number, number, number, number] | null = $state(null);
@@ -285,7 +290,7 @@ export class HexStore {
 	private async loadGlobalInto(
 		layer: HexLayerConfig,
 		prefix: string,
-		target: 'primary' | 'compare'
+		target: 'primary' | 'compare' | 'regional'
 	): Promise<void> {
 		const url = getSatGlobalUrl(layer.id, prefix);
 		const result = await query(`SELECT * FROM '${url}'`);
@@ -326,12 +331,16 @@ export class HexStore {
 			this.selectedDpto = null;
 			this.deptBbox = null;
 			this.dataVersion++;
-		} else {
+		} else if (target === 'compare') {
 			this.compareVisibleData = data;
 			this.compareBoundaryCache = bounds;
 			this.compareDpto = null;
 			this.compareDeptBbox = null;
 			this.compareDataVersion++;
+		} else {
+			this.regionalVisibleData = data;
+			this.regionalBoundaryCache = bounds;
+			this.regionalDataVersion++;
 		}
 	}
 
@@ -344,6 +353,33 @@ export class HexStore {
 		} catch (e) {
 			console.warn('Failed to load full compare data:', e);
 		}
+	}
+
+	async loadRegionalData(prefix: string): Promise<void> {
+		const layer = this.activeLayer;
+		if (!layer || layer.id === 'flood_risk') return;
+		try {
+			await this.loadGlobalInto(layer, prefix, 'regional');
+		} catch (e) {
+			console.warn('Failed to load regional hex data:', e);
+		}
+	}
+
+	clearRegionalData(): void {
+		if (this.regionalVisibleData.size === 0) return;
+		this.regionalVisibleData = new Map();
+		this.regionalBoundaryCache = new Map();
+		this.regionalDataVersion++;
+	}
+
+	get regionalChoroplethEntries(): { h3index: string; value: number; properties: Record<string, number>; boundary?: number[][] }[] {
+		if (!this.activeLayer) return [];
+		const pv = this.activeLayer.primaryVariable;
+		const entries: { h3index: string; value: number; properties: Record<string, number>; boundary?: number[][] }[] = [];
+		for (const [h3index, data] of this.regionalVisibleData) {
+			entries.push({ h3index, value: (data[pv] ?? 0) as number, properties: data as Record<string, number>, boundary: this.regionalBoundaryCache.get(h3index) });
+		}
+		return entries;
 	}
 
 	private static bboxFromBounds(bounds: Map<string, number[][]>): [number, number, number, number] | null {
@@ -757,5 +793,6 @@ export class HexStore {
 		this.provincialAvg = null;
 		this.colorDomain = null;
 		this.clearCompareDept();
+		this.clearRegionalData();
 	}
 }

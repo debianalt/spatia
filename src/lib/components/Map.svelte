@@ -22,6 +22,7 @@
 	let lassoActive = false;
 	let catastroActive = false;
 	let activeTerritoryId = 'misiones';
+	let regionalModeActive = false;
 
 	onMount(() => {
 		const protocol = new Protocol();
@@ -490,6 +491,24 @@
 				filter: ['==', ['get', 'h3index'], '']
 			});
 
+			// ── Regional mode hex choropleth (3rd territory slot) ────────────
+			map.addSource('regional-hexagons', {
+				type: 'geojson',
+				data: { type: 'FeatureCollection', features: [] }
+			});
+			map.addLayer({
+				id: 'regional-hex-fill',
+				type: 'fill',
+				source: 'regional-hexagons',
+				paint: { 'fill-color': '#3b82f6', 'fill-opacity': 0 }
+			});
+			map.addLayer({
+				id: 'regional-hex-line',
+				type: 'line',
+				source: 'regional-hexagons',
+				paint: { 'line-color': '#1e293b', 'line-width': 0.5, 'line-opacity': 0 }
+			});
+
 			// ── Hex zone highlight layers (GeoJSON, for lasso zones) ────────
 			map.addSource('hex-zones', {
 				type: 'geojson',
@@ -936,6 +955,23 @@
 
 	function applyTerritoryVisibility() {
 		if (!map) return;
+
+		if (regionalModeActive) {
+			// Regional mode: only update buildings for active territory.
+			// Fog masks and borders are managed by setRegionalMapMode().
+			const isItapua = activeTerritoryId === 'itapua_py';
+			const isCorrientes = activeTerritoryId === 'corrientes';
+			const activeBuilding = isCorrientes ? 'corrientes-buildings-3d' : isItapua ? 'itapua-buildings-3d' : 'buildings-3d';
+			for (const l of ['buildings-3d', 'itapua-buildings-3d', 'corrientes-buildings-3d']) {
+				if (map.getLayer(l)) map.setLayoutProperty(l, 'visibility', l === activeBuilding ? 'visible' : 'none');
+			}
+			if (map.getLayer(activeBuilding)) {
+				const colorExpr = isItapua ? mapStore.getHeightColorExpr() : mapStore.getColorExpr();
+				map.setPaintProperty(activeBuilding, 'fill-extrusion-color', colorExpr as any);
+			}
+			return;
+		}
+
 		const isMisiones = activeTerritoryId === 'misiones';
 		const isItapua = activeTerritoryId === 'itapua_py';
 		const isCorrientes = activeTerritoryId === 'corrientes';
@@ -990,6 +1026,35 @@
 	export function setActiveTerritory(territoryId: string) {
 		activeTerritoryId = territoryId;
 		applyTerritoryVisibility();
+	}
+
+	export function setRegionalMapMode(active: boolean) {
+		if (!map) return;
+		regionalModeActive = active;
+		if (active) {
+			// Hide all fog masks
+			for (const id of ['mask-fill', 'itapua-mask-fill', 'corrientes-mask-fill']) {
+				if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
+			}
+			// Show all territory borders
+			for (const id of ['province-border', 'itapua-border', 'corrientes-border']) {
+				if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible');
+			}
+			// Province fill/line: show both AR provinces (remove codprov filter)
+			for (const id of ['province-fill', 'province-line']) {
+				if (map.getLayer(id)) {
+					map.setLayoutProperty(id, 'visibility', 'visible');
+					map.setFilter(id, null);
+				}
+			}
+			// Itapúa district outlines + selection layers: always visible in regional mode
+			for (const id of ['itapua-district-fill', 'itapua-district-line', 'itapua-district-selected-fill', 'itapua-district-selected-line']) {
+				if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible');
+			}
+		} else {
+			// Full restore via standard territory visibility logic
+			applyTerritoryVisibility();
+		}
 	}
 
 	// ── Lens opportunity glow layers ─────────────────────────────────────────
@@ -1655,6 +1720,57 @@
 		if (map.getLayer('compare-hex-fill')) map.setPaintProperty('compare-hex-fill', 'fill-opacity', 0);
 		if (map.getLayer('compare-hex-line')) map.setPaintProperty('compare-hex-line', 'line-opacity', 0);
 		if (map.getLayer('compare-hex-selected')) map.setFilter('compare-hex-selected', ['==', ['get', 'h3index'], '']);
+	}
+
+	export function setRegionalHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = 'sequential', domain?: [number, number]) {
+		if (!map) return;
+		const src = map.getSource('regional-hexagons') as maplibregl.GeoJSONSource | undefined;
+		if (!src) return;
+
+		if (entries.length === 0) {
+			src.setData({ type: 'FeatureCollection', features: [] });
+			map.setPaintProperty('regional-hex-fill', 'fill-opacity', 0);
+			map.setPaintProperty('regional-hex-line', 'line-opacity', 0);
+			return;
+		}
+
+		let minVal: number, maxVal: number;
+		if (domain && colorScale !== 'diverging' && colorScale !== 'categorical') {
+			[minVal, maxVal] = domain;
+		} else {
+			minVal = Infinity; maxVal = -Infinity;
+			for (const e of entries) {
+				if (e.value < minVal) minVal = e.value;
+				if (e.value > maxVal) maxVal = e.value;
+			}
+		}
+		const range = maxVal - minVal || 1;
+		const getColor = (v: number) => computeHexColor(v, colorScale, minVal, maxVal, range);
+
+		const features: any[] = [];
+		for (const entry of entries) {
+			if (!entry.boundary) continue;
+			features.push({
+				type: 'Feature',
+				properties: { h3index: entry.h3index, value: entry.value, color: getColor(entry.value), ...(entry.properties || {}) },
+				geometry: { type: 'Polygon', coordinates: [entry.boundary] }
+			});
+		}
+
+		src.setData({ type: 'FeatureCollection', features });
+		map.setPaintProperty('regional-hex-fill', 'fill-color', ['get', 'color']);
+		map.setPaintProperty('regional-hex-fill', 'fill-opacity', 0.50);
+		map.setPaintProperty('regional-hex-line', 'line-color', '#0f172a');
+		map.setPaintProperty('regional-hex-line', 'line-width', 0.5);
+		map.setPaintProperty('regional-hex-line', 'line-opacity', 0.55);
+	}
+
+	export function clearRegionalHexChoropleth() {
+		if (!map) return;
+		const src = map.getSource('regional-hexagons') as maplibregl.GeoJSONSource | undefined;
+		if (src) src.setData({ type: 'FeatureCollection', features: [] });
+		if (map.getLayer('regional-hex-fill')) map.setPaintProperty('regional-hex-fill', 'fill-opacity', 0);
+		if (map.getLayer('regional-hex-line')) map.setPaintProperty('regional-hex-line', 'line-opacity', 0);
 	}
 
 	export function highlightHexagon(h3index: string) {

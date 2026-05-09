@@ -48,21 +48,62 @@
 		if (typeof window !== 'undefined') updateUrlState();
 	});
 
+	const REGIONAL_NEA_BBOX: [number, number, number, number] = [-59.8, -30.8, -53.6, -25.4];
+
+	function getRegionalOtherPrefixes(): [string, string] {
+		const activePrefix = hexStore.territoryPrefix;
+		const all = ['', 'corrientes/', 'itapua_py/'];
+		const others = all.filter(p => p !== activePrefix);
+		return [others[0], others[1]];
+	}
+
 	// Sync territory prefix + fly map + reload data whenever territory changes
 	$effect(() => {
 		const t = territoryStore.activeTerritory;
+		const isRegional = untrack(() => territoryStore.regionalMode);
 		hexStore.setTerritoryPrefix(t.parquetPrefix);
-		// Fly map to new territory bbox after a short delay (map may still be initialising)
-		setTimeout(() => mapComponent?.flyToBbox(t.bbox), 100);
 		// Toggle territory-specific layers (mask, province boundary, buildings)
-		mapComponent?.setActiveTerritory(t.id);
+		mapComponent?.setActiveTerritory(t.id); // applyTerritoryVisibility() respects regionalModeActive
 		// Reload hex choropleth for the new territory
 		hexStore.loadVisibleData();
 		// Reset selected dept since admin units differ per territory
 		hexStore.selectedDpto = null;
-		// Clear district selections when switching territory
-		mapStore.clearDistricts();
-		mapComponent?.setDistrictHighlight([]);
+		if (!isRegional) {
+			// Normal mode: fly to territory + clear cross-territory selections
+			setTimeout(() => mapComponent?.flyToBbox(t.bbox), 100);
+			mapStore.clearDistricts();
+			mapComponent?.setDistrictHighlight([]);
+		} else {
+			// Regional mode (Option D): keep selections, reload other territories' hex data
+			if (hexStore.activeLayer?.comparable) {
+				hexStore.clearCompareDept();
+				hexStore.clearRegionalData();
+				const [p2, p3] = getRegionalOtherPrefixes();
+				hexStore.loadFullCompare(p2).catch(() => {});
+				hexStore.loadRegionalData(p3).catch(() => {});
+			}
+		}
+	});
+
+	// Regional mode toggle: zoom to union bbox, remove fog masks, load all 3 territories
+	$effect(() => {
+		const isRegional = territoryStore.regionalMode;
+		if (isRegional) {
+			setTimeout(() => mapComponent?.flyToBbox(REGIONAL_NEA_BBOX), 100);
+			mapComponent?.setRegionalMapMode(true);
+			if (hexStore.activeLayer?.comparable) {
+				const [p2, p3] = getRegionalOtherPrefixes();
+				hexStore.loadFullCompare(p2).catch(() => {});
+				hexStore.loadRegionalData(p3).catch(() => {});
+			}
+		} else {
+			mapComponent?.setRegionalMapMode(false);
+			mapComponent?.clearCompareHexChoropleth();
+			mapComponent?.clearRegionalHexChoropleth();
+			hexStore.clearCompareDept();
+			hexStore.clearRegionalData();
+			setTimeout(() => mapComponent?.flyToBbox(territoryStore.activeTerritory.bbox), 100);
+		}
 	});
 
 	onMount(() => {
@@ -361,6 +402,12 @@
 				hexStore.ensureColorDomain().catch(() => {});
 				mapStore.setActiveHexLayer(analysis.id);
 				mapComponent?.setHexLayerInfo(i18n.t(layerCfg.titleKey), layerCfg.colorScale === 'categorical');
+				// Regional mode: also load data for the other 2 territories
+				if (untrack(() => territoryStore.regionalMode) && layerCfg.comparable) {
+					const [p2, p3] = getRegionalOtherPrefixes();
+					hexStore.loadFullCompare(p2).catch(() => {});
+					hexStore.loadRegionalData(p3).catch(() => {});
+				}
 			} else {
 				// Fallback: direct load (legacy)
 				loadHexChoropleth(analysis);
@@ -408,6 +455,7 @@
 	// This $effect only handles non-perDepartment layers (legacy path).
 	let prevDataVersion = 0;
 	let prevCompareDataVersion = 0;
+	let prevRegionalDataVersion = 0;
 
 	$effect(() => {
 		const version = hexStore.dataVersion;
@@ -469,6 +517,21 @@
 		}
 		let colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = layer?.colorScale ?? 'sequential';
 		mapComponent?.setCompareHexChoropleth(entries, colorScale, hexStore.colorDomain ?? undefined);
+	});
+
+	// ── Regional choropleth: render 3rd territory hexes when regionalDataVersion changes ──
+	$effect(() => {
+		const version = hexStore.regionalDataVersion;
+		const entries = hexStore.regionalChoroplethEntries;
+		const layer = hexStore.activeLayer;
+		if (version === prevRegionalDataVersion) return;
+		prevRegionalDataVersion = version;
+		if (entries.length === 0) {
+			mapComponent?.clearRegionalHexChoropleth();
+			return;
+		}
+		const colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = layer?.colorScale ?? 'sequential';
+		mapComponent?.setRegionalHexChoropleth(entries, colorScale, hexStore.colorDomain ?? undefined);
 	});
 
 	// ── Clear data load error when analysis changes ──────────────────────────
