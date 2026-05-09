@@ -1923,15 +1923,12 @@
 	export function setZoneHighlight(zones: { redcodes: string[]; color: string }[]) {
 		if (!map) return;
 		const emptyFilter: any = ['==', ['get', 'redcode'], ''];
-		const isCorrientes = activeTerritoryId === 'corrientes';
-		const buildingsZoneLayer = isCorrientes ? 'zone-buildings-corrientes' : 'zone-buildings';
-		const hiddenZoneLayer    = isCorrientes ? 'zone-buildings'            : 'zone-buildings-corrientes';
 
 		if (zones.length === 0) {
 			if (map.getLayer('zone-fill')) map.setFilter('zone-fill', emptyFilter);
 			if (map.getLayer('zone-line')) map.setFilter('zone-line', emptyFilter);
-			if (map.getLayer(buildingsZoneLayer)) map.setFilter(buildingsZoneLayer, emptyFilter);
-			if (map.getLayer(hiddenZoneLayer))    map.setFilter(hiddenZoneLayer, emptyFilter);
+			if (map.getLayer('zone-buildings')) map.setFilter('zone-buildings', emptyFilter);
+			if (map.getLayer('zone-buildings-corrientes')) map.setFilter('zone-buildings-corrientes', emptyFilter);
 			return;
 		}
 
@@ -1956,12 +1953,15 @@
 			map.setPaintProperty('zone-line', 'line-color', matchExpr);
 			map.setFilter('zone-line', filter);
 		}
-		// Building outlines: territory-aware layer
-		if (map.getLayer(buildingsZoneLayer)) {
-			map.setPaintProperty(buildingsZoneLayer, 'line-color', matchExpr);
-			map.setFilter(buildingsZoneLayer, filter);
+		// Building outlines: highlight both territory layers (regional mode shows mixed zones)
+		if (map.getLayer('zone-buildings')) {
+			map.setPaintProperty('zone-buildings', 'line-color', matchExpr);
+			map.setFilter('zone-buildings', filter);
 		}
-		if (map.getLayer(hiddenZoneLayer)) map.setFilter(hiddenZoneLayer, emptyFilter);
+		if (map.getLayer('zone-buildings-corrientes')) {
+			map.setPaintProperty('zone-buildings-corrientes', 'line-color', matchExpr);
+			map.setFilter('zone-buildings-corrientes', filter);
+		}
 	}
 
 	export function clearZoneHighlight() {

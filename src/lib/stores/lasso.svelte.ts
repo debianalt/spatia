@@ -83,36 +83,40 @@ export class LassoStore {
 		const id = ZONE_LABELS[idx] || String.fromCharCode(65 + this.zones.length);
 		const color = ZONE_COLORS[idx];
 
-		const inClause = redcodes.map(r => `'${r}'`).join(',');
-		const isCorrientes = redcodes[0]?.startsWith('18');
-
-		// Corrientes lacks pct_agua_red — substitute 0 so petal var count stays consistent
-		const cols = isCorrientes
-			? PETAL_VARS.map(v => v.col === 'pct_agua_red' ? '0 as pct_agua_red' : v.col).join(', ')
-			: PETAL_VARS.map(v => v.col).join(', ');
-		const parquet = isCorrientes ? PARQUETS.radio_stats_corrientes : PARQUETS.radio_stats_master;
+		const misionesRc = redcodes.filter(r => r.startsWith('54'));
+		const corrientesRc = redcodes.filter(r => r.startsWith('18'));
 
 		try {
-			// Fetch provincial averages (cached after first call)
 			const provAvg = await getProvincialAvg();
-
-			const sql = `SELECT redcode, total_personas, ${cols}, area_km2 FROM '${parquet}' WHERE redcode IN (${inClause})`;
-			const result = await query(sql);
 
 			let totalPop = 0;
 			let totalArea = 0;
 			const weighted = new Array(PETAL_VARS.length).fill(0);
 
-			for (let i = 0; i < result.numRows; i++) {
-				const row = result.get(i)!.toJSON() as Record<string, any>;
-				const pop = Number(row.total_personas) || 0;
-				const area = Number(row.area_km2) || 0;
-				totalPop += pop;
-				totalArea += area;
-				for (let v = 0; v < PETAL_VARS.length; v++) {
-					const val = Number(row[PETAL_VARS[v].col]) || 0;
-					weighted[v] += val * pop;
+			const accumulate = (result: any) => {
+				for (let i = 0; i < result.numRows; i++) {
+					const row = result.get(i)!.toJSON() as Record<string, any>;
+					const pop = Number(row.total_personas) || 0;
+					const area = Number(row.area_km2) || 0;
+					totalPop += pop;
+					totalArea += area;
+					for (let v = 0; v < PETAL_VARS.length; v++) {
+						weighted[v] += (Number(row[PETAL_VARS[v].col]) || 0) * pop;
+					}
 				}
+			};
+
+			if (misionesRc.length > 0) {
+				const cols = PETAL_VARS.map(v => v.col).join(', ');
+				const sql = `SELECT redcode, total_personas, ${cols}, area_km2 FROM '${PARQUETS.radio_stats_master}' WHERE redcode IN (${misionesRc.map(r => `'${r}'`).join(',')})`;
+				accumulate(await query(sql));
+			}
+
+			if (corrientesRc.length > 0) {
+				// Corrientes lacks pct_agua_red — substitute 0 so petal var count stays consistent
+				const cols = PETAL_VARS.map(v => v.col === 'pct_agua_red' ? '0 as pct_agua_red' : v.col).join(', ');
+				const sql = `SELECT redcode, total_personas, ${cols}, area_km2 FROM '${PARQUETS.radio_stats_corrientes}' WHERE redcode IN (${corrientesRc.map(r => `'${r}'`).join(',')})`;
+				accumulate(await query(sql));
 			}
 
 			const rawValues = totalPop > 0
@@ -121,21 +125,10 @@ export class LassoStore {
 
 			const normalizedValues = normalizeValues(rawValues, provAvg);
 
-			const zone: Zone = {
-				id,
-				color,
-				redcodes,
-				polygon,
-				stats: {
-					population: totalPop,
-					area_km2: totalArea,
-					radioCount: redcodes.length,
-					rawValues,
-					normalizedValues,
-				},
-			};
-
-			this.zones = [...this.zones, zone];
+			this.zones = [...this.zones, {
+				id, color, redcodes, polygon,
+				stats: { population: totalPop, area_km2: totalArea, radioCount: redcodes.length, rawValues, normalizedValues },
+			}];
 		} catch (e) {
 			console.warn('Failed to create lasso zone:', e);
 		}
