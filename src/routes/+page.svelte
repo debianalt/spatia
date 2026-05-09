@@ -1159,7 +1159,7 @@
 
 <style>
 	.territory-col {
-		width: 110px;
+		width: 145px;
 		flex-shrink: 0;
 		background: rgba(10, 12, 18, 0.88);
 		backdrop-filter: blur(8px);

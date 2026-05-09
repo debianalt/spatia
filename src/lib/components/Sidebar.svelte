@@ -109,9 +109,9 @@
 </script>
 
 {#if !collapsed}
-<div class="sidebar absolute top-0 right-0 bottom-0 z-10 rounded-l-lg p-3 px-4 border-l border-border w-full md:w-[500px] text-xs leading-relaxed"
+<div class="sidebar absolute top-0 right-0 bottom-0 z-10 rounded-l-lg p-3 px-4 border-l border-border w-full md:w-[440px] text-xs leading-relaxed"
 	style="background: var(--color-panel); backdrop-filter: blur(8px);"
-	transition:fly={{ x: 500, duration: 180, easing: cubicOut }}>
+	transition:fly={{ x: 440, duration: 180, easing: cubicOut }}>
 
 	<button class="collapse-btn" onclick={() => collapsed = true} title={i18n.t('side.welcome.hidePanel')}>
 		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 4 L18 12 L10 20"/></svg>
