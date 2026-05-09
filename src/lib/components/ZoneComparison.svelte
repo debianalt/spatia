@@ -2,6 +2,7 @@
 	import { PETAL_VARS, type LassoStore, type Zone } from '$lib/stores/lasso.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import { downloadCsvFromRows, downloadGeoJsonFromPolygon } from '$lib/utils/data-export';
+	import PetalChart from './PetalChart.svelte';
 
 	let {
 		lassoStore,
@@ -14,6 +15,8 @@
 	} = $props();
 
 	const zones = $derived(lassoStore.zones);
+	const petalLayers = $derived(lassoStore.petalLayers);
+	const petalLabels = $derived(lassoStore.petalLabels);
 
 	function downloadZoneSummary() {
 		if (zones.length === 0) return;
@@ -101,6 +104,11 @@
 		{/each}
 	</div>
 
+	{#if petalLayers.length > 0}
+		<p class="ref-note">{i18n.t('zone.petalNote')}</p>
+		<PetalChart layers={petalLayers} labels={petalLabels} size={300} />
+	{/if}
+
 	{#if zones.length > 0}
 		<div class="zone-download-row">
 			<button class="zone-download-btn" onclick={downloadZoneSummary}>
@@ -113,6 +121,7 @@
 
 <style>
 	.zone-comparison { font-size: 11px; }
+	.ref-note { font-size: 8px; color: #64748b; text-align: center; margin: 4px 0 2px; }
 	.zone-header {
 		display: flex;
 		justify-content: space-between;
