@@ -265,15 +265,21 @@
 							{/if}
 						</tbody>
 					</table>
+					{@const deptLabel = (t: typeof stats[0]['territory']) => t.country === 'py' ? 'Dist.' : t.country === 'br' ? 'Mun.' : 'Dept.'}
+					{@const crossTerritory = stats[0].territory.id !== stats[1].territory.id}
+					{@const hasPercentil = compareVars.some(v => v.unit === 'percentil')}
 					<p class="note">
 						{#if dpto && compareDpto}
-							Dept. {dpto} ({stats[0].territory.flag}) vs Dist. {compareDpto} ({stats[1].territory.flag})
+							{deptLabel(stats[0].territory)} {dpto} ({stats[0].territory.flag}) vs {deptLabel(stats[1].territory)} {compareDpto} ({stats[1].territory.flag})
 						{:else if dpto}
-							Dept. {dpto} ({stats[0].territory.flag}) vs {stats[1].territory.flag} prom. provincial
+							{deptLabel(stats[0].territory)} {dpto} ({stats[0].territory.flag}) vs {stats[1].territory.flag} prom. provincial
 						{:else}
 							Prom. {stats[0].territory.flag} vs prom. {stats[1].territory.flag}
 						{/if}
 					</p>
+					{#if crossTerritory && hasPercentil}
+						<p class="note note-warn">⚠ Percentiles relativos a cada territorio — no son directamente comparables entre provincias</p>
+					{/if}
 				{/if}
 			</div>
 		{/if}
@@ -442,5 +448,10 @@
 		margin: 5px 0 0;
 		text-align: right;
 		font-style: italic;
+	}
+	.note-warn {
+		color: rgba(251, 191, 36, 0.6);
+		font-style: normal;
+		text-align: left;
 	}
 </style>
