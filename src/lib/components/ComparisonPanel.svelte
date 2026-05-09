@@ -33,6 +33,7 @@
 	let loading = $state(false);
 	let groups: TerritoryGroup[] = $state([]);
 	let selectorOpen = $state(false);
+	let statsGen = 0; // generation counter — cancels stale async loadStats promises
 
 	const activeLayer = $derived(
 		lensStore.activeAnalysis ? HEX_LAYER_REGISTRY[lensStore.activeAnalysis.id] : null
@@ -140,29 +141,32 @@
 		if (!layer || !compare || !isReady()) return;
 
 		const cols = compareVars.map(v => v.col);
+		const gen = ++statsGen; // mark this run; stale async results will be discarded
 		loading = true;
 		stats = [];
 
 		if (dpto && hexStore.visibleData.size > 0 && compareDpto && hexStore.compareVisibleData.size > 0) {
-			// Dept-to-dept: both from in-memory data
+			// Dept-to-dept: both from in-memory data — synchronous, no race risk
 			stats = [
 				computeDeptAvg(primary, cols, hexStore.visibleData),
 				computeDeptAvg(compare, cols, hexStore.compareVisibleData),
 			];
 			loading = false;
 		} else if (dpto && hexStore.visibleData.size > 0) {
-			// Primary dept selected, no compare dept yet
+			// Primary dept selected, compare dept loading or not yet chosen
 			const localStat = computeDeptAvg(primary, cols, hexStore.visibleData);
 			loadStats(compare, cols).then(compareStat => {
+				if (statsGen !== gen) return; // superseded by newer run
 				stats = [localStat, compareStat];
 				loading = false;
-			}).catch(() => { loading = false; });
+			}).catch(() => { if (statsGen === gen) loading = false; });
 		} else {
 			// Territory-level: both from global parquets
 			Promise.all([loadStats(primary, cols), loadStats(compare, cols)]).then(results => {
+				if (statsGen !== gen) return;
 				stats = results;
 				loading = false;
-			}).catch(() => { loading = false; });
+			}).catch(() => { if (statsGen === gen) loading = false; });
 		}
 	});
 
