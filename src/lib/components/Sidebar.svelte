@@ -20,6 +20,11 @@
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import CTADiagnostic from './CTADiagnostic.svelte';
 	import MoranPanel from './MoranPanel.svelte';
+	import HistogramPanel from './HistogramPanel.svelte';
+	import BivariatePlot from './BivariatePlot.svelte';
+	import BumpChart from './BumpChart.svelte';
+	import ParallelCoords from './ParallelCoords.svelte';
+	import FlowChart from './FlowChart.svelte';
 
 	let {
 		mapStore,
@@ -47,6 +52,10 @@
 		onDownloadRadiosSummary,
 		onShowLisa,
 		onMoranBrush,
+		onHistogramBrush,
+		onBivariateBrush,
+		onParallelBrush,
+		onFlowBrush,
 	}: {
 		mapStore: MapStore;
 		lensStore: LensStore;
@@ -73,6 +82,10 @@
 		onDownloadRadiosSummary?: () => void;
 		onShowLisa?: (entries: { h3index: string; value: number; boundary?: number[][] }[]) => void;
 		onMoranBrush?: (h3s: string[]) => void;
+		onHistogramBrush?: (h3s: string[]) => void;
+		onBivariateBrush?: (h3s: string[]) => void;
+		onParallelBrush?: (h3s: string[]) => void;
+		onFlowBrush?: (h3s: string[]) => void;
 	} = $props();
 
 	let collapsed = $state(true);
@@ -180,6 +193,37 @@
 						boundaryCache={hexStore.boundaryCache}
 						onShowLisa={onShowLisa ?? (() => {})}
 						onBrushSelect={onMoranBrush ?? (() => {})}
+					/>
+					<HistogramPanel
+						data={hexStore.visibleData}
+						variable={hexStore.activeLayer.primaryVariable}
+						xLabel={hexStore.activeLayer.variables.some(v => v.unit === 'percentil') ? 'percentil prov.' : 'score /100'}
+						onBrushSelect={onHistogramBrush ?? (() => {})}
+					/>
+					<BivariatePlot
+						data={hexStore.visibleData}
+						variable={hexStore.activeLayer.primaryVariable}
+						xLabel={hexStore.activeLayer.variables.some(v => v.unit === 'percentil') ? 'percentil prov.' : 'score /100'}
+						analysisId={hexStore.activeLayer.id}
+						territoryPrefix={hexStore.territoryPrefix}
+						onBrushSelect={onBivariateBrush ?? (() => {})}
+					/>
+					<BumpChart
+						activeAnalysisId={hexStore.activeLayer.id}
+						selectedDept={hexStore.selectedDpto}
+						territoryPrefix={hexStore.territoryPrefix}
+					/>
+					<ParallelCoords
+						data={hexStore.visibleData}
+						variables={hexStore.numericVariables}
+						onBrushSelect={onParallelBrush ?? (() => {})}
+					/>
+				{/if}
+				{#if hexStore.activeLayer?.temporal}
+					<FlowChart
+						data={hexStore.visibleData}
+						temporalPeriods={hexStore.activeLayer.temporalPeriods ?? null}
+						onBrushSelect={onFlowBrush ?? (() => {})}
 					/>
 				{/if}
 			</div>

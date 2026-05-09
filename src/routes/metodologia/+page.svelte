@@ -35,7 +35,7 @@
 			</button>
 		</div>
 		<h1 class="title">Metodología e indicadores</h1>
-		<div class="kicker">nealab · inteligencia geoespacial abierta</div>
+		<div class="kicker">nealab · noreste argentino y regiones transfronterizas</div>
 		<p class="desc">
 			Documentación metodológica de cada indicador: fuentes de datos, variables incluidas, método de
 			normalización y limitaciones conocidas. Todos los análisis son reproducibles y auditables.

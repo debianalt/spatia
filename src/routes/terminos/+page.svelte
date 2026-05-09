@@ -57,7 +57,7 @@
 				abierto, desarrollada en el marco de un proyecto de investigación financiado por el
 				Consejo Nacional de Investigaciones Científicas y Técnicas (CONICET). Integra datos
 				públicos de fuentes declaradas para generar visualizaciones e indicadores sobre el
-				territorio de la provincia de Misiones y regiones circundantes.
+				territorio del noreste argentino y sus regiones transfronterizas.
 			</p>
 			<p>
 				nealab <strong>no es</strong> un sistema de recomendación, un sistema de certificación,

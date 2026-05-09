@@ -76,8 +76,8 @@
 		} else {
 			// Regional mode (Option D): keep selections, reload other territories' hex data
 			if (hexStore.activeLayer?.comparable) {
-				hexStore.clearCompareDept();
-				hexStore.clearRegionalData();
+				untrack(() => hexStore.clearCompareDept());
+				untrack(() => hexStore.clearRegionalData());
 				const [p2, p3] = getRegionalOtherPrefixes();
 				hexStore.loadFullCompare(p2).catch(() => {});
 				hexStore.loadRegionalData(p3).catch(() => {});
@@ -100,8 +100,8 @@
 			mapComponent?.setRegionalMapMode(false);
 			mapComponent?.clearCompareHexChoropleth();
 			mapComponent?.clearRegionalHexChoropleth();
-			hexStore.clearCompareDept();
-			hexStore.clearRegionalData();
+			untrack(() => hexStore.clearCompareDept());
+			untrack(() => hexStore.clearRegionalData());
 			setTimeout(() => mapComponent?.flyToBbox(territoryStore.activeTerritory.bbox), 100);
 		}
 	});
@@ -500,6 +500,44 @@
 		}
 		mapComponent?.setHexZoneHighlight(
 			[{ h3indices: h3s, color: '#fbbf24' }],
+			hexStore.boundaryCache
+		);
+	}
+
+	function handleHistogramBrush(h3s: string[]) {
+		if (h3s.length === 0) {
+			mapComponent?.clearHexZoneHighlight();
+			return;
+		}
+		mapComponent?.setHexZoneHighlight(
+			[{ h3indices: h3s, color: '#34d399' }],
+			hexStore.boundaryCache
+		);
+	}
+
+	function handleBivariateBrush(h3s: string[]) {
+		if (h3s.length === 0) {
+			mapComponent?.clearHexZoneHighlight();
+			return;
+		}
+		mapComponent?.setHexZoneHighlight(
+			[{ h3indices: h3s, color: '#fb923c' }],
+			hexStore.boundaryCache
+		);
+	}
+
+	function handleFlowBrush(h3s: string[]) {
+		if (h3s.length === 0) { mapComponent?.clearHexZoneHighlight(); return; }
+		mapComponent?.setHexZoneHighlight(
+			[{ h3indices: h3s, color: '#a78bfa' }],
+			hexStore.boundaryCache
+		);
+	}
+
+	function handleParallelBrush(h3s: string[]) {
+		if (h3s.length === 0) { mapComponent?.clearHexZoneHighlight(); return; }
+		mapComponent?.setHexZoneHighlight(
+			[{ h3indices: h3s, color: '#22d3ee' }],
 			hexStore.boundaryCache
 		);
 	}
@@ -1138,6 +1176,10 @@
 			onDownloadRadiosSummary={downloadRadiosSummary}
 			onShowLisa={handleShowLisa}
 			onMoranBrush={handleMoranBrush}
+			onHistogramBrush={handleHistogramBrush}
+			onBivariateBrush={handleBivariateBrush}
+			onParallelBrush={handleParallelBrush}
+			onFlowBrush={handleFlowBrush}
 			onRemoveDistrict={handleRemoveDistrict}
 			onClearDistricts={handleClearDistricts}
 			/>

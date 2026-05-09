@@ -605,7 +605,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.deprivation.low',
 		legendHighKey: 'legend.deprivation.high',
-		coverage: { itapua_py: 'unavailable', corrientes: 'pending' },
+		coverage: { itapua_py: 'unavailable', corrientes: 'available' },
 	},
 	territorial_isolation: {
 		id: 'territorial_isolation',
@@ -627,7 +627,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.isolation.low',
 		legendHighKey: 'legend.isolation.high',
-		coverage: { itapua_py: 'unavailable', corrientes: 'pending' },
+		coverage: { itapua_py: 'unavailable', corrientes: 'available' },
 	},
 	health_access: {
 		id: 'health_access',
@@ -649,7 +649,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.health.low',
 		legendHighKey: 'legend.health.high',
-		coverage: { itapua_py: 'unavailable', corrientes: 'pending' },
+		coverage: { itapua_py: 'unavailable', corrientes: 'available' },
 	},
 	education_capital: {
 		id: 'education_capital',
@@ -669,7 +669,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.eduCap.low',
 		legendHighKey: 'legend.eduCap.high',
-		coverage: { itapua_py: 'unavailable', corrientes: 'pending' },
+		coverage: { itapua_py: 'unavailable', corrientes: 'available' },
 	},
 	education_flow: {
 		id: 'education_flow',
@@ -688,7 +688,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.eduFlow.low',
 		legendHighKey: 'legend.eduFlow.high',
-		coverage: { itapua_py: 'unavailable', corrientes: 'pending' },
+		coverage: { itapua_py: 'unavailable', corrientes: 'available' },
 	},
 	// ── Land use / MapBiomas ──
 	land_use: {

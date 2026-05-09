@@ -697,6 +697,10 @@
 			</div>
 		{/if}
 
+		{#if isTemporal}
+			<TemporalToggle {hexStore} layerId={layerCfg?.id ?? ''} />
+		{/if}
+
 		<div class="dept-section">
 			<div class="section-title">{i18n.t('analysis.flood.topDepts')}</div>
 			{#if deptList.length === 0 && isPerDept}

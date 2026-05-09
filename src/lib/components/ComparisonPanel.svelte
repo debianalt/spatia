@@ -6,6 +6,7 @@
 	import type { HexStore } from '$lib/stores/hex.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import { loadDeptList, type DeptItem } from '$lib/utils/deptSummaries';
+	import PetalChart from './PetalChart.svelte';
 
 	let {
 		territoryStore,
@@ -43,6 +44,17 @@
 	const compareVars = $derived(
 		activeLayer?.variables.filter(v => !NON_NUMERIC.has(v.col)) ?? []
 	);
+
+	const petalVars = $derived(compareVars.filter(v => v.unit === 'percentil'));
+	const hasPetal  = $derived(petalVars.length >= 3);
+	const petalLayers = $derived.by(() => {
+		if (!hasPetal || stats.length !== 2) return [];
+		return [
+			{ values: petalVars.map(v => stats[0].values[v.col] ?? 0), color: '#60a5fa' },
+			{ values: petalVars.map(v => stats[1].values[v.col] ?? 0), color: '#fbbf24' },
+		];
+	});
+	const petalLabels = $derived(petalVars.map(v => i18n.t(v.labelKey)));
 
 	// Preload dept lists for ALL available territories when analysis changes
 	$effect(() => {
@@ -160,6 +172,14 @@
 				stats = [localStat, compareStat];
 				loading = false;
 			}).catch(() => { if (statsGen === gen) loading = false; });
+		} else if (!dpto && compareDpto && hexStore.compareVisibleData.size > 0) {
+			// No primary dept, compare dept loaded — primary is territory-level
+			const compareStat = computeDeptAvg(compare, cols, hexStore.compareVisibleData);
+			loadStats(primary, cols).then(primaryStat => {
+				if (statsGen !== gen) return;
+				stats = [primaryStat, compareStat];
+				loading = false;
+			}).catch(() => { if (statsGen === gen) loading = false; });
 		} else {
 			// Territory-level: both from global parquets
 			Promise.all([loadStats(primary, cols), loadStats(compare, cols)]).then(results => {
@@ -241,6 +261,17 @@
 					{@const compareDpto = hexStore.compareDpto}
 					{@const primaryLabel = dpto ? (dpto.length > 10 ? dpto.slice(0, 9) + '.' : dpto) : stats[0].territory.shortLabel}
 					{@const compareLabel = compareDpto ? (compareDpto.length > 10 ? compareDpto.slice(0, 9) + '.' : compareDpto) : stats[1].territory.shortLabel}
+					{#if hasPetal && !stats[0].error && !stats[1].error}
+						<div class="petal-section">
+							<div class="petal-legend">
+								<span class="petal-dot" style="background:#60a5fa"></span>
+								<span class="petal-leg-label">{stats[0].territory.flag} {primaryLabel}</span>
+								<span class="petal-dot" style="background:#fbbf24"></span>
+								<span class="petal-leg-label">{stats[1].territory.flag} {compareLabel}</span>
+							</div>
+							<PetalChart layers={petalLayers} labels={petalLabels} size={200} />
+						</div>
+					{/if}
 					<table class="stats-table">
 						<thead>
 							<tr>
@@ -282,7 +313,7 @@
 						{/if}
 					</p>
 					{#if crossTerritory && hasPercentil}
-						<p class="note note-warn">⚠ Percentiles relativos a cada territorio — no son directamente comparables entre provincias</p>
+						<p class="note note-warn">Percentiles calculados dentro de cada provincia. El eje 50 = mediana provincial.</p>
 					{/if}
 				{/if}
 			</div>
@@ -457,5 +488,26 @@
 		color: rgba(251, 191, 36, 0.6);
 		font-style: normal;
 		text-align: left;
+	}
+
+	.petal-section {
+		margin: 8px 0 4px;
+	}
+	.petal-legend {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		justify-content: center;
+		margin-bottom: 2px;
+	}
+	.petal-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+	.petal-leg-label {
+		font-size: 9px;
+		color: rgba(255,255,255,0.65);
 	}
 </style>

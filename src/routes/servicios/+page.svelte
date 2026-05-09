@@ -11,10 +11,10 @@
 </script>
 
 <svelte:head>
-	<title>nealab — inteligencia geoespacial abierta para Misiones y regiones circundantes</title>
+	<title>nealab — inteligencia geoespacial abierta para el noreste argentino y sus regiones transfronterizas</title>
 	<meta
 		name="description"
-		content="nealab es una plataforma pública de inteligencia geoespacial abierta centrada especialmente en la provincia de Misiones, con cobertura parcial en regiones circundantes. Reúne más de veinte capas de análisis para gestión pública, investigación, cooperación internacional y ciencia ciudadana."
+		content="nealab es una plataforma de análisis geoespacial orientada al noreste argentino y sus regiones transfronterizas. Reúne más de veinte capas de análisis satelital, censal y ambiental para investigación, gestión pública y cooperación internacional."
 	/>
 	<meta property="og:title" content="nealab — servicios de inteligencia geoespacial" />
 	<meta
@@ -36,12 +36,11 @@
 				↓ Imprimir / Guardar PDF
 			</button>
 		</div>
-		<div class="kicker">Inteligencia geoespacial abierta · Misiones y regiones circundantes</div>
+		<div class="kicker">Inteligencia geoespacial abierta · Noreste argentino y regiones transfronterizas</div>
 		<h1 class="title"><a class="title-link" href="/">nealab</a></h1>
 		<p class="subtitle">
-			Plataforma pública de análisis geoespacial centrada especialmente en la provincia de Misiones, con cobertura parcial en regiones circundantes.
-			Datos, métodos y código abiertos; pensada para investigación, gestión pública, cooperación
-			internacional y ciencia ciudadana. Hospedado en <a href="/">spatia.ar</a>.
+			Plataforma de análisis geoespacial orientada al noreste argentino y sus regiones transfronterizas.
+			Datos, métodos y código abiertos. Hospedado en <a href="/">spatia.ar</a>.
 		</p>
 	</header>
 
@@ -51,15 +50,13 @@
 			<strong>nealab</strong> es una plataforma de <strong>inteligencia geoespacial abierta</strong>
 			desarrollada en el marco del <strong>CONICET</strong>, la <strong>UNaM (FHyCS)</strong> y el
 			partenariado académico con el <strong>Google Earth Engine Research &amp; Innovation Program</strong>.
-			Reúne más de veinte capas de análisis sobre la provincia de Misiones —y parcialmente sobre el
-			regiones circundantes— para explorar de forma interactiva el estado ecológico, social, productivo y de
-			infraestructura de la ecorregión.
+			Reúne más de veinte capas de análisis sobre el noreste argentino y sus regiones transfronterizas
+			para explorar de forma interactiva el estado ecológico, social, productivo y de infraestructura de la región.
 		</p>
 		<p>
-			No es un sistema de recomendación, ni un rankeador automático, ni un sustituto del juicio de
-			quienes habitan y conocen el lugar. Es una herramienta para preguntar mejor: para visualizar
-			capas de información pública, contrastarlas entre sí, y acompañar la conversación con
-			evidencia cuantitativa reproducible.
+			No constituye un sistema de recomendación, ni un sustituto del juicio experto o de la decisión política.
+			Es una herramienta para visualizar capas de información pública, contrastarlas entre sí y enriquecer
+			diagnósticos con evidencia cuantitativa reproducible.
 		</p>
 	</section>
 
@@ -90,9 +87,8 @@
 				linkeadas desde el panel lateral de cada análisis.
 			</li>
 			<li>
-				<strong>Reproducibilidad.</strong> El pipeline completo vive en un repositorio público y
-				puede volver a ejecutarse desde cero sobre otra jurisdicción cambiando sólo el bounding
-				box. Sin dependencias propietarias.
+				<strong>Reproducibilidad.</strong> El pipeline completo está documentado en un repositorio público.
+				Los análisis pueden reproducirse y adaptarse a otras jurisdicciones sobre las mismas fuentes de datos abiertos.
 			</li>
 			<li>
 				<strong>Actualización continua.</strong> Las capas actualizables —dinámica de
@@ -102,10 +98,9 @@
 				reflejan el estado más reciente disponible en cada momento.
 			</li>
 			<li>
-				<strong>Ciencia ciudadana.</strong> La plataforma es un insumo para que comunidades,
-				organizaciones y municipios puedan interrogar su propia geografía con las mismas
-				herramientas que usan los organismos técnicos internacionales, ya sea para disentir,
-				corregir, mejorar, o participar más activamente en la gestión de sus localidades.
+				<strong>Acceso abierto a herramientas técnicas.</strong> La plataforma permite a gobiernos locales,
+				organizaciones de investigación e instituciones técnicas acceder a las mismas herramientas de análisis
+				que usan organismos multilaterales, e incorporar evidencia geoespacial reproducible a sus diagnósticos.
 			</li>
 			<li>
 				<strong>Interoperabilidad.</strong> Cualquier vista o zona puede exportarse a CSV o
@@ -147,7 +142,7 @@
 		</ul>
 		<p>
 			Todas las capas se proyectan sobre una grilla <strong>H3 resolución 9</strong> uniforme
-			(~0.1 km² por hexágono, ~320 000 hexágonos en Misiones), con crosswalks documentados a radios
+			(~0.1 km² por hexágono, ~320 000 hexágonos por territorio analizado), con crosswalks documentados a radios
 			censales y parcelas catastrales para análisis cruzados.
 		</p>
 	</section>
@@ -157,8 +152,8 @@
 		<ul class="list">
 			<li>
 				<strong>Organismos multilaterales</strong> (PNUD, BID, Banco Mundial, FAO, CEPAL) que
-				necesiten diagnósticos geoespaciales rápidos y reproducibles sobre Misiones y regiones circundantes, con
-				datos curados y pipelines auditables.
+				necesiten diagnósticos geoespaciales rápidos y reproducibles sobre el noreste argentino y sus regiones transfronterizas,
+				con datos curados y pipelines auditables.
 			</li>
 			<li>
 				<strong>Gobiernos provinciales y municipales</strong> que busquen visualizar
@@ -222,8 +217,7 @@
 			esta plataforma constituye una recomendación de acción, una certificación técnica ni una
 			consultoría profesional. Los scores, tipologías y rankings son síntesis cuantitativas de
 			variables observables desde percepción remota, censos y fuentes administrativas. No
-			sustituyen el juicio experto, la deliberación democrática ni la responsabilidad política
-			de quien decide.
+			sustituyen el juicio experto ni la responsabilidad de quien decide.
 		</p>
 		<p>
 			<strong>Sin garantía de exactitud.</strong> La plataforma y toda la información que contiene
@@ -233,26 +227,22 @@
 			limitaciones metodológicas documentadas en la ficha técnica de cada capa.
 		</p>
 		<p>
-			<strong>Ningún análisis geoespacial puede considerarse completo sin trabajo de campo en
-			terreno.</strong> La mirada satelital capta estructura y promedios; rara vez capta
-			significado, historia o proceso. Las capas de nealab necesitan ser contrastadas con las
-			fuentes primarias que sólo pueden aportar <strong>quienes habitan el lugar</strong>:
-			residentes, comunidades originarias, pobladores rurales, productores familiares, técnicos
-			locales, organizaciones sociales, funcionarios de territorio.
+			<strong>Ningún análisis geoespacial reemplaza el trabajo de campo.</strong> La percepción remota
+			captura condiciones físicas promedio en ventanas temporales definidas; no captura procesos sociales,
+			conflictos de uso, restricciones jurídicas o cambios recientes que aún no se hayan incorporado a los datos.
+			Las capas de nealab requieren validación en terreno por parte de técnicos y responsables
+			que conozcan la situación local.
 		</p>
 		<p>
-			Esta participación no es un complemento ornamental del análisis —es condición de validez.
-			Una zona clasificada como "alta aptitud agrícola" puede ser, para quienes la habitan, un
-			sitio de memoria, un área de protección comunitaria o un territorio en disputa. Una zona con
-			"bajo riesgo de inundación" según la serie histórica puede estar atravesando cambios
-			recientes que todavía no llegaron a los datos. Estas diferencias no son ruido en el modelo:
-			son la información que el modelo no puede ver.
+			Una zona clasificada con alta aptitud agrícola puede tener restricciones de uso, regímenes de tenencia
+			o condiciones locales no reflejados en los datos disponibles. Una zona con bajo riesgo histórico de
+			inundación puede estar experimentando cambios hidrológicos recientes. En todos los casos, el análisis
+			geoespacial es un insumo diagnóstico, no un resultado de política.
 		</p>
 		<p>
-			Por eso <strong>cada una de las clasificaciones disponibles en nealab debe entenderse como
-			una hipótesis a contrastar, nunca como una verdad a aplicar.</strong> Usar esta plataforma
-			con responsabilidad implica leer la ficha metodológica de cada capa, reconocer sus
-			limitaciones, y completarla siempre con trabajo situado y escucha activa.
+			<strong>Cada clasificación disponible en nealab debe entenderse como una hipótesis a contrastar,
+			no como un resultado definitivo.</strong> El uso responsable implica leer la ficha metodológica de cada capa,
+			reconocer sus limitaciones, y complementar el análisis con validación de campo.
 		</p>
 		<div class="liability-block">
 			<p class="liability-text">

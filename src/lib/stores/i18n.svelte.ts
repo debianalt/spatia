@@ -598,7 +598,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'legend.pm25pred.low': { es: 'Aire mas limpio', en: 'Cleaner air', gn: "Pora" },
 	'legend.pm25pred.high': { es: 'Mayor contaminacion', en: 'More polluted', gn: "Vai" },
 	// ── PM2.5 Drivers ──
-	'sat.pm25.title': { es: '¿Qué nivel de exposición a PM2.5 hay en Misiones?', en: 'What level of PM2.5 exposure is there in Misiones?', gn: "Mba'eichagua PM2.5 oĩ Misiones-pe?" },
+	'sat.pm25.title': { es: '¿Qué nivel de exposición a PM2.5 hay?', en: 'What level of PM2.5 exposure is there?', gn: "Mba'eichagua PM2.5 oĩ?" },
 	'sat.pm25.desc': { es: 'Drivers de PM2.5 identificados por machine learning: intensidad de fuego regional, clima, terreno y vegetación. Panel de 25 años (ACAG V6, 1998-2022).', en: 'PM2.5 drivers identified by machine learning: regional fire intensity, climate, terrain and vegetation. 25-year panel (ACAG V6, 1998-2022).', gn: 'PM2.5 drivers' },
 	'sat.pm25.type': { es: 'Tipo', en: 'Type', gn: 'Laja' },
 	'sat.pm25.typeLabel': { es: 'Clasificación', en: 'Classification', gn: 'Clasificación' },
@@ -922,9 +922,9 @@ const dict: Record<string, Record<Locale, string>> = {
 	'side.onboarding.step3': { es: 'Hacé click en un hexágono para ver el detalle geoespacial completo', en: 'Click a hexagon to see the full geospatial profile', gn: "Ehesakutu hexágono ehecha hag̃ua" },
 	'side.welcome.status': { es: 'En desarrollo', en: 'Under development', gn: 'Oñemoĩhína' },
 	'side.welcome.desc': {
-		es: 'Plataforma de análisis geoespacial que integra múltiples fuentes satelitales, censales y catastrales, en continua actualización automatizada, sobre la provincia de Misiones, Argentina.',
-		en: 'Geospatial analysis platform integrating multiple satellite, census and cadastral sources, continuously and automatically updated, for Misiones province, Argentina.',
-		gn: "Yvy rekokatu plataforma Misiones-pe, heta moñe'ẽha satélite, censo ha catastro ndive, oñembohekopyahu hag̃uaitépe."
+		es: 'Plataforma de análisis geoespacial que integra múltiples fuentes satelitales, censales y catastrales, en continua actualización automatizada, sobre el noreste argentino y sus regiones transfronterizas.',
+		en: 'Geospatial analysis platform integrating multiple satellite, census and cadastral sources, continuously and automatically updated, for northeast Argentina and its cross-border regions.',
+		gn: "Yvy rekokatu plataforma NEA-pe ha ñemboyvate jápa regiones ndive, heta moñe'ẽha satélite, censo ha catastro ndive, oñembohekopyahu hag̃uaitépe."
 	},
 	'side.welcome.pro': { es: 'nealab Pro', en: 'nealab Pro', gn: 'nealab Pro' },
 	'side.welcome.pro.ia': { es: 'Asistente IA con contexto geoespacial completo', en: 'AI assistant with full geospatial context', gn: "IA pytyvõhára yvy rekokatu reheve" },
