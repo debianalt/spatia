@@ -58,7 +58,7 @@
 			onclick={() => territoryStore.regionalMode ? territoryStore.exitRegionalMode() : territoryStore.enterRegionalMode()}
 		>
 			<span class="r-dot">{territoryStore.regionalMode ? '◉' : '◎'}</span>
-			Vista Regional NEA
+			Vista Regional
 		</button>
 	</div>
 
