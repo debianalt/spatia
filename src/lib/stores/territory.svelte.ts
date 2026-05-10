@@ -1,10 +1,11 @@
-import { TERRITORY_REGISTRY, getDefaultTerritory, type TerritoryConfig } from '$lib/config';
+import { TERRITORY_REGISTRY, getDefaultTerritory, type TerritoryConfig, type CountryId } from '$lib/config';
 
 export class TerritoryStore {
 	activeTerritory: TerritoryConfig = $state(getDefaultTerritory());
 	compareTerritory: TerritoryConfig | null = $state(null);
 	compareModeActive: boolean = $state(false);
-	regionalMode: boolean = $state(false);
+	regionalMode: boolean = $state(true);
+	countryFilter: CountryId | null = $state(null);
 
 	setTerritory(id: string) {
 		const t = TERRITORY_REGISTRY[id];
@@ -27,14 +28,25 @@ export class TerritoryStore {
 		this.compareModeActive = false;
 	}
 
-	enterRegionalMode() {
+	enterRegionalMode(country: CountryId | null = null) {
 		this.compareTerritory = null;
 		this.compareModeActive = false;
+		this.countryFilter = country;
 		this.regionalMode = true;
+		if (country !== null) {
+			// Set active territory to first available in that country
+			const first = Object.values(TERRITORY_REGISTRY).find(t => t.country === country && t.available);
+			if (first) this.activeTerritory = first;
+		}
+	}
+
+	enterCountryView(country: CountryId) {
+		this.enterRegionalMode(country);
 	}
 
 	exitRegionalMode() {
 		this.regionalMode = false;
+		this.countryFilter = null;
 	}
 
 	get availableCount(): number {

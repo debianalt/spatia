@@ -25,6 +25,16 @@
 		if (!c) return null;
 		return c === 'available' ? '#22c55e' : c === 'pending' ? '#f59e0b' : '#6b7280';
 	}
+
+	function hasAvailable(country: CountryId): boolean {
+		return (byCountry[country] ?? []).some(t => t.available);
+	}
+
+	const regionalLabel = $derived(
+		territoryStore.countryFilter
+			? `Vista Regional · ${countryFlags[territoryStore.countryFilter]}`
+			: 'Vista Regional · NEA'
+	);
 </script>
 
 <div class="territory-selector">
@@ -36,18 +46,28 @@
 			title="Salir de vista regional"
 		>
 			<span class="r-dot">◉</span>
-			<span class="r-label">Vista Regional · NEA</span>
+			<span class="r-label">{regionalLabel}</span>
 			<span class="r-exit">seleccionar →</span>
 		</button>
 	{:else}
 		<!-- Expanded: full territory list when in per-territory mode -->
 		{#each activeCountries as country}
 			{@const territories = byCountry[country] ?? []}
+			{@const canSelect = hasAvailable(country)}
 			<div class="country-block">
-				<div class="country-header">
+				<button
+					class="country-header"
+					class:country-active={territoryStore.regionalMode && territoryStore.countryFilter === country}
+					disabled={!canSelect}
+					onclick={() => canSelect && territoryStore.enterCountryView(country)}
+					title={canSelect ? `Vista regional ${countryNames[country]}` : `${countryNames[country]} — próximamente`}
+				>
 					<span class="country-flag">{countryFlags[country]}</span>
 					<span class="country-name">{countryNames[country]}</span>
-				</div>
+					{#if canSelect}
+						<span class="country-arrow">›</span>
+					{/if}
+				</button>
 
 				<div class="territory-list">
 					{#each territories as territory (territory.id)}
@@ -86,7 +106,7 @@
 				onclick={() => territoryStore.enterRegionalMode()}
 			>
 				<span class="r-dot">◎</span>
-				Vista Regional
+				Vista Regional NEA
 			</button>
 		</div>
 	{/if}
@@ -145,6 +165,27 @@
 		align-items: center;
 		gap: 5px;
 		padding: 4px 6px;
+		background: none;
+		border: none;
+		border-radius: 3px;
+		cursor: pointer;
+		width: 100%;
+		text-align: left;
+		transition: background 0.12s;
+	}
+
+	.country-header:hover:not(:disabled) {
+		background: rgba(167, 139, 250, 0.08);
+	}
+
+	.country-header:disabled {
+		cursor: default;
+		opacity: 0.5;
+	}
+
+	.country-header.country-active {
+		background: rgba(167, 139, 250, 0.15);
+		border: 1px solid rgba(167, 139, 250, 0.3);
 	}
 
 	.country-flag { font-size: 11px; line-height: 1; }
@@ -155,6 +196,21 @@
 		color: rgba(255, 255, 255, 0.50);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
+		flex: 1;
+	}
+
+	.country-header:hover:not(:disabled) .country-name {
+		color: rgba(255, 255, 255, 0.75);
+	}
+
+	.country-arrow {
+		font-size: 10px;
+		color: rgba(167, 139, 250, 0.4);
+		font-weight: 400;
+	}
+
+	.country-header:hover:not(:disabled) .country-arrow {
+		color: rgba(167, 139, 250, 0.8);
 	}
 
 	.territory-list {

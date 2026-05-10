@@ -16,7 +16,7 @@
 	import { isInsideMisiones } from '$lib/utils/misiones-pip';
 	import { isInsideItapua } from '$lib/utils/itapua-pip';
 	import { isInsideCorrientes } from '$lib/utils/corrientes-pip';
-	import { PARQUETS, MAP_INIT, HEX_LAYER_REGISTRY, getAnalysisById, getAnalysesForLens, type AnalysisConfig, type LensId } from '$lib/config';
+	import { PARQUETS, MAP_INIT, HEX_LAYER_REGISTRY, TERRITORY_REGISTRY, getAnalysisById, getAnalysesForLens, type AnalysisConfig, type LensId, type CountryId } from '$lib/config';
 	import { i18n, type Locale } from '$lib/stores/i18n.svelte';
 	import { terms } from '$lib/stores/terms.svelte';
 	import { page } from '$app/stores';
@@ -40,6 +40,7 @@
 		if (hexStore.selectedDpto) params.set('dept', hexStore.selectedDpto);
 		if (hexStore.temporalMode !== 'current') params.set('tm', hexStore.temporalMode);
 		if (!territoryStore.regionalMode) params.set('rm', '0');
+		else if (territoryStore.countryFilter) params.set('cf', territoryStore.countryFilter);
 		const qs = params.toString();
 		window.history.replaceState({}, '', qs ? `?${qs}` : window.location.pathname);
 	}
@@ -56,11 +57,23 @@
 
 	const REGIONAL_NEA_BBOX: [number, number, number, number] = [-59.8, -30.8, -53.6, -25.4];
 
-	function getRegionalOtherPrefixes(): [string, string] {
-		const activePrefix = hexStore.territoryPrefix;
-		const all = ['', 'corrientes/', 'itapua_py/'];
-		const others = all.filter(p => p !== activePrefix);
-		return [others[0], others[1]];
+	function getRegionalOtherPrefixes(countryFilter: CountryId | null, activePrefix: string): string[] {
+		return Object.values(TERRITORY_REGISTRY)
+			.filter(t => t.available && (countryFilter === null || t.country === countryFilter))
+			.map(t => t.parquetPrefix)
+			.filter(p => p !== activePrefix);
+	}
+
+	function getRegionalBbox(countryFilter: CountryId | null): [number, number, number, number] {
+		if (!countryFilter) return REGIONAL_NEA_BBOX;
+		const ts = Object.values(TERRITORY_REGISTRY).filter(t => t.available && t.country === countryFilter);
+		if (ts.length === 0) return REGIONAL_NEA_BBOX;
+		return [
+			Math.min(...ts.map(t => t.bbox[0])),
+			Math.min(...ts.map(t => t.bbox[1])),
+			Math.max(...ts.map(t => t.bbox[2])),
+			Math.max(...ts.map(t => t.bbox[3])),
+		];
 	}
 
 	// Sync territory prefix + fly map + reload data whenever territory changes
@@ -80,25 +93,33 @@
 			mapStore.clearDistricts();
 			mapComponent?.setDistrictHighlight([]);
 		} else {
-			// Regional mode: reload all 3 territories' hex data
+			// Regional mode: reload territories for current country filter
 			untrack(() => hexStore.clearCompareDept());
 			untrack(() => hexStore.clearRegionalData());
-			const [p2, p3] = getRegionalOtherPrefixes();
-			hexStore.loadFullCompare(p2).catch(() => {});
-			hexStore.loadRegionalData(p3).catch(() => {});
+			const others = getRegionalOtherPrefixes(
+				untrack(() => territoryStore.countryFilter),
+				t.parquetPrefix
+			);
+			if (others.length >= 1) hexStore.loadFullCompare(others[0]).catch(() => {});
+			if (others.length >= 2) hexStore.loadRegionalData(others[1]).catch(() => {});
 		}
 	});
 
-	// Regional mode toggle: zoom to union bbox, remove fog masks, load all 3 territories
+	// Regional mode toggle + country filter: zoom to correct bbox, manage hex slots
 	$effect(() => {
 		const isRegional = territoryStore.regionalMode;
+		const countryFilter = territoryStore.countryFilter;
 		if (isRegional) {
-			setTimeout(() => mapComponent?.flyToBbox(REGIONAL_NEA_BBOX), 100);
+			const bbox = getRegionalBbox(countryFilter);
+			setTimeout(() => mapComponent?.flyToBbox(bbox), 100);
 			mapComponent?.setRegionalMapMode(true);
-			if (hexStore.activeLayer) {
-				const [p2, p3] = getRegionalOtherPrefixes();
-				hexStore.loadFullCompare(p2).catch(() => {});
-				hexStore.loadRegionalData(p3).catch(() => {});
+			if (untrack(() => hexStore.activeLayer)) {
+				const activePrefix = untrack(() => territoryStore.activeTerritory.parquetPrefix);
+				const others = getRegionalOtherPrefixes(countryFilter, activePrefix);
+				if (others.length >= 1) hexStore.loadFullCompare(others[0]).catch(() => {});
+				else untrack(() => hexStore.clearCompareDept());
+				if (others.length >= 2) hexStore.loadRegionalData(others[1]).catch(() => {});
+				else untrack(() => hexStore.clearRegionalData());
 			}
 		} else {
 			mapComponent?.setRegionalMapMode(false);
@@ -106,7 +127,7 @@
 			mapComponent?.clearRegionalHexChoropleth();
 			untrack(() => hexStore.clearCompareDept());
 			untrack(() => hexStore.clearRegionalData());
-			setTimeout(() => mapComponent?.flyToBbox(territoryStore.activeTerritory.bbox), 100);
+			setTimeout(() => mapComponent?.flyToBbox(untrack(() => territoryStore.activeTerritory.bbox)), 100);
 		}
 	});
 
@@ -121,6 +142,8 @@
 		const territory = params.get('t');
 		if (territory) territoryStore.setTerritory(territory);
 		if (params.get('rm') === '0') territoryStore.exitRegionalMode();
+		const cf = params.get('cf');
+		if (cf === 'ar' || cf === 'py' || cf === 'br') territoryStore.enterCountryView(cf as CountryId);
 		const lens = params.get('lens') as LensId | null;
 		const analysisId = params.get('a');
 		if (lens) {
@@ -441,11 +464,15 @@
 				hexStore.ensureColorDomain().catch(() => {});
 				mapStore.setActiveHexLayer(analysis.id);
 				mapComponent?.setHexLayerInfo(i18n.t(layerCfg.titleKey), layerCfg.colorScale === 'categorical');
-				// Regional mode: load data for all 3 territories
+				// Regional mode: load data for other territories in scope
 				if (untrack(() => territoryStore.regionalMode)) {
-					const [p2, p3] = getRegionalOtherPrefixes();
-					hexStore.loadFullCompare(p2).catch(() => {});
-					hexStore.loadRegionalData(p3).catch(() => {});
+					const countryFilter = untrack(() => territoryStore.countryFilter);
+					const activePrefix = untrack(() => territoryStore.activeTerritory.parquetPrefix);
+					const others = getRegionalOtherPrefixes(countryFilter, activePrefix);
+					if (others.length >= 1) hexStore.loadFullCompare(others[0]).catch(() => {});
+					else untrack(() => hexStore.clearCompareDept());
+					if (others.length >= 2) hexStore.loadRegionalData(others[1]).catch(() => {});
+					else untrack(() => hexStore.clearRegionalData());
 				}
 			} else {
 				// Fallback: direct load (legacy)
