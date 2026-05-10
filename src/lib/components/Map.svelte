@@ -12,6 +12,9 @@
 	import itapuaMask from '$lib/data/itapua_mask.json';
 	import corrientesBoundary from '$lib/data/corrientes_boundary.json';
 	import corrientesMask from '$lib/data/corrientes_mask.json';
+	import { isInsideMisiones } from '$lib/utils/misiones-pip';
+	import { isInsideItapua } from '$lib/utils/itapua-pip';
+	import { isInsideCorrientes } from '$lib/utils/corrientes-pip';
 
 	let { mapStore }: { mapStore: MapStore } = $props();
 
@@ -816,6 +819,37 @@
 		});
 		map.on('mouseleave', 'compare-hex-fill', () => {
 			if (!lassoActive) map.getCanvas().style.cursor = '';
+		});
+
+		// General mousemove: show pointer over blank territory areas (Option A nav hint)
+		map.on('mousemove', (e) => {
+			if (lassoActive) return;
+			const canvas = map.getCanvas();
+			if (canvas.style.cursor !== '') return; // specific layer handler already set it
+			const { lat, lng } = e.lngLat;
+			const inTerritory = isInsideItapua(lat, lng) || isInsideMisiones(lat, lng) || isInsideCorrientes(lat, lng);
+			canvas.style.cursor = inTerritory ? 'pointer' : '';
+		});
+
+		// General click: switch territory scope when clicking blank area inside a territory
+		const TERRITORY_LAYERS = ['hex-fill', 'compare-hex-fill', 'regional-hex-fill',
+			'buildings-3d', 'corrientes-buildings-3d', 'itapua-buildings-3d',
+			'buildings-flat', 'province-fill', 'itapua-district-fill'];
+		map.on('click', (e) => {
+			if (lassoActive) return;
+			const activeLayers = TERRITORY_LAYERS.filter(l => map.getLayer(l));
+			if (activeLayers.length > 0 && map.queryRenderedFeatures(e.point, { layers: activeLayers }).length > 0) return;
+			const { lat, lng } = e.lngLat;
+			let territory: string | null = null;
+			if (isInsideItapua(lat, lng)) territory = 'itapua_py';
+			else if (isInsideMisiones(lat, lng)) territory = 'misiones';
+			else if (isInsideCorrientes(lat, lng)) territory = 'corrientes';
+			if (territory) {
+				container.dispatchEvent(new CustomEvent('territory-map-select', {
+					bubbles: true,
+					detail: { territory }
+				}));
+			}
 		});
 
 	}

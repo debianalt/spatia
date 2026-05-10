@@ -5,12 +5,13 @@ export class TerritoryStore {
 	compareTerritory: TerritoryConfig | null = $state(null);
 	compareModeActive: boolean = $state(false);
 	regionalMode: boolean = $state(true);
-	countryFilter: CountryId | null = $state(null);
+	countryFilter: CountryId = $state('ar');
 
 	setTerritory(id: string) {
 		const t = TERRITORY_REGISTRY[id];
 		if (!t || !t.available) return;
 		this.activeTerritory = t;
+		this.countryFilter = t.country;
 		// Exit compare mode when switching primary territory (but NOT regional mode — Option D)
 		this.compareTerritory = null;
 		this.compareModeActive = false;
@@ -31,13 +32,11 @@ export class TerritoryStore {
 	enterRegionalMode(country: CountryId | null = null) {
 		this.compareTerritory = null;
 		this.compareModeActive = false;
-		this.countryFilter = country;
+		this.countryFilter = country ?? 'ar';
 		this.regionalMode = true;
-		if (country !== null) {
-			// Set active territory to first available in that country
-			const first = Object.values(TERRITORY_REGISTRY).find(t => t.country === country && t.available);
-			if (first) this.activeTerritory = first;
-		}
+		const resolved = country ?? 'ar';
+		const first = Object.values(TERRITORY_REGISTRY).find(t => t.country === resolved && t.available);
+		if (first) this.activeTerritory = first;
 	}
 
 	enterCountryView(country: CountryId) {
@@ -46,7 +45,7 @@ export class TerritoryStore {
 
 	exitRegionalMode() {
 		this.regionalMode = false;
-		this.countryFilter = null;
+		this.countryFilter = 'ar';
 	}
 
 	get availableCount(): number {

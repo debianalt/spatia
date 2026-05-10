@@ -34,24 +34,21 @@
 	// ── URL state: read params on mount, write on change ──
 	function updateUrlState() {
 		const params = new URLSearchParams();
-		if (territoryStore.activeTerritory.id !== 'misiones') params.set('t', territoryStore.activeTerritory.id);
 		if (lensStore.activeLens) params.set('lens', lensStore.activeLens);
 		if (lensStore.activeAnalysis) params.set('a', lensStore.activeAnalysis.id);
 		if (hexStore.selectedDpto) params.set('dept', hexStore.selectedDpto);
 		if (hexStore.temporalMode !== 'current') params.set('tm', hexStore.temporalMode);
-		if (!territoryStore.regionalMode) params.set('rm', '0');
-		else if (territoryStore.countryFilter) params.set('cf', territoryStore.countryFilter);
+		if (territoryStore.countryFilter !== 'ar') params.set('cf', territoryStore.countryFilter);
 		const qs = params.toString();
 		window.history.replaceState({}, '', qs ? `?${qs}` : window.location.pathname);
 	}
 
 	$effect(() => {
-		const _territory = territoryStore.activeTerritory;
+		const _cf = territoryStore.countryFilter;
 		const _lens = lensStore.activeLens;
 		const _analysis = lensStore.activeAnalysis;
 		const _dept = hexStore.selectedDpto;
 		const _tm = hexStore.temporalMode;
-		const _rm = territoryStore.regionalMode;
 		if (typeof window !== 'undefined') updateUrlState();
 	});
 
@@ -139,9 +136,6 @@
 
 		// Restore state from URL params
 		const params = new URLSearchParams(window.location.search);
-		const territory = params.get('t');
-		if (territory) territoryStore.setTerritory(territory);
-		if (params.get('rm') === '0') territoryStore.exitRegionalMode();
 		const cf = params.get('cf');
 		if (cf === 'ar' || cf === 'py' || cf === 'br') territoryStore.enterCountryView(cf as CountryId);
 		const lens = params.get('lens') as LensId | null;
@@ -162,10 +156,26 @@
 			})
 			.catch(e => { console.warn('DuckDB init failed:', e); duckdbFailed = true; });
 
+		// Option A: map-click territory switching
+		mapContainer?.addEventListener('territory-map-select', ((e: CustomEvent) => {
+			const { territory } = e.detail;
+			if (territory && territory !== territoryStore.activeTerritory.id) {
+				territoryStore.setTerritory(territory);
+			}
+		}) as EventListener);
+
 		mapContainer?.addEventListener('radio-select', ((e: CustomEvent) => {
 			if (lassoStore.active) return;
 			if (lensStore.activeAnalysis?.spatialUnit === 'catastro') return; // flood mode uses parcel clicks
 			const { redcode, selected, census } = e.detail;
+
+			// Auto-switch territory based on codprov (54=Misiones, 18=Corrientes)
+			const codprov = census?.codprov;
+			if (codprov === '54' && territoryStore.activeTerritory.id !== 'misiones') {
+				territoryStore.setTerritory('misiones');
+			} else if (codprov === '18' && territoryStore.activeTerritory.id !== 'corrientes') {
+				territoryStore.setTerritory('corrientes');
+			}
 
 			// Dismiss welcome panel so ComparisonChart (petals) can render
 			showAbout = false;
@@ -187,6 +197,10 @@
 
 		mapContainer?.addEventListener('district-select', ((e: CustomEvent) => {
 			showAbout = false;
+			// Itapúa districts always belong to PY scope
+			if (territoryStore.countryFilter !== 'py') {
+				territoryStore.setTerritory('itapua_py');
+			}
 			const { distrito, personas } = e.detail;
 			mapStore.addDistrict(distrito, personas);
 			mapComponent?.setDistrictHighlight(getDistrictHighlightEntries());
