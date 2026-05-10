@@ -652,6 +652,20 @@
 			}, 80);
 		});
 
+		// Itapúa area hover badge (district layer + regional hex layer)
+		const dispatchItapuaEnter = () => container.dispatchEvent(new CustomEvent('itapua-area-enter', { bubbles: true }));
+		const dispatchItapuaLeave = () => container.dispatchEvent(new CustomEvent('itapua-area-leave', { bubbles: true }));
+		map.on('mouseenter', 'itapua-district-fill', dispatchItapuaEnter);
+		map.on('mouseleave', 'itapua-district-fill', dispatchItapuaLeave);
+		map.on('mouseenter', 'regional-hex-fill', () => {
+			dispatchItapuaEnter();
+			if (!lassoActive) map.getCanvas().style.cursor = 'pointer';
+		});
+		map.on('mouseleave', 'regional-hex-fill', () => {
+			dispatchItapuaLeave();
+			if (!lassoActive) map.getCanvas().style.cursor = '';
+		});
+
 		// Click-to-select/deselect radio (multi-select)
 		map.on('click', 'buildings-3d', (e) => {
 			if (lassoActive) return;
@@ -744,6 +758,17 @@
 			container.dispatchEvent(new CustomEvent('compare-hex-select', {
 				bubbles: true,
 				detail: { h3index, properties: e.features![0].properties! }
+			}));
+		});
+
+		// Click on regional (Itapúa) hex in regional mode
+		map.on('click', 'regional-hex-fill', (e) => {
+			if (lassoActive) return;
+			const h3index = e.features![0].properties!.h3index;
+			if (!h3index) return;
+			container.dispatchEvent(new CustomEvent('regional-hex-select', {
+				bubbles: true,
+				detail: { h3index }
 			}));
 		});
 

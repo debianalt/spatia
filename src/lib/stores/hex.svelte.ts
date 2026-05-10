@@ -539,6 +539,23 @@ export class HexStore {
 		this.selectedHexes = updated;
 	}
 
+	selectRegionalHex(h3index: string) {
+		if (this.selectedHexes.has(h3index)) return;
+		const data = this.regionalVisibleData.get(h3index) ?? {};
+		const updated = new Map(this.selectedHexes);
+		// Violet to distinguish Itapúa (PY) from AR hexes
+		updated.set(h3index, { color: '#8b5cf6', data });
+		this.selectedHexes = updated;
+	}
+
+	toggleRegionalHex(h3index: string) {
+		if (this.selectedHexes.has(h3index)) {
+			this.deselectHex(h3index);
+		} else {
+			this.selectRegionalHex(h3index);
+		}
+	}
+
 	deselectHex(h3index: string) {
 		if (!this.selectedHexes.has(h3index)) return;
 		const updated = new Map(this.selectedHexes);

@@ -30,6 +30,7 @@
 	let mapComponent: ReturnType<typeof MapComponent>;
 	let mapContainer: HTMLDivElement;
 	let duckdbFailed = $state(false);
+	let itapuaHovering = $state(false);
 	// ── URL state: read params on mount, write on change ──
 	function updateUrlState() {
 		const params = new URLSearchParams();
@@ -183,6 +184,18 @@
 				hexStore.ensureProvincialAvgLoaded();
 			}
 		}) as EventListener);
+
+		mapContainer?.addEventListener('regional-hex-select', ((e: CustomEvent) => {
+			if (lassoStore.active) return;
+			const { h3index } = e.detail;
+			if (hexStore.activeLayer && hexStore.regionalVisibleData.size > 0) {
+				hexStore.toggleRegionalHex(h3index);
+				hexStore.ensureProvincialAvgLoaded();
+			}
+		}) as EventListener);
+
+		mapContainer?.addEventListener('itapua-area-enter', (() => { itapuaHovering = true; }) as EventListener);
+		mapContainer?.addEventListener('itapua-area-leave', (() => { itapuaHovering = false; }) as EventListener);
 
 		mapContainer?.addEventListener('hex-select', ((e: CustomEvent) => {
 			if (lassoStore.active) return;
@@ -1174,6 +1187,10 @@
 				</div>
 			{/if}
 
+			{#if itapuaHovering && territoryStore.regionalMode}
+				<div class="itapua-hover-badge">🇵🇾 Itapúa · datos satelitales comparables</div>
+			{/if}
+
 			<!-- Controls (positioned relative to map) -->
 			<Controls
 				{mapStore}
@@ -1289,5 +1306,24 @@
 		.app-title {
 			font-size: 13px;
 		}
+	}
+
+	.itapua-hover-badge {
+		position: absolute;
+		bottom: 44px;
+		left: 50%;
+		transform: translateX(-50%);
+		background: rgba(15, 23, 42, 0.88);
+		border: 1px solid rgba(139, 92, 246, 0.45);
+		color: #a78bfa;
+		font-size: 10px;
+		font-weight: 600;
+		padding: 4px 12px;
+		border-radius: 20px;
+		pointer-events: none;
+		z-index: 10;
+		backdrop-filter: blur(6px);
+		white-space: nowrap;
+		letter-spacing: 0.03em;
 	}
 </style>
