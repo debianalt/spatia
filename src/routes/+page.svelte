@@ -18,6 +18,7 @@
 	import { isInsideCorrientes } from '$lib/utils/corrientes-pip';
 	import { PARQUETS, MAP_INIT, HEX_LAYER_REGISTRY, getAnalysisById, getAnalysesForLens, type AnalysisConfig, type LensId } from '$lib/config';
 	import { i18n, type Locale } from '$lib/stores/i18n.svelte';
+	import { terms } from '$lib/stores/terms.svelte';
 	import { page } from '$app/stores';
 
 	const mapStore = new MapStore();
@@ -36,6 +37,8 @@
 		if (lensStore.activeLens) params.set('lens', lensStore.activeLens);
 		if (lensStore.activeAnalysis) params.set('a', lensStore.activeAnalysis.id);
 		if (hexStore.selectedDpto) params.set('dept', hexStore.selectedDpto);
+		if (hexStore.temporalMode !== 'current') params.set('tm', hexStore.temporalMode);
+		if (!territoryStore.regionalMode) params.set('rm', '0');
 		const qs = params.toString();
 		window.history.replaceState({}, '', qs ? `?${qs}` : window.location.pathname);
 	}
@@ -45,6 +48,8 @@
 		const _lens = lensStore.activeLens;
 		const _analysis = lensStore.activeAnalysis;
 		const _dept = hexStore.selectedDpto;
+		const _tm = hexStore.temporalMode;
+		const _rm = territoryStore.regionalMode;
 		if (typeof window !== 'undefined') updateUrlState();
 	});
 
@@ -116,6 +121,7 @@
 		const params = new URLSearchParams(window.location.search);
 		const territory = params.get('t');
 		if (territory) territoryStore.setTerritory(territory);
+		if (params.get('rm') === '0') territoryStore.exitRegionalMode();
 		const lens = params.get('lens') as LensId | null;
 		const analysisId = params.get('a');
 		if (lens) {
@@ -125,6 +131,8 @@
 				if (a) lensStore.setAnalysis(a);
 			}
 		}
+		const tm = params.get('tm');
+		if (tm === 'baseline' || tm === 'delta') hexStore.setTemporalMode(tm);
 
 		initDuckDB()
 			.then(() => {
@@ -181,6 +189,13 @@
 		mapContainer?.addEventListener('hex-select', ((e: CustomEvent) => {
 			if (lassoStore.active) return;
 			const { h3index, properties } = e.detail;
+			// Auto-switch territory in regional mode when clicking a hex from a different territory
+			if (territoryStore.regionalMode) {
+				const detected = inferTerritoryFromH3(h3index);
+				if (detected && detected !== territoryStore.activeTerritory.id) {
+					territoryStore.setTerritory(detected);
+				}
+			}
 			if (hexStore.activeLayer) {
 				hexStore.toggleHex(h3index);
 				// Ensure provincial avg is loaded for petal normalization
@@ -339,6 +354,19 @@
 	let prevAnalysisId: string | null = null;
 	let analysisDataLoaded = $state(false);
 	let showAbout = $state(false);
+
+	// Auto-open welcome panel on first visit after terms acceptance
+	const WELCOMED_KEY = 'spatia_welcomed_v1';
+	let hasShownWelcome = typeof window !== 'undefined'
+		? localStorage.getItem(WELCOMED_KEY) === 'true'
+		: true;
+	$effect(() => {
+		if (terms.accepted && !hasShownWelcome) {
+			showAbout = true;
+			hasShownWelcome = true;
+			if (typeof window !== 'undefined') localStorage.setItem(WELCOMED_KEY, 'true');
+		}
+	});
 
 	// Dismiss welcome panel when user selects a lens
 	$effect(() => {
@@ -635,6 +663,14 @@
 		} catch (e) {
 			console.warn('Failed to load analysis choropleth:', e);
 		}
+	}
+
+	function inferTerritoryFromH3(h3index: string): string | null {
+		const [lat, lng] = cellToLatLng(h3index);
+		if (isInsideMisiones(lat, lng)) return 'misiones';
+		if (isInsideItapua(lat, lng)) return 'itapua_py';
+		if (isInsideCorrientes(lat, lng)) return 'corrientes';
+		return null;
 	}
 
 	async function fetchHexData(h3index: string): Promise<void> {
@@ -1094,7 +1130,7 @@
 <div class="flex h-screen w-full">
 	<!-- Territory column: vertical list, always visible -->
 	<div class="territory-col">
-		<TerritorySelector {territoryStore} />
+		<TerritorySelector {territoryStore} activeCoverage={hexStore.activeLayer?.coverage} />
 	</div>
 
 	<!-- Map + overlays -->

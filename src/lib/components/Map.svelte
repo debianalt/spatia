@@ -532,6 +532,7 @@
 			// Re-apply territory visibility in case territory was set before map loaded
 			// (e.g., territory restored from URL state before onMount completed)
 			applyTerritoryVisibility();
+			if (regionalModeActive) setRegionalMapMode(true);
 		});
 
 		return () => {
@@ -976,17 +977,16 @@
 		if (!map) return;
 
 		if (regionalModeActive) {
-			// Regional mode: only update buildings for active territory.
+			// Regional mode: show ALL territory buildings simultaneously (all 3 PMTiles pre-loaded).
 			// Fog masks and borders are managed by setRegionalMapMode().
-			const isItapua = activeTerritoryId === 'itapua_py';
-			const isCorrientes = activeTerritoryId === 'corrientes';
-			const activeBuilding = isCorrientes ? 'corrientes-buildings-3d' : isItapua ? 'itapua-buildings-3d' : 'buildings-3d';
+			const colorExprDefault = mapStore.getColorExpr();
+			const colorExprItapua = mapStore.getHeightColorExpr();
 			for (const l of ['buildings-3d', 'itapua-buildings-3d', 'corrientes-buildings-3d']) {
-				if (map.getLayer(l)) map.setLayoutProperty(l, 'visibility', l === activeBuilding ? 'visible' : 'none');
-			}
-			if (map.getLayer(activeBuilding)) {
-				const colorExpr = isItapua ? mapStore.getHeightColorExpr() : mapStore.getColorExpr();
-				map.setPaintProperty(activeBuilding, 'fill-extrusion-color', colorExpr as any);
+				if (map.getLayer(l)) {
+					map.setLayoutProperty(l, 'visibility', 'visible');
+					const expr = l === 'itapua-buildings-3d' ? colorExprItapua : colorExprDefault;
+					map.setPaintProperty(l, 'fill-extrusion-color', expr as any);
+				}
 			}
 			return;
 		}
@@ -1062,8 +1062,8 @@
 	}
 
 	export function setRegionalMapMode(active: boolean) {
-		if (!map) return;
 		regionalModeActive = active;
+		if (!map) return;
 		if (active) {
 			// Hide all fog masks
 			for (const id of ['mask-fill', 'itapua-mask-fill', 'corrientes-mask-fill']) {

@@ -2,66 +2,94 @@
 	import { getTerritoriesByCountry, type CountryId } from '$lib/config';
 	import type { TerritoryStore } from '$lib/stores/territory.svelte';
 
-	let { territoryStore }: { territoryStore: TerritoryStore } = $props();
+	let {
+		territoryStore,
+		activeCoverage = undefined,
+	}: {
+		territoryStore: TerritoryStore;
+		activeCoverage?: Record<string, 'available' | 'pending' | 'unavailable'> | undefined;
+	} = $props();
 
 	const byCountry = getTerritoriesByCountry();
 	const countryOrder: CountryId[] = ['ar', 'py', 'br'];
 	const countryNames: Record<CountryId, string> = { ar: 'Argentina', py: 'Paraguay', br: 'Brasil' };
 	const countryFlags: Record<CountryId, string> = { ar: '🇦🇷', py: '🇵🇾', br: '🇧🇷' };
 
-	// Countries that actually have territories
 	const activeCountries = $derived(
 		countryOrder.filter(c => (byCountry[c] ?? []).length > 0)
 	);
+
+	function coverageColor(tid: string): string | null {
+		if (tid === 'misiones') return null;
+		const c = activeCoverage?.[tid];
+		if (!c) return null;
+		return c === 'available' ? '#22c55e' : c === 'pending' ? '#f59e0b' : '#6b7280';
+	}
 </script>
 
 <div class="territory-selector">
-	{#each activeCountries as country}
-		{@const territories = byCountry[country] ?? []}
-		<div class="country-block">
-			<div class="country-header">
-				<span class="country-flag">{countryFlags[country]}</span>
-				<span class="country-name">{countryNames[country]}</span>
-			</div>
-
-			<div class="territory-list">
-				{#each territories as territory (territory.id)}
-					<button
-						class="territory-btn"
-						class:active={territoryStore.activeTerritory.id === territory.id}
-						class:unavailable={!territory.available}
-						disabled={!territory.available}
-						onclick={() => territoryStore.setTerritory(territory.id)}
-						title={territory.available ? territory.label : `${territory.label} — próximamente`}
-					>
-						{#if territoryStore.activeTerritory.id === territory.id}
-							<span class="dot active-dot">●</span>
-						{:else if !territory.available}
-							<span class="dot soon-dot">○</span>
-						{:else}
-							<span class="dot idle-dot">○</span>
-						{/if}
-						<span class="t-name">{territory.label}</span>
-						{#if !territory.available}
-							<span class="badge">próximamente</span>
-						{/if}
-					</button>
-				{/each}
-			</div>
-		</div>
-	{/each}
-
-	<div class="regional-row">
+	{#if territoryStore.regionalMode}
+		<!-- Collapsed: single-line indicator in regional mode -->
 		<button
-			class="regional-btn"
-			class:active={territoryStore.regionalMode}
-			onclick={() => territoryStore.regionalMode ? territoryStore.exitRegionalMode() : territoryStore.enterRegionalMode()}
+			class="regional-active-btn"
+			onclick={() => territoryStore.exitRegionalMode()}
+			title="Salir de vista regional"
 		>
-			<span class="r-dot">{territoryStore.regionalMode ? '◉' : '◎'}</span>
-			Vista Regional
+			<span class="r-dot">◉</span>
+			<span class="r-label">Vista Regional · NEA</span>
+			<span class="r-exit">seleccionar →</span>
 		</button>
-	</div>
+	{:else}
+		<!-- Expanded: full territory list when in per-territory mode -->
+		{#each activeCountries as country}
+			{@const territories = byCountry[country] ?? []}
+			<div class="country-block">
+				<div class="country-header">
+					<span class="country-flag">{countryFlags[country]}</span>
+					<span class="country-name">{countryNames[country]}</span>
+				</div>
 
+				<div class="territory-list">
+					{#each territories as territory (territory.id)}
+						{@const cc = coverageColor(territory.id)}
+						<button
+							class="territory-btn"
+							class:active={territoryStore.activeTerritory.id === territory.id}
+							class:unavailable={!territory.available}
+							disabled={!territory.available}
+							onclick={() => territoryStore.setTerritory(territory.id)}
+							title={territory.available ? territory.label : `${territory.label} — próximamente`}
+						>
+							{#if territoryStore.activeTerritory.id === territory.id}
+								<span class="dot active-dot">●</span>
+							{:else if !territory.available}
+								<span class="dot soon-dot">○</span>
+							{:else}
+								<span class="dot idle-dot">○</span>
+							{/if}
+							<span class="t-name">{territory.label}</span>
+							{#if cc}
+								<span class="coverage-dot" style="background:{cc}" title={activeCoverage?.[territory.id]}></span>
+							{/if}
+							{#if !territory.available}
+								<span class="badge">próximamente</span>
+							{/if}
+						</button>
+					{/each}
+				</div>
+			</div>
+		{/each}
+
+		<div class="regional-row">
+			<button
+				class="regional-btn"
+				onclick={() => territoryStore.enterRegionalMode()}
+			>
+				<span class="r-dot">◎</span>
+				Vista Regional
+			</button>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -72,7 +100,41 @@
 		padding: 2px 0 6px;
 	}
 
-	/* Country accordion */
+	/* ── Regional mode: collapsed single-line ── */
+	.regional-active-btn {
+		display: flex;
+		align-items: center;
+		gap: 5px;
+		padding: 5px 6px;
+		background: rgba(167, 139, 250, 0.12);
+		border: 1px solid rgba(167, 139, 250, 0.3);
+		border-radius: 3px;
+		cursor: pointer;
+		width: 100%;
+		text-align: left;
+		transition: all 0.15s;
+	}
+
+	.regional-active-btn:hover {
+		background: rgba(167, 139, 250, 0.18);
+		border-color: rgba(167, 139, 250, 0.5);
+	}
+
+	.r-label {
+		font-size: 10px;
+		font-weight: 600;
+		color: #a78bfa;
+		flex: 1;
+	}
+
+	.r-exit {
+		font-size: 8.5px;
+		color: rgba(167, 139, 250, 0.5);
+		font-weight: 400;
+		white-space: nowrap;
+	}
+
+	/* ── Per-territory mode: full list ── */
 	.country-block {
 		border-radius: 4px;
 		overflow: hidden;
@@ -95,7 +157,6 @@
 		letter-spacing: 0.06em;
 	}
 
-	/* Territory list inside accordion */
 	.territory-list {
 		display: flex;
 		flex-direction: column;
@@ -145,6 +206,14 @@
 	.territory-btn.active .t-name { color: #e2e8f0; font-weight: 600; }
 	.territory-btn.unavailable .t-name { color: rgba(255, 255, 255, 0.40); }
 
+	.coverage-dot {
+		width: 5px;
+		height: 5px;
+		border-radius: 50%;
+		flex-shrink: 0;
+		opacity: 0.85;
+	}
+
 	.badge {
 		font-size: 7.5px;
 		color: rgba(255, 255, 255, 0.25);
@@ -179,12 +248,5 @@
 		color: rgba(255, 255, 255, 0.8);
 	}
 
-	.regional-btn.active {
-		background: rgba(167, 139, 250, 0.12);
-		border-color: rgba(167, 139, 250, 0.3);
-		color: #a78bfa;
-	}
-
-	.r-dot { font-size: 8px; }
-
+	.r-dot { font-size: 8px; color: #a78bfa; }
 </style>
