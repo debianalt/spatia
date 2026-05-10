@@ -54,8 +54,8 @@
 			<h2>2. Naturaleza del servicio</h2>
 			<p>
 				nealab es una <strong>herramienta de análisis geoespacial académico</strong> de acceso
-				abierto, desarrollada en el marco de un proyecto de investigación financiado por el
-				Consejo Nacional de Investigaciones Científicas y Técnicas (CONICET). Integra datos
+				abierto, desarrollada en el marco de un proyecto de investigación con el aval del
+				Consejo Nacional de Investigaciones Científicas y Técnicas (CONICET, Argentina). Integra datos
 				públicos de fuentes declaradas para generar visualizaciones e indicadores sobre el
 				territorio del noreste argentino y sus regiones transfronterizas.
 			</p>
@@ -93,8 +93,7 @@
 			<h2>4. Limitación de responsabilidad</h2>
 			<p>
 				En la máxima medida permitida por la legislación aplicable, <strong>Raimundo Elias Gomez,
-				el Consejo Nacional de Investigaciones Científicas y Técnicas (CONICET) y la Universidad
-				Nacional de Misiones (UNaM)</strong> no serán responsables por daños de ningún tipo
+				CONICET y la Universidad Nacional de Misiones (UNaM)</strong> no serán responsables por daños de ningún tipo
 				derivados del uso o la imposibilidad de uso de nealab, incluyendo pero no limitado a:
 			</p>
 			<ul class="list">
@@ -113,8 +112,8 @@
 		<section class="section">
 			<h2>5. Marco institucional</h2>
 			<p>
-				CONICET y la UNaM (Facultad de Humanidades y Ciencias Sociales) son el <strong>marco
-				académico e institucional</strong> de la investigación que dio origen a nealab. No son
+				CONICET y la UNaM, a través de la Facultad de Humanidades y Ciencias Sociales (FHyCS),
+				son el <strong>marco académico e institucional</strong> de la investigación que dio origen a nealab. No son
 				proveedores del servicio en sentido comercial, no avalan los análisis como documentos
 				oficiales de ninguna institución pública o privada, y no asumen responsabilidad por
 				el uso que terceros hagan de la información disponible en la plataforma.

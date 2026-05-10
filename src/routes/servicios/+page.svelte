@@ -48,8 +48,11 @@
 		<h2>Qué es nealab</h2>
 		<p>
 			<strong>nealab</strong> es una plataforma de <strong>inteligencia geoespacial abierta</strong>
-			desarrollada en el marco del <strong>CONICET</strong>, la <strong>UNaM (FHyCS)</strong> y el
-			acceso de nivel investigación al <strong>Google Earth Engine Partner Tier</strong>.
+			desarrollada en el marco del <strong>Consejo Nacional de Investigaciones Científicas y
+			Técnicas (CONICET, Argentina)</strong>, la <strong>Secretaría de Investigación y Posgrado
+			(SINVyP)</strong> de la <strong>Facultad de Humanidades y Ciencias Sociales (FHyCS)</strong>
+			de la <strong>Universidad Nacional de Misiones (UNaM)</strong>, y el acceso de nivel
+			investigación al <strong>Google Earth Engine (GEE) Partner Tier</strong>.
 			Reúne más de veinte capas de análisis sobre el noreste argentino y sus regiones transfronterizas
 			para explorar de forma interactiva el estado ecológico, social, productivo y de infraestructura de la región.
 		</p>
@@ -66,7 +69,8 @@
 			El desarrollo de nealab se enmarca en el proyecto de investigación <em>Evolución de las
 			desigualdades sociales en torno a las Áreas Naturales Protegidas Transfronterizas de
 			Argentina, Brasil y Paraguay</em> (código 16/H1710-FE, SINVyP FHyCS-UNaM), desarrollado
-			con el aval del Consejo Nacional de Investigaciones Científicas y Técnicas (CONICET).
+			con el aval de CONICET. Este proyecto integra el <strong>Programa de Investigaciones
+			Interdisciplinarias sobre Regiones de Frontera (INREFRO)</strong> de la FHyCS-UNaM.
 		</p>
 	</section>
 
