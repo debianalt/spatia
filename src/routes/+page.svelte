@@ -79,14 +79,12 @@
 			mapStore.clearDistricts();
 			mapComponent?.setDistrictHighlight([]);
 		} else {
-			// Regional mode (Option D): keep selections, reload other territories' hex data
-			if (hexStore.activeLayer?.comparable) {
-				untrack(() => hexStore.clearCompareDept());
-				untrack(() => hexStore.clearRegionalData());
-				const [p2, p3] = getRegionalOtherPrefixes();
-				hexStore.loadFullCompare(p2).catch(() => {});
-				hexStore.loadRegionalData(p3).catch(() => {});
-			}
+			// Regional mode: reload all 3 territories' hex data
+			untrack(() => hexStore.clearCompareDept());
+			untrack(() => hexStore.clearRegionalData());
+			const [p2, p3] = getRegionalOtherPrefixes();
+			hexStore.loadFullCompare(p2).catch(() => {});
+			hexStore.loadRegionalData(p3).catch(() => {});
 		}
 	});
 
@@ -96,7 +94,7 @@
 		if (isRegional) {
 			setTimeout(() => mapComponent?.flyToBbox(REGIONAL_NEA_BBOX), 100);
 			mapComponent?.setRegionalMapMode(true);
-			if (hexStore.activeLayer?.comparable) {
+			if (hexStore.activeLayer) {
 				const [p2, p3] = getRegionalOtherPrefixes();
 				hexStore.loadFullCompare(p2).catch(() => {});
 				hexStore.loadRegionalData(p3).catch(() => {});
@@ -430,8 +428,8 @@
 				hexStore.ensureColorDomain().catch(() => {});
 				mapStore.setActiveHexLayer(analysis.id);
 				mapComponent?.setHexLayerInfo(i18n.t(layerCfg.titleKey), layerCfg.colorScale === 'categorical');
-				// Regional mode: also load data for the other 2 territories
-				if (untrack(() => territoryStore.regionalMode) && layerCfg.comparable) {
+				// Regional mode: load data for all 3 territories
+				if (untrack(() => territoryStore.regionalMode)) {
 					const [p2, p3] = getRegionalOtherPrefixes();
 					hexStore.loadFullCompare(p2).catch(() => {});
 					hexStore.loadRegionalData(p3).catch(() => {});
