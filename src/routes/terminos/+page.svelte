@@ -153,7 +153,7 @@
 				</li>
 				<li>
 					Usar nealab como única fuente de due-diligence en contextos regulatorios que exigen
-					certificación profesional (incluido pero no limitado al cumplimiento EUDR, evaluaciones
+					certificación profesional (incluido pero no limitado al cumplimiento del Reglamento de Deforestación de la Unión Europea (EUDR, por sus siglas en inglés), evaluaciones
 					de impacto ambiental o tasaciones).
 				</li>
 				<li>
@@ -167,8 +167,10 @@
 			<h2>8. Propiedad intelectual</h2>
 			<p>
 				Los datos integrados por nealab provienen de fuentes públicas declaradas en la ficha
-				técnica de cada capa (INDEC, IGN, JRC, Hansen GFC, MODIS, MapBiomas, OSM, entre otras)
-				y se usan conforme a sus licencias originales. El pipeline de procesamiento, el código
+				técnica de cada capa — entre otras, el Instituto Nacional de Estadística y Censos
+				(INDEC), el Instituto Geográfico Nacional (IGN), el Joint Research Centre (JRC) de la
+				Comisión Europea, Hansen Global Forest Change (GFC), MODIS (Moderate Resolution Imaging
+				Spectroradiometer), MapBiomas y OpenStreetMap (OSM) — y se usan conforme a sus licencias originales. El pipeline de procesamiento, el código
 				de la plataforma y las visualizaciones son de autoría de Raimundo Elias Gomez y pueden
 				citarse según la referencia indicada en
 				<a href="/servicios">spatia.ar/servicios</a>.

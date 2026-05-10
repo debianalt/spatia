@@ -79,10 +79,12 @@
 		<ul class="list">
 			<li>
 				<strong>Acceso abierto.</strong> Todos los datos que integra la plataforma provienen de
-				fuentes públicas declaradas en la ficha metodológica de cada capa (INDEC, OSM, IGN,
-				MapBiomas, Catastro, JRC, Hansen GFC, MODIS, entre otras). Cualquier persona puede
-				consultar esas fuentes originales y reproducir los análisis siguiendo el pipeline
-				documentado.
+				fuentes públicas declaradas en la ficha metodológica de cada capa — entre otras:
+				el Instituto Nacional de Estadística y Censos (INDEC), el Instituto Geográfico
+				Nacional (IGN), OpenStreetMap (OSM), MapBiomas, Catastro, el Joint Research Centre
+				(JRC) de la Comisión Europea, Hansen Global Forest Change (GFC) y MODIS (Moderate
+				Resolution Imaging Spectroradiometer). Cualquier persona puede consultar esas fuentes
+				originales y reproducir los análisis siguiendo el pipeline documentado.
 			</li>
 			<li>
 				<strong>Trazabilidad metodológica.</strong> Cada capa tiene su ficha técnica con fuentes,
@@ -122,15 +124,17 @@
 		<ul class="list">
 			<li>
 				<strong>Habitar.</strong>
-				Riesgo de inundación (JRC Global Surface Water + Sentinel-1 SAR), carencia de servicios
+				Riesgo de inundación (JRC Global Surface Water + Sentinel-1 SAR — radar de apertura
+				sintética, satélites de la Agencia Espacial Europea — ESA), carencia de servicios
 				básicos (censo 2022), calidad edilicia, accesibilidad a salud y educación, catastro
 				parcelario.
 			</li>
 			<li>
 				<strong>Producir.</strong>
 				Aptitud edafoclimática agrícola, aptitud forestal comercial, salud de la vegetación, stock
-				de carbono y balance de emisiones, dinámica de deforestación, aire (PM2.5) y cumplimiento
-				EUDR para commodities.
+				de carbono y balance de emisiones, dinámica de deforestación, calidad del aire
+				(PM2.5 — material particulado fino de diámetro ≤ 2,5 micrómetros) y cumplimiento del
+				Reglamento de Deforestación de la Unión Europea (EUDR, por sus siglas en inglés) para commodities.
 			</li>
 			<li>
 				<strong>Servir.</strong>
@@ -144,9 +148,7 @@
 			</li>
 		</ul>
 		<p>
-			Todas las capas se proyectan sobre una grilla <strong>H3 resolución 9</strong> uniforme
-			(~0.1 km² por hexágono, ~320 000 hexágonos por territorio analizado), con crosswalks documentados a radios
-			censales y parcelas catastrales para análisis cruzados.
+			Todas las capas se proyectan sobre una grilla hexagonal <strong>H3</strong> (sistema de indexación geoespacial de código abierto desarrollado por Uber Technologies) de resolución 9 (~0,1 km² por hexágono, ~320 000 hexágonos por territorio analizado), con crosswalks documentados a radios censales y parcelas catastrales para análisis cruzados.
 		</p>
 	</section>
 
@@ -154,9 +156,7 @@
 		<h2>Para quienes</h2>
 		<ul class="list">
 			<li>
-				<strong>Organismos multilaterales</strong> (PNUD, BID, Banco Mundial, FAO, CEPAL) que
-				necesiten diagnósticos geoespaciales rápidos y reproducibles sobre el noreste argentino y sus regiones transfronterizas,
-				con datos curados y pipelines auditables.
+				<strong>Organismos multilaterales</strong> — Programa de las Naciones Unidas para el Desarrollo (PNUD), Banco Interamericano de Desarrollo (BID), Banco Mundial, Organización de las Naciones Unidas para la Alimentación y la Agricultura (FAO), Comisión Económica para América Latina y el Caribe (CEPAL) — que necesiten diagnósticos geoespaciales rápidos y reproducibles sobre el noreste argentino y sus regiones transfronterizas, con datos curados y pipelines auditables.
 			</li>
 			<li>
 				<strong>Gobiernos provinciales y municipales</strong> que busquen visualizar
@@ -202,9 +202,7 @@
 				Regulación UE 2023/1115, combinando Hansen GFC, MODIS MCD64A1 y geometrías parcelarias.
 			</li>
 			<li>
-				<strong>Integración con sistemas existentes.</strong> Conexión de nealab con SIGs
-				institucionales, tableros BI, APIs de terceros y flujos internos mediante DuckDB, Parquet
-				o GeoJSON.
+				<strong>Integración con sistemas existentes.</strong> Conexión de nealab con Sistemas de Información Geográfica (SIG) institucionales, tableros de Business Intelligence (BI), interfaces de programación (API) de terceros y flujos internos mediante DuckDB, Parquet o GeoJSON.
 			</li>
 		</ul>
 	</section>
@@ -262,14 +260,23 @@
 	<section class="section">
 		<h2>Fuentes y colaboraciones</h2>
 		<p>
-			nealab integra datos públicos de INDEC (Censo 2022), IGN, Dirección General de Catastro de
-			Misiones, JRC Global Surface Water, Hansen Global Forest Change, MODIS, MapBiomas (AR/PY),
-			CHIRPS, ERA5, VIIRS, GHSL, SoilGrids, Sentinel (ESA/Copernicus), Global Building Atlas
-			(Zhu et al., 2025, ESSD), Overture Maps Foundation, OpenStreetMap, Meta/WRI Canopy Height,
-			GEDI L4B (NASA), ESA CCI Biomass, Global Forest Watch, Dalhousie University ACAG PM2.5,
-			EMSA (Secretaría de Energía), Oxford MAP, DGEEC (Paraguay) y IBGE (Brasil), entre otras.
-			El procesamiento se realiza sobre Google Earth Engine como plataforma de cómputo, con
-			acceso al <strong>Google Earth Engine Partner Tier</strong>.
+			nealab integra datos de fuentes públicas, entre ellas: INDEC (Censo Nacional de Población,
+			Hogares y Viviendas 2022), IGN, Dirección General de Catastro de Misiones, JRC Global
+			Surface Water, Hansen Global Forest Change, MODIS, MapBiomas (Argentina y Paraguay),
+			CHIRPS (Climate Hazards Group InfraRed Precipitation with Station data), ERA5 (reanálisis
+			climático del Centro Europeo de Predicción Meteorológica a Medio Plazo — ECMWF, 5.ª versión),
+			VIIRS (Visible Infrared Imaging Radiometer Suite, sensor NOAA/NASA), GHSL (Global Human
+			Settlement Layer, Centro Común de Investigación de la Unión Europea), SoilGrids (ISRIC —
+			International Soil Reference and Information Centre), misiones Sentinel de la Agencia Espacial
+			Europea (ESA) / programa Copernicus, Global Building Atlas (GBA; Zhu et al., 2025, Earth
+			System Science Data — ESSD), Overture Maps Foundation, OpenStreetMap, Meta / World Resources
+			Institute (WRI) Canopy Height, GEDI L4B (Global Ecosystem Dynamics Investigation — NASA),
+			ESA CCI Biomass (Climate Change Initiative de la ESA), Global Forest Watch (GFW), conjunto
+			PM2.5 de la Universidad de Dalhousie (ACAG — Atmospheric Composition Analysis Group),
+			EMSA (Empresa Misionera de Energía), Oxford MAP (Malaria Atlas Project), Dirección General
+			de Estadística, Encuestas y Censos de Paraguay (DGEEC) e Instituto Brasileiro de Geografia
+			e Estatística (IBGE), entre otras. El procesamiento se realiza sobre Google Earth Engine
+			como plataforma de cómputo, con acceso al <strong>Google Earth Engine Partner Tier</strong>.
 		</p>
 	</section>
 
