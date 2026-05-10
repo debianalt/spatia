@@ -49,7 +49,7 @@
 		<p>
 			<strong>nealab</strong> es una plataforma de <strong>inteligencia geoespacial abierta</strong>
 			desarrollada en el marco del <strong>CONICET</strong>, la <strong>UNaM (FHyCS)</strong> y el
-			partenariado académico con el <strong>Google Earth Engine Research &amp; Innovation Program</strong>.
+			acceso de nivel investigación al <strong>Google Earth Engine Partner Tier</strong>.
 			Reúne más de veinte capas de análisis sobre el noreste argentino y sus regiones transfronterizas
 			para explorar de forma interactiva el estado ecológico, social, productivo y de infraestructura de la región.
 		</p>
@@ -65,9 +65,8 @@
 		<p>
 			El desarrollo de nealab se enmarca en el proyecto de investigación <em>Evolución de las
 			desigualdades sociales en torno a las Áreas Naturales Protegidas Transfronterizas de
-			Argentina, Brasil y Paraguay</em> (código 16/H1710-FE), radicado en la Facultad de
-			Humanidades y Ciencias Sociales de la Universidad Nacional de Misiones y financiado por el
-			Consejo Nacional de Investigaciones Científicas y Técnicas (CONICET).
+			Argentina, Brasil y Paraguay</em> (código 16/H1710-FE, SINVyP FHyCS-UNaM), desarrollado
+			con el aval del Consejo Nacional de Investigaciones Científicas y Técnicas (CONICET).
 		</p>
 	</section>
 
@@ -260,11 +259,13 @@
 		<h2>Fuentes y colaboraciones</h2>
 		<p>
 			nealab integra datos públicos de INDEC (Censo 2022), IGN, Dirección General de Catastro de
-			Misiones, JRC Global Surface Water, Hansen Global Forest Change, MODIS, MapBiomas, CHIRPS,
-			ERA5, VIIRS, GHSL, SoilGrids, Sentinel, Overture Maps Foundation, OpenStreetMap, Meta/WRI
-			Canopy Height, Dalhousie University ACAG PM2.5, EMSA (Secretaría de Energía) y Oxford MAP,
-			entre otras. El procesamiento se realiza sobre Google Earth Engine como plataforma de
-			cómputo, con acceso académico al Research &amp; Innovation Program.
+			Misiones, JRC Global Surface Water, Hansen Global Forest Change, MODIS, MapBiomas (AR/PY),
+			CHIRPS, ERA5, VIIRS, GHSL, SoilGrids, Sentinel (ESA/Copernicus), Global Building Atlas
+			(Zhu et al., 2025, ESSD), Overture Maps Foundation, OpenStreetMap, Meta/WRI Canopy Height,
+			GEDI L4B (NASA), ESA CCI Biomass, Global Forest Watch, Dalhousie University ACAG PM2.5,
+			EMSA (Secretaría de Energía), Oxford MAP, DGEEC (Paraguay) y IBGE (Brasil), entre otras.
+			El procesamiento se realiza sobre Google Earth Engine como plataforma de cómputo, con
+			acceso al <strong>Google Earth Engine Partner Tier</strong>.
 		</p>
 	</section>
 
@@ -284,7 +285,7 @@
 			Territorial Intelligence (Version v2). Zenodo.
 			<a href="https://doi.org/10.5281/zenodo.19543818">https://doi.org/10.5281/zenodo.19543818</a>
 		</p>
-		<p class="affil">CONICET · FHyCS-UNaM · Google Earth Engine R&amp;I Program</p>
+		<p class="affil">CONICET · FHyCS-UNaM · Google Earth Engine Partner Tier</p>
 		<p class="print-only generated">
 			Documento generado el {today} desde spatia.ar/servicios
 		</p>
