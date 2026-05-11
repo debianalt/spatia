@@ -1,10 +1,11 @@
 <script lang="ts">
 	import type { HexStore } from '$lib/stores/hex.svelte';
+	import type { TerritoryStore } from '$lib/stores/territory.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import CTADiagnostic from '$lib/components/CTADiagnostic.svelte';
 	import PetalChart from '$lib/components/PetalChart.svelte';
 	import TemporalToggle from '$lib/components/TemporalToggle.svelte';
-	import { HEX_LAYER_REGISTRY, DATA_FRESHNESS, getSatDptoUrl, getFloodDptoUrl, getScoresDptoUrl, getReportUrl, getTemporalCol, getDeptSummaryUrl, type AnalysisConfig, type TemporalMode } from '$lib/config';
+	import { HEX_LAYER_REGISTRY, DATA_FRESHNESS, getSatDptoUrl, getFloodDptoUrl, getScoresDptoUrl, getReportUrl, getTemporalCol, getDeptSummaryUrl, TERRITORY_REGISTRY, type AnalysisConfig, type TemporalMode } from '$lib/config';
 	import { loadDeptSummary } from '$lib/utils/deptSummaries';
 	import { query } from '$lib/stores/duckdb';
 	import { downloadCsvFromQuery, downloadGeoJsonFromHexQuery } from '$lib/utils/data-export';
@@ -13,10 +14,12 @@
 	let {
 		analysis,
 		hexStore,
+		territoryStore,
 		onSelectDpto,
 	}: {
 		analysis: AnalysisConfig;
 		hexStore: HexStore;
+		territoryStore: TerritoryStore;
 		onSelectDpto?: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
 	} = $props();
 
@@ -45,9 +48,54 @@
 		loadDeptSummary(layerCfg.id, prefix).then(s => { deptSummary = s; });
 	});
 
+	// Territory tab state — multi-territory dept list
+	let allSummaries = $state(new Map<string, any>());
+	let activeTab = $state('');
+	let _summaryLoad = 0;
+
+	// Effect 1: keep activeTab in sync with current territory
+	$effect(() => {
+		if (!isPerDept || !layerCfg) return;
+		activeTab = territoryStore.activeTerritory.id;
+	});
+
+	// Effect 2: load dept summaries for all territories when analysis changes (not on territory change)
+	$effect(() => {
+		if (!isPerDept || !layerCfg) return;
+		const id = layerCfg.id;
+		allSummaries = new Map();
+		const myLoad = ++_summaryLoad;
+		const available = Object.values(TERRITORY_REGISTRY).filter(t => t.available);
+		Promise.all(
+			available.map(t => loadDeptSummary(id, t.parquetPrefix).then(s => ({ t, s })))
+		).then(results => {
+			if (_summaryLoad !== myLoad) return;
+			const m = new Map<string, any>();
+			for (const { t, s } of results) {
+				if (s?.departments?.length > 0) m.set(t.id, s);
+			}
+			allSummaries = m;
+		});
+	});
+
+	const tabTerritories = $derived.by(() => {
+		const available = Object.values(TERRITORY_REGISTRY).filter(t => t.available);
+		return available.filter(t => allSummaries.has(t.id));
+	});
+
+	function handleTabClick(territoryId: string) {
+		activeTab = territoryId;
+		if (territoryId !== territoryStore.activeTerritory.id) {
+			territoryStore.setTerritory(territoryId);
+		}
+	}
+
+	const activeSummaryData = $derived(allSummaries.get(activeTab) ?? deptSummary);
+
 	const deptList = $derived.by(() => {
-		if (!deptSummary?.departments) return [];
-		return [...deptSummary.departments].sort((a: any, b: any) => b.avg_score - a.avg_score);
+		const summary = allSummaries.size > 0 ? allSummaries.get(activeTab) : deptSummary;
+		if (!summary?.departments) return [];
+		return [...summary.departments].sort((a: any, b: any) => b.avg_score - a.avg_score);
 	});
 
 	const colorScale = $derived(layerCfg?.colorScale ?? 'sequential');
@@ -647,19 +695,19 @@
 			<details class="method-details">
 				<summary class="method-summary">{i18n.t('section.howToRead')}</summary>
 				<div class="method-body">
-					<p class="explain-text">{content.howToRead}</p>
+					<p class="explain-text">{content.howToRead[i18n.locale] ?? content.howToRead.es}</p>
 				</div>
 			</details>
 			<details class="method-details">
 				<summary class="method-summary">{i18n.t('section.implications')}</summary>
 				<div class="method-body">
-					<p class="explain-text">{content.implications}</p>
+					<p class="explain-text">{content.implications[i18n.locale] ?? content.implications.es}</p>
 				</div>
 			</details>
 			<details class="method-details">
 				<summary class="method-summary">{i18n.t('section.methodology')}</summary>
 				<div class="method-body">
-					<p class="explain-text">{content.method}</p>
+					<p class="explain-text">{content.method[i18n.locale === 'pt' || i18n.locale === 'gn' ? 'es' : i18n.locale] ?? content.method.es}</p>
 				</div>
 			</details>
 		{/if}
@@ -688,10 +736,10 @@
 			</div>
 		{/if}
 
-		{#if deptSummary}
+		{#if activeSummaryData}
 			<div class="summary-cards">
 				<div class="summary-card">
-					<div class="card-value">{deptSummary.province.total_hexes?.toLocaleString()}</div>
+					<div class="card-value">{activeSummaryData.province.total_hexes?.toLocaleString()}</div>
 					<div class="card-label">{i18n.t('section.zonesAnalyzed')}</div>
 				</div>
 			</div>
@@ -699,6 +747,18 @@
 
 		{#if isTemporal}
 			<TemporalToggle {hexStore} layerId={layerCfg?.id ?? ''} />
+		{/if}
+
+		{#if tabTerritories.length > 1}
+			<div class="territory-tabs">
+				{#each tabTerritories as t}
+					<button
+						class="territory-tab"
+						class:active={activeTab === t.id}
+						onclick={() => handleTabClick(t.id)}
+					>{t.shortLabel}</button>
+				{/each}
+			</div>
 		{/if}
 
 		<div class="dept-section">
@@ -726,21 +786,21 @@
 			<details class="method-details">
 				<summary class="method-summary">{i18n.t('section.howToRead')}</summary>
 				<div class="method-body">
-					<p class="explain-text">{content.howToRead}</p>
+					<p class="explain-text">{content.howToRead[i18n.locale] ?? content.howToRead.es}</p>
 				</div>
 			</details>
 
 			<details class="method-details">
 				<summary class="method-summary">{i18n.t('section.implications')}</summary>
 				<div class="method-body">
-					<p class="explain-text">{content.implications}</p>
+					<p class="explain-text">{content.implications[i18n.locale] ?? content.implications.es}</p>
 				</div>
 			</details>
 
 			<details class="method-details">
 				<summary class="method-summary">{i18n.t('section.methodology')}</summary>
 				<div class="method-body">
-					<p class="explain-text">{content.method}</p>
+					<p class="explain-text">{content.method[i18n.locale === 'pt' || i18n.locale === 'gn' ? 'es' : i18n.locale] ?? content.method.es}</p>
 					<div class="method-components">
 						{#each componentVars as v}
 							<div class="method-item">
@@ -936,6 +996,13 @@
 	.hex-val { display: flex; justify-content: space-between; align-items: baseline; }
 	.hex-val-label { color: #a3a3a3; }
 	.hex-val-num { color: #e5e5e5; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+	/* ── Territory tabs ── */
+	.territory-tabs { display: flex; gap: 0; margin-bottom: 10px; border-radius: 6px; overflow: hidden; border: 1px solid rgba(100,116,139,0.2); }
+	.territory-tab { flex: 1; background: rgba(255,255,255,0.03); border: none; color: #a3a3a3; font-size: 9px; font-weight: 500; padding: 5px 4px; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+	.territory-tab:not(:last-child) { border-right: 1px solid rgba(100,116,139,0.15); }
+	.territory-tab.active { background: rgba(59,130,246,0.15); color: #60a5fa; font-weight: 700; }
+	.territory-tab:hover:not(.active) { background: rgba(255,255,255,0.06); }
 
 	/* ── Temporal toggle ── */
 	.temporal-toggle { display: flex; gap: 0; margin-bottom: 10px; border-radius: 6px; overflow: hidden; border: 1px solid rgba(100,116,139,0.2); }
