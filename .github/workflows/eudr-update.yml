@@ -44,11 +44,21 @@ jobs:
       - name: Import to D1
         # Requires CLOUDFLARE_API_TOKEN with D1:Edit permission.
         # If this step fails, update the token at Cloudflare Dashboard → API Tokens.
-        continue-on-error: true
+        # `set +e` plus explicit `exit 0` guarantees the step never fails the job —
+        # `continue-on-error: true` alone is insufficient: wrangler's exit code 1
+        # surfaces in the run conclusion even with it set.
         run: |
+          set +e
           python db/import_eudr.py
-          npx wrangler d1 execute spatia-db --remote --file db/seed_eudr.sql || \
-            echo "::warning::D1 import failed — CLOUDFLARE_API_TOKEN needs D1 Edit permission"
+          if [ -f db/seed_eudr.sql ]; then
+            npx wrangler d1 execute spatia-db --remote --file db/seed_eudr.sql
+            if [ $? -ne 0 ]; then
+              echo "::warning::D1 import failed — CLOUDFLARE_API_TOKEN needs D1 Edit permission"
+            fi
+          else
+            echo "::warning::seed_eudr.sql not produced, skipping D1 import"
+          fi
+          exit 0
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
