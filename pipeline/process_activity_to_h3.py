@@ -33,7 +33,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
 
 from config import OUTPUT_DIR, get_territory
-from scoring import load_goalposts, score_with_goalposts
+from scoring import load_goalposts, score_with_goalposts, geometric_mean_score
 
 HEXAGONS_PATH = os.path.join(OUTPUT_DIR, "hexagons-lite.geojson")
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, "sat_productive_activity.parquet")
@@ -187,14 +187,28 @@ def main():
         if var in result.columns and bl_col in result.columns:
             result[f'{var}_delta'] = (result[var] - result[bl_col]).round(4)
 
-    # Score = primary choropleth
+    # Score: geometric mean of two human-activity proxies (nightlights + built fraction).
+    # c_npp/c_ndvi (vegetation productivity) and c_lst (thermal) are NOT used for score
+    # because they're not direct measures of human activity. They remain available as
+    # explorable component variables for users to inspect.
+    # Both components are percentile-rank-normalised to 0-100 within the territory before
+    # the geometric mean to avoid VIIRS' raw scale dominating built fraction.
+    def _score_from(viirs_col: str, built_col: str) -> pd.Series:
+        df_score = pd.DataFrame({
+            'c_viirs_pct': pctile(result[viirs_col]),
+            'c_built_pct': pctile(result[built_col]),
+        })
+        return geometric_mean_score(df_score, ['c_viirs_pct', 'c_built_pct'], floor=1.0).round(1)
+
     if args.mode == 'comparable' and goalposts:
+        # Goalpost mode kept for future cross-territory comparability.
+        # Uses VIIRS goalposts only (no built goalposts defined yet).
         gp = goalposts['indicators'].get('c_viirs', {'lo': 0, 'hi': 15})
         result['score'] = score_with_goalposts(result['c_viirs'], gp['lo'], gp['hi']).round(1)
         result['score_baseline'] = score_with_goalposts(result['c_viirs_baseline'], gp['lo'], gp['hi']).round(1)
     else:
-        result['score'] = pctile(result['c_viirs'])
-        result['score_baseline'] = pctile(result['c_viirs_baseline'])
+        result['score'] = _score_from('c_viirs', 'c_built')
+        result['score_baseline'] = _score_from('c_viirs_baseline', 'c_built_baseline')
     result['delta_score'] = (result['score'] - result['score_baseline']).round(1)
 
     # Round raw values

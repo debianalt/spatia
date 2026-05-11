@@ -68,7 +68,7 @@ export function getParquetUrl(name: string): string {
 		sat_carbon_stock: '?v=8',
 		sat_pm25_drivers: '?v=5',
 		sat_deforestation_dynamics: '?v=5',
-		sat_productive_activity: '?v=8',
+		sat_productive_activity: '?v=9',
 		sat_land_use: '?v=2',
 		sat_soil_water: '?v=1',
 		overture_scores: '?v=26',
