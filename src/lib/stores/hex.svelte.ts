@@ -1,8 +1,9 @@
 import { query, isReady } from '$lib/stores/duckdb';
 import { PARQUETS, HEX_LAYER_REGISTRY, getFloodDptoUrl, getScoresDptoUrl, getSatDptoUrl, getSatGlobalUrl, getTemporalCol, type HexLayerConfig, type HexVariable, type TemporalMode } from '$lib/config';
 import { pointInPolygon } from '$lib/utils/geometry';
+import { findDeptFeature } from '$lib/utils/deptBoundaries';
 import { i18n } from '$lib/stores/i18n.svelte';
-import { cellToLatLng, cellToBoundary } from 'h3-js';
+import { cellToLatLng, cellToBoundary, polygonToCells } from 'h3-js';
 
 const ZONE_COLORS = ['#60a5fa', '#f97316', '#22c55e', '#a855f7', '#ef4444', '#eab308'];
 const ZONE_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -215,6 +216,43 @@ export class HexStore {
 					coords.push(coords[0]);
 					boundaries.set(h3index, coords);
 				} catch { /* skip invalid h3 */ }
+			}
+
+			// Fill missing hexes: the crosswalk used by split_by_admin.py can leave hexes
+			// that geographically belong to this dept assigned to neighboring depts (border
+			// polygon overlap/gap artifacts), AND the GEE raster export bbox may not cover
+			// the full polygon extent. Result: visible "holes" inside the dept polygon.
+			// Fix: enumerate all H3 res-9 cells inside the real dept polygon and add any
+			// that are missing from the parquet as nodata hexes (rendered "Sin cobertura").
+			// Only applicable to AR territories where we have polygon data.
+			const deptFeature = findDeptFeature(dpto, this.territoryPrefix);
+			if (deptFeature?.geometry) {
+				const geom = deptFeature.geometry;
+				const polygons: number[][][][] = geom.type === 'MultiPolygon'
+					? geom.coordinates
+					: geom.type === 'Polygon'
+					? [geom.coordinates]
+					: [];
+				for (const poly of polygons) {
+					try {
+						// h3-js polygonToCells: coords as [lng, lat] (GeoJSON), third arg = isGeoJson
+						const expected = polygonToCells(poly as any, 9, true);
+						for (const h3index of expected) {
+							if (data.has(h3index)) continue;
+							try {
+								const [lat, lng] = cellToLatLng(h3index);
+								data.set(h3index, {});
+								centroids.set(h3index, [lng, lat]);
+								const boundary = cellToBoundary(h3index);
+								const coords = boundary.map(([lat, lng]) => [lng, lat]);
+								coords.push(coords[0]);
+								boundaries.set(h3index, coords);
+							} catch { /* skip invalid h3 */ }
+						}
+					} catch (e) {
+						console.warn('[loadDept polygonToCells failed]', dpto, e);
+					}
+				}
 			}
 
 			this.visibleData = data;
