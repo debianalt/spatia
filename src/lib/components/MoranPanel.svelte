@@ -13,7 +13,7 @@
 	const allH3s = $derived([...data.keys()]);
 
 	let container: HTMLDivElement;
-	let open = $state(false);
+	let open = $state(true);
 	let computing = $state(false);
 	let brushCount = $state(0);
 	let lisaMode = $state(false);

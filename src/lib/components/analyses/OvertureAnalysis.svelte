@@ -176,8 +176,7 @@
 	let downloadState = $state<'idle' | 'csv' | 'geojson'>('idle');
 
 	function currentParquetKey(): string {
-		const dept = deptList.find((d: any) => (d.dpto ?? d.distrito) === selectedDpto);
-		return dept?.parquetKey || 'data';
+		return hexStore.selectedParquetKey || 'data';
 	}
 
 	async function handleDownloadCsv() {
@@ -217,12 +216,13 @@
 		return getSatDptoUrl(id, parquetKey, tp);
 	}
 
-	// Data download URL for selected department
+	// Data download URL for selected department.
+	// Uses hexStore.selectedParquetKey (set by loadDepartment) instead of looking up in
+	// deptList — avoids race conditions where allSummaries is still loading async and
+	// deptList is momentarily empty (manifested as missing CSV/GeoJSON buttons for Itapúa).
 	const dataUrl = $derived.by(() => {
-		if (!selectedDpto || !layerCfg || !deptList.length) return null;
-		const dept = deptList.find((d: any) => (d.dpto ?? d.distrito) === selectedDpto);
-		if (!dept) return null;
-		return urlForAnalysis(layerCfg.id, dept.parquetKey);
+		if (!selectedDpto || !layerCfg || !hexStore.selectedParquetKey) return null;
+		return urlForAnalysis(layerCfg.id, hexStore.selectedParquetKey);
 	});
 
 	// Component variables (skip score, type, type_label, pca)

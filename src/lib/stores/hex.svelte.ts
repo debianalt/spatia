@@ -51,6 +51,7 @@ export class HexStore {
 	private provincialAvg: number[] | null = $state(null);
 	colorDomain: [number, number] | null = $state(null);
 	selectedDpto: string | null = $state(null);
+	selectedParquetKey: string | null = $state(null);
 
 	// ── Compare dept (cross-territory dept-to-dept comparison) ──────────────
 	compareVisibleData: Map<string, Record<string, any>> = $state(new Map());
@@ -92,6 +93,7 @@ export class HexStore {
 			this.centroidCache = new Map();
 			this.boundaryCache = new Map();
 			this.selectedDpto = null;
+			this.selectedParquetKey = null;
 			this.deptBbox = null;
 			this.temporalMode = 'current';
 			this.dataVersion++;
@@ -104,6 +106,7 @@ export class HexStore {
 		this.activeLayer = cfg;
 		this.temporalMode = 'current';
 		this.selectedDpto = null;
+		this.selectedParquetKey = null;
 		this.deptBbox = null;
 		this.clearCompareDept();
 		this.clearRegionalData();
@@ -139,6 +142,7 @@ export class HexStore {
 		this.colorDomain = null;
 		this.visibleData = new Map();
 		this.selectedDpto = null;
+		this.selectedParquetKey = null;
 		this.deptBbox = null;
 		this.dataVersion++;
 		this.clearCompareDept();
@@ -160,6 +164,7 @@ export class HexStore {
 		this.loading = true;
 		this.loadError = null;
 		this.selectedDpto = dpto;
+		this.selectedParquetKey = parquetKey;
 		this.visibleData = new Map();
 		this.clearSelection();
 		this.clearHexZones();
@@ -368,6 +373,7 @@ export class HexStore {
 			this.centroidCache = centroids;
 			this.boundaryCache = bounds;
 			this.selectedDpto = null;
+			this.selectedParquetKey = null;
 			this.deptBbox = null;
 			this.dataVersion++;
 		} else if (target === 'compare') {
@@ -472,6 +478,7 @@ export class HexStore {
 
 	backToDepartments() {
 		this.selectedDpto = null;
+		this.selectedParquetKey = null;
 		this.deptBbox = null;
 		this.clearSelection();
 		this.clearHexZones();
@@ -850,6 +857,7 @@ export class HexStore {
 		this.centroidCache = new Map();
 		this.boundaryCache = new Map();
 		this.selectedDpto = null;
+		this.selectedParquetKey = null;
 		this.deptBbox = null;
 		this.loadError = null;
 		this.temporalMode = 'current';

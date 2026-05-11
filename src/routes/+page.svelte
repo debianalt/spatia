@@ -660,16 +660,23 @@
 	});
 
 	// ── Dept bbox outlines + auto-fly when both depts are loaded ────────────
-	// Primary bbox: always suppressed (we always render the real polygon via dept-outline).
-	// Compare bbox: only rendered as a fallback when no real polygon exists (e.g. Itapúa, PY).
+	// Primary + compare bbox rectangles are only rendered as a fallback when no real
+	// polygon exists (e.g. Itapúa, PY — no polygons in ar_dept_boundaries.json).
+	// For AR depts, the real polygon is rendered separately via dept-outline / compare-dept-outline.
 	$effect(() => {
 		const p = hexStore.deptBbox;
 		const c = hexStore.compareDeptBbox;
+		const dpto = hexStore.selectedDpto;
+		const tp = hexStore.territoryPrefix;
 		const compareDpto = hexStore.compareDpto;
 		const compareTp = hexStore.compareTerritoryPrefix;
+		const primaryHasPolygon = !!(dpto && findDeptFeature(dpto, tp));
 		const compareHasPolygon = !!(compareDpto && compareTp != null
 			&& findDeptFeature(compareDpto, compareTp));
-		mapComponent?.updateDeptHighlights(null, compareHasPolygon ? null : c);
+		mapComponent?.updateDeptHighlights(
+			primaryHasPolygon ? null : p,
+			compareHasPolygon ? null : c
+		);
 		if (p && c) {
 			const union: [number, number, number, number] = [
 				Math.min(p[0], c[0]),
