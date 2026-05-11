@@ -1235,11 +1235,11 @@
 			<LensSelector {lensStore} />
 
 			<div class="flex items-center gap-0.5">
-				{#each (['es', 'en', 'gn'] as Locale[]) as lang}
+				{#each (['es', 'en', 'gn', 'pt'] as Locale[]) as lang}
 					<button
 						class="px-2.5 py-1 text-[11px] font-semibold rounded-full cursor-pointer border transition-all {i18n.locale === lang ? 'bg-white/10 text-white border-white/30' : 'bg-transparent text-white/50 border-transparent hover:text-white'}"
 						onclick={() => i18n.setLocale(lang)}>
-						{lang.toUpperCase()}
+						{lang === 'pt' ? 'BR' : lang.toUpperCase()}
 					</button>
 				{/each}
 			</div>
