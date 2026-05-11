@@ -437,14 +437,36 @@
 				source: 'dept-highlights',
 				paint: {
 					'line-color': ['get', 'color'],
-					'line-width': ['interpolate', ['linear'], ['zoom'], 4, 3, 8, 2, 12, 1.5],
-					'line-opacity': ['interpolate', ['linear'], ['zoom'], 4, 0.9, 10, 0.6, 14, 0.3],
-					'line-dasharray': [5, 3]
+					'line-width': ['interpolate', ['linear'], ['zoom'], 4, 2.5, 8, 1.5, 12, 1],
+					'line-opacity': 0
+				}
+			});
+
+			// ── Selected department outline (real polygon, single-dept mode) ──
+			map.addSource('dept-outline', {
+				type: 'geojson',
+				data: { type: 'FeatureCollection', features: [] }
+			});
+			map.addLayer({
+				id: 'dept-outline-line',
+				type: 'line',
+				source: 'dept-outline',
+				paint: {
+					'line-color': '#60a5fa',
+					'line-width': ['interpolate', ['linear'], ['zoom'], 4, 2, 8, 1.8, 14, 1.2],
+					'line-opacity': 0.85
 				}
 			});
 
 			// ── Hexagon H3 layers (GeoJSON, loaded dynamically) ─────────
 			map.addSource('hexagons', {
+				type: 'geojson',
+				data: { type: 'FeatureCollection', features: [] }
+			});
+
+			// Territory background: fills missing-parquet hexes so they show gray
+			// instead of pure dark basemap, eliminating the "manchones" patch effect.
+			map.addSource('territory-bg', {
 				type: 'geojson',
 				data: { type: 'FeatureCollection', features: [] }
 			});
@@ -455,6 +477,13 @@
 				source: 'hexagons',
 				paint: { 'fill-color': '#3b82f6', 'fill-opacity': 0 }
 			});
+
+			map.addLayer({
+				id: 'territory-bg-fill',
+				type: 'fill',
+				source: 'territory-bg',
+				paint: { 'fill-color': 'rgb(55,65,81)', 'fill-opacity': 0.65 }
+			}, 'hex-fill');
 			map.addLayer({
 				id: 'hex-line',
 				type: 'line',
@@ -796,7 +825,9 @@
 			const titleLine = hexLayerTitle ? `<div style="color:rgba(255,255,255,0.5);font-size:9px;margin-bottom:2px">${hexLayerTitle}</div>` : '';
 
 			let valueLine: string;
-			if (hexLayerIsCategorical && p.type_label) {
+			if (p.nodata === true || p.nodata === 'true') {
+				valueLine = `<span style="color:#94a3b8;font-weight:600;font-style:italic">${i18n.t('legend.noData')}</span>`;
+			} else if (hexLayerIsCategorical && p.type_label) {
 				valueLine = `<span style="color:#e2e8f0;font-weight:600">${p.type_label}</span>`;
 			} else {
 				const score = p.value != null ? Number(p.value).toFixed(1) : '—';
@@ -1030,6 +1061,25 @@
 			});
 		}
 		src.setData({ type: 'FeatureCollection', features });
+		// Show border only in compare mode (both depts present); hide in single-dept mode
+		const compareMode = !!(primary && compare);
+		if (map.getLayer('dept-highlight-line')) {
+			map.setPaintProperty('dept-highlight-line', 'line-opacity',
+				compareMode ? ['interpolate', ['linear'], ['zoom'], 4, 0.8, 10, 0.5, 14, 0.25] : 0
+			);
+		}
+		if (map.getLayer('dept-highlight-fill')) {
+			map.setPaintProperty('dept-highlight-fill', 'fill-opacity', compareMode ? 0.06 : 0);
+		}
+	}
+
+	export function setDeptOutline(feature: any | null) {
+		const src = map?.getSource('dept-outline') as maplibregl.GeoJSONSource | undefined;
+		if (!src) return;
+		src.setData({
+			type: 'FeatureCollection',
+			features: feature ? [feature] : []
+		});
 	}
 
 	function applyTerritoryVisibility() {
@@ -1660,9 +1710,16 @@
 	// ── Hexagon H3 choropleth functions ──────────────────────────────────
 
 	const CATEGORICAL_PALETTE = ['#1565c0', '#7e57c2', '#4db6ac', '#66bb6a', '#c0ca33', '#ffb74d', '#e65100', '#78909c'];
+	// "Sin cobertura" — azul-gris claro, distinguible del territory-bg (#374151).
+	// Usado para hex sobre cuerpos de agua o zonas sin medición raster/censal.
+	const NODATA_COLOR = '#4b6584';
 
 	function computeHexColor(value: number, colorScale: string, minVal: number, maxVal: number, range: number): string {
-		if (value === 0 && colorScale !== 'diverging' && colorScale !== 'categorical' && colorScale !== 'lisa') return 'rgb(55,65,81)';
+		if (typeof value !== 'number' || !Number.isFinite(value)) return NODATA_COLOR;
+		// Legacy: value=0 era usado como proxy de nodata. Tras la refactorización,
+		// setHexChoropleth maneja nodata explícitamente antes de llamar a esta función.
+		// Este branch permanece como red de seguridad para callsites legacy.
+		if (value === 0 && colorScale !== 'diverging' && colorScale !== 'categorical' && colorScale !== 'lisa') return NODATA_COLOR;
 		if (colorScale === 'lisa') {
 			const LISA: Record<number, string> = { 1: '#3b82f6', 2: '#60a5fa', 3: '#f97316', 4: '#ef4444' };
 			return LISA[Math.round(value)] ?? 'rgb(55,65,81)';
@@ -1706,7 +1763,7 @@
 		return `rgb(${r},${g},${b})`;
 	}
 
-	export function setHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' | 'lisa' = 'flood', domain?: [number, number]) {
+	export function setHexChoropleth(entries: { h3index: string; value: number | null; properties?: Record<string, number>; boundary?: number[][]; nodata?: boolean }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' | 'lisa' = 'flood', domain?: [number, number]) {
 		if (!map) return;
 		const src = map.getSource('hexagons') as maplibregl.GeoJSONSource | undefined;
 		if (!src) return;
@@ -1718,15 +1775,23 @@
 			return;
 		}
 
+		const isNodata = (e: { value: number | null; nodata?: boolean }) =>
+			e.nodata === true || e.value === null || typeof e.value !== 'number' || !Number.isFinite(e.value);
+
 		let minVal: number, maxVal: number;
 		if (domain && colorScale !== 'diverging' && colorScale !== 'categorical') {
 			// Use provincial percentile bounds (P2/P98) for consistent cross-department coloring
 			[minVal, maxVal] = domain;
 		} else {
-			// Fallback: local min/max from entries
+			// Fallback: local min/max from entries (skip nodata)
 			minVal = Infinity; maxVal = -Infinity;
-			const values = entries.map(e => e.value);
-			for (const v of values) { if (v < minVal) minVal = v; if (v > maxVal) maxVal = v; }
+			for (const e of entries) {
+				if (isNodata(e)) continue;
+				const v = e.value as number;
+				if (v < minVal) minVal = v;
+				if (v > maxVal) maxVal = v;
+			}
+			if (!Number.isFinite(minVal)) { minVal = 0; maxVal = 1; }
 		}
 		const range = maxVal - minVal || 1;
 
@@ -1735,12 +1800,26 @@
 		const features: any[] = [];
 		for (const entry of entries) {
 			if (!entry.boundary) continue;
+			if (isNodata(entry)) {
+				features.push({
+					type: 'Feature',
+					properties: {
+						h3index: entry.h3index,
+						value: null,
+						color: NODATA_COLOR,
+						nodata: true,
+						...(entry.properties || {})
+					},
+					geometry: { type: 'Polygon', coordinates: [entry.boundary] }
+				});
+				continue;
+			}
 			features.push({
 				type: 'Feature',
 				properties: {
 					h3index: entry.h3index,
 					value: entry.value,
-					color: getColor(entry.value),
+					color: getColor(entry.value as number),
 					...(entry.properties || {})
 				},
 				geometry: { type: 'Polygon', coordinates: [entry.boundary] }
@@ -1749,10 +1828,18 @@
 
 		src.setData({ type: 'FeatureCollection', features });
 		map.setPaintProperty('hex-fill', 'fill-color', ['get', 'color']);
-		map.setPaintProperty('hex-fill', 'fill-opacity', 0.50);
-		map.setPaintProperty('hex-line', 'line-color', '#0f172a');
+		map.setPaintProperty('hex-fill', 'fill-opacity', 0.78);
+		map.setPaintProperty('hex-line', 'line-color', '#374151');
 		map.setPaintProperty('hex-line', 'line-width', 0.5);
-		map.setPaintProperty('hex-line', 'line-opacity', 0.55);
+		map.setPaintProperty('hex-line', 'line-opacity', 0.25);
+
+		const bgSrc = map.getSource('territory-bg') as maplibregl.GeoJSONSource | undefined;
+		if (bgSrc) {
+			const bgData = activeTerritoryId === 'corrientes' ? corrientesBoundary
+			             : activeTerritoryId === 'itapua_py'  ? itapuaBoundary
+			             : misionesBoundary;
+			bgSrc.setData(bgData as any);
+		}
 	}
 
 	export function clearHexChoropleth() {
@@ -1763,9 +1850,11 @@
 		if (map.getLayer('hex-line')) map.setPaintProperty('hex-line', 'line-opacity', 0);
 		if (map.getLayer('hex-selected')) map.setFilter('hex-selected', ['==', ['get', 'h3index'], '']);
 		if (map.getLayer('compare-hex-selected')) map.setFilter('compare-hex-selected', ['==', ['get', 'h3index'], '']);
+		const bgSrc = map.getSource('territory-bg') as maplibregl.GeoJSONSource | undefined;
+		if (bgSrc) bgSrc.setData({ type: 'FeatureCollection', features: [] });
 	}
 
-	export function setCompareHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = 'sequential', domain?: [number, number]) {
+	export function setCompareHexChoropleth(entries: { h3index: string; value: number | null; properties?: Record<string, number>; boundary?: number[][]; nodata?: boolean }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = 'sequential', domain?: [number, number]) {
 		if (!map) return;
 		const src = map.getSource('compare-hexagons') as maplibregl.GeoJSONSource | undefined;
 		if (!src) return;
@@ -1777,15 +1866,21 @@
 			return;
 		}
 
+		const isNodata = (e: { value: number | null; nodata?: boolean }) =>
+			e.nodata === true || e.value === null || typeof e.value !== 'number' || !Number.isFinite(e.value);
+
 		let minVal: number, maxVal: number;
 		if (domain && colorScale !== 'diverging' && colorScale !== 'categorical') {
 			[minVal, maxVal] = domain;
 		} else {
 			minVal = Infinity; maxVal = -Infinity;
 			for (const e of entries) {
-				if (e.value < minVal) minVal = e.value;
-				if (e.value > maxVal) maxVal = e.value;
+				if (isNodata(e)) continue;
+				const v = e.value as number;
+				if (v < minVal) minVal = v;
+				if (v > maxVal) maxVal = v;
 			}
+			if (!Number.isFinite(minVal)) { minVal = 0; maxVal = 1; }
 		}
 		const range = maxVal - minVal || 1;
 		const getColor = (v: number) => computeHexColor(v, colorScale, minVal, maxVal, range);
@@ -1793,19 +1888,27 @@
 		const features: any[] = [];
 		for (const entry of entries) {
 			if (!entry.boundary) continue;
+			if (isNodata(entry)) {
+				features.push({
+					type: 'Feature',
+					properties: { h3index: entry.h3index, value: null, color: NODATA_COLOR, nodata: true, ...(entry.properties || {}) },
+					geometry: { type: 'Polygon', coordinates: [entry.boundary] }
+				});
+				continue;
+			}
 			features.push({
 				type: 'Feature',
-				properties: { h3index: entry.h3index, value: entry.value, color: getColor(entry.value), ...(entry.properties || {}) },
+				properties: { h3index: entry.h3index, value: entry.value, color: getColor(entry.value as number), ...(entry.properties || {}) },
 				geometry: { type: 'Polygon', coordinates: [entry.boundary] }
 			});
 		}
 
 		src.setData({ type: 'FeatureCollection', features });
 		map.setPaintProperty('compare-hex-fill', 'fill-color', ['get', 'color']);
-		map.setPaintProperty('compare-hex-fill', 'fill-opacity', 0.50);
-		map.setPaintProperty('compare-hex-line', 'line-color', '#0f172a');
+		map.setPaintProperty('compare-hex-fill', 'fill-opacity', 0.78);
+		map.setPaintProperty('compare-hex-line', 'line-color', '#374151');
 		map.setPaintProperty('compare-hex-line', 'line-width', 0.5);
-		map.setPaintProperty('compare-hex-line', 'line-opacity', 0.55);
+		map.setPaintProperty('compare-hex-line', 'line-opacity', 0.25);
 	}
 
 	export function clearCompareHexChoropleth() {
@@ -1817,7 +1920,7 @@
 		if (map.getLayer('compare-hex-selected')) map.setFilter('compare-hex-selected', ['==', ['get', 'h3index'], '']);
 	}
 
-	export function setRegionalHexChoropleth(entries: { h3index: string; value: number; properties?: Record<string, number>; boundary?: number[][] }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = 'sequential', domain?: [number, number]) {
+	export function setRegionalHexChoropleth(entries: { h3index: string; value: number | null; properties?: Record<string, number>; boundary?: number[][]; nodata?: boolean }[], colorScale: 'flood' | 'sequential' | 'diverging' | 'categorical' | 'green' | 'warm' = 'sequential', domain?: [number, number]) {
 		if (!map) return;
 		const src = map.getSource('regional-hexagons') as maplibregl.GeoJSONSource | undefined;
 		if (!src) return;
@@ -1829,15 +1932,21 @@
 			return;
 		}
 
+		const isNodata = (e: { value: number | null; nodata?: boolean }) =>
+			e.nodata === true || e.value === null || typeof e.value !== 'number' || !Number.isFinite(e.value);
+
 		let minVal: number, maxVal: number;
 		if (domain && colorScale !== 'diverging' && colorScale !== 'categorical') {
 			[minVal, maxVal] = domain;
 		} else {
 			minVal = Infinity; maxVal = -Infinity;
 			for (const e of entries) {
-				if (e.value < minVal) minVal = e.value;
-				if (e.value > maxVal) maxVal = e.value;
+				if (isNodata(e)) continue;
+				const v = e.value as number;
+				if (v < minVal) minVal = v;
+				if (v > maxVal) maxVal = v;
 			}
+			if (!Number.isFinite(minVal)) { minVal = 0; maxVal = 1; }
 		}
 		const range = maxVal - minVal || 1;
 		const getColor = (v: number) => computeHexColor(v, colorScale, minVal, maxVal, range);
@@ -1845,19 +1954,27 @@
 		const features: any[] = [];
 		for (const entry of entries) {
 			if (!entry.boundary) continue;
+			if (isNodata(entry)) {
+				features.push({
+					type: 'Feature',
+					properties: { h3index: entry.h3index, value: null, color: NODATA_COLOR, nodata: true, ...(entry.properties || {}) },
+					geometry: { type: 'Polygon', coordinates: [entry.boundary] }
+				});
+				continue;
+			}
 			features.push({
 				type: 'Feature',
-				properties: { h3index: entry.h3index, value: entry.value, color: getColor(entry.value), ...(entry.properties || {}) },
+				properties: { h3index: entry.h3index, value: entry.value, color: getColor(entry.value as number), ...(entry.properties || {}) },
 				geometry: { type: 'Polygon', coordinates: [entry.boundary] }
 			});
 		}
 
 		src.setData({ type: 'FeatureCollection', features });
 		map.setPaintProperty('regional-hex-fill', 'fill-color', ['get', 'color']);
-		map.setPaintProperty('regional-hex-fill', 'fill-opacity', 0.50);
-		map.setPaintProperty('regional-hex-line', 'line-color', '#0f172a');
+		map.setPaintProperty('regional-hex-fill', 'fill-opacity', 0.78);
+		map.setPaintProperty('regional-hex-line', 'line-color', '#374151');
 		map.setPaintProperty('regional-hex-line', 'line-width', 0.5);
-		map.setPaintProperty('regional-hex-line', 'line-opacity', 0.55);
+		map.setPaintProperty('regional-hex-line', 'line-opacity', 0.25);
 	}
 
 	export function clearRegionalHexChoropleth() {

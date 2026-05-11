@@ -94,13 +94,20 @@
 				</div>
 				{#each componentVars as v}
 					{@const val = hexData.data?.[v.col]}
+					{@const rawVal = v.rawCol ? hexData.data?.[v.rawCol] : null}
+					{@const hasData = (typeof val === 'string' && val.length > 0)
+						|| (typeof val === 'number' && Number.isFinite(val))
+						|| (typeof rawVal === 'number' && Number.isFinite(rawVal))}
 					{@const isStr = typeof val === 'string' && val.length > 0}
 					{@const numVal = typeof val === 'number' ? val : 0}
-					{@const rawVal = v.rawCol ? hexData.data?.[v.rawCol] : null}
 					{@const displayVal = (rawVal != null && typeof rawVal === 'number') ? rawVal : numVal}
 					<div class="cd-row">
 						<span class="cd-label">{i18n.t(v.labelKey)}</span>
-						<span class="cd-val-data">{isStr ? val : fmtSmart(displayVal) + (v.unit ? ` ${v.unit}` : ' /100')}</span>
+						{#if !hasData}
+							<span class="cd-val-data cd-val-nodata">{i18n.t('legend.noData')}</span>
+						{:else}
+							<span class="cd-val-data">{isStr ? val : fmtSmart(displayVal) + (v.unit ? ` ${v.unit}` : ' /100')}</span>
+						{/if}
 					</div>
 				{/each}
 			</div>
@@ -127,6 +134,7 @@
 	.cd-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; min-width: 2px; }
 	.cd-val { font-size: 8px; font-weight: 600; color: #cbd5e1; width: 24px; text-align: right; flex-shrink: 0; }
 	.cd-val-data { font-size: 10px; font-weight: 600; color: #e2e8f0; text-align: right; margin-left: auto; white-space: nowrap; }
+	.cd-val-nodata { color: #94a3b8; font-style: italic; font-weight: 500; }
 	.hc-header {
 		display: flex;
 		justify-content: space-between;

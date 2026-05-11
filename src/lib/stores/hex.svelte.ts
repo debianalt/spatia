@@ -107,6 +107,7 @@ export class HexStore {
 		this.selectedDpto = null;
 		this.deptBbox = null;
 		this.clearCompareDept();
+		this.clearRegionalData();
 
 		// Per-department layers: don't load all data, wait for department selection
 		if (cfg.perDepartment) {
@@ -163,6 +164,8 @@ export class HexStore {
 		this.visibleData = new Map();
 		this.clearSelection();
 		this.clearHexZones();
+		this.clearCompareDept();
+		this.clearRegionalData();
 		this.dataVersion++;
 
 		try {
@@ -346,7 +349,7 @@ export class HexStore {
 
 	async loadFullCompare(comparePrefix: string): Promise<void> {
 		const layer = this.activeLayer;
-		if (!layer || layer.id === 'flood_risk') return;
+		if (!layer || layer.id === 'flood_risk' || layer.perDepartment) return;
 
 		try {
 			await this.loadGlobalInto(layer, comparePrefix, 'compare');
@@ -357,7 +360,7 @@ export class HexStore {
 
 	async loadRegionalData(prefix: string): Promise<void> {
 		const layer = this.activeLayer;
-		if (!layer || layer.id === 'flood_risk') return;
+		if (!layer || layer.id === 'flood_risk' || layer.perDepartment) return;
 		try {
 			await this.loadGlobalInto(layer, prefix, 'regional');
 		} catch (e) {
@@ -583,18 +586,27 @@ export class HexStore {
 
 	// ── Choropleth entries ────────────────────────────────────────────────
 
-	get choroplethEntries(): { h3index: string; value: number; properties: Record<string, number>; boundary?: number[][] }[] {
+	get choroplethEntries(): { h3index: string; value: number | null; properties: Record<string, number>; boundary?: number[][]; nodata?: boolean }[] {
 		if (!this.activeLayer) return [];
 		const effectivePrimary = this.activeLayer.temporal && this.temporalMode !== 'current'
 			? getTemporalCol(this.activeLayer.primaryVariable, this.temporalMode)
 			: this.activeLayer.primaryVariable;
 		const isDelta = this.activeLayer.temporal && this.temporalMode === 'delta';
-		const entries: { h3index: string; value: number; properties: Record<string, number>; boundary?: number[][] }[] = [];
+		const entries: { h3index: string; value: number | null; properties: Record<string, number>; boundary?: number[][]; nodata?: boolean }[] = [];
 		for (const [h3index, data] of this.visibleData) {
-			const value = data[effectivePrimary] ?? 0;
-			if (!isDelta || value !== 0) {
-				entries.push({ h3index, value, properties: data, boundary: this.boundaryCache.get(h3index) });
-			}
+			const raw = data[effectivePrimary];
+			const hasData = raw !== undefined && raw !== null &&
+				(typeof raw !== 'number' || Number.isFinite(raw));
+			const value: number | null = hasData ? Number(raw) : null;
+			// Delta mode: skip true zeros (no change), but keep nodata so they're rendered explicitly
+			if (isDelta && hasData && value === 0) continue;
+			entries.push({
+				h3index,
+				value,
+				properties: data,
+				boundary: this.boundaryCache.get(h3index),
+				nodata: !hasData
+			});
 		}
 		return entries;
 	}

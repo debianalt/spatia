@@ -72,6 +72,10 @@
 				</div>
 			{/each}
 		</div>
+		<div class="nodata-row">
+			<span class="nodata-swatch"></span>
+			<span class="nodata-label">{i18n.t('legend.noData')}</span>
+		</div>
 	</div>
 {:else if layer && isGradient}
 	<div class="legend">
@@ -164,7 +168,7 @@
 		width: 10px;
 		height: 10px;
 		border-radius: 2px;
-		background: #374151;
+		background: #4b6584;
 		flex-shrink: 0;
 	}
 	.nodata-label {
