@@ -458,6 +458,22 @@
 				}
 			});
 
+			// ── Compared department outline (real polygon, compare mode) ──
+			map.addSource('compare-dept-outline', {
+				type: 'geojson',
+				data: { type: 'FeatureCollection', features: [] }
+			});
+			map.addLayer({
+				id: 'compare-dept-outline-line',
+				type: 'line',
+				source: 'compare-dept-outline',
+				paint: {
+					'line-color': '#fbbf24',
+					'line-width': ['interpolate', ['linear'], ['zoom'], 4, 2, 8, 1.8, 14, 1.2],
+					'line-opacity': 0.85
+				}
+			});
+
 			// ── Hexagon H3 layers (GeoJSON, loaded dynamically) ─────────
 			map.addSource('hexagons', {
 				type: 'geojson',
@@ -1075,6 +1091,15 @@
 
 	export function setDeptOutline(feature: any | null) {
 		const src = map?.getSource('dept-outline') as maplibregl.GeoJSONSource | undefined;
+		if (!src) return;
+		src.setData({
+			type: 'FeatureCollection',
+			features: feature ? [feature] : []
+		});
+	}
+
+	export function setCompareDeptOutline(feature: any | null) {
+		const src = map?.getSource('compare-dept-outline') as maplibregl.GeoJSONSource | undefined;
 		if (!src) return;
 		src.setData({
 			type: 'FeatureCollection',

@@ -16,6 +16,7 @@
 	import { isInsideMisiones } from '$lib/utils/misiones-pip';
 	import { isInsideItapua } from '$lib/utils/itapua-pip';
 	import { isInsideCorrientes } from '$lib/utils/corrientes-pip';
+	import { findDeptFeature } from '$lib/utils/deptBoundaries';
 	import { PARQUETS, MAP_INIT, HEX_LAYER_REGISTRY, TERRITORY_REGISTRY, getAnalysisById, getAnalysesForLens, type AnalysisConfig, type LensId, type CountryId } from '$lib/config';
 	import { i18n, type Locale } from '$lib/stores/i18n.svelte';
 	import { terms } from '$lib/stores/terms.svelte';
@@ -659,10 +660,16 @@
 	});
 
 	// ── Dept bbox outlines + auto-fly when both depts are loaded ────────────
+	// Primary bbox: always suppressed (we always render the real polygon via dept-outline).
+	// Compare bbox: only rendered as a fallback when no real polygon exists (e.g. Itapúa, PY).
 	$effect(() => {
 		const p = hexStore.deptBbox;
 		const c = hexStore.compareDeptBbox;
-		mapComponent?.updateDeptHighlights(p, c);
+		const compareDpto = hexStore.compareDpto;
+		const compareTp = hexStore.compareTerritoryPrefix;
+		const compareHasPolygon = !!(compareDpto && compareTp != null
+			&& findDeptFeature(compareDpto, compareTp));
+		mapComponent?.updateDeptHighlights(null, compareHasPolygon ? null : c);
 		if (p && c) {
 			const union: [number, number, number, number] = [
 				Math.min(p[0], c[0]),
@@ -672,6 +679,21 @@
 			];
 			mapComponent?.flyToBbox(union);
 		}
+	});
+
+	// ── Selected department real-polygon outline (primary + compare) ───────
+	$effect(() => {
+		const dpto = hexStore.selectedDpto;
+		const tp = hexStore.territoryPrefix;
+		const feat = dpto ? findDeptFeature(dpto, tp) : null;
+		mapComponent?.setDeptOutline(feat);
+
+		const compareDpto = hexStore.compareDpto;
+		const compareTp = hexStore.compareTerritoryPrefix;
+		const compareFeat = compareDpto && compareTp != null
+			? findDeptFeature(compareDpto, compareTp)
+			: null;
+		mapComponent?.setCompareDeptOutline(compareFeat);
 	});
 
 	// ── Clear compare dept when compare mode is exited ───────────────────

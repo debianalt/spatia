@@ -56,6 +56,7 @@ export class HexStore {
 	compareVisibleData: Map<string, Record<string, any>> = $state(new Map());
 	private compareBoundaryCache: Map<string, number[][]> = new Map();
 	compareDpto: string | null = $state(null);
+	compareTerritoryPrefix: string | null = $state(null);
 	compareDataVersion: number = $state(0);
 
 	// ── Regional mode (3rd territory hex slot) ───────────────────────────
@@ -316,6 +317,7 @@ export class HexStore {
 			this.compareVisibleData = data;
 			this.compareBoundaryCache = bounds;
 			this.compareDpto = dpto;
+			this.compareTerritoryPrefix = comparePrefix;
 			this.compareDeptBbox = HexStore.bboxFromBounds(bounds);
 			this.compareDataVersion++;
 		} catch (e) {
@@ -372,6 +374,7 @@ export class HexStore {
 			this.compareVisibleData = data;
 			this.compareBoundaryCache = bounds;
 			this.compareDpto = null;
+			this.compareTerritoryPrefix = prefix;
 			this.compareDeptBbox = null;
 			this.compareDataVersion++;
 		} else {
@@ -451,6 +454,7 @@ export class HexStore {
 		this.compareVisibleData = new Map();
 		this.compareBoundaryCache = new Map();
 		this.compareDpto = null;
+		this.compareTerritoryPrefix = null;
 		this.compareDeptBbox = null;
 		this.compareDataVersion++;
 	}
