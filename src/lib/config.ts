@@ -165,11 +165,11 @@ export const PARQUETS = {
 export const BASEMAP = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
 
 export const MAP_INIT = {
-	center: [-54.4, -27.0] as [number, number],  // Misiones provincia
-	zoom: 7.5,
+	center: [-56.7, -28.1] as [number, number],  // NEA regional view
+	zoom: 6.0,
 	pitch: 50,
 	bearing: -15,
-	minZoom: 6,
+	minZoom: 5,
 	maxZoom: 18
 } as const;
 
@@ -305,15 +305,15 @@ export function getTerritoriesByCountry(): Record<CountryId, TerritoryConfig[]> 
 export type LensId = 'invertir' | 'producir' | 'servir' | 'vivir';
 
 export interface LensConfig {
-	label: Record<'es' | 'en' | 'gn', string>;
+	label: Record<'es' | 'en' | 'gn' | 'pt', string>;
 	color: string;
 }
 
 export const LENS_CONFIG: Record<LensId, LensConfig> = {
-	invertir: { label: { es: 'Invertir', en: 'Invest', gn: 'Moĩ viru' }, color: '#f59e0b' },
-	producir: { label: { es: 'Producir', en: 'Produce', gn: "Mba'apo" }, color: '#22c55e' },
-	servir: { label: { es: 'Servir', en: 'Serve', gn: 'Pytyvõ' }, color: '#3b82f6' },
-	vivir: { label: { es: 'Vivir', en: 'Live', gn: 'Ñemity' }, color: '#06b6d4' },
+	invertir: { label: { es: 'Invertir', en: 'Invest', gn: 'Moĩ viru', pt: 'Investir' }, color: '#f59e0b' },
+	producir: { label: { es: 'Producir', en: 'Produce', gn: "Mba'apo", pt: 'Produzir' }, color: '#22c55e' },
+	servir: { label: { es: 'Servir', en: 'Serve', gn: 'Pytyvõ', pt: 'Servir' }, color: '#3b82f6' },
+	vivir: { label: { es: 'Vivir', en: 'Live', gn: 'Ñemity', pt: 'Viver' }, color: '#06b6d4' },
 } as const;
 
 // ── Hex layer system (multi-resolution) ──────────────────────────────────────
@@ -503,7 +503,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.locValue.low',
 		legendHighKey: 'legend.locValue.high',
-		coverage: { itapua_py: 'unavailable', corrientes: 'pending' },
+		coverage: { itapua_py: 'unavailable', corrientes: 'available' },
 	},
 	agri_potential: {
 		id: 'agri_potential',
@@ -583,7 +583,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		perDepartment: true,
 		legendLowKey: 'legend.forestry.low',
 		legendHighKey: 'legend.forestry.high',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 	},
 	service_deprivation: {
 		id: 'service_deprivation',
@@ -723,8 +723,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'territorial_types',
 		parquet: 'sat_territorial_types',
 		variables: [
-			{ col: 'score', labelKey: 'sat.types.score', aggregation: 'mean' },
-			{ col: 'type', labelKey: 'sat.types.type', aggregation: 'mean' },
+			{ col: 'territorial_type', labelKey: 'sat.types.type', aggregation: 'mean' },
 			{ col: 'type_label', labelKey: 'sat.types.typeLabel', aggregation: 'mean' },
 			{ col: 'm_npp', labelKey: 'sat.types.npp', aggregation: 'mean' },
 			{ col: 'm_ndvi', labelKey: 'sat.types.ndvi', aggregation: 'mean' },
@@ -738,12 +737,12 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 			{ col: 'm_gdd', labelKey: 'sat.types.gdd', aggregation: 'mean' },
 			{ col: 'm_precipitation', labelKey: 'sat.types.precip', aggregation: 'mean' },
 		],
-		primaryVariable: 'score',
-		colorScale: 'sequential',
+		primaryVariable: 'territorial_type',
+		colorScale: 'categorical',
 		aggregation: 'mean',
 		titleKey: 'sat.types.title',
 		perDepartment: true,
-		coverage: { itapua_py: 'unavailable', corrientes: 'pending' },
+		coverage: { itapua_py: 'unavailable', corrientes: 'available' },
 		legendLowKey: 'legend.types.low',
 		legendHighKey: 'legend.types.high',
 	},
@@ -770,7 +769,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		titleKey: 'analysis.scores.title',
 		perDepartment: true,
 		comparable: true,
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 		legendLowKey: 'legend.scores.low',
 		legendHighKey: 'legend.scores.high',
 	},
@@ -972,7 +971,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		temporalPeriods: { current: '2022–2025', baseline: '2014–2017', source: 'VIIRS · MODIS · Hansen · GHSL' },
 		legendLowKey: 'legend.prodAct.low',
 		legendHighKey: 'legend.prodAct.high',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 	},
 	// ── Deforestation Dynamics (Hansen 2001-2024, observed) ──
 	// No petalVars: only 2 numeric indicators (loss_rate + cumulative) — radar with 2 vars is not meaningful.
@@ -994,7 +993,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		temporalPeriods: { current: '2015–2024', baseline: '2001–2010', source: 'Hansen GFC v1.12' },
 		legendLowKey: 'legend.deforest.low',
 		legendHighKey: 'legend.deforest.high',
-		coverage: { itapua_py: 'available', corrientes: 'pending' },
+		coverage: { itapua_py: 'available', corrientes: 'available' },
 	},
 	// ── EUDR deforestation risk (H3 res-7, 10 provinces) ──
 	eudr: {
@@ -1150,7 +1149,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'invertir',
 		titleKey: 'sat.locValue.title',
 		descKey: 'sat.locValue.desc',
-		coverage: { itapua_py: 'unavailable', corrientes: 'pending' },
+		coverage: { itapua_py: 'unavailable', corrientes: 'available' },
 		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
