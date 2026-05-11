@@ -26,10 +26,22 @@ from rasterio.features import geometry_mask
 from rasterio.windows import from_bounds
 from shapely.geometry import shape
 
-from config import OUTPUT_DIR, H3_RESOLUTION
+from config import OUTPUT_DIR, H3_RESOLUTION, TERRITORY_CONFIGS, get_territory
 from validate import validate_raster
 
+# Default hex grid path for Misiones (backward compat). For other territories,
+# resolved at runtime from territory['output_prefix'].
 HEXAGONS_PATH = os.path.join(OUTPUT_DIR, "hexagons-lite.geojson")
+
+
+def resolve_hexgrid_path(output_prefix):
+    """Return the hexagon GeoJSON path for the given territory output_prefix."""
+    if not output_prefix:
+        return HEXAGONS_PATH
+    candidate = os.path.join(OUTPUT_DIR, output_prefix.rstrip("/"), "hexagons.geojson")
+    if os.path.exists(candidate):
+        return candidate
+    return os.path.join(OUTPUT_DIR, output_prefix.rstrip("/"), "hexagons-lite.geojson")
 
 # For each analysis: which bands are in the temporal exports, their weights and invert flags.
 # These must match the band order in gee_export_analysis_temporal.py outputs.
@@ -273,15 +285,25 @@ def main():
     parser = argparse.ArgumentParser(description="Process temporal rasters to H3 with deltas")
     parser.add_argument("--analysis", required=True, help="Analysis ID or 'all'")
     parser.add_argument("--input-dir", default=OUTPUT_DIR, help="Directory with GeoTIFFs")
+    parser.add_argument("--territory", default="misiones",
+                        choices=list(TERRITORY_CONFIGS.keys()),
+                        help="Territory ID (defaults to misiones for backward compat)")
     args = parser.parse_args()
+
+    territory = get_territory(args.territory)
+    output_prefix = territory['output_prefix']  # 'corrientes/', 'itapua_py/', or ''
+    territory_dir = os.path.join(args.input_dir, output_prefix.rstrip("/")) if output_prefix else args.input_dir
+    territory_out_dir = os.path.join(OUTPUT_DIR, output_prefix.rstrip("/")) if output_prefix else OUTPUT_DIR
+    os.makedirs(territory_out_dir, exist_ok=True)
 
     if args.analysis == 'all':
         analyses = list(TEMPORAL_COMPONENTS.keys())
     else:
         analyses = [a.strip() for a in args.analysis.split(',')]
 
-    print("Loading hexagon grid...")
-    with open(HEXAGONS_PATH, 'r') as f:
+    hexgrid_path = resolve_hexgrid_path(output_prefix)
+    print(f"Loading hexagon grid from {hexgrid_path}...")
+    with open(hexgrid_path, 'r') as f:
         hexgrid = json.load(f)
     features = hexgrid['features']
     print(f"  {len(features):,} hexagons")
@@ -294,10 +316,10 @@ def main():
             print(f"  SKIP {aid}: no temporal config")
             continue
 
-        baseline_path = os.path.join(args.input_dir, f"sat_{aid}_baseline.tif")
-        current_path = os.path.join(args.input_dir, f"sat_{aid}_current.tif")
-        original_parquet = os.path.join(args.input_dir, f"sat_{aid}.parquet")
-        output_path = os.path.join(OUTPUT_DIR, f"sat_{aid}.parquet")
+        baseline_path = os.path.join(territory_dir, f"sat_{aid}_baseline.tif")
+        current_path = os.path.join(territory_dir, f"sat_{aid}_current.tif")
+        original_parquet = os.path.join(territory_dir, f"sat_{aid}.parquet")
+        output_path = os.path.join(territory_out_dir, f"sat_{aid}.parquet")
 
         if not validate_raster(baseline_path):
             print(f"  SKIP {aid}: baseline raster invalid or not found")

@@ -19,7 +19,8 @@ import sys
 import time
 
 from config import (MISIONES_BBOX, OUTPUT_DIR,
-                    BASELINE_START, BASELINE_END, CURRENT_START, CURRENT_END)
+                    BASELINE_START, BASELINE_END, CURRENT_START, CURRENT_END,
+                    TERRITORY_CONFIGS, get_territory)
 
 EXPORT_SCALE = 100
 DRIVE_FOLDER = 'spatia-satellite'
@@ -243,11 +244,16 @@ def main():
     parser.add_argument("--baseline-end", default=BASELINE_END)
     parser.add_argument("--current-start", default=CURRENT_START)
     parser.add_argument("--current-end", default=CURRENT_END)
+    parser.add_argument("--territory", default="misiones",
+                        choices=list(TERRITORY_CONFIGS.keys()),
+                        help="Territory ID (defaults to misiones for backward compat)")
     args = parser.parse_args()
 
     is_ci = authenticate()
     use_gcs = is_ci
-    bbox = ee.Geometry.Rectangle(MISIONES_BBOX)
+    territory = get_territory(args.territory)
+    bbox = ee.Geometry.Rectangle(territory['bbox'])
+    output_prefix = territory['output_prefix']  # 'corrientes/', 'itapua_py/', or '' for misiones
 
     if args.analysis == 'all':
         analyses = list(TEMPORAL_BUILDERS.keys())
@@ -281,7 +287,7 @@ def main():
                     image=composite,
                     description=file_name,
                     bucket=GCS_BUCKET,
-                    fileNamePrefix=f'satellite/{file_name}',
+                    fileNamePrefix=f'satellite/{output_prefix}{file_name}',
                     region=bbox, scale=args.scale,
                     crs='EPSG:4326', maxPixels=1e9)
             else:
