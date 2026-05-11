@@ -45,55 +45,97 @@ LAYERS = {
     "urbano": "mapa:parcela_urbana",
 }
 
+# WFS retry strategy: 3 attempts with increasing wait + timeout.
+# Total worst case before falling back to cached snapshot: ~13 min.
+WFS_RETRY_WAITS = [0, 30, 120, 600]     # seconds before each attempt
+WFS_RETRY_TIMEOUTS = [180, 300, 600, 600]
+
 
 # ── WFS download ─────────────────────────────────────────────────────────────
 
 
 def download_wfs_paginated(layer_name, label):
-    """Download WFS with pagination for large layers."""
-    print(f"  Downloading {label}...", end=" ", flush=True)
+    """Download WFS with pagination, retrying full passes on connection failure.
+
+    Returns a FeatureCollection. Empty features list means either the upstream
+    WFS returned 0 rows (endpoint up) or every retry exhausted (endpoint down).
+    Callers must treat empty as "no update" and reuse the previous snapshot.
+    """
+    print(f"  Downloading {label}...", flush=True)
     warnings.filterwarnings("ignore", message="Unverified HTTPS request")
     t0 = time.time()
 
-    all_features = []
-    offset = 0
+    last_error = None
+    for attempt, (wait, timeout) in enumerate(
+        zip(WFS_RETRY_WAITS, WFS_RETRY_TIMEOUTS), start=1
+    ):
+        if wait > 0:
+            print(
+                f"  Backoff {wait}s before attempt {attempt}/{len(WFS_RETRY_TIMEOUTS)}...",
+                flush=True,
+            )
+            time.sleep(wait)
 
-    while True:
-        url = (
-            f"{WFS_BASE}?service=WFS&version=1.0.0&request=GetFeature"
-            f"&typeName={layer_name}"
-            f"&outputFormat=application/json"
-            f"&maxFeatures={BATCH_SIZE}&startIndex={offset}"
-        )
-        try:
-            resp = requests.get(url, verify=False, timeout=180)
-            resp.raise_for_status()
-        except requests.exceptions.Timeout:
-            print(f"\n  Timeout at offset {offset}, retrying...", end=" ", flush=True)
-            time.sleep(5)
+        all_features = []
+        offset = 0
+        attempt_failed = False
+
+        while True:
+            url = (
+                f"{WFS_BASE}?service=WFS&version=1.0.0&request=GetFeature"
+                f"&typeName={layer_name}"
+                f"&outputFormat=application/json"
+                f"&maxFeatures={BATCH_SIZE}&startIndex={offset}"
+            )
             try:
-                resp = requests.get(url, verify=False, timeout=300)
+                resp = requests.get(url, verify=False, timeout=timeout)
                 resp.raise_for_status()
-            except Exception as e:
-                print(f"\n  Failed at offset {offset}: {e}")
+            except (
+                requests.exceptions.Timeout,
+                requests.exceptions.ConnectionError,
+                requests.exceptions.HTTPError,
+            ) as e:
+                print(
+                    f"  Attempt {attempt} failed at offset {offset}: "
+                    f"{type(e).__name__}",
+                    flush=True,
+                )
+                last_error = e
+                attempt_failed = True
                 break
-        except Exception as e:
-            print(f"\n  Failed at offset {offset}: {e}")
-            break
+            except Exception as e:
+                print(f"  Attempt {attempt} unexpected error at offset {offset}: {e}", flush=True)
+                last_error = e
+                attempt_failed = True
+                break
 
-        data = resp.json()
-        feats = data.get("features", [])
-        if not feats:
-            break
-        all_features.extend(feats)
-        offset += BATCH_SIZE
+            data = resp.json()
+            feats = data.get("features", [])
+            if not feats:
+                break
+            all_features.extend(feats)
+            offset += BATCH_SIZE
 
-        if len(all_features) % 50000 < BATCH_SIZE:
-            print(f"{len(all_features):,}...", end=" ", flush=True)
+            if len(all_features) % 50000 < BATCH_SIZE:
+                print(f"    {len(all_features):,} features so far...", flush=True)
+
+        if not attempt_failed:
+            elapsed = time.time() - t0
+            if all_features:
+                print(f"  {len(all_features):,} features in {elapsed:.0f}s")
+            else:
+                print(
+                    f"  WFS endpoint up but returned 0 features in {elapsed:.0f}s "
+                    f"— treating as no-update."
+                )
+            return {"type": "FeatureCollection", "features": all_features}
 
     elapsed = time.time() - t0
-    print(f"{len(all_features):,} features in {elapsed:.0f}s")
-    return {"type": "FeatureCollection", "features": all_features}
+    print(
+        f"  [ERR] All {len(WFS_RETRY_TIMEOUTS)} retries exhausted for {label} "
+        f"in {elapsed:.0f}s. Last error: {last_error}"
+    )
+    return {"type": "FeatureCollection", "features": []}
 
 
 def parse_and_reproject(geojson, src_crs="EPSG:22177"):
@@ -218,9 +260,34 @@ def track_changes(new_gdf, existing_gdf, parcel_type):
     removed_gdf contains parcels that were in existing but not in new — their
     full geometry is preserved so the ghost layer can keep showing them for a
     grace period.
+
+    If new_gdf is empty (WFS failed) and existing_gdf has data, the previous
+    snapshot is reused unchanged so the R2 state survives upstream outages.
     """
     today = pd.Timestamp(date.today())
     changes = []
+
+    # WFS failed or returned empty → preserve last known good state.
+    if new_gdf is None or len(new_gdf) == 0:
+        if existing_gdf is not None and len(existing_gdf) > 0:
+            print(
+                f"  [warn] {parcel_type}: WFS returned 0 features. Reusing previous "
+                f"snapshot ({len(existing_gdf):,} parcels) without changes."
+            )
+            return existing_gdf.copy(), [], None
+        print(
+            f"  [warn] {parcel_type}: WFS returned 0 features AND no previous "
+            f"state. Skipping {parcel_type}."
+        )
+        empty = gpd.GeoDataFrame(
+            columns=[
+                "cca", "area_m2", "departamento", "municipio",
+                "geometry", "first_seen", "last_updated",
+            ],
+            geometry="geometry",
+            crs="EPSG:4326",
+        )
+        return empty, [], None
 
     if existing_gdf is None or len(existing_gdf) == 0:
         # First run: everything is new, no removed
@@ -724,6 +791,15 @@ def run_extraction(output_dir, radios_path, state_dir=None, skip_wfs=False):
         prev_rural = load_previous_state(state_dir, "rural")
         prev_urbano = load_previous_state(state_dir, "urbano")
 
+        rural_empty = len(gdf_rural) == 0
+        urbano_empty = len(gdf_urbano) == 0
+        degraded = rural_empty or urbano_empty
+
+        # Bail out only if BOTH layers failed AND no prior snapshot exists.
+        if rural_empty and urbano_empty and prev_rural is None and prev_urbano is None:
+            print("  [x] Both WFS layers empty and no previous state — cannot proceed.")
+            return None
+
         # Track changes (each returns the removed geometries too)
         rural_gdf, rural_changes, rural_removed = track_changes(gdf_rural, prev_rural, "rural")
         urbano_gdf, urbano_changes, urbano_removed = track_changes(gdf_urbano, prev_urbano, "urbano")
@@ -736,6 +812,13 @@ def run_extraction(output_dir, radios_path, state_dir=None, skip_wfs=False):
         # Update ghost layer: merge removed-in-this-run with the previous
         # removed state, prune entries older than REMOVED_GRACE_DAYS.
         update_removed_state(state_dir, [rural_removed, urbano_removed])
+
+        if degraded:
+            print(
+                f"\n  [WARN] Run degraded: rural_empty={rural_empty}, "
+                f"urbano_empty={urbano_empty}. Reused previous snapshot for "
+                f"missing layer(s); next run will retry WFS."
+            )
 
     # Load radios for spatial join
     print(f"  Loading radios from {radios_path}...")
