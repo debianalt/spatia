@@ -128,6 +128,80 @@ export function downloadGeoJsonFromHexList(
 	triggerDownload(blob, filename);
 }
 
+// ── SVG / PNG export for charts ─────────────────────────────────────────────
+
+function inlineSvgStyles(svg: SVGElement): void {
+	// CSS classes don't apply once the SVG leaves the DOM context.
+	// Copy computed styles to inline attributes so the file renders identically
+	// in Illustrator/Inkscape (SVG) and on a fresh canvas (PNG).
+	const props = ['fill', 'stroke', 'stroke-width', 'stroke-opacity', 'stroke-dasharray',
+		'opacity', 'fill-opacity', 'font-family', 'font-size', 'font-weight', 'text-anchor'];
+	const walk = (node: Element) => {
+		const cs = window.getComputedStyle(node);
+		for (const p of props) {
+			const v = cs.getPropertyValue(p);
+			if (v) (node as SVGElement).style.setProperty(p, v);
+		}
+		for (const child of Array.from(node.children)) walk(child);
+	};
+	walk(svg);
+	svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+}
+
+export function exportSvgAsSvg(svg: SVGElement, filename: string): void {
+	const cloned = svg.cloneNode(true) as SVGElement;
+	inlineSvgStyles(cloned);
+	const xml = new XMLSerializer().serializeToString(cloned);
+	const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+	triggerDownload(blob, filename);
+}
+
+export async function exportSvgAsPng(
+	svg: SVGElement,
+	filename: string,
+	opts: { scale?: number; background?: string } = {}
+): Promise<void> {
+	const scale = opts.scale ?? 2;
+	const background = opts.background ?? '#0a0e1a';
+	const rect = svg.getBoundingClientRect();
+	const width = rect.width || Number(svg.getAttribute('width')) || 600;
+	const height = rect.height || Number(svg.getAttribute('height')) || 400;
+
+	const cloned = svg.cloneNode(true) as SVGElement;
+	inlineSvgStyles(cloned);
+	// Ensure width/height attrs so Image() rasterises correctly
+	cloned.setAttribute('width', String(width));
+	cloned.setAttribute('height', String(height));
+	const xml = new XMLSerializer().serializeToString(cloned);
+	const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+	const url = URL.createObjectURL(blob);
+
+	try {
+		const img = new Image();
+		await new Promise<void>((resolve, reject) => {
+			img.onload = () => resolve();
+			img.onerror = (e) => reject(e);
+			img.src = url;
+		});
+		const canvas = document.createElement('canvas');
+		canvas.width = width * scale;
+		canvas.height = height * scale;
+		const ctx = canvas.getContext('2d');
+		if (!ctx) return;
+		ctx.fillStyle = background;
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+		await new Promise<void>((resolve) => {
+			canvas.toBlob((b) => {
+				if (b) triggerDownload(b, filename);
+				resolve();
+			}, 'image/png');
+		});
+	} finally {
+		URL.revokeObjectURL(url);
+	}
+}
+
 export function downloadGeoJsonFromPolygon(
 	coordinates: Array<[number, number]>,
 	properties: Record<string, unknown>,

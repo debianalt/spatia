@@ -1,6 +1,7 @@
 <script lang="ts">
 	import * as d3 from 'd3';
 	import { gridDisk } from 'h3-js';
+	import ChartFrame from './ChartFrame.svelte';
 
 	let {
 		data = new Map() as Map<string, Record<string, any>>,
@@ -13,7 +14,6 @@
 	const allH3s = $derived([...data.keys()]);
 
 	let container: HTMLDivElement;
-	let open = $state(true);
 	let computing = $state(false);
 	let brushCount = $state(0);
 	let lisaMode = $state(false);
@@ -23,8 +23,18 @@
 	} | null>(null);
 
 	$effect(() => {
-		if (open && variable && data.size > 0 && allH3s.length > 0) compute();
+		if (variable && data.size > 0 && allH3s.length > 0) compute();
 	});
+
+	function csvRows() {
+		if (!result) return [];
+		return result.points.map(p => ({
+			h3index: p.h3,
+			std: p.std.toFixed(4),
+			lag: p.lag.toFixed(4),
+			quadrant: p.quad,
+		}));
+	}
 
 	$effect(() => {
 		if (result && container) draw();
@@ -280,35 +290,10 @@
 		onShowLisa(entries);
 	}
 
-	function exportCSV() {
-		if (!result) return;
-		const counts = { HH: 0, LL: 0, HL: 0, LH: 0 };
-		for (const p of result.points) counts[p.quad as keyof typeof counts]++;
-		const pStr = result.p < 0.001 ? '<0.001' : result.p.toFixed(4);
-		const header = 'variable,I,E[I],z,p,n,HH,LL,HL,LH';
-		const row = [variable, result.I.toFixed(6), result.expected.toFixed(6), result.z.toFixed(4), pStr, result.n, counts.HH, counts.LL, counts.HL, counts.LH].join(',');
-		const csv = [header, row].join('\n');
-		const blob = new Blob([csv], { type: 'text/csv' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = `moran_${variable}_${new Date().toISOString().slice(0, 10)}.csv`;
-		a.click();
-		URL.revokeObjectURL(url);
-	}
 </script>
 
-<div class="moran-wrap">
-	<button class="moran-toggle" onclick={() => { open = !open; }}>
-		<span class="moran-arrow">{open ? '▾' : '▸'}</span>
-		Autocorrelación espacial
-		{#if result && !open}
-			<span class="moran-badge">I = {result.I.toFixed(3)}</span>
-		{/if}
-	</button>
-
-	{#if open}
-		<div class="moran-body">
+<ChartFrame title="Autocorrelación espacial" csvRows={csvRows} csvFilename="spatia_moran">
+	<div class="moran-body">
 			{#if computing}
 				<div class="moran-loading">
 					<div class="moran-spinner"></div>
@@ -325,7 +310,6 @@
 						<span class="moran-sel">{brushCount} sel.</span>
 						<button class="moran-btn-clear" onclick={clearBrush}>✕</button>
 					{/if}
-					<button class="moran-btn-csv" onclick={exportCSV}>CSV</button>
 				</div>
 				<div class="moran-mapview">
 					<span class="moran-dim">Mapa:</span>
@@ -349,9 +333,8 @@
 			{:else}
 				<div class="moran-empty">Cargá una capa para calcular autocorrelación espacial</div>
 			{/if}
-		</div>
-	{/if}
-</div>
+	</div>
+</ChartFrame>
 
 <style>
 	.moran-wrap {

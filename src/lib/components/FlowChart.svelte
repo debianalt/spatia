@@ -1,4 +1,6 @@
 <script lang="ts">
+	import ChartFrame from './ChartFrame.svelte';
+
 	let {
 		data = new Map() as Map<string, Record<string, any>>,
 		temporalPeriods = null as { baseline: string; current: string } | null,
@@ -132,11 +134,19 @@
 		void data.size;
 		activeFlow = null; activeSide = null; activeBand = null;
 	});
+
+	function csvRows() {
+		return entries.map(e => ({
+			h3index: e.h3,
+			band_from: BAND_LABELS[e.from],
+			band_to: BAND_LABELS[e.to],
+		}));
+	}
 </script>
 
-<div class="fc-panel">
-	<div class="fc-header">
-		<span class="fc-title">Evolución</span>
+<ChartFrame title="Evolución" csvRows={csvRows} csvFilename="spatia_flow">
+	<div class="fc-panel">
+	<div class="fc-subheader">
 		{#if activeFlow !== null}
 			<span class="fc-active">
 				{BAND_LABELS[activeFlow[0]]}→{BAND_LABELS[activeFlow[1]]}: {matrix[activeFlow[0]][activeFlow[1]].length.toLocaleString()} hex
@@ -237,15 +247,14 @@
 			Flujo de hexágonos entre bandas: <em>Bajo</em> (&lt;33) · <em>Medio</em> (33–67) · <em>Alto</em> (≥67) · Clic en un flujo o banda para ver esos hexágonos en el mapa
 		</div>
 	{/if}
-</div>
+	</div>
+</ChartFrame>
 
 <style>
 	.fc-panel {
-		margin: 8px 0 4px;
-		padding: 6px 0 2px;
-		border-top: 1px solid rgba(255,255,255,0.1);
+		padding: 2px 0;
 	}
-	.fc-header {
+	.fc-subheader {
 		display: flex;
 		align-items: baseline;
 		gap: 6px;
@@ -253,14 +262,6 @@
 		padding: 0 2px;
 		min-height: 14px;
 		flex-wrap: wrap;
-	}
-	.fc-title {
-		font-size: 9px;
-		font-weight: 700;
-		color: rgba(255,255,255,0.45);
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		white-space: nowrap;
 	}
 	.fc-active {
 		font-size: 8px;

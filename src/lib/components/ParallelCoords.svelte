@@ -1,4 +1,6 @@
 <script lang="ts">
+	import ChartFrame from './ChartFrame.svelte';
+
 	let {
 		data = new Map() as Map<string, Record<string, any>>,
 		variables = [] as { col: string; labelKey: string; unit?: string }[],
@@ -240,11 +242,19 @@
 		hoverClear !== null ? 'pointer' :
 		(hoverIdx !== null || dragging) ? 'ns-resize' : 'default'
 	);
+
+	function csvRows() {
+		return allPoints.map(pt => {
+			const row: Record<string, unknown> = { h3index: pt.h3 };
+			for (const v of numericVars) row[v.col] = pt.vals[v.col].toFixed(3);
+			return row;
+		});
+	}
 </script>
 
-<div class="pc-panel">
-	<div class="pc-header">
-		<span class="pc-title">Variables</span>
+<ChartFrame title="Variables" csvRows={csvRows} csvFilename="spatia_parallel">
+	<div class="pc-panel">
+	<div class="pc-subheader">
 		{#if selectedCount > 0}
 			<span class="pc-count">{selectedCount.toLocaleString()} hex</span>
 			<button class="pc-clear-btn" onclick={clearAll}>× limpiar todo</button>
@@ -361,15 +371,14 @@
 			Pasá el mouse sobre una variable y <em>arrastrá para filtrar</em> por rango · El <em>×</em> sobre cada filtro activo lo limpia individualmente · "Limpiar todo" quita todos los filtros
 		</div>
 	{/if}
-</div>
+	</div>
+</ChartFrame>
 
 <style>
 	.pc-panel {
-		margin: 8px 0 4px;
-		padding: 6px 0 2px;
-		border-top: 1px solid rgba(255,255,255,0.1);
+		padding: 2px 0;
 	}
-	.pc-header {
+	.pc-subheader {
 		display: flex;
 		align-items: baseline;
 		gap: 6px;
@@ -377,14 +386,6 @@
 		padding: 0 2px;
 		min-height: 14px;
 		flex-wrap: wrap;
-	}
-	.pc-title {
-		font-size: 9px;
-		font-weight: 700;
-		color: rgba(255,255,255,0.45);
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		white-space: nowrap;
 	}
 	.pc-count { font-size: 8px; color: #22d3ee; }
 	.pc-hint  { font-size: 8px; color: rgba(255,255,255,0.18); font-style: italic; }

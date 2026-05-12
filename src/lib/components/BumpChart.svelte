@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { loadDeptSummary } from '$lib/utils/deptSummaries';
+	import ChartFrame from './ChartFrame.svelte';
 
 	let {
 		activeAnalysisId = '',
@@ -158,11 +159,21 @@
 		hoverDept = null;
 		hoverColIdx = null;
 	}
+
+	function csvRows() {
+		const rows: Array<{ dept: string; analysis: string; rank: number; score: string }> = [];
+		for (const col of rankings) {
+			for (const d of col.depts) {
+				rows.push({ dept: d.name, analysis: col.analysisId, rank: d.rank, score: d.score.toFixed(2) });
+			}
+		}
+		return rows;
+	}
 </script>
 
-<div class="bump-panel">
-	<div class="bump-header">
-		<span class="bump-title">Perfil comparativo</span>
+<ChartFrame title="Perfil comparativo" csvRows={csvRows} csvFilename="spatia_bump">
+	<div class="bump-panel">
+	<div class="bump-subheader">
 		{#if hoverInfo}
 			<span class="bump-hover">{hoverInfo.dept} · {hoverInfo.label}: #{hoverInfo.rank}/{hoverInfo.total} ({hoverInfo.score.toFixed(1)})</span>
 		{:else if selectedDept && selectedEntry}
@@ -267,29 +278,20 @@
 	{:else if !loading}
 		<div class="bump-state">sin datos comparables disponibles</div>
 	{/if}
-</div>
+	</div>
+</ChartFrame>
 
 <style>
 	.bump-panel {
-		margin: 8px 0 4px;
-		padding: 6px 0 2px;
-		border-top: 1px solid rgba(255,255,255,0.1);
+		padding: 2px 0;
 	}
-	.bump-header {
+	.bump-subheader {
 		display: flex;
 		align-items: baseline;
 		gap: 6px;
 		margin-bottom: 2px;
 		padding: 0 2px;
 		min-height: 14px;
-	}
-	.bump-title {
-		font-size: 9px;
-		font-weight: 700;
-		color: rgba(255,255,255,0.45);
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		white-space: nowrap;
 	}
 	.bump-rank {
 		font-size: 8px;

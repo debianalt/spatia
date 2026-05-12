@@ -1,4 +1,6 @@
 <script lang="ts">
+	import ChartFrame from './ChartFrame.svelte';
+
 	let {
 		data = new Map() as Map<string, Record<string, any>>,
 		variable = '',
@@ -10,6 +12,15 @@
 		xLabel?: string;
 		onBrushSelect?: (h3s: string[]) => void;
 	} = $props();
+
+	function csvRows() {
+		const BIN_W = 100 / 20;
+		return histogram.map((count, i) => ({
+			bin_lo: (i * BIN_W).toFixed(1),
+			bin_hi: ((i + 1) * BIN_W).toFixed(1),
+			count,
+		}));
+	}
 
 	const BINS = 20;
 	const PAD_L = 28, PAD_R = 8, PAD_T = 6, PAD_B = 20;
@@ -104,9 +115,9 @@
 	});
 </script>
 
-<div class="hpanel">
-	<div class="hpanel-header">
-		<span class="hpanel-title">Distribución</span>
+<ChartFrame title="Distribución" csvRows={csvRows} csvFilename="spatia_histogram">
+	<div class="hpanel">
+	<div class="hpanel-subheader">
 		<span class="hpanel-unit">{xLabel} 0–100</span>
 		{#if brushLo !== null}
 			<span class="hpanel-count">{selectedCount.toLocaleString()} hex · doble-clic para limpiar</span>
@@ -175,27 +186,19 @@
 			font-size="7" font-family="system-ui, sans-serif"
 		>{totalHexes > 999 ? (totalHexes / 1000).toFixed(0) + 'k' : totalHexes}</text>
 	</svg>
-</div>
+	</div>
+</ChartFrame>
 
 <style>
 	.hpanel {
-		margin: 8px 0 4px;
-		padding: 6px 0 2px;
-		border-top: 1px solid rgba(255,255,255,0.06);
+		padding: 2px 0;
 	}
-	.hpanel-header {
+	.hpanel-subheader {
 		display: flex;
 		align-items: baseline;
 		gap: 6px;
 		margin-bottom: 2px;
 		padding: 0 2px;
-	}
-	.hpanel-title {
-		font-size: 9px;
-		font-weight: 700;
-		color: rgba(255,255,255,0.45);
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
 	}
 	.hpanel-count {
 		font-size: 8px;

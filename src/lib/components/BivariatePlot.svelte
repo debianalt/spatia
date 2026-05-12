@@ -2,6 +2,7 @@
 	import { query } from '$lib/stores/duckdb';
 	import { ANALYSIS_REGISTRY, HEX_LAYER_REGISTRY, getSatGlobalUrl } from '$lib/config';
 	import { i18n } from '$lib/stores/i18n.svelte';
+	import ChartFrame from './ChartFrame.svelte';
 
 	let {
 		data = new Map() as Map<string, Record<string, any>>,
@@ -153,11 +154,15 @@
 		brushRect = null;
 		selectedCount = 0;
 	});
+
+	function csvRows() {
+		return allPoints.map(p => ({ h3index: p.h3, x: p.x.toFixed(2), y: p.y.toFixed(2) }));
+	}
 </script>
 
-<div class="bvpanel">
-	<div class="bvpanel-header">
-		<span class="bvpanel-title">Bivariado</span>
+<ChartFrame title="Bivariado" csvRows={csvRows} csvFilename="spatia_bivariate">
+	<div class="bvpanel">
+	<div class="bvpanel-subheader">
 		{#if brushRect !== null}
 			<span class="bvpanel-count">{selectedCount.toLocaleString()} hex · doble-clic para limpiar</span>
 		{:else if selectedB && allPoints.length > 0}
@@ -264,27 +269,19 @@
 			>{yLabel}</text>
 		</svg>
 	{/if}
-</div>
+	</div>
+</ChartFrame>
 
 <style>
 	.bvpanel {
-		margin: 8px 0 4px;
-		padding: 6px 0 2px;
-		border-top: 1px solid rgba(255,255,255,0.1);
+		padding: 2px 0;
 	}
-	.bvpanel-header {
+	.bvpanel-subheader {
 		display: flex;
 		align-items: baseline;
 		gap: 6px;
 		margin-bottom: 4px;
 		padding: 0 2px;
-	}
-	.bvpanel-title {
-		font-size: 9px;
-		font-weight: 700;
-		color: rgba(255,255,255,0.45);
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
 	}
 	.bvpanel-count {
 		font-size: 8px;
