@@ -41,8 +41,10 @@ jobs:
       - name: Generate H3 grid for Itapúa if needed
         run: |
           if [ ! -f pipeline/output/itapua_py/hexagons.geojson ] && [ ! -f pipeline/output/itapua_py/hexagons-lite.geojson ]; then
-            python pipeline/build_admin_crosswalk.py --territory itapua_py --source gee || echo "::warning::hexagon grid not generated; temporal step may fail"
+            python pipeline/build_admin_crosswalk.py --territory itapua_py --source gaul || echo "::warning::hexagon grid not generated; temporal step may fail"
           fi
+        env:
+          GEE_SERVICE_ACCOUNT_KEY: ${{ secrets.GEE_SERVICE_ACCOUNT_KEY }}
 
       - name: Run temporal update pipeline (Itapúa)
         run: |
