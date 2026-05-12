@@ -129,14 +129,23 @@
 		onBrushSelect([]);
 		const { I, points } = result;
 
-		const W = container.clientWidth;
-		const H = container.clientHeight;
+		// Use container size at first draw as the canonical viewBox, then render the SVG
+		// at 100% width/height with preserveAspectRatio. The viewBox stays fixed so labels
+		// + dots scale UNIFORMLY when the container grows (expand to floating panel) — the
+		// same approach the other 5 charts use declaratively.
+		const W = container.clientWidth || 250;
+		const H = container.clientHeight || 180;
 		const m = { top: 10, right: 12, bottom: 28, left: 40 };
 		const w = W - m.left - m.right;
 		const h = H - m.top - m.bottom;
 
 		d3.select(container).selectAll('*').remove();
-		const svg = d3.select(container).append('svg').attr('width', W).attr('height', H);
+		const svg = d3.select(container).append('svg')
+			.attr('width', '100%')
+			.attr('height', '100%')
+			.attr('viewBox', `0 0 ${W} ${H}`)
+			.attr('preserveAspectRatio', 'xMidYMid meet')
+			.style('display', 'block');
 		const g = svg.append('g').attr('transform', `translate(${m.left},${m.top})`);
 
 		const sample = points.length > 2000
@@ -447,6 +456,18 @@
 		width: 100%;
 		height: 180px;
 		user-select: none;
+	}
+	/* When inside ChartFrame's expanded floating panel, let the plot grow */
+	:global(.chart-frame-expanded) .moran-body {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		gap: 6px;
+	}
+	:global(.chart-frame-expanded) .moran-plot {
+		flex: 1;
+		height: auto;
+		min-height: 300px;
 	}
 	.moran-quads {
 		display: flex;
