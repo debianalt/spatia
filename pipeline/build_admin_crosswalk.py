@@ -135,13 +135,22 @@ def load_polygons_shapefile(shapefile_path: str, territory: dict) -> list[dict]:
         raise ValueError(f"Cannot find name columns in {list(gdf.columns)}. "
                          f"Expected NAME_1/NAME_2 (GADM) or ADM1_NAME/ADM2_NAME (GAUL).")
 
-    # Filter to Itapúa departamento
+    # Filter to target department
     admin_filter = territory.get('admin_filter')
     if admin_filter:
+        import unicodedata
+
+        def _ascii_fold(s):
+            return unicodedata.normalize('NFKD', str(s)).encode('ascii', 'ignore').decode('ascii')
+
         prop, val = admin_filter
-        # Try both GADM and GAUL column naming
-        for col in (name1_col, col_map.get(prop.upper(), prop)):
-            mask = gdf[col].str.contains(val.replace('ú', 'u'), case=False, na=False)
+        val_plain = _ascii_fold(val)
+        # Try GADM column (name1_col) then GAUL column (prop), skip if not present
+        for col in (name1_col, col_map.get(prop.upper())):
+            if col is None or col not in gdf.columns:
+                continue
+            folded = gdf[col].fillna('').apply(_ascii_fold)
+            mask = folded.str.contains(val_plain, case=False, na=False)
             if mask.any():
                 gdf = gdf[mask]
                 print(f"  Filtered to '{val}': {len(gdf)} polygons via column '{col}'")
