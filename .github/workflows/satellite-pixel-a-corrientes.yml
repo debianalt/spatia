@@ -33,6 +33,18 @@ jobs:
           pip install -r pipeline/requirements.txt
           npm install -g wrangler
 
+      - name: Generate H3 grid + admin crosswalk for Corrientes if needed
+        run: |
+          if [ ! -f pipeline/output/corrientes/hexagons.geojson ] && [ ! -f pipeline/output/corrientes/hexagons-lite.geojson ]; then
+            if [ ! -f pipeline/data/gadm41_ARG_2.shp ]; then
+              echo "Downloading GADM 4.1 Argentina shapefile..."
+              mkdir -p pipeline/data
+              curl -sL https://geodata.ucdavis.edu/gadm/gadm4.1/shp/gadm41_ARG_shp.zip -o pipeline/data/gadm41_ARG_shp.zip
+              (cd pipeline/data && unzip -o gadm41_ARG_shp.zip "gadm41_ARG_2*" >/dev/null)
+            fi
+            python pipeline/build_admin_crosswalk.py --territory corrientes --source gadm --shapefile pipeline/data/gadm41_ARG_2.shp
+          fi
+
       - name: Run Corrientes pixel pipeline
         run: |
           python pipeline/run_corrientes_pipeline.py \

@@ -33,6 +33,18 @@ jobs:
           pip install -r pipeline/requirements.txt
           npm install -g wrangler
 
+      - name: Generate H3 grid + admin crosswalk for Itapúa if needed
+        run: |
+          if [ ! -f pipeline/output/itapua_py/hexagons.geojson ] && [ ! -f pipeline/output/itapua_py/hexagons-lite.geojson ]; then
+            if [ ! -f pipeline/data/gadm41_PRY_2.shp ]; then
+              mkdir -p pipeline/data
+              curl -sL https://geodata.ucdavis.edu/gadm/gadm4.1/shp/gadm41_PRY_shp.zip -o pipeline/data/gadm41_PRY_shp.zip
+              (cd pipeline/data && unzip -o gadm41_PRY_shp.zip "gadm41_PRY_2*" >/dev/null)
+            fi
+            python pipeline/build_admin_crosswalk.py --territory itapua_py --source gadm \
+              --shapefile pipeline/data/gadm41_PRY_2.shp
+          fi
+
       - name: Run Itapúa pixel pipeline
         run: |
           python pipeline/run_itapua_pipeline.py \
