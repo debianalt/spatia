@@ -99,8 +99,16 @@
 				untrack(() => territoryStore.countryFilter),
 				t.parquetPrefix
 			);
-			if (others.length >= 1) hexStore.loadFullCompare(others[0]).catch(() => {});
-			if (others.length >= 2) hexStore.loadRegionalData(others[1]).catch(() => {});
+			// 1 other (e.g. PY: Itapúa + Alto Paraná): loadFullCompare bails on
+			// perDepartment analyses, so route the single other to the regional
+			// slot (loadGlobalInto, no perDepartment guard) and keep compare empty.
+			if (others.length === 1) {
+				untrack(() => hexStore.clearCompareDept());
+				hexStore.loadRegionalData(others[0]).catch(() => {});
+			} else if (others.length >= 2) {
+				hexStore.loadFullCompare(others[0]).catch(() => {});
+				hexStore.loadRegionalData(others[1]).catch(() => {});
+			}
 		}
 	});
 
@@ -115,10 +123,18 @@
 			if (untrack(() => hexStore.activeLayer)) {
 				const activePrefix = untrack(() => territoryStore.activeTerritory.parquetPrefix);
 				const others = getRegionalOtherPrefixes(countryFilter, activePrefix);
-				if (others.length >= 1) hexStore.loadFullCompare(others[0]).catch(() => {});
-				else untrack(() => hexStore.clearCompareDept());
-				if (others.length >= 2) hexStore.loadRegionalData(others[1]).catch(() => {});
-				else untrack(() => hexStore.clearRegionalData());
+				// 1 other (PY: Itapúa + Alto Paraná): route to regional slot —
+				// loadFullCompare bails on perDepartment analyses (all 6 core are).
+				if (others.length === 1) {
+					untrack(() => hexStore.clearCompareDept());
+					hexStore.loadRegionalData(others[0]).catch(() => {});
+				} else if (others.length >= 2) {
+					hexStore.loadFullCompare(others[0]).catch(() => {});
+					hexStore.loadRegionalData(others[1]).catch(() => {});
+				} else {
+					untrack(() => hexStore.clearCompareDept());
+					untrack(() => hexStore.clearRegionalData());
+				}
 			}
 		} else {
 			mapComponent?.setRegionalMapMode(false);
