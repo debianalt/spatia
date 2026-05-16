@@ -769,7 +769,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		titleKey: 'analysis.scores.title',
 		perDepartment: true,
 		comparable: true,
-		coverage: { alto_parana_py: 'pending', itapua_py: 'available', corrientes: 'available'},
+		coverage: { alto_parana_py: 'available', itapua_py: 'available', corrientes: 'available'},
 		legendLowKey: 'legend.scores.low',
 		legendHighKey: 'legend.scores.high',
 	},
@@ -1074,7 +1074,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		status: 'available',
 		spatialUnit: 'hexagon',
 		comparable: true,
-		coverage: { alto_parana_py: 'pending', itapua_py: 'available', corrientes: 'available'},
+		coverage: { alto_parana_py: 'available', itapua_py: 'available', corrientes: 'available'},
 	},
 	// ── Radio-based analyses (radio_stats_master via crosswalk) ──
 	// investment_value removed — re_median_usd_m2 only covers 26% of radios

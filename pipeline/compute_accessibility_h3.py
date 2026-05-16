@@ -43,9 +43,10 @@ from scoring import run_full_diagnostics, geometric_mean_score, load_goalposts, 
 _GCLOUD = 'gcloud.cmd' if platform.system() == 'Windows' else 'gcloud'
 
 CAPITAL_COORDS = {
-    'misiones':   (-27.367,  -55.896),   # Posadas (lat, lng)
-    'itapua_py':  (-27.336,  -55.869),   # Encarnación (lat, lng)
-    'corrientes': (-27.4676, -58.8341),  # Corrientes capital (lat, lng)
+    'misiones':       (-27.367,  -55.896),   # Posadas (lat, lng)
+    'itapua_py':      (-27.336,  -55.869),   # Encarnación (lat, lng)
+    'corrientes':     (-27.4676, -58.8341),  # Corrientes capital (lat, lng)
+    'alto_parana_py': (-25.5097, -54.6111),  # Ciudad del Este (lat, lng)
 }
 
 TYPE_LABELS = {
@@ -445,6 +446,15 @@ def main():
 
     # ── Composite score ───────────────────────────────────────────────────────
     print("\nComputing composite score...")
+    # Neutralize entirely-NaN retained indicators (e.g. an OSM-derived metric
+    # with no Overpass features in this territory) — same treatment as the PCA
+    # path above. Without this, geometric_mean_score returns all-NaN and the
+    # downstream KMeans gets 0 samples. Only triggers on 100%-NaN columns, so
+    # territories with full data are unaffected.
+    for _c in retained:
+        if df[_c].isna().all():
+            print(f"  WARN: indicator '{_c}' is entirely NaN — filling neutral 50.0")
+            df[_c] = 50.0
     df['score'] = geometric_mean_score(df, retained, floor=1.0).round(1)
     scored_mask = df['score'].notna()
     print(f"  valid={scored_mask.sum():,}/{n:,}  "
