@@ -37,3 +37,29 @@ export async function getProvincialAvg(): Promise<number[]> {
 	_cachedProvAvg = PETAL_VARS.map(v => Number(row[`avg_${v.col}`]) || 1);
 	return _cachedProvAvg;
 }
+
+let _cachedRadioPop: Map<string, Record<string, any>> | null = null;
+
+/**
+ * Full Misiones radio-level census population for PETAL_VARS, keyed by redcode.
+ * Cached module-level after first call (mirrors getProvincialAvg). Read-only:
+ * the returned Map is never mutated by callers.
+ */
+export async function loadRadioPopulation(): Promise<Map<string, Record<string, any>>> {
+	if (_cachedRadioPop) return _cachedRadioPop;
+	if (!isReady()) throw new Error('DuckDB not ready');
+
+	const cols = PETAL_VARS.map(v => v.col).join(', ');
+	const sql = `SELECT redcode, ${cols} FROM '${PARQUETS.radio_stats_master}' WHERE total_personas > 0`;
+	const result = await query(sql);
+
+	const m = new Map<string, Record<string, any>>();
+	for (let i = 0; i < result.numRows; i++) {
+		const row = result.get(i)!.toJSON() as Record<string, any>;
+		for (const v of PETAL_VARS) row[v.col] = Number(row[v.col]);
+		m.set(String(row.redcode), row);
+	}
+
+	_cachedRadioPop = m;
+	return _cachedRadioPop;
+}

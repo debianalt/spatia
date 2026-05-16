@@ -25,6 +25,7 @@
 	import BumpChart from './BumpChart.svelte';
 	import ParallelCoords from './ParallelCoords.svelte';
 	import FlowChart from './FlowChart.svelte';
+	import RadioCensusPanel from './RadioCensusPanel.svelte';
 
 	let {
 		mapStore,
@@ -122,9 +123,9 @@
 </script>
 
 {#if !collapsed}
-<div class="sidebar absolute top-0 right-0 bottom-0 z-10 rounded-l-lg p-3 px-4 border-l border-border w-full md:w-[440px] text-xs leading-relaxed"
+<div class="sidebar absolute top-0 right-0 bottom-0 z-10 rounded-l-lg p-3 px-4 border-l border-border w-full md:w-[380px] text-xs leading-relaxed"
 	style="background: var(--color-panel); backdrop-filter: blur(8px);"
-	transition:fly={{ x: 440, duration: 180, easing: cubicOut }}>
+	transition:fly={{ x: 380, duration: 180, easing: cubicOut }}>
 
 	<button class="collapse-btn" onclick={() => collapsed = true} title={i18n.t('side.welcome.hidePanel')}>
 		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 4 L18 12 L10 20"/></svg>
@@ -181,53 +182,51 @@
 			<HexComparison {hexStore} />
 		</div>
 	{:else if lensStore.activeLens && lensStore.activeAnalysis}
-		<!-- Compare selector always visible; when active it fills the panel and replaces AnalysisView -->
+		<!-- Compare selector sticky above chart scroll; charts always visible below -->
 		<ComparisonPanel {territoryStore} {lensStore} {hexStore} />
-		{#if !territoryStore.compareModeActive}
-			<div class="chart-scroll">
-				<AnalysisView {lensStore} {mapStore} {hexStore} onBack={handleBack} {onRemoveRadio} {onSelectFloodDpto} {onSelectFloodCatastroDpto} {onSelectCatastroDpto} {onSelectScoresCatastroDpto} {onSelectRadioAnalysisDpto} />
-				{#if hexStore.visibleData.size > 0 && hexStore.activeLayer?.primaryVariable}
-					<MoranPanel
-						data={hexStore.visibleData}
-						variable={hexStore.activeLayer.primaryVariable}
-						boundaryCache={hexStore.boundaryCache}
-						onShowLisa={onShowLisa ?? (() => {})}
-						onBrushSelect={onMoranBrush ?? (() => {})}
-					/>
-					<HistogramPanel
-						data={hexStore.visibleData}
-						variable={hexStore.activeLayer.primaryVariable}
-						xLabel={hexStore.activeLayer.variables.some(v => v.unit === 'percentil') ? 'percentil prov.' : 'score /100'}
-						onBrushSelect={onHistogramBrush ?? (() => {})}
-					/>
-					<BivariatePlot
-						data={hexStore.visibleData}
-						variable={hexStore.activeLayer.primaryVariable}
-						xLabel={hexStore.activeLayer.variables.some(v => v.unit === 'percentil') ? 'percentil prov.' : 'score /100'}
-						analysisId={hexStore.activeLayer.id}
-						territoryPrefix={hexStore.territoryPrefix}
-						onBrushSelect={onBivariateBrush ?? (() => {})}
-					/>
-					<BumpChart
-						activeAnalysisId={hexStore.activeLayer.id}
-						selectedDept={hexStore.selectedDpto}
-						territoryPrefix={hexStore.territoryPrefix}
-					/>
-					<ParallelCoords
-						data={hexStore.visibleData}
-						variables={hexStore.numericVariables}
-						onBrushSelect={onParallelBrush ?? (() => {})}
-					/>
-				{/if}
-				{#if hexStore.activeLayer?.temporal}
-					<FlowChart
-						data={hexStore.visibleData}
-						temporalPeriods={hexStore.activeLayer.temporalPeriods ?? null}
-						onBrushSelect={onFlowBrush ?? (() => {})}
-					/>
-				{/if}
-			</div>
-		{/if}
+		<div class="chart-scroll">
+			<AnalysisView {lensStore} {mapStore} {hexStore} {territoryStore} onBack={handleBack} {onRemoveRadio} {onSelectFloodDpto} {onSelectFloodCatastroDpto} {onSelectCatastroDpto} {onSelectScoresCatastroDpto} {onSelectRadioAnalysisDpto} />
+			{#if hexStore.visibleData.size > 0 && hexStore.activeLayer?.primaryVariable}
+				<MoranPanel
+					data={hexStore.visibleData}
+					variable={hexStore.activeLayer.primaryVariable}
+					boundaryCache={hexStore.boundaryCache}
+					onShowLisa={onShowLisa ?? (() => {})}
+					onBrushSelect={onMoranBrush ?? (() => {})}
+				/>
+				<HistogramPanel
+					data={hexStore.visibleData}
+					variable={hexStore.activeLayer.primaryVariable}
+					xLabel={hexStore.activeLayer.variables.some(v => v.unit === 'percentil') ? 'percentil prov.' : 'score /100'}
+					onBrushSelect={onHistogramBrush ?? (() => {})}
+				/>
+				<BivariatePlot
+					data={hexStore.visibleData}
+					variable={hexStore.activeLayer.primaryVariable}
+					xLabel={hexStore.activeLayer.variables.some(v => v.unit === 'percentil') ? 'percentil prov.' : 'score /100'}
+					analysisId={hexStore.activeLayer.id}
+					territoryPrefix={hexStore.territoryPrefix}
+					onBrushSelect={onBivariateBrush ?? (() => {})}
+				/>
+				<BumpChart
+					activeAnalysisId={hexStore.activeLayer.id}
+					selectedDept={hexStore.selectedDpto}
+					territoryPrefix={hexStore.territoryPrefix}
+				/>
+				<ParallelCoords
+					data={hexStore.visibleData}
+					variables={hexStore.numericVariables}
+					onBrushSelect={onParallelBrush ?? (() => {})}
+				/>
+			{/if}
+			{#if hexStore.activeLayer?.temporal}
+				<FlowChart
+					data={hexStore.visibleData}
+					temporalPeriods={hexStore.activeLayer.temporalPeriods ?? null}
+					onBrushSelect={onFlowBrush ?? (() => {})}
+				/>
+			{/if}
+		</div>
 	{:else if mapStore.selectedDistricts.size > 0}
 		<!-- Itapúa: districts selected -->
 		<div class="chart-scroll">
@@ -253,6 +252,11 @@
 		<!-- Lens active, no analysis, no radio: show analysis menu -->
 		<div class="chart-scroll">
 			<AnalysisMenu {lensStore} activeTerritory={territoryStore.activeTerritory} {onSelectAnalysis} />
+		</div>
+	{:else if territoryStore.activeTerritory.id === 'misiones'}
+		<!-- Base map, no lens, no selection: census-radios exploratory panel -->
+		<div class="chart-scroll">
+			<RadioCensusPanel />
 		</div>
 	{/if}
 
