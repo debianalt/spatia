@@ -80,17 +80,9 @@ TEMPORAL_COMPONENTS = {
             ('c_treecover', 0.20, False),
         ],
     },
-    'change_pressure': {
-        'dynamic': [
-            (1, 'c_viirs_level', 0.25, False),
-            (2, 'c_ndvi_level', 0.15, True),
-            (3, 'c_fire_annual', 0.15, False),
-        ],
-        'fixed_from_original': [
-            ('c_ghsl_change', 0.25, False),
-            ('c_hansen_loss', 0.20, False),
-        ],
-    },
+    # change_pressure intentionally NOT temporal — canonical version is the
+    # trend-based pixel pipeline (build_change_pressure). The level variant
+    # here was clobbering it and breaking cross-territory comparability.
     'agri_potential': {
         'dynamic': [
             (1, 'c_precipitation', 0.20, False),

@@ -228,7 +228,6 @@ TEMPORAL_BUILDERS = {
     'environmental_risk': dynamic_environmental_risk,
     'climate_comfort': dynamic_climate_comfort,
     'green_capital': dynamic_green_capital,
-    'change_pressure': dynamic_change_pressure,
     'agri_potential': dynamic_agri_potential,
     'forest_health': dynamic_forest_health,
 }

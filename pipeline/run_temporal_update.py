@@ -22,9 +22,14 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
 from config import OUTPUT_DIR, GCS_BUCKET, TERRITORY_CONFIGS, get_territory
 
+# change_pressure EXCLUDED: it is already a trend/change metric (canonical
+# build_change_pressure, 5 goalpost-comparable cols). The temporal/level
+# variant (dynamic_change_pressure) was OVERWRITING the canonical parquet
+# with level data → not comparable with Misiones. Keep change_pressure
+# strictly on the pixel/trend pipeline.
 TEMPORAL_ANALYSES = [
     "environmental_risk", "climate_comfort", "green_capital",
-    "change_pressure", "agri_potential", "forest_health",
+    "agri_potential", "forest_health",
 ]
 GCS_PREFIX = "satellite"
 
