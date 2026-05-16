@@ -97,6 +97,7 @@ const ALTO_PARANA_SUMMARIES: Record<string, () => Promise<any>> = {
 	soil_water:             () => import('$lib/data/alto_parana_py_sat_soil_water_summary.json'),
 	flood_risk:             () => import('$lib/data/alto_parana_py_flood_dept_summary.json'),
 	territorial_scores:     () => import('$lib/data/alto_parana_py_scores_dept_summary.json'),
+	accessibility:          () => import('$lib/data/alto_parana_py_sat_accessibility_summary.json'),
 };
 
 const TERRITORY_SUMMARIES: Record<string, Record<string, () => Promise<any>>> = {

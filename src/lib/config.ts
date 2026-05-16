@@ -833,7 +833,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		titleKey: 'analysis.accessibility.title',
 		perDepartment: true,
 		comparable: true,
-		coverage: { alto_parana_py: 'pending', itapua_py: 'available', corrientes: 'available'},
+		coverage: { alto_parana_py: 'available', itapua_py: 'available', corrientes: 'available'},
 	},
 	// ── Carbon Stock & Balance ──
 	carbon_stock: {
@@ -1100,7 +1100,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		status: 'available',
 		spatialUnit: 'hexagon',
 		comparable: true,
-		coverage: { alto_parana_py: 'pending', itapua_py: 'available', corrientes: 'available'},
+		coverage: { alto_parana_py: 'available', itapua_py: 'available', corrientes: 'available'},
 	},
 	// natural_risks hidden — covered by environmental_risk (H3)
 	// ── Satellite H3 analyses ──

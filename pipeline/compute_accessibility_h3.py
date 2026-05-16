@@ -402,6 +402,16 @@ def main():
             locked = goalposts.get('pca_variable_selection', {}).get('accessibility')
             if locked:
                 retained = [c for c in locked if c in rank_cols]
+                if not retained:
+                    # goalpost lock uses the radio-aggregation naming
+                    # (travel_min_posadas / dist_nearest_*; aggregate_radio_to_h3.py).
+                    # This raster path uses r_* component names. When the schemes
+                    # don't intersect, keep ALL rank_cols: deterministic and
+                    # cross-territory comparable (same fixed set for Ita/Cor/AP),
+                    # which is the intent of comparable mode.
+                    retained = list(rank_cols)
+                    print("  [comparable] lock name-scheme mismatch "
+                          "(radio vs raster) -> using all rank_cols")
                 dropped = [c for c in rank_cols if c not in retained]
                 print(f"  [comparable] Locked selection ({len(retained)}): {retained}")
                 if dropped:
