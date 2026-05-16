@@ -1151,35 +1151,36 @@
 		map.setFilter('selected-line', emptyFilter);
 	}
 
-	export function setDistrictHighlight(districts: Array<{distrito: string, color: string}>) {
+	export function setDistrictHighlight(districts: Array<{distrito: string, color: string, territory?: string}>) {
 		if (!map) return;
 		const emptyFilter: any = ['==', ['get', 'district'], ''];
-		const prefix = activeTerritoryId === 'alto_parana_py' ? 'alto_parana' : 'itapua';
-		const fillId = `${prefix}-district-selected-fill`;
-		const lineId = `${prefix}-district-selected-line`;
-		// Clear the other PY territory's selection so highlights don't persist across switch
-		const otherPrefix = prefix === 'itapua' ? 'alto_parana' : 'itapua';
-		if (map.getLayer(`${otherPrefix}-district-selected-fill`)) {
-			map.setFilter(`${otherPrefix}-district-selected-fill`, emptyFilter);
-			map.setFilter(`${otherPrefix}-district-selected-line`, emptyFilter);
+		// Apply highlight PER territory so Itapúa + Alto Paraná selections
+		// coexist (cross-territory district comparison on the base map).
+		// A territory with zero selected districts gets cleared — but the
+		// OTHER territory's highlight is never wiped.
+		const TERR_PREFIX: Record<string, string> = {
+			itapua_py: 'itapua', alto_parana_py: 'alto_parana'
+		};
+		for (const [terrId, prefix] of Object.entries(TERR_PREFIX)) {
+			const fillId = `${prefix}-district-selected-fill`;
+			const lineId = `${prefix}-district-selected-line`;
+			if (!map.getLayer(fillId)) continue;
+			const ds = districts.filter(d => (d.territory ?? 'itapua_py') === terrId);
+			if (ds.length === 0) {
+				map.setFilter(fillId, emptyFilter);
+				map.setFilter(lineId, emptyFilter);
+				continue;
+			}
+			const names = ds.map(d => d.distrito);
+			const matchExpr: any[] = ['match', ['get', 'district']];
+			for (const d of ds) matchExpr.push(d.distrito, d.color);
+			matchExpr.push('#60a5fa'); // fallback
+			map.setPaintProperty(fillId, 'fill-color', matchExpr);
+			map.setPaintProperty(fillId, 'fill-opacity', 0.45);
+			map.setFilter(fillId, ['in', ['get', 'district'], ['literal', names]]);
+			map.setPaintProperty(lineId, 'line-color', matchExpr);
+			map.setFilter(lineId, ['in', ['get', 'district'], ['literal', names]]);
 		}
-		if (!map.getLayer(fillId)) return;
-		if (districts.length === 0) {
-			map.setFilter(fillId, emptyFilter);
-			map.setFilter(lineId, emptyFilter);
-			return;
-		}
-		const names = districts.map(d => d.distrito);
-		const matchExpr: any[] = ['match', ['get', 'district']];
-		for (const d of districts) {
-			matchExpr.push(d.distrito, d.color);
-		}
-		matchExpr.push('#60a5fa'); // fallback
-		map.setPaintProperty(fillId, 'fill-color', matchExpr);
-		map.setPaintProperty(fillId, 'fill-opacity', 0.45);
-		map.setFilter(fillId, ['in', ['get', 'district'], ['literal', names]]);
-		map.setPaintProperty(lineId, 'line-color', matchExpr);
-		map.setFilter(lineId, ['in', ['get', 'district'], ['literal', names]]);
 	}
 
 	export function flyToCoords(lat: number, lng: number, zoom?: number) {
@@ -1320,13 +1321,13 @@
 		if (map.getLayer('alto_parana-border')) {
 			map.setLayoutProperty('alto_parana-border', 'visibility', isAltoParana ? 'visible' : 'none');
 		}
-		// Itapúa district polygons: show only in Itapúa territory
-		for (const l of ['itapua-district-fill', 'itapua-district-line', 'itapua-district-selected-fill', 'itapua-district-selected-line']) {
-			if (map.getLayer(l)) map.setLayoutProperty(l, 'visibility', isItapua ? 'visible' : 'none');
-		}
-		// Alto Paraná district polygons: show only in Alto Paraná territory
-		for (const l of ['alto_parana-district-fill', 'alto_parana-district-line', 'alto_parana-district-selected-fill', 'alto_parana-district-selected-line']) {
-			if (map.getLayer(l)) map.setLayoutProperty(l, 'visibility', isAltoParana ? 'visible' : 'none');
+		// PY district polygons: show BOTH Itapúa + Alto Paraná whenever any
+		// PY territory is active, so districts of the two can be selected and
+		// compared together on the base map (no territory switch needed).
+		const isPY = isItapua || isAltoParana;
+		for (const l of ['itapua-district-fill', 'itapua-district-line', 'itapua-district-selected-fill', 'itapua-district-selected-line',
+			'alto_parana-district-fill', 'alto_parana-district-line', 'alto_parana-district-selected-fill', 'alto_parana-district-selected-line']) {
+			if (map.getLayer(l)) map.setLayoutProperty(l, 'visibility', isPY ? 'visible' : 'none');
 		}
 
 		// Buildings: show only the active territory's layer, hide the others

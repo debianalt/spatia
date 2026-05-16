@@ -216,13 +216,13 @@
 		mapContainer?.addEventListener('district-select', ((e: CustomEvent) => {
 			showAbout = false;
 			const { distrito, personas, territory } = e.detail;
-			// Route to the PY territory the clicked district belongs to
-			// (2 PY territories: itapua_py + alto_parana_py).
 			const targetTerritory = territory || 'itapua_py';
-			if (territoryStore.activeTerritory.id !== targetTerritory) {
-				territoryStore.setTerritory(targetTerritory);
-			}
-			mapStore.addDistrict(distrito, personas);
+			// Do NOT switch primary territory on district select — district
+			// selection/comparison is independent of the active hex/lens
+			// territory. This avoids a heavy territory reload (the delay) and
+			// the clearDistricts() wipe, and lets Itapúa + Alto Paraná
+			// districts be compared together on the base map.
+			mapStore.addDistrict(distrito, personas, targetTerritory);
 			mapComponent?.setDistrictHighlight(getDistrictHighlightEntries());
 			fetchDistrictEnrichment(distrito, targetTerritory);
 		}) as EventListener);
@@ -924,8 +924,8 @@
 		return [...mapStore.selectedRadios.entries()].map(([rc, d]) => ({redcode: rc, color: d.color}));
 	}
 
-	function getDistrictHighlightEntries(): Array<{distrito: string, color: string}> {
-		return [...mapStore.selectedDistricts.entries()].map(([d, data]) => ({distrito: d, color: data.color}));
+	function getDistrictHighlightEntries(): Array<{distrito: string, color: string, territory: string}> {
+		return [...mapStore.selectedDistricts.entries()].map(([d, data]) => ({distrito: d, color: data.color, territory: data.territory}));
 	}
 
 	async function fetchDistrictEnrichment(distrito: string, territory: string = 'itapua_py'): Promise<void> {

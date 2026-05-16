@@ -81,7 +81,7 @@
 
 <div class="chart-root">
 	<div class="header">
-		<span class="title">Distritos — Itapúa</span>
+		<span class="title">Distritos — Paraguay (NBI)</span>
 		<button class="clear-btn" onclick={onClearDistricts}>&#10005; Limpiar</button>
 	</div>
 
@@ -95,6 +95,7 @@
 				title="Deseleccionar">
 				<span class="chip-dot" style="background: {data.color};"></span>
 				{distrito}
+				<span class="chip-terr">{data.territory === 'alto_parana_py' ? 'APY' : 'ITA'}</span>
 				<span class="chip-x">&times;</span>
 			</button>
 		{/each}
@@ -166,6 +167,7 @@
 	.chip:hover { opacity: 0.7; }
 	.chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 	.chip-x { font-size: 12px; margin-left: 1px; }
+	.chip-terr { font-size: 7.5px; font-weight: 700; color: rgba(255,255,255,0.4); letter-spacing: 0.04em; }
 	.loading-note { font-size: 9px; color: #94a3b8; margin: 4px 0; }
 	.ref-note {
 		font-size: 8px; color: rgba(255,255,255,0.45);

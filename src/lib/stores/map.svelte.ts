@@ -42,6 +42,7 @@ export type ScoresParcelData = {
 export type DistrictData = {
 	color: string;
 	personas: number;
+	territory: string;   // itapua_py | alto_parana_py — for per-territory highlight + enrichment parquet
 	enriched: Record<string, any> | null;
 };
 
@@ -112,12 +113,16 @@ export class MapStore {
 		this.colorIndex = 0;
 	}
 
-	addDistrict(distrito: string, personas: number, colorOverride?: string) {
+	// Keyed by distrito name: Itapúa and Alto Paraná district names are
+	// disjoint, so name collisions across the 2 PY territories don't occur.
+	// territory is stored per entry for per-territory highlight + the
+	// correct district_stats parquet on (re)render.
+	addDistrict(distrito: string, personas: number, territory: string = 'itapua_py', colorOverride?: string) {
 		if (this.selectedDistricts.has(distrito)) return;
 		const color = colorOverride || RADIO_COLORS[this.districtColorIndex % RADIO_COLORS.length];
 		if (!colorOverride) this.districtColorIndex++;
 		const updated = new Map(this.selectedDistricts);
-		updated.set(distrito, { color, personas, enriched: null });
+		updated.set(distrito, { color, personas, territory, enriched: null });
 		this.selectedDistricts = updated;
 	}
 
