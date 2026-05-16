@@ -247,10 +247,13 @@ def main():
     parser.add_argument("--territory", default="misiones",
                         choices=list(TERRITORY_CONFIGS.keys()),
                         help="Territory ID (defaults to misiones for backward compat)")
+    parser.add_argument("--gcs", action="store_true",
+                        help="Force export to GCS (default: GCS in CI, Drive locally). "
+                             "Required for local multi-territory runs (pipeline reads from GCS).")
     args = parser.parse_args()
 
     is_ci = authenticate()
-    use_gcs = is_ci
+    use_gcs = is_ci or args.gcs
     territory = get_territory(args.territory)
     bbox = ee.Geometry.Rectangle(territory['bbox'])
     output_prefix = territory['output_prefix']  # 'corrientes/', 'itapua_py/', or '' for misiones

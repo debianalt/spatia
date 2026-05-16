@@ -29,6 +29,13 @@ TEMPORAL_ANALYSES = [
 GCS_PREFIX = "satellite"
 
 
+def _run_npx(args, **kwargs):
+    """subprocess.run for npx. On Windows npx is npx.cmd → needs shell=True
+    (cmd.exe resolves via PATHEXT); list-form without shell raises WinError 2.
+    POSIX/CI keeps shell=False so the list executes directly (unchanged)."""
+    return subprocess.run(args, shell=(sys.platform == "win32"), **kwargs)
+
+
 def baseline_r2_prefix(output_prefix):
     """R2 prefix for cached baselines. Empty output_prefix = Misiones legacy path."""
     return f"neahub/data/{output_prefix}temporal_baseline"
@@ -108,7 +115,7 @@ def download_baseline_from_r2(analyses, output_prefix):
             continue
         r2_key = f"{prefix}/sat_{aid}_baseline.tif"
         print(f"  Downloading baseline from R2: {r2_key}...")
-        result = subprocess.run(
+        result = _run_npx(
             ["npx", "wrangler", "r2", "object", "get", r2_key,
              "--file", local_path, "--remote"],
             capture_output=True, text=True)
@@ -131,7 +138,7 @@ def upload_baseline_to_r2(analyses, output_prefix):
             continue
         r2_key = f"{prefix}/sat_{aid}_baseline.tif"
         print(f"  Uploading baseline: {r2_key}")
-        subprocess.run(
+        _run_npx(
             ["npx", "wrangler", "r2", "object", "put", r2_key,
              "--file", local_path, "--remote"],
             capture_output=True)
@@ -145,7 +152,7 @@ def upload_outputs_to_r2(analyses, output_prefix):
         main = os.path.join(local_dir, f"sat_{aid}.parquet")
         if os.path.exists(main):
             r2_key = f"neahub/data/{output_prefix}sat_{aid}.parquet"
-            subprocess.run(["npx", "wrangler", "r2", "object", "put",
+            _run_npx(["npx", "wrangler", "r2", "object", "put",
                           r2_key, "--file", main, "--remote"],
                          capture_output=True)
             count += 1
@@ -156,7 +163,7 @@ def upload_outputs_to_r2(analyses, output_prefix):
                 if f.startswith(f"sat_{aid}_") and f.endswith(".parquet"):
                     fpath = os.path.join(dpto_dir, f)
                     r2_key = f"neahub/data/{output_prefix}sat_dpto/{f}"
-                    subprocess.run(["npx", "wrangler", "r2", "object", "put",
+                    _run_npx(["npx", "wrangler", "r2", "object", "put",
                                   r2_key, "--file", fpath, "--remote"],
                                  capture_output=True)
                     count += 1
@@ -167,7 +174,7 @@ def upload_outputs_to_r2(analyses, output_prefix):
                 if f.startswith(f"sat_{aid}_") and f.endswith(".pdf"):
                     fpath = os.path.join(report_dir, f)
                     r2_key = f"neahub/data/{output_prefix}reports/{f}"
-                    subprocess.run(["npx", "wrangler", "r2", "object", "put",
+                    _run_npx(["npx", "wrangler", "r2", "object", "put",
                                   r2_key, "--file", fpath, "--remote"],
                                  capture_output=True)
                     count += 1
@@ -211,7 +218,7 @@ def main():
         if not run("Step 1: Export temporal composites from GEE",
                    [sys.executable, os.path.join(SCRIPT_DIR, "gee_export_analysis_temporal.py"),
                     "--analysis", ",".join(analyses), "--mode", mode,
-                    "--territory", args.territory]):
+                    "--territory", args.territory, "--gcs"]):
             return 1
 
         # Step 2: Download from GCS (always fetch baseline too — cached if exists)
