@@ -23,9 +23,11 @@ R2 upload (run after confirming output looks correct):
     --file pipeline/output/itapua_buildings.pmtiles --remote
 """
 
+import argparse
 import gzip
 import math
 import os
+import sys
 import time
 import warnings
 from collections import defaultdict
@@ -46,13 +48,34 @@ from shapely.strtree import STRtree
 from shapely import wkb as shapely_wkb
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_DIR = os.path.join(SCRIPT_DIR, "output")
-OUTPUT = os.path.join(OUTPUT_DIR, "itapua_buildings.pmtiles")
-CENSO_CSV = os.path.join(SCRIPT_DIR, "data", "itapua_censo_2022.csv")
-DISTRITOS_GEOJSON = os.path.join(OUTPUT_DIR, "itapua_py_gaul_distritos.geojson")
+sys.path.insert(0, SCRIPT_DIR)
+from config import get_territory
 
-# Itapúa, Paraguay — slightly padded to capture border buildings
-BBOX = {"west": -57.40, "south": -27.70, "east": -55.00, "north": -26.40}
+OUTPUT_DIR = os.path.join(SCRIPT_DIR, "output")
+
+
+def _stem(tid: str) -> str:
+    for suf in ("_py", "_br", "_ar"):
+        if tid.endswith(suf):
+            return tid[:-len(suf)]
+    return tid
+
+
+_ap = argparse.ArgumentParser(description="Build buildings PMTiles w/ census enrichment (any territory)")
+_ap.add_argument("--territory", default="itapua_py", help="Territory ID (default: itapua_py)")
+_args = _ap.parse_args()
+_TERR = get_territory(_args.territory)
+_TID = _TERR["id"]
+_STEM = _stem(_TID)
+
+OUTPUT = os.path.join(OUTPUT_DIR, f"{_STEM}_buildings.pmtiles")
+CENSO_CSV = os.path.join(SCRIPT_DIR, "data", f"{_STEM}_censo_2022.csv")
+_ine = os.path.join(OUTPUT_DIR, f"{_TID}_ine_distritos.geojson")
+_gaul = os.path.join(OUTPUT_DIR, f"{_TID}_gaul_distritos.geojson")
+DISTRITOS_GEOJSON = _ine if os.path.exists(_ine) else _gaul
+
+_w, _s, _e, _n = _TERR["bbox"]
+BBOX = {"west": _w, "south": _s, "east": _e, "north": _n}
 
 MIN_ZOOM = 8
 MAX_ZOOM = 14
@@ -380,8 +403,8 @@ def generate_pmtiles(features):
                 "center_zoom": 12,
             },
             {
-                "name": "itapua_buildings",
-                "description": "Building footprints for Itapúa, Paraguay (Overture Maps) with DGEEC Censo 2022",
+                "name": f"{_STEM}_buildings",
+                "description": f"Building footprints for {_TERR['label']} (Overture Maps) with DGEEC Censo 2022",
                 "vector_layers": [{
                     "id": LAYER_NAME,
                     "fields": {
@@ -404,7 +427,7 @@ def generate_pmtiles(features):
     print(f"  -> {OUTPUT} ({size_mb:.1f} MB, {time.time()-t0:.0f}s total)")
     print()
     print("Next step:")
-    print(f"  npx wrangler r2 object put neahub/data/tiles/itapua_buildings.pmtiles \\")
+    print(f"  npx wrangler r2 object put neahub/data/tiles/{_STEM}_buildings.pmtiles \\")
     print(f"    --file {OUTPUT} --remote")
 
 

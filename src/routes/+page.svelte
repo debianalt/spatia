@@ -215,14 +215,16 @@
 
 		mapContainer?.addEventListener('district-select', ((e: CustomEvent) => {
 			showAbout = false;
-			// Itapúa districts always belong to PY scope
-			if (territoryStore.countryFilter !== 'py') {
-				territoryStore.setTerritory('itapua_py');
+			const { distrito, personas, territory } = e.detail;
+			// Route to the PY territory the clicked district belongs to
+			// (2 PY territories: itapua_py + alto_parana_py).
+			const targetTerritory = territory || 'itapua_py';
+			if (territoryStore.activeTerritory.id !== targetTerritory) {
+				territoryStore.setTerritory(targetTerritory);
 			}
-			const { distrito, personas } = e.detail;
 			mapStore.addDistrict(distrito, personas);
 			mapComponent?.setDistrictHighlight(getDistrictHighlightEntries());
-			fetchDistrictEnrichment(distrito);
+			fetchDistrictEnrichment(distrito, targetTerritory);
 		}) as EventListener);
 
 		mapContainer?.addEventListener('district-deselect', ((e: CustomEvent) => {
@@ -926,10 +928,13 @@
 		return [...mapStore.selectedDistricts.entries()].map(([d, data]) => ({distrito: d, color: data.color}));
 	}
 
-	async function fetchDistrictEnrichment(distrito: string): Promise<void> {
+	async function fetchDistrictEnrichment(distrito: string, territory: string = 'itapua_py'): Promise<void> {
 		try {
 			await initDuckDB();
-			const result = await query(`SELECT * FROM '${PARQUETS.district_stats_itapua}' WHERE distrito = '${distrito.replace(/'/g, "''")}' LIMIT 1`);
+			const statsUrl = territory === 'alto_parana_py'
+				? PARQUETS.district_stats_alto_parana
+				: PARQUETS.district_stats_itapua;
+			const result = await query(`SELECT * FROM '${statsUrl}' WHERE distrito = '${distrito.replace(/'/g, "''")}' LIMIT 1`);
 			if (result.numRows > 0) {
 				mapStore.updateDistrictEnriched(distrito, result.get(0)!.toJSON() as Record<string, any>);
 			}

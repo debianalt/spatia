@@ -4,7 +4,7 @@ function getBase(): string {
 	return R2_PROD;
 }
 
-export function getTilesUrl(name: 'buildings' | 'itapua_buildings' | 'itapua_districts' | 'corrientes_buildings' | 'radios' | 'terrain' | 'hexagons' | 'catastro'): string {
+export function getTilesUrl(name: 'buildings' | 'itapua_buildings' | 'itapua_districts' | 'corrientes_buildings' | 'alto_parana_buildings' | 'alto_parana_districts' | 'radios' | 'terrain' | 'hexagons' | 'catastro'): string {
 	if (name === 'terrain') {
 		return '/api/terrain/{z}/{x}/{y}.png';
 	}
@@ -13,6 +13,8 @@ export function getTilesUrl(name: 'buildings' | 'itapua_buildings' | 'itapua_dis
 		itapua_buildings: 'tiles/itapua_buildings.pmtiles',
 		itapua_districts: 'data/tiles/itapua_districts.pmtiles',
 		corrientes_buildings: 'data/tiles/corrientes_buildings.pmtiles',
+		alto_parana_buildings: 'data/tiles/alto_parana_buildings.pmtiles',
+		alto_parana_districts: 'data/tiles/alto_parana_districts.pmtiles',
 		radios: 'data/tiles/radios-v3.pmtiles',
 		hexagons: 'tiles/hexagons-v2.pmtiles',
 		catastro: 'tiles/catastro.pmtiles?v=3'
@@ -160,6 +162,8 @@ export const PARQUETS = {
 	get eudr_deforestation() { return getEudrParquetUrl('eudr_deforestation'); },
 	// Itapua district-level satellite scores
 	get district_stats_itapua() { return `${getBase()}/data/itapua_py/district_stats_itapua.parquet`; },
+	// Alto Paraná district-level satellite scores
+	get district_stats_alto_parana() { return `${getBase()}/data/alto_parana_py/district_stats_alto_parana.parquet`; },
 };
 
 export const BASEMAP = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';

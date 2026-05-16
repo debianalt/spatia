@@ -15,9 +15,11 @@ R2 upload:
     --file pipeline/output/itapua_districts.pmtiles --remote
 """
 
+import argparse
 import gzip
 import math
 import os
+import sys
 from collections import defaultdict
 
 import geopandas as gpd
@@ -29,18 +31,40 @@ from shapely.ops import clip_by_rect
 from shapely.geometry import mapping
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, SCRIPT_DIR)
+from config import get_territory
+
 OUTPUT_DIR = os.path.join(SCRIPT_DIR, "output")
-OUTPUT = os.path.join(OUTPUT_DIR, "itapua_districts.pmtiles")
-CENSO_CSV = os.path.join(SCRIPT_DIR, "data", "itapua_censo_2022.csv")
-DISTRITOS_GEOJSON = os.path.join(OUTPUT_DIR, "itapua_py_gaul_distritos.geojson")
+
+
+def _stem(tid: str) -> str:
+    for suf in ("_py", "_br", "_ar"):
+        if tid.endswith(suf):
+            return tid[:-len(suf)]
+    return tid
+
+
+_ap = argparse.ArgumentParser(description="Build district polygon PMTiles (any territory)")
+_ap.add_argument("--territory", default="itapua_py", help="Territory ID (default: itapua_py)")
+_args = _ap.parse_args()
+_TERR = get_territory(_args.territory)
+_TID = _TERR["id"]
+_STEM = _stem(_TID)
+
+OUTPUT = os.path.join(OUTPUT_DIR, f"{_STEM}_districts.pmtiles")
+CENSO_CSV = os.path.join(SCRIPT_DIR, "data", f"{_STEM}_censo_2022.csv")
+# Prefer INE 2022 cartography (alto_parana_py etc.), fall back to GAUL (itapua legacy)
+_ine = os.path.join(OUTPUT_DIR, f"{_TID}_ine_distritos.geojson")
+_gaul = os.path.join(OUTPUT_DIR, f"{_TID}_gaul_distritos.geojson")
+DISTRITOS_GEOJSON = _ine if os.path.exists(_ine) else _gaul
 
 MIN_ZOOM = 4
 MAX_ZOOM = 14
 LAYER_NAME = "districts"
 EXTENT = 4096
 
-# Itapua bounding box
-BBOX = {"west": -57.40, "south": -27.70, "east": -55.00, "north": -26.40}
+_w, _s, _e, _n = _TERR["bbox"]
+BBOX = {"west": _w, "south": _s, "east": _e, "north": _n}
 
 
 # ── Tile math ──────────────────────────────────────────────────────────────
@@ -85,11 +109,13 @@ def load_data():
     for _, row in gdf.iterrows():
         name = row["ADM2_NAME"]
         pop = censo.get(name, {"personas": 0, "hogares": 0})
+        # GAUL has ADM2_CODE; INE 2022 cartography has DIST_CODE (CLAVE)
+        code = row.get("ADM2_CODE", row.get("DIST_CODE", 0))
         features.append({
             "geometry": row.geometry,
             "properties": {
                 "district":   name,
-                "adm2_code":  int(row["ADM2_CODE"]),
+                "adm2_code":  int(code) if code not in (None, "") else 0,
                 "personas":   pop["personas"],
                 "hogares":    pop["hogares"],
             },
@@ -196,8 +222,8 @@ def generate_pmtiles(features):
                 "center_zoom": MIN_ZOOM,
             },
             {
-                "name": "itapua_districts",
-                "description": "Itapua (Paraguay) GAUL administrative districts with DGEEC 2022 census data",
+                "name": f"{_STEM}_districts",
+                "description": f"{_TERR['label']} administrative districts with DGEEC 2022 census data",
                 "vector_layers": [
                     {
                         "id": LAYER_NAME,
