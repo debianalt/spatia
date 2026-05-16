@@ -5,6 +5,7 @@
 	import type { LensStore } from '$lib/stores/lens.svelte';
 	import type { HexStore } from '$lib/stores/hex.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
+	import { formatDept } from '$lib/utils/format';
 	import { loadDeptList, type DeptItem } from '$lib/utils/deptSummaries';
 	import PetalChart from './PetalChart.svelte';
 
@@ -219,7 +220,7 @@
 			<button class="compare-row-btn" onclick={() => selectorOpen = !selectorOpen}>
 				{#if territoryStore.compareModeActive && territoryStore.compareTerritory}
 					{territoryStore.compareTerritory.flag}
-					{hexStore.compareDpto ?? territoryStore.compareTerritory.shortLabel} ▾
+					{hexStore.compareDpto ? formatDept(hexStore.compareDpto) : territoryStore.compareTerritory.shortLabel} ▾
 				{:else}
 					Comparar con… ▾
 				{/if}
@@ -236,7 +237,7 @@
 						</button>
 						{#each g.depts.filter(d => d.name !== hexStore.selectedDpto) as d (d.parquetKey)}
 							<button class="opt opt-dept" onclick={() => selectTarget(g.territory, d)}>
-								{d.name}
+								{formatDept(d.name)}
 							</button>
 						{/each}
 					{/each}
@@ -259,8 +260,10 @@
 				{:else if stats.length === 2}
 					{@const dpto = hexStore.selectedDpto}
 					{@const compareDpto = hexStore.compareDpto}
-					{@const primaryLabel = dpto ? (dpto.length > 10 ? dpto.slice(0, 9) + '.' : dpto) : stats[0].territory.shortLabel}
-					{@const compareLabel = compareDpto ? (compareDpto.length > 10 ? compareDpto.slice(0, 9) + '.' : compareDpto) : stats[1].territory.shortLabel}
+					{@const dptoF = dpto ? formatDept(dpto) : null}
+					{@const compareDptoF = compareDpto ? formatDept(compareDpto) : null}
+					{@const primaryLabel = dptoF ? (dptoF.length > 10 ? dptoF.slice(0, 9) + '.' : dptoF) : stats[0].territory.shortLabel}
+					{@const compareLabel = compareDptoF ? (compareDptoF.length > 10 ? compareDptoF.slice(0, 9) + '.' : compareDptoF) : stats[1].territory.shortLabel}
 					{#if hasPetal && !stats[0].error && !stats[1].error}
 						<div class="petal-section">
 							<div class="petal-legend">
@@ -305,9 +308,9 @@
 					{@const hasPercentil = compareVars.some(v => v.unit === 'percentil')}
 					<p class="note">
 						{#if dpto && compareDpto}
-							{deptLabel(stats[0].territory)} {dpto} ({stats[0].territory.flag}) vs {deptLabel(stats[1].territory)} {compareDpto} ({stats[1].territory.flag})
+							{deptLabel(stats[0].territory)} {formatDept(dpto)} ({stats[0].territory.flag}) vs {deptLabel(stats[1].territory)} {formatDept(compareDpto)} ({stats[1].territory.flag})
 						{:else if dpto}
-							{deptLabel(stats[0].territory)} {dpto} ({stats[0].territory.flag}) vs {stats[1].territory.flag} prom. provincial
+							{deptLabel(stats[0].territory)} {formatDept(dpto)} ({stats[0].territory.flag}) vs {stats[1].territory.flag} prom. provincial
 						{:else}
 							Prom. {stats[0].territory.flag} vs prom. {stats[1].territory.flag}
 						{/if}

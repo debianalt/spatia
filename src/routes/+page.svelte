@@ -1291,7 +1291,7 @@
 			{/if}
 
 			{#if itapuaHovering && territoryStore.regionalMode}
-				<div class="itapua-hover-badge">🇵🇾 Itapúa · datos satelitales comparables</div>
+				<div class="itapua-hover-badge">🇵🇾 Paraguay · datos satelitales comparables</div>
 			{/if}
 
 			<!-- Controls (positioned relative to map) -->
@@ -1415,8 +1415,8 @@
 	.itapua-hover-badge {
 		position: absolute;
 		bottom: 44px;
-		left: 50%;
-		transform: translateX(-50%);
+		left: 16px;
+		transform: none;
 		background: rgba(15, 23, 42, 0.88);
 		border: 1px solid rgba(139, 92, 246, 0.45);
 		color: #a78bfa;

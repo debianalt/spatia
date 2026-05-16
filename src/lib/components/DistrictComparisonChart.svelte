@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { DistrictData } from '$lib/stores/map.svelte';
 	import PetalChart from './PetalChart.svelte';
+	import { formatDept } from '$lib/utils/format';
 
 	let {
 		districts,
@@ -94,7 +95,7 @@
 				onclick={() => onRemoveDistrict(distrito)}
 				title="Deseleccionar">
 				<span class="chip-dot" style="background: {data.color};"></span>
-				{distrito}
+				{formatDept(distrito)}
 				<span class="chip-terr">{data.territory === 'alto_parana_py' ? 'APY' : 'ITA'}</span>
 				<span class="chip-x">&times;</span>
 			</button>
@@ -123,7 +124,7 @@
 				<div class="r-table-row">
 					<span class="rt-col rt-zone">
 						<span class="r-dot-sm" style:background={entry.color}></span>
-						{entry.distrito}
+						{formatDept(entry.distrito)}
 					</span>
 					<span class="rt-col rt-num">{fmt(entry.personas)}</span>
 					<span class="rt-col rt-num">
