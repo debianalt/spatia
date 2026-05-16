@@ -8,6 +8,25 @@ import { cellToLatLng, cellToBoundary, polygonToCells } from 'h3-js';
 const ZONE_COLORS = ['#60a5fa', '#f97316', '#22c55e', '#a855f7', '#ef4444', '#eab308'];
 const ZONE_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
+// change_pressure component column drift: Misiones parquets use the
+// *_trend / fire_count naming; the newer pipeline (Corrientes, Itapúa,
+// Alto Paraná) emits *_level / fire_annual. config.ts petalVars are
+// Misiones-aligned. Mirror each value under both names at row-build so
+// every territory's petal/comparison resolves regardless of which name
+// the parquet used. (ghsl_change/hansen_loss have no rename — absent
+// where the parquet lacks them; cannot be aliased.)
+const COL_ALIAS_PAIRS: [string, string][] = [
+	['c_viirs_trend', 'c_viirs_level'],
+	['c_ndvi_trend', 'c_ndvi_level'],
+	['c_fire_count', 'c_fire_annual'],
+];
+function aliasCols(values: Record<string, any>): void {
+	for (const [a, b] of COL_ALIAS_PAIRS) {
+		if (values[a] == null && values[b] != null) values[a] = values[b];
+		else if (values[b] == null && values[a] != null) values[b] = values[a];
+	}
+}
+
 // Persistent cache that survives clearAll() / layer toggling
 interface LayerCache {
 	data: Map<string, Record<string, any>>;
@@ -215,6 +234,7 @@ export class HexStore {
 						const num = Number(val);
 						values[col] = Number.isFinite(num) && typeof val !== 'string' ? num : String(val);
 					}
+					aliasCols(values);
 					data.set(h3index, values);
 					centroids.set(h3index, [lng, lat]);
 					const boundary = cellToBoundary(h3index);
@@ -310,6 +330,7 @@ export class HexStore {
 					const num = Number(val);
 					values[col] = Number.isFinite(num) && typeof val !== 'string' ? num : String(val);
 				}
+				aliasCols(values);
 				data.set(h3index, values);
 				try {
 					const boundary = cellToBoundary(h3index);
@@ -357,6 +378,7 @@ export class HexStore {
 				const num = Number(val);
 				values[col] = Number.isFinite(num) && typeof val !== 'string' ? num : String(val);
 			}
+			aliasCols(values);
 			data.set(h3index, values);
 			try {
 				const [lat, lng] = cellToLatLng(h3index);
