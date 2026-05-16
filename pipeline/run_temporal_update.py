@@ -22,14 +22,17 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
 from config import OUTPUT_DIR, GCS_BUCKET, TERRITORY_CONFIGS, get_territory
 
-# change_pressure EXCLUDED: it is already a trend/change metric (canonical
-# build_change_pressure, 5 goalpost-comparable cols). The temporal/level
-# variant (dynamic_change_pressure) was OVERWRITING the canonical parquet
-# with level data → not comparable with Misiones. Keep change_pressure
-# strictly on the pixel/trend pipeline.
+# change_pressure + forest_health EXCLUDED from temporal: their temporal
+# variants (dynamic_change_pressure → level cols; dynamic_forest_health →
+# c_ndvi_mean) OVERWRITE the canonical pixel parquet (build_* → trend cols
+# = what Misiones has, what config.ts petalVars + goalposts
+# pca_variable_selection expect). That broke cross-territory comparability
+# (Misiones=trend vs Cor/Ita/AP=level/mean). Rule: temporal must NEVER
+# clobber a pixel-canonical analysis with a divergently-defined component.
+# These two stay strictly on the pixel/trend pipeline.
 TEMPORAL_ANALYSES = [
     "environmental_risk", "climate_comfort", "green_capital",
-    "agri_potential", "forest_health",
+    "agri_potential",
 ]
 GCS_PREFIX = "satellite"
 

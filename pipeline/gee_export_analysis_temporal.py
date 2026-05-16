@@ -229,7 +229,6 @@ TEMPORAL_BUILDERS = {
     'climate_comfort': dynamic_climate_comfort,
     'green_capital': dynamic_green_capital,
     'agri_potential': dynamic_agri_potential,
-    'forest_health': dynamic_forest_health,
 }
 
 

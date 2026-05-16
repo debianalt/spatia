@@ -95,17 +95,9 @@ TEMPORAL_COMPONENTS = {
             ('c_slope', 0.15, True),
         ],
     },
-    'forest_health': {
-        'dynamic': [
-            (1, 'c_ndvi_mean', 0.25, False),
-            (2, 'c_fire', 0.20, True),
-            (3, 'c_gpp', 0.15, False),
-            (4, 'c_et', 0.15, False),
-        ],
-        'fixed_from_original': [
-            ('c_loss_ratio', 0.25, True),
-        ],
-    },
+    # forest_health intentionally NOT temporal — canonical is the trend-based
+    # pixel pipeline (build_forest_health → c_ndvi_trend). The level variant
+    # here (c_ndvi_mean) was clobbering it and breaking comparability.
 }
 
 

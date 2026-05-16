@@ -9,7 +9,7 @@ on:
     inputs:
       analyses:
         description: 'Comma-separated analysis IDs (default: all 6)'
-        default: 'environmental_risk,climate_comfort,green_capital,agri_potential,forest_health'
+        default: 'environmental_risk,climate_comfort,green_capital,agri_potential'
       include_baseline:
         description: 'Also export baseline from GEE (first run or re-calibration)'
         type: boolean
@@ -53,7 +53,7 @@ jobs:
       - name: Run temporal update pipeline (Corrientes)
         run: |
           python pipeline/run_temporal_update.py \
-            --analyses ${{ github.event.inputs.analyses || 'environmental_risk,climate_comfort,green_capital,agri_potential,forest_health' }} \
+            --analyses ${{ github.event.inputs.analyses || 'environmental_risk,climate_comfort,green_capital,agri_potential' }} \
             --territory corrientes \
             ${{ github.event.inputs.include_baseline == 'true' && '--include-baseline' || '' }}
         env:
