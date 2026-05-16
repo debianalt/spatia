@@ -79,9 +79,20 @@ const CORRIENTES_SUMMARIES: Record<string, () => Promise<any>> = {
 	location_value:         () => import('$lib/data/corrientes_sat_location_value_summary.json'),
 };
 
+// Alto Paraná (PY) — Phase 1: 6 core satellite analyses. More added per phase.
+const ALTO_PARANA_SUMMARIES: Record<string, () => Promise<any>> = {
+	environmental_risk:     () => import('$lib/data/alto_parana_py_sat_environmental_risk_summary.json'),
+	climate_comfort:        () => import('$lib/data/alto_parana_py_sat_climate_comfort_summary.json'),
+	green_capital:          () => import('$lib/data/alto_parana_py_sat_green_capital_summary.json'),
+	change_pressure:        () => import('$lib/data/alto_parana_py_sat_change_pressure_summary.json'),
+	forest_health:          () => import('$lib/data/alto_parana_py_sat_forest_health_summary.json'),
+	agri_potential:         () => import('$lib/data/alto_parana_py_sat_agri_potential_summary.json'),
+};
+
 const TERRITORY_SUMMARIES: Record<string, Record<string, () => Promise<any>>> = {
 	'itapua_py/': ITAPUA_SUMMARIES,
 	'corrientes/': CORRIENTES_SUMMARIES,
+	'alto_parana_py/': ALTO_PARANA_SUMMARIES,
 };
 
 export async function loadDeptSummary(analysisId: string, territoryPrefix: string): Promise<any> {

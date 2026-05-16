@@ -53,6 +53,25 @@ TERRITORY_CONFIGS: dict[str, dict] = {
         'output_prefix': 'corrientes/',              # R2: data/corrientes/sat_*.parquet
         'export_scale': 100,
     },
+    'alto_parana_py': {
+        'id': 'alto_parana_py',
+        'label': 'Alto Paraná',
+        'country': 'py',
+        # Derived from INE district dissolve (build_territory_boundary_mask.py),
+        # padded 0.1deg. Raw bounds: [-55.5506, -26.2571, -54.3458, -24.4762].
+        'bbox': [-55.65, -26.36, -54.25, -24.38],   # [W, S, E, N]
+        'admin_level': 'distrito',
+        'admin_col': 'distrito',
+        # Admin source = INE 2022 census cartography (22 distritos), NOT GAUL/GADM:
+        # both GAUL 2015 and GADM 4.1 only have 18 (missing Iruña, Santa Fe del
+        # Paraná, Dr. Raúl Peña, Tavapy — created post-2015). Built via
+        # ine_cartografia_to_geojson.py -> output/alto_parana_py_ine_distritos.geojson,
+        # consumed by build_admin_crosswalk.py --source geojson.
+        'admin_collection': None,
+        'admin_filter': ('ADM1_NAME', 'Alto Parana'),  # ascii-folded match vs INE 'ALTO PARANÁ'
+        'output_prefix': 'alto_parana_py/',          # R2: data/alto_parana_py/sat_*.parquet
+        'export_scale': 100,
+    },
 }
 
 def get_territory(territory_id: str) -> dict:

@@ -16,6 +16,7 @@
 	import { isInsideMisiones } from '$lib/utils/misiones-pip';
 	import { isInsideItapua } from '$lib/utils/itapua-pip';
 	import { isInsideCorrientes } from '$lib/utils/corrientes-pip';
+	import { isInsideAltoParana } from '$lib/utils/alto_parana-pip';
 	import { findDeptFeature } from '$lib/utils/deptBoundaries';
 	import { PARQUETS, MAP_INIT, HEX_LAYER_REGISTRY, TERRITORY_REGISTRY, getAnalysisById, getAnalysesForLens, type AnalysisConfig, type LensId, type CountryId } from '$lib/config';
 	import { i18n, type Locale } from '$lib/stores/i18n.svelte';
@@ -758,6 +759,7 @@
 		const [lat, lng] = cellToLatLng(h3index);
 		if (isInsideMisiones(lat, lng)) return 'misiones';
 		if (isInsideItapua(lat, lng)) return 'itapua_py';
+		if (isInsideAltoParana(lat, lng)) return 'alto_parana_py';
 		if (isInsideCorrientes(lat, lng)) return 'corrientes';
 		return null;
 	}
@@ -1168,6 +1170,8 @@
 				const [lat, lng] = cellToLatLng(e.h3index);
 				return hexStore.territoryPrefix === 'itapua_py/'
 					? isInsideItapua(lat, lng)
+					: hexStore.territoryPrefix === 'alto_parana_py/'
+					? isInsideAltoParana(lat, lng)
 					: hexStore.territoryPrefix === 'corrientes/'
 					? isInsideCorrientes(lat, lng)
 					: isInsideMisiones(lat, lng);
