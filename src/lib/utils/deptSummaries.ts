@@ -87,6 +87,15 @@ const ALTO_PARANA_SUMMARIES: Record<string, () => Promise<any>> = {
 	change_pressure:        () => import('$lib/data/alto_parana_py_sat_change_pressure_summary.json'),
 	forest_health:          () => import('$lib/data/alto_parana_py_sat_forest_health_summary.json'),
 	agri_potential:         () => import('$lib/data/alto_parana_py_sat_agri_potential_summary.json'),
+	// Phase 2 (8/11 done):
+	carbon_stock:           () => import('$lib/data/alto_parana_py_sat_carbon_stock_summary.json'),
+	climate_vulnerability:  () => import('$lib/data/alto_parana_py_sat_climate_vulnerability_summary.json'),
+	deforestation_dynamics: () => import('$lib/data/alto_parana_py_sat_deforestation_dynamics_summary.json'),
+	forestry_aptitude:      () => import('$lib/data/alto_parana_py_sat_forestry_aptitude_summary.json'),
+	land_use:               () => import('$lib/data/alto_parana_py_sat_land_use_summary.json'),
+	pm25_drivers:           () => import('$lib/data/alto_parana_py_sat_pm25_drivers_summary.json'),
+	soil_water:             () => import('$lib/data/alto_parana_py_sat_soil_water_summary.json'),
+	flood_risk:             () => import('$lib/data/alto_parana_py_flood_dept_summary.json'),
 };
 
 const TERRITORY_SUMMARIES: Record<string, Record<string, () => Promise<any>>> = {
