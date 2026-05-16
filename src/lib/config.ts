@@ -975,7 +975,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		temporalPeriods: { current: '2022–2025', baseline: '2014–2017', source: 'VIIRS · MODIS · Hansen · GHSL' },
 		legendLowKey: 'legend.prodAct.low',
 		legendHighKey: 'legend.prodAct.high',
-		coverage: { alto_parana_py: 'pending', itapua_py: 'available', corrientes: 'available'},
+		coverage: { alto_parana_py: 'available', itapua_py: 'available', corrientes: 'available'},
 	},
 	// ── Deforestation Dynamics (Hansen 2001-2024, observed) ──
 	// No petalVars: only 2 numeric indicators (loss_rate + cumulative) — radar with 2 vars is not meaningful.
@@ -1286,7 +1286,7 @@ export const ANALYSIS_REGISTRY: AnalysisConfig[] = [
 		lensId: 'invertir',
 		titleKey: 'sat.prodAct.title',
 		descKey: 'sat.prodAct.desc',
-		coverage: { alto_parana_py: 'pending', itapua_py: 'available', corrientes: 'available'},
+		coverage: { alto_parana_py: 'available', itapua_py: 'available', corrientes: 'available'},
 		comparable: true,
 		status: 'available',
 		spatialUnit: 'hexagon',
