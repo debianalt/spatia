@@ -596,6 +596,14 @@
 		);
 	}
 
+	function handleRadioCensusBrush(redcodes: string[]) {
+		if (redcodes.length === 0) {
+			mapComponent?.clearRadioBrushHighlight();
+			return;
+		}
+		mapComponent?.setRadioBrushHighlight(redcodes);
+	}
+
 	function handleBivariateBrush(h3s: string[]) {
 		if (h3s.length === 0) {
 			mapComponent?.clearHexZoneHighlight();
@@ -1301,6 +1309,7 @@
 			onBivariateBrush={handleBivariateBrush}
 			onParallelBrush={handleParallelBrush}
 			onFlowBrush={handleFlowBrush}
+			onRadioCensusBrush={handleRadioCensusBrush}
 			onRemoveDistrict={handleRemoveDistrict}
 			onClearDistricts={handleClearDistricts}
 			/>

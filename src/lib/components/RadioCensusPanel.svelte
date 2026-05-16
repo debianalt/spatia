@@ -1,10 +1,14 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import { PETAL_VARS, loadRadioPopulation } from '$lib/utils/petal';
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import HistogramPanel from './HistogramPanel.svelte';
 	import ParallelCoords from './ParallelCoords.svelte';
 
-	let { territory }: { territory: string } = $props();
+	let { territory, onBrushSelect }: {
+		territory: string;
+		onBrushSelect?: (redcodes: string[]) => void;
+	} = $props();
 
 	const TERR_LABEL: Record<string, string> = { misiones: 'Misiones', corrientes: 'Corrientes' };
 
@@ -21,6 +25,7 @@
 		const terr = territory; // reactive dep — reload on territory switch
 		if (terr === loadedFor) return;
 		loadedFor = terr;
+		onBrushSelect?.([]); // clear stale highlight from previous territory
 		radioData = null;
 		loadError = false;
 		loadRadioPopulation(terr)
@@ -36,6 +41,10 @@
 	const effVar = $derived(
 		activeVars.some((v) => v.col === selectedVar) ? selectedVar : activeVars[0].col
 	);
+
+	// Clear the map highlight when the panel goes away (lens opened, switch to
+	// Itapúa, radios selected, etc.) so no ghost overlay remains.
+	onDestroy(() => onBrushSelect?.([]));
 </script>
 
 <div class="chart-root">
@@ -60,8 +69,8 @@
 			</select>
 		</label>
 
-		<HistogramPanel data={radioData} variable={effVar} xLabel="%" />
-		<ParallelCoords data={radioData} variables={activeVars} />
+		<HistogramPanel data={radioData} variable={effVar} xLabel="%" {onBrushSelect} />
+		<ParallelCoords data={radioData} variables={activeVars} {onBrushSelect} />
 	{/if}
 </div>
 

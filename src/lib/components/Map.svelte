@@ -402,6 +402,23 @@
 				paint: { 'line-color': '#60a5fa', 'line-width': 2.5, 'line-opacity': 0.9 },
 				filter: emptyFilter
 			});
+			// ── Radio census-panel brush highlight (chart brush → radios) ──
+			map.addLayer({
+				id: 'radio-brush-fill',
+				type: 'fill',
+				source: 'radios',
+				'source-layer': 'radios',
+				paint: { 'fill-color': '#fbbf24', 'fill-opacity': 0.40 },
+				filter: emptyFilter
+			});
+			map.addLayer({
+				id: 'radio-brush-line',
+				type: 'line',
+				source: 'radios',
+				'source-layer': 'radios',
+				paint: { 'line-color': '#fbbf24', 'line-width': 1.5, 'line-opacity': 0.9 },
+				filter: emptyFilter
+			});
 			// Building outlines tinted by zone color (visible in 3D)
 			map.addLayer({
 				id: 'zone-buildings',
@@ -2079,6 +2096,21 @@
 		if (!map) return;
 		const src = map.getSource('hex-zones') as maplibregl.GeoJSONSource | undefined;
 		if (src) src.setData({ type: 'FeatureCollection', features: [] });
+	}
+
+	// Census-panel chart brush → highlight matching radios on the PMTiles layer.
+	export function clearRadioBrushHighlight() {
+		if (!map) return;
+		const e: any = ['==', ['get', 'redcode'], ''];
+		if (map.getLayer('radio-brush-fill')) map.setFilter('radio-brush-fill', e);
+		if (map.getLayer('radio-brush-line')) map.setFilter('radio-brush-line', e);
+	}
+	export function setRadioBrushHighlight(redcodes: string[]) {
+		if (!map) return;
+		if (redcodes.length === 0) { clearRadioBrushHighlight(); return; }
+		const f: any = ['in', ['get', 'redcode'], ['literal', redcodes]];
+		if (map.getLayer('radio-brush-fill')) map.setFilter('radio-brush-fill', f);
+		if (map.getLayer('radio-brush-line')) map.setFilter('radio-brush-line', f);
 	}
 
 	// ── Lasso / Zone functions ────────────────────────────────────────────

@@ -57,6 +57,7 @@
 		onBivariateBrush,
 		onParallelBrush,
 		onFlowBrush,
+		onRadioCensusBrush,
 	}: {
 		mapStore: MapStore;
 		lensStore: LensStore;
@@ -87,6 +88,7 @@
 		onBivariateBrush?: (h3s: string[]) => void;
 		onParallelBrush?: (h3s: string[]) => void;
 		onFlowBrush?: (h3s: string[]) => void;
+		onRadioCensusBrush?: (redcodes: string[]) => void;
 	} = $props();
 
 	let collapsed = $state(true);
@@ -254,7 +256,7 @@
 				{onDownloadRadiosSummary}
 			/>
 			{#if !lensStore.activeLens && isCensusTerritory}
-				<RadioCensusPanel territory={territoryStore.activeTerritory.id} />
+				<RadioCensusPanel territory={territoryStore.activeTerritory.id} onBrushSelect={onRadioCensusBrush ?? (() => {})} />
 			{/if}
 		</div>
 	{:else if lensStore.activeLens}
@@ -265,7 +267,7 @@
 	{:else if isCensusTerritory}
 		<!-- Base map, no lens, no selection: census-radios panel (default) -->
 		<div class="chart-scroll">
-			<RadioCensusPanel territory={territoryStore.activeTerritory.id} />
+			<RadioCensusPanel territory={territoryStore.activeTerritory.id} onBrushSelect={onRadioCensusBrush ?? (() => {})} />
 		</div>
 	{/if}
 
