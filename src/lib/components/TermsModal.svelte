@@ -8,7 +8,7 @@
 		<h1 class="title">Inteligencia territorial, acceso abierto</h1>
 
 		<p class="platform-intro">
-			Explorá 23+ análisis geoespaciales sobre Misiones, Corrientes e Itapúa: deforestación,
+			Explorá 23+ análisis geoespaciales sobre Misiones, Corrientes, Itapúa y Alto Paraná: deforestación,
 			carbono, calidad del aire, riesgo hídrico, actividad productiva y más.
 			Sin costo, sin registro.
 		</p>

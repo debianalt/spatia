@@ -189,8 +189,9 @@ def step_upload_r2(analyses: list[str], r2_prefix: str, out_dir: str, dry_run: b
 
 def main():
     parser = argparse.ArgumentParser(description="Satellite pipeline orchestrator (any territory)")
-    parser.add_argument("--territory", required=True,
-                        help="Territory ID from config.py (e.g. itapua_py, alto_parana_py)")
+    parser.add_argument("--territory", default="itapua_py",
+                        help="Territory ID from config.py (default: itapua_py — "
+                             "backward-compat for existing Itapúa CI workflows)")
     parser.add_argument("--mode", choices=['comparable', 'local'], default='comparable',
                         help="Scoring mode passed to process_raster_to_h3 "
                              "(default: comparable — cross-territory goalpost norm)")

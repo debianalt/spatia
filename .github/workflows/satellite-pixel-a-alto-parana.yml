@@ -1,0 +1,73 @@
+name: Update Satellite Analyses (Alto Paraná — Group A)
+# environmental_risk + climate_comfort + green_capital for Alto Paraná (PY)
+
+on:
+  schedule:
+    - cron: '0 8 13,28 * *'  # 13th & 28th, 08:00 UTC (offset from Itapúa 07:00)
+  workflow_dispatch:
+    inputs:
+      analyses:
+        description: 'Comma-separated analysis IDs (default: all group A)'
+        default: 'environmental_risk,climate_comfort,green_capital'
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: pipeline/requirements.txt
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y p7zip-full
+          pip install -r pipeline/requirements.txt
+          npm install -g wrangler
+
+      - name: Generate H3 grid + admin crosswalk for Alto Paraná if needed
+        run: |
+          if [ ! -f pipeline/output/alto_parana_py/hexagons.geojson ] && [ ! -f pipeline/output/alto_parana_py/hexagons-lite.geojson ]; then
+            # Admin source = INE 2022 census cartography (22 distritos;
+            # GAUL/GADM only have 18). Download .rar, extract, convert.
+            if [ ! -f "pipeline/output/alto_parana_py_ine_distritos.geojson" ]; then
+              mkdir -p pipeline/data
+              curl -sL "https://www.ine.gov.py/microdatos/register/CARTOGRAFIA%20CENSAL%202022/CARTOGRAFIA%20CENSAL_SHP/10%20ALTO%20PARANA.rar" -o pipeline/data/ine_10_alto_parana.rar
+              (cd pipeline/data && 7z x -y ine_10_alto_parana.rar -oine_ap >/dev/null)
+              python pipeline/ine_cartografia_to_geojson.py --territory alto_parana_py \
+                --shp "pipeline/data/ine_ap/10 ALTO PARANA/Distritos_Alto Parana.shp"
+            fi
+            python pipeline/build_admin_crosswalk.py --territory alto_parana_py --source geojson \
+              --shapefile pipeline/output/alto_parana_py_ine_distritos.geojson
+          fi
+
+      - name: Run Alto Paraná pixel pipeline
+        run: |
+          python pipeline/run_itapua_pipeline.py \
+            --territory alto_parana_py --mode comparable \
+            --only ${{ github.event.inputs.analyses || 'environmental_risk,climate_comfort,green_capital' }} \
+            --upload
+        env:
+          GEE_SERVICE_ACCOUNT_KEY: ${{ secrets.GEE_SERVICE_ACCOUNT_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: satellite-pixel-a-alto-parana
+          path: |
+            pipeline/output/alto_parana_py/sat_environmental_risk.parquet
+            pipeline/output/alto_parana_py/sat_climate_comfort.parquet
+            pipeline/output/alto_parana_py/sat_green_capital.parquet
+          retention-days: 30
+
+      - name: Notify on failure
+        if: failure()
+        run: echo "::error::Alto Paraná Group A pipeline failed."

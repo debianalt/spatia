@@ -1,0 +1,80 @@
+name: Update Temporal Baselines (Alto Paraná)
+# Monthly delta scores (current vs baseline) for the 6 pixel analyses in Alto Paraná.
+# Requires baselines pre-cached in R2 (run --include-baseline locally first).
+# Note: environmental_risk temporal baseline is 100% nodata for AP and is
+# skipped gracefully (env_risk is non-temporal across all territories).
+
+on:
+  schedule:
+    - cron: '0 8 21 * *'  # 21st of each month, 08:00 UTC (offset from Itapúa 07:00/20th)
+  workflow_dispatch:
+    inputs:
+      analyses:
+        description: 'Comma-separated analysis IDs (default: all 6)'
+        default: 'environmental_risk,climate_comfort,green_capital,change_pressure,agri_potential,forest_health'
+      include_baseline:
+        description: 'Also export baseline from GEE (first run or re-calibration)'
+        type: boolean
+        default: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: pipeline/requirements.txt
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y p7zip-full
+          pip install -r pipeline/requirements.txt
+          npm install -g wrangler
+
+      - name: Generate H3 grid for Alto Paraná if needed
+        run: |
+          if [ ! -f pipeline/output/alto_parana_py/hexagons.geojson ] && [ ! -f pipeline/output/alto_parana_py/hexagons-lite.geojson ]; then
+            if [ ! -f "pipeline/output/alto_parana_py_ine_distritos.geojson" ]; then
+              mkdir -p pipeline/data
+              curl -sL "https://www.ine.gov.py/microdatos/register/CARTOGRAFIA%20CENSAL%202022/CARTOGRAFIA%20CENSAL_SHP/10%20ALTO%20PARANA.rar" -o pipeline/data/ine_10_alto_parana.rar
+              (cd pipeline/data && 7z x -y ine_10_alto_parana.rar -oine_ap >/dev/null)
+              python pipeline/ine_cartografia_to_geojson.py --territory alto_parana_py \
+                --shp "pipeline/data/ine_ap/10 ALTO PARANA/Distritos_Alto Parana.shp"
+            fi
+            python pipeline/build_admin_crosswalk.py --territory alto_parana_py --source geojson \
+              --shapefile pipeline/output/alto_parana_py_ine_distritos.geojson || echo "::warning::hexagon grid not generated; temporal step may fail"
+          fi
+
+      - name: Run temporal update pipeline (Alto Paraná)
+        run: |
+          python pipeline/run_temporal_update.py \
+            --analyses ${{ github.event.inputs.analyses || 'environmental_risk,climate_comfort,green_capital,change_pressure,agri_potential,forest_health' }} \
+            --territory alto_parana_py \
+            ${{ github.event.inputs.include_baseline == 'true' && '--include-baseline' || '' }}
+        env:
+          GEE_SERVICE_ACCOUNT_KEY: ${{ secrets.GEE_SERVICE_ACCOUNT_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: satellite-temporal-alto-parana
+          path: |
+            pipeline/output/alto_parana_py/sat_climate_comfort.parquet
+            pipeline/output/alto_parana_py/sat_green_capital.parquet
+            pipeline/output/alto_parana_py/sat_change_pressure.parquet
+            pipeline/output/alto_parana_py/sat_agri_potential.parquet
+            pipeline/output/alto_parana_py/sat_forest_health.parquet
+          retention-days: 30
+
+      - name: Notify on failure
+        if: failure()
+        run: echo "::error::Alto Paraná temporal pipeline failed."
