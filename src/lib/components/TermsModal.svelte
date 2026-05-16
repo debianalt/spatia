@@ -4,13 +4,24 @@
 
 <div class="overlay">
 	<div class="modal">
-		<div class="kicker">Condiciones de uso · nealab / spatia.ar</div>
-		<h1 class="title">Antes de continuar</h1>
+		<div class="kicker">spatia.ar</div>
+		<h1 class="title">Inteligencia territorial, acceso abierto</h1>
 
-		<p class="intro">
-			nealab es una plataforma de análisis geoespacial académico de acceso abierto. Para usarla, leé
-			y aceptá las siguientes condiciones.
+		<p class="platform-intro">
+			Explorá 23+ análisis geoespaciales sobre Misiones, Corrientes e Itapúa: deforestación,
+			carbono, calidad del aire, riesgo hídrico, actividad productiva y más.
+			Sin costo, sin registro.
 		</p>
+
+		<div class="platform-stats">
+			<span>319.871 hexágonos H3</span>
+			<span class="stat-sep">·</span>
+			<span>23 análisis</span>
+			<span class="stat-sep">·</span>
+			<span>CONICET / UNaM</span>
+		</div>
+
+		<div class="stats-divider">Condiciones de uso</div>
 
 		<ul class="points">
 			<li>
@@ -42,7 +53,7 @@
 		<div class="actions">
 			<a class="btn-secondary" href="/terminos">Leer términos completos →</a>
 			<button class="btn-primary" onclick={() => terms.accept()}>
-				Acepto — entrar a nealab
+				Acepto, quiero explorar
 			</button>
 		</div>
 	</div>
@@ -91,11 +102,36 @@
 		line-height: 1.2;
 	}
 
-	.intro {
+	.platform-intro {
 		font-size: 12px;
-		color: rgba(255, 255, 255, 0.65);
-		margin: 0 0 20px;
-		line-height: 1.6;
+		color: rgba(255, 255, 255, 0.75);
+		margin: 0 0 14px;
+		line-height: 1.65;
+	}
+
+	.platform-stats {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px 0;
+		font-size: 10px;
+		color: rgba(255, 255, 255, 0.35);
+		letter-spacing: 0.04em;
+		margin-bottom: 28px;
+	}
+
+	.stat-sep {
+		margin: 0 8px;
+		color: rgba(255, 255, 255, 0.18);
+	}
+
+	.stats-divider {
+		font-size: 9px;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		color: rgba(255, 255, 255, 0.25);
+		border-top: 1px solid rgba(255, 255, 255, 0.08);
+		padding-top: 16px;
+		margin-bottom: 16px;
 	}
 
 	.points {

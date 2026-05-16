@@ -1,9 +1,15 @@
 <script lang="ts">
+	import { i18n } from '$lib/stores/i18n.svelte';
+	import LangSwitcher from '$lib/components/LangSwitcher.svelte';
+	import { SERVICIOS } from '$lib/content/servicios';
+
 	const today = new Date().toLocaleDateString('es-AR', {
 		year: 'numeric',
 		month: 'long',
 		day: 'numeric',
 	});
+
+	const c = $derived(SERVICIOS[i18n.locale] ?? SERVICIOS.es);
 
 	function handlePrint() {
 		if (typeof window !== 'undefined') window.print();
@@ -11,16 +17,10 @@
 </script>
 
 <svelte:head>
-	<title>nealab — inteligencia geoespacial abierta para el noreste argentino y sus regiones transfronterizas</title>
-	<meta
-		name="description"
-		content="nealab es una plataforma de análisis geoespacial orientada al noreste argentino y sus regiones transfronterizas. Reúne más de veinte capas de análisis satelital, censal y ambiental para investigación, gestión pública y cooperación internacional."
-	/>
-	<meta property="og:title" content="nealab — servicios de inteligencia geoespacial" />
-	<meta
-		property="og:description"
-		content="Plataforma pública de inteligencia geoespacial abierta. Análisis reproducible, acceso abierto, ciencia ciudadana. Hospedado en spatia.ar."
-	/>
+	<title>{c.pageTitle}</title>
+	<meta name="description" content={c.metaDesc} />
+	<meta property="og:title" content={c.ogTitle} />
+	<meta property="og:description" content={c.ogDesc} />
 </svelte:head>
 
 <div class="page">
@@ -31,274 +31,103 @@
 
 	<header class="hdr">
 		<div class="hdr-actions no-print">
-			<a class="back-link" href="/">&larr; Volver al mapa</a>
-			<button class="print-btn" type="button" onclick={handlePrint}>
-				↓ Imprimir / Guardar PDF
-			</button>
+			<a class="back-link" href="/">{i18n.t('nav.backToMap')}</a>
+			<div class="hdr-right">
+				<LangSwitcher variant="mono" />
+				<button class="print-btn" type="button" onclick={handlePrint}>
+					{i18n.t('nav.printSave')}
+				</button>
+			</div>
 		</div>
-		<div class="kicker">Inteligencia geoespacial abierta · Noreste argentino y regiones transfronterizas</div>
+		<div class="kicker">{c.kicker}</div>
 		<h1 class="title"><a class="title-link" href="/">nealab</a></h1>
 		<p class="subtitle">
-			Plataforma de análisis geoespacial orientada al noreste argentino y sus regiones transfronterizas.
-			Datos, métodos y código abiertos. Hospedado en <a href="/">spatia.ar</a>.
+			{@html c.subtitle}
 		</p>
 	</header>
 
 	<section class="section">
-		<h2>Qué es nealab</h2>
-		<p>
-			<strong>nealab</strong> es una plataforma de <strong>inteligencia geoespacial abierta</strong>
-			desarrollada en el marco del <strong>Consejo Nacional de Investigaciones Científicas y
-			Técnicas (CONICET, Argentina)</strong>, la <strong>Secretaría de Investigación y Posgrado
-			(SINVyP)</strong> de la <strong>Facultad de Humanidades y Ciencias Sociales (FHyCS)</strong>
-			de la <strong>Universidad Nacional de Misiones (UNaM)</strong>, y el acceso de nivel
-			investigación al <strong>Google Earth Engine (GEE) Partner Tier</strong>.
-			Reúne más de veinte capas de análisis sobre el noreste argentino y sus regiones transfronterizas
-			para explorar de forma interactiva el estado ecológico, social, productivo y de infraestructura de la región.
-		</p>
-		<p>
-			No constituye un sistema de recomendación, ni un sustituto del juicio experto o de la decisión política.
-			Es una herramienta para visualizar capas de información pública, contrastarlas entre sí y enriquecer
-			diagnósticos con evidencia cuantitativa reproducible.
-		</p>
+		<h2>{c.queEsTitle}</h2>
+		<p>{@html c.queEsP1}</p>
+		<p>{c.queEsP2}</p>
 	</section>
 
 	<section class="section">
-		<h2>Marco institucional</h2>
-		<p>
-			El desarrollo de nealab se enmarca en el proyecto de investigación <em>Evolución de las
-			desigualdades sociales en torno a las Áreas Naturales Protegidas Transfronterizas de
-			Argentina, Brasil y Paraguay</em> (código 16/H1710-FE, SINVyP FHyCS-UNaM), desarrollado
-			con el aval de CONICET. Este proyecto integra el <strong>Programa de Investigaciones
-			Interdisciplinarias sobre Regiones de Frontera (INREFRO)</strong> de la FHyCS-UNaM.
-		</p>
+		<h2>{c.marcoTitle}</h2>
+		<p>{@html c.marcoP1}</p>
 	</section>
 
 	<section class="section">
-		<h2>Principios</h2>
+		<h2>{c.principiosTitle}</h2>
 		<ul class="list">
-			<li>
-				<strong>Acceso abierto.</strong> Todos los datos que integra la plataforma provienen de
-				fuentes públicas declaradas en la ficha metodológica de cada capa — entre otras:
-				el Instituto Nacional de Estadística y Censos (INDEC), el Instituto Geográfico
-				Nacional (IGN), OpenStreetMap (OSM), MapBiomas, Catastro, el Joint Research Centre
-				(JRC) de la Comisión Europea, Hansen Global Forest Change (GFC) y MODIS (Moderate
-				Resolution Imaging Spectroradiometer). Cualquier persona puede consultar esas fuentes
-				originales y reproducir los análisis siguiendo el pipeline documentado.
-			</li>
-			<li>
-				<strong>Trazabilidad metodológica.</strong> Cada capa tiene su ficha técnica con fuentes,
-				resolución, pipeline de procesamiento, supuestos y limitaciones conocidas. Las fichas están
-				linkeadas desde el panel lateral de cada análisis.
-			</li>
-			<li>
-				<strong>Reproducibilidad.</strong> El pipeline completo está documentado en un repositorio público.
-				Los análisis pueden reproducirse y adaptarse a otras jurisdicciones sobre las mismas fuentes de datos abiertos.
-			</li>
-			<li>
-				<strong>Actualización continua.</strong> Las capas actualizables —dinámica de
-				deforestación, riesgo hídrico, actividad productiva, confort climático, entre otras—
-				se regeneran de forma automatizada a partir de las fuentes originales. Los pipelines
-				corren programados sin intervención manual, de modo que los datos visualizados
-				reflejan el estado más reciente disponible en cada momento.
-			</li>
-			<li>
-				<strong>Acceso abierto a herramientas técnicas.</strong> La plataforma permite a gobiernos locales,
-				organizaciones de investigación e instituciones técnicas acceder a las mismas herramientas de análisis
-				que usan organismos multilaterales, e incorporar evidencia geoespacial reproducible a sus diagnósticos.
-			</li>
-			<li>
-				<strong>Interoperabilidad.</strong> Cualquier vista o zona puede exportarse a CSV o
-				GeoJSON. Se integra sin fricción con flujos de trabajo existentes en gobierno, academia
-				y consultoría.
-			</li>
+			{#each c.principios as item}
+				<li>{@html item}</li>
+			{/each}
 		</ul>
 	</section>
 
 	<section class="section">
-		<h2>Qué ofrece</h2>
-		<p>
-			nealab organiza sus análisis en cuatro grandes preguntas o "lentes", que pueden combinarse
-			entre sí:
-		</p>
+		<h2>{c.queOfreceTitle}</h2>
+		<p>{c.queOfreceIntro}</p>
 		<ul class="list">
-			<li>
-				<strong>Habitar.</strong>
-				Riesgo de inundación (JRC Global Surface Water + Sentinel-1 SAR — radar de apertura
-				sintética, satélites de la Agencia Espacial Europea — ESA), carencia de servicios
-				básicos (censo 2022), calidad edilicia, accesibilidad a salud y educación, catastro
-				parcelario.
-			</li>
-			<li>
-				<strong>Producir.</strong>
-				Aptitud edafoclimática agrícola, aptitud forestal comercial, salud de la vegetación, stock
-				de carbono y balance de emisiones, dinámica de deforestación, calidad del aire
-				(PM2.5 — material particulado fino de diámetro ≤ 2,5 micrómetros) y cumplimiento del
-				Reglamento de Deforestación de la Unión Europea (EUDR, por sus siglas en inglés) para commodities.
-			</li>
-			<li>
-				<strong>Servir.</strong>
-				Capital educativo, flujo del sistema educativo, acceso a salud, aislamiento geoespacial y
-				perfil sociodemográfico, con crosswalk dasimétrico a hexágonos H3.
-			</li>
-			<li>
-				<strong>Invertir.</strong>
-				Valor posicional, presión de cambio urbano, confort climático, infraestructura eléctrica
-				y clasificación de tipos geoespaciales para informar decisiones de localización.
-			</li>
+			{#each c.queOfrece as item}
+				<li>{@html item}</li>
+			{/each}
 		</ul>
-		<p>
-			Todas las capas se proyectan sobre una grilla hexagonal <strong>H3</strong> (sistema de indexación geoespacial de código abierto desarrollado por Uber Technologies) de resolución 9 (~0,1 km² por hexágono, ~320 000 hexágonos por territorio analizado), con crosswalks documentados a radios censales y parcelas catastrales para análisis cruzados.
-		</p>
+		<p>{@html c.queOfreceFootnote}</p>
 	</section>
 
 	<section class="section">
-		<h2>Para quienes</h2>
+		<h2>{c.paraQuienesTitle}</h2>
 		<ul class="list">
-			<li>
-				<strong>Organismos multilaterales</strong> — Programa de las Naciones Unidas para el Desarrollo (PNUD), Banco Interamericano de Desarrollo (BID), Banco Mundial, Organización de las Naciones Unidas para la Alimentación y la Agricultura (FAO), Comisión Económica para América Latina y el Caribe (CEPAL) — que necesiten diagnósticos geoespaciales rápidos y reproducibles sobre el noreste argentino y sus regiones transfronterizas, con datos curados y pipelines auditables.
-			</li>
-			<li>
-				<strong>Gobiernos provinciales y municipales</strong> que busquen visualizar
-				simultáneamente indicadores ambientales, sociales y de infraestructura para planificación
-				sectorial o negociación con terceros.
-			</li>
-			<li>
-				<strong>Investigación académica</strong> con necesidad de datos curados listos para
-				análisis, especialmente en ecología, geografía, economía ecológica, ciencias sociales y
-				salud pública.
-			</li>
-			<li>
-				<strong>Organizaciones de la sociedad civil</strong> que quieran fundamentar denuncias,
-				propuestas de política o campañas de incidencia con evidencia cuantitativa rigurosa.
-			</li>
-			<li>
-				<strong>Consultoras ambientales, agrícolas y forestales</strong> que necesiten
-				due-diligence geoespacial verificable, particularmente para cumplimiento EUDR en
-				exportaciones hacia la Unión Europea.
-			</li>
-			<li>
-				<strong>Docentes y estudiantes</strong> que quieran introducirse al análisis geoespacial
-				con una plataforma en español, con metodologías explicadas y datos reales.
-			</li>
+			{#each c.paraQuienes as item}
+				<li>{@html item}</li>
+			{/each}
 		</ul>
 	</section>
 
 	<section class="section">
-		<h2>Servicios disponibles</h2>
+		<h2>{c.serviciosTitle}</h2>
 		<ul class="list">
-			<li>
-				<strong>Asesoría geoespacial aplicada.</strong> Acompañamiento técnico a proyectos
-				específicos de diagnóstico, planificación, evaluación de impacto o diseño de políticas.
-			</li>
-			<li>
-				<strong>Informes temáticos por departamento o zona.</strong> Fichas sintéticas que integran
-				todas las capas relevantes sobre un recorte espacial solicitado, con interpretación
-				contextualizada.
-			</li>
-			<li>
-				<strong>Análisis de cumplimiento EUDR.</strong> Due diligence geoespacial sobre áreas de
-				origen de commodities (soja, carne, madera, café, cacao, caucho, aceite de palma) con la
-				Regulación UE 2023/1115, combinando Hansen GFC, MODIS MCD64A1 y geometrías parcelarias.
-			</li>
-			<li>
-				<strong>Integración con sistemas existentes.</strong> Conexión de nealab con Sistemas de Información Geográfica (SIG) institucionales, tableros de Business Intelligence (BI), interfaces de programación (API) de terceros y flujos internos mediante DuckDB, Parquet o GeoJSON.
-			</li>
+			{#each c.servicios as item}
+				<li>{@html item}</li>
+			{/each}
 		</ul>
 	</section>
 
 	<section class="section">
-		<h2>Sobre los límites de este análisis</h2>
-		<p>
-			Esta sección es importante y pedimos que se lea con atención antes de utilizar nealab en
-			cualquier decisión con consecuencias reales.
-		</p>
-		<p>
-			<strong>nealab es una herramienta analítica, no prescriptiva.</strong> Ningún análisis en
-			esta plataforma constituye una recomendación de acción, una certificación técnica ni una
-			consultoría profesional. Los scores, tipologías y rankings son síntesis cuantitativas de
-			variables observables desde percepción remota, censos y fuentes administrativas. No
-			sustituyen el juicio experto ni la responsabilidad de quien decide.
-		</p>
-		<p>
-			<strong>Sin garantía de exactitud.</strong> La plataforma y toda la información que contiene
-			se proveen tal cual (as-is), sin garantías expresas ni implícitas sobre exactitud,
-			completitud, actualización o idoneidad para ningún propósito en particular. Los datos
-			satelitales, censales y administrativos pueden contener errores, desfasajes temporales o
-			limitaciones metodológicas documentadas en la ficha técnica de cada capa.
-		</p>
-		<p>
-			<strong>Ningún análisis geoespacial reemplaza el trabajo de campo.</strong> La percepción remota
-			captura condiciones físicas promedio en ventanas temporales definidas; no captura procesos sociales,
-			conflictos de uso, restricciones jurídicas o cambios recientes que aún no se hayan incorporado a los datos.
-			Las capas de nealab requieren validación en terreno por parte de técnicos y responsables
-			que conozcan la situación local.
-		</p>
-		<p>
-			Una zona clasificada con alta aptitud agrícola puede tener restricciones de uso, regímenes de tenencia
-			o condiciones locales no reflejados en los datos disponibles. Una zona con bajo riesgo histórico de
-			inundación puede estar experimentando cambios hidrológicos recientes. En todos los casos, el análisis
-			geoespacial es un insumo diagnóstico, no un resultado de política.
-		</p>
-		<p>
-			<strong>Cada clasificación disponible en nealab debe entenderse como una hipótesis a contrastar,
-			no como un resultado definitivo.</strong> El uso responsable implica leer la ficha metodológica de cada capa,
-			reconocer sus limitaciones, y complementar el análisis con validación de campo.
-		</p>
+		<h2>{c.limitesTitle}</h2>
+		<p>{c.limitesWarning}</p>
+		<p>{@html c.limitesP1}</p>
+		<p>{@html c.limitesP2}</p>
+		<p>{@html c.limitesP3}</p>
+		<p>{c.limitesP4}</p>
+		<p>{@html c.limitesP5}</p>
 		<div class="liability-block">
-			<p class="liability-text">
-				<strong>Responsabilidad.</strong> Bajo ninguna circunstancia el autor, CONICET ni UNaM
-				serán responsables por daños directos, indirectos, incidentales o consecuentes derivados
-				del uso de nealab. Quien utilice esta plataforma en un contexto de gestión, inversión,
-				investigación o política pública asume la responsabilidad de ese uso y debe
-				complementarlo con validación profesional independiente.
-			</p>
-			<a class="terms-link" href="/terminos">Leer términos y condiciones completos →</a>
+			<p class="liability-text">{@html c.liabilityText}</p>
+			<a class="terms-link" href="/terminos">{c.termsLink}</a>
 		</div>
 	</section>
 
 	<section class="section">
-		<h2>Fuentes y colaboraciones</h2>
-		<p>
-			nealab integra datos de fuentes públicas, entre ellas: INDEC (Censo Nacional de Población,
-			Hogares y Viviendas 2022), IGN, Dirección General de Catastro de Misiones, JRC Global
-			Surface Water, Hansen Global Forest Change, MODIS, MapBiomas (Argentina y Paraguay),
-			CHIRPS (Climate Hazards Group InfraRed Precipitation with Station data), ERA5 (reanálisis
-			climático del Centro Europeo de Predicción Meteorológica a Medio Plazo — ECMWF, 5.ª versión),
-			VIIRS (Visible Infrared Imaging Radiometer Suite, sensor NOAA/NASA), GHSL (Global Human
-			Settlement Layer, Centro Común de Investigación de la Unión Europea), SoilGrids (ISRIC —
-			International Soil Reference and Information Centre), misiones Sentinel de la Agencia Espacial
-			Europea (ESA) / programa Copernicus, Global Building Atlas (GBA; Zhu et al., 2025, Earth
-			System Science Data — ESSD), Overture Maps Foundation, OpenStreetMap, Meta / World Resources
-			Institute (WRI) Canopy Height, GEDI L4B (Global Ecosystem Dynamics Investigation — NASA),
-			ESA CCI Biomass (Climate Change Initiative de la ESA), Global Forest Watch (GFW), conjunto
-			PM2.5 de la Universidad de Dalhousie (ACAG — Atmospheric Composition Analysis Group),
-			EMSA (Empresa Misionera de Energía), Oxford MAP (Malaria Atlas Project), Dirección General
-			de Estadística, Encuestas y Censos de Paraguay (DGEEC) e Instituto Brasileiro de Geografia
-			e Estatística (IBGE), entre otras. El procesamiento se realiza sobre Google Earth Engine
-			como plataforma de cómputo, con acceso al <strong>Google Earth Engine Partner Tier</strong>.
-		</p>
+		<h2>{c.fuentesTitle}</h2>
+		<p>{@html c.fuentesP1}</p>
 	</section>
 
 	<section class="section">
-		<h2>Contacto</h2>
-		<p>
-			<strong>Raimundo Elias Gomez</strong><br />
-			Investigador CONICET · Facultad de Humanidades y Ciencias Sociales, Universidad Nacional de
-			Misiones (Argentina)<br />
-			<a href="mailto:nealab@spatia.ar">nealab@spatia.ar</a>
-		</p>
+		<h2>{c.contactoTitle}</h2>
+		<p>{@html c.contactoContent}</p>
 	</section>
 
 	<footer class="footer">
 		<p>
-			Citación sugerida: Gomez, R. E. (2026). nealab: A Zero-Cost Platform for Subnational
+			{c.citationLabel}: Gomez, R. E. (2026). nealab: A Zero-Cost Platform for Subnational
 			Territorial Intelligence (Version v2). Zenodo.
 			<a href="https://doi.org/10.5281/zenodo.19543818">https://doi.org/10.5281/zenodo.19543818</a>
 		</p>
-		<p class="affil">CONICET · FHyCS-UNaM · Google Earth Engine Partner Tier</p>
+		<p class="affil">{c.affil}</p>
 		<p class="print-only generated">
-			Documento generado el {today} desde spatia.ar/servicios
+			{c.printGenerated.replace('{date}', today)}
 		</p>
 	</footer>
 	</div>
@@ -335,6 +164,11 @@
 		align-items: center;
 		gap: 12px;
 		margin-bottom: 24px;
+	}
+	.hdr-right {
+		display: flex;
+		align-items: center;
+		gap: 8px;
 	}
 	.back-link {
 		display: inline-block;

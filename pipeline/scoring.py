@@ -250,16 +250,20 @@ def geometric_mean_score(
         return df[columns[0]].clip(lower=floor)
 
     log_sum = pd.Series(0.0, index=df.index)
-    valid = pd.Series(True, index=df.index, dtype=bool)
+    n_valid = pd.Series(0, index=df.index, dtype=int)
 
     for col in columns:
         vals = df[col].clip(lower=floor)
         is_valid = vals.notna()
-        valid &= is_valid
+        n_valid[is_valid] += 1
         log_sum[is_valid] += np.log(vals[is_valid])
 
+    # Per-row divisor: use n_valid instead of n so hex with partial coverage
+    # (e.g. MODIS GPP/ET gaps) still get a score from the variables they have.
+    # Hex with n_valid=0 remain NaN (dropped by caller — water bodies, true gaps).
     result = pd.Series(np.nan, index=df.index)
-    result[valid] = np.exp(log_sum[valid] / n)
+    mask = n_valid > 0
+    result[mask] = np.exp(log_sum[mask] / n_valid[mask])
     return result
 
 

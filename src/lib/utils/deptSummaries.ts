@@ -75,6 +75,8 @@ const CORRIENTES_SUMMARIES: Record<string, () => Promise<any>> = {
 	productive_activity:    () => import('$lib/data/corrientes_sat_productive_activity_summary.json'),
 	deforestation_dynamics: () => import('$lib/data/corrientes_sat_deforestation_dynamics_summary.json'),
 	forestry_aptitude:      () => import('$lib/data/corrientes_sat_forestry_aptitude_summary.json'),
+	territorial_types:      () => import('$lib/data/corrientes_sat_territorial_types_summary.json'),
+	location_value:         () => import('$lib/data/corrientes_sat_location_value_summary.json'),
 };
 
 const TERRITORY_SUMMARIES: Record<string, Record<string, () => Promise<any>>> = {

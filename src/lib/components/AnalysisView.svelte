@@ -3,6 +3,7 @@
 	import type { LensStore } from '$lib/stores/lens.svelte';
 	import type { MapStore } from '$lib/stores/map.svelte';
 	import type { HexStore } from '$lib/stores/hex.svelte';
+	import type { TerritoryStore } from '$lib/stores/territory.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import OvertureAnalysis from './analyses/OvertureAnalysis.svelte';
 	import CatastroAnalysis from './analyses/CatastroAnalysis.svelte';
@@ -11,6 +12,7 @@
 		lensStore,
 		mapStore,
 		hexStore,
+		territoryStore,
 		onBack,
 		onRemoveRadio,
 		onSelectFloodDpto,
@@ -22,6 +24,7 @@
 		lensStore: LensStore;
 		mapStore: MapStore;
 		hexStore: HexStore;
+		territoryStore: TerritoryStore;
 		onBack: () => void;
 		onRemoveRadio: (redcode: string) => void;
 		onSelectFloodDpto: (dpto: string, parquetKey: string, centroid: [number, number]) => void;
@@ -43,7 +46,7 @@
 			<div class="view-title-group">
 				<div class="view-title">{i18n.t(analysis.titleKey)}</div>
 				<div class="view-lens" style:color={cfg.color}>
-					{cfg.label[i18n.locale as 'es' | 'en' | 'gn']}
+					{cfg.label[i18n.locale as 'es' | 'en' | 'gn' | 'pt']}
 				</div>
 			</div>
 		</div>
@@ -57,7 +60,7 @@
 		{:else if analysis.spatialUnit === 'catastro'}
 			<CatastroAnalysis {lensStore} {mapStore} {onRemoveRadio} {onSelectCatastroDpto} />
 		{:else if HEX_LAYER_REGISTRY[analysis.id]}
-			<OvertureAnalysis {analysis} {hexStore} onSelectDpto={onSelectFloodDpto} />
+			<OvertureAnalysis {analysis} {hexStore} {territoryStore} onSelectDpto={onSelectFloodDpto} />
 		{:else}
 			<p class="text-text-dim text-[10px]">{i18n.t(analysis.descKey)}</p>
 		{/if}

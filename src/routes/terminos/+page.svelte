@@ -1,12 +1,17 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { terms } from '$lib/stores/terms.svelte';
+	import { i18n } from '$lib/stores/i18n.svelte';
+	import LangSwitcher from '$lib/components/LangSwitcher.svelte';
+	import { TERMINOS } from '$lib/content/terminos';
 
 	const today = new Date().toLocaleDateString('es-AR', {
 		year: 'numeric',
 		month: 'long',
 		day: 'numeric',
 	});
+
+	const c = $derived(TERMINOS[i18n.locale] ?? TERMINOS.es);
 
 	function acceptAndEnter() {
 		terms.accept();
@@ -15,217 +20,118 @@
 </script>
 
 <svelte:head>
-	<title>Términos y condiciones — nealab</title>
-	<meta name="description" content="Términos y condiciones de uso de nealab, plataforma de inteligencia geoespacial abierta. Exclusión de garantías, limitación de responsabilidad, ley aplicable." />
+	<title>{c.pageTitle}</title>
+	<meta name="description" content={c.metaDesc} />
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
 <div class="page">
 	<div class="content">
-		<div class="print-brand">nealab · términos y condiciones · spatia.ar</div>
+		<div class="print-brand">{c.printBrand}</div>
 
 		<header class="hdr">
 			<div class="hdr-actions no-print">
-				<a class="back-link" href="/">&larr; Volver al mapa</a>
+				<a class="back-link" href="/">{i18n.t('nav.backToMap')}</a>
+				<LangSwitcher variant="mono" />
 			</div>
-			<div class="kicker">Términos y condiciones de uso · nealab / spatia.ar</div>
-			<h1 class="title">Términos y condiciones</h1>
-			<p class="subtitle">
-				Última actualización: mayo de 2026. Al usar nealab aceptás estos términos en su totalidad.
-				Si no los aceptás, no uses la plataforma.
-			</p>
+			<div class="kicker">{c.kicker}</div>
+			<h1 class="title">{c.title}</h1>
+			<p class="subtitle">{c.subtitle}</p>
 		</header>
 
 		<section class="section">
-			<h2>1. Aceptación</h2>
-			<p>
-				El uso de nealab y de cualquier análisis, dato o visualización disponible en
-				<strong>spatia.ar</strong> implica la aceptación plena e incondicional de estos términos y
-				condiciones. Esta aceptación se produce en el momento en que el usuario accede a la
-				plataforma y confirma haber leído y comprendido las condiciones aquí establecidas.
-			</p>
-			<p>
-				Si usás nealab en nombre de una organización, institución o empresa, aceptás estos términos
-				en nombre de esa entidad y declarás tener autoridad para hacerlo.
-			</p>
+			<h2>{c.s1Title}</h2>
+			<p>{@html c.s1P1}</p>
+			<p>{c.s1P2}</p>
 		</section>
 
 		<section class="section">
-			<h2>2. Naturaleza del servicio</h2>
-			<p>
-				nealab es una <strong>herramienta de análisis geoespacial académico</strong> de acceso
-				abierto, desarrollada en el marco de un proyecto de investigación con el aval del
-				Consejo Nacional de Investigaciones Científicas y Técnicas (CONICET, Argentina). Integra datos
-				públicos de fuentes declaradas para generar visualizaciones e indicadores sobre el
-				territorio del noreste argentino y sus regiones transfronterizas.
-			</p>
-			<p>
-				nealab <strong>no es</strong> un sistema de recomendación, un sistema de certificación,
-				un peritaje técnico ni una consultoría profesional de ningún tipo. Sus análisis son
-				síntesis cuantitativas de variables observables desde percepción remota, censos y fuentes
-				administrativas, y deben entenderse como <strong>hipótesis a contrastar</strong>, nunca
-				como verdades a aplicar directamente.
-			</p>
+			<h2>{c.s2Title}</h2>
+			<p>{@html c.s2P1}</p>
+			<p>{@html c.s2P2}</p>
 		</section>
 
 		<section class="section">
-			<h2>3. Exclusión de garantías</h2>
-			<p>
-				La plataforma y toda la información que contiene se proveen <strong>tal cual (as-is)</strong>,
-				sin garantías de ningún tipo, expresas ni implícitas, incluyendo pero no limitado a:
-			</p>
+			<h2>{c.s3Title}</h2>
+			<p>{@html c.s3Intro}</p>
 			<ul class="list">
-				<li>Exactitud o precisión de los datos</li>
-				<li>Completitud o ausencia de errores</li>
-				<li>Actualización o vigencia de la información</li>
-				<li>Idoneidad para un propósito particular</li>
-				<li>Ausencia de interrupciones o errores técnicos</li>
+				{#each c.s3List as item}
+					<li>{item}</li>
+				{/each}
 			</ul>
-			<p>
-				Los datos satelitales, censales y administrativos que integra nealab pueden contener
-				errores, desfasajes temporales o limitaciones metodológicas documentadas en la ficha
-				técnica de cada capa. Es responsabilidad del usuario verificar la adecuación de esa
-				información para el uso que pretende darle.
-			</p>
+			<p>{c.s3P2}</p>
 		</section>
 
 		<section class="section">
-			<h2>4. Limitación de responsabilidad</h2>
-			<p>
-				En la máxima medida permitida por la legislación aplicable, <strong>Raimundo Elias Gomez,
-				CONICET y la Universidad Nacional de Misiones (UNaM)</strong> no serán responsables por daños de ningún tipo
-				derivados del uso o la imposibilidad de uso de nealab, incluyendo pero no limitado a:
-			</p>
+			<h2>{c.s4Title}</h2>
+			<p>{@html c.s4Intro}</p>
 			<ul class="list">
-				<li>Daños directos, indirectos, incidentales, especiales o consecuentes</li>
-				<li>Pérdidas económicas, pérdida de ganancias o de oportunidades de negocio</li>
-				<li>Decisiones de inversión, gestión o política pública basadas en los análisis</li>
-				<li>Consecuencias jurídicas, regulatorias o comerciales de cualquier índole</li>
-				<li>Pérdida o corrupción de datos</li>
+				{#each c.s4List as item}
+					<li>{item}</li>
+				{/each}
 			</ul>
-			<p>
-				Esta limitación aplica independientemente de que los daños fueran previsibles o de que
-				se hubiera advertido sobre su posibilidad.
-			</p>
+			<p>{c.s4P2}</p>
 		</section>
 
 		<section class="section">
-			<h2>5. Marco institucional</h2>
-			<p>
-				CONICET y la UNaM, a través de la Facultad de Humanidades y Ciencias Sociales (FHyCS),
-				son el <strong>marco académico e institucional</strong> de la investigación que dio origen a nealab. No son
-				proveedores del servicio en sentido comercial, no avalan los análisis como documentos
-				oficiales de ninguna institución pública o privada, y no asumen responsabilidad por
-				el uso que terceros hagan de la información disponible en la plataforma.
-			</p>
-			<p>
-				La mención de CONICET y UNaM en esta plataforma refleja el origen académico del
-				desarrollo, no un aval institucional sobre la exactitud, completitud o idoneidad de
-				ningún análisis particular.
-			</p>
+			<h2>{c.s5Title}</h2>
+			<p>{@html c.s5P1}</p>
+			<p>{c.s5P2}</p>
 		</section>
 
 		<section class="section">
-			<h2>6. Uso permitido</h2>
-			<p>nealab puede usarse libremente para:</p>
+			<h2>{c.s6Title}</h2>
+			<p>{c.s6Intro}</p>
 			<ul class="list">
-				<li>Consulta, exploración y visualización de datos geoespaciales públicos</li>
-				<li>Investigación académica y producción científica</li>
-				<li>Educación, docencia y ciencia ciudadana</li>
-				<li>Diagnósticos no vinculantes como insumo de deliberación o planificación</li>
-				<li>Generación de hipótesis que serán contrastadas con fuentes primarias y trabajo de campo</li>
+				{#each c.s6List as item}
+					<li>{item}</li>
+				{/each}
 			</ul>
-			<p>
-				El uso en decisiones con consecuencias jurídicas, económicas, territoriales o de política
-				pública requiere <strong>validación independiente</strong> por profesionales habilitados
-				y trabajo situado en campo.
-			</p>
+			<p>{@html c.s6P2}</p>
 		</section>
 
 		<section class="section">
-			<h2>7. Uso prohibido</h2>
-			<p>Está prohibido:</p>
+			<h2>{c.s7Title}</h2>
+			<p>{c.s7Intro}</p>
 			<ul class="list">
-				<li>
-					Presentar los análisis de nealab como certificaciones técnicas, peritajes, informes
-					oficiales o documentos con valor jurídico sin indicar explícitamente su naturaleza
-					indicativa y sus limitaciones metodológicas.
-				</li>
-				<li>
-					Usar nealab como única fuente de due-diligence en contextos regulatorios que exigen
-					certificación profesional (incluido pero no limitado al cumplimiento del Reglamento de Deforestación de la Unión Europea (EUDR, por sus siglas en inglés), evaluaciones
-					de impacto ambiental o tasaciones).
-				</li>
-				<li>
-					Reproducir o redistribuir los análisis de nealab atribuyéndoles una precisión, autoridad
-					o vigencia que el servicio no garantiza.
-				</li>
+				{#each c.s7List as item}
+					<li>{item}</li>
+				{/each}
 			</ul>
 		</section>
 
 		<section class="section">
-			<h2>8. Propiedad intelectual</h2>
-			<p>
-				Los datos integrados por nealab provienen de fuentes públicas declaradas en la ficha
-				técnica de cada capa — entre otras, el Instituto Nacional de Estadística y Censos
-				(INDEC), el Instituto Geográfico Nacional (IGN), el Joint Research Centre (JRC) de la
-				Comisión Europea, Hansen Global Forest Change (GFC), MODIS (Moderate Resolution Imaging
-				Spectroradiometer), MapBiomas y OpenStreetMap (OSM) — y se usan conforme a sus licencias originales. El pipeline de procesamiento, el código
-				de la plataforma y las visualizaciones son de autoría de Raimundo Elias Gomez y pueden
-				citarse según la referencia indicada en
-				<a href="/servicios">spatia.ar/servicios</a>.
-			</p>
+			<h2>{c.s8Title}</h2>
+			<p>{@html c.s8P1}</p>
 		</section>
 
 		<section class="section">
-			<h2>9. Privacidad y datos</h2>
-			<p>
-				nealab no recopila datos personales de los usuarios. El acceso a la plataforma puede
-				generar registros técnicos estándar (dirección IP, timestamp, ruta de acceso) utilizados
-				exclusivamente para monitoreo de infraestructura y detección de errores. Estos registros
-				no se comparten con terceros ni se usan para identificar personas.
-			</p>
-			<p>
-				La aceptación de estos términos se registra localmente en el navegador del usuario
-				(localStorage) y no se transmite a ningún servidor.
-			</p>
+			<h2>{c.s9Title}</h2>
+			<p>{c.s9P1}</p>
+			<p>{c.s9P2}</p>
 		</section>
 
 		<section class="section">
-			<h2>10. Modificaciones</h2>
-			<p>
-				Estos términos pueden modificarse. La versión vigente está siempre disponible en
-				<strong>spatia.ar/terminos</strong>. Cambios sustanciales en las condiciones de
-				responsabilidad o uso requerirán nueva aceptación explícita, que la plataforma
-				solicitará automáticamente al usuario.
-			</p>
+			<h2>{c.s10Title}</h2>
+			<p>{@html c.s10P1}</p>
 		</section>
 
 		<section class="section">
-			<h2>11. Ley aplicable y jurisdicción</h2>
-			<p>
-				Estos términos y condiciones se rigen por las leyes de la <strong>República Argentina</strong>,
-				en particular el Código Civil y Comercial de la Nación (Ley 26.994 y sus modificatorias).
-				Para cualquier controversia derivada del uso de nealab, las partes se someten a la
-				jurisdicción de los <strong>tribunales ordinarios de la ciudad de Posadas, provincia
-				de Misiones</strong>, con renuncia expresa a cualquier otro fuero que pudiera corresponder.
-			</p>
+			<h2>{c.s11Title}</h2>
+			<p>{@html c.s11P1}</p>
 		</section>
 
 		<div class="accept-block no-print">
-			<p class="accept-text">
-				Al hacer clic en el botón de abajo confirmás que leíste y aceptás estos términos y
-				condiciones en su totalidad.
-			</p>
+			<p class="accept-text">{c.acceptText}</p>
 			<button class="btn-accept" onclick={acceptAndEnter}>
-				Acepto los términos — entrar a nealab
+				{c.acceptBtn}
 			</button>
 		</div>
 
 		<footer class="footer">
-			<p>spatia.ar/terminos · Versión mayo 2026</p>
-			<p class="affil">CONICET · FHyCS-UNaM</p>
-			<p class="print-only generated">Documento generado el {today} desde spatia.ar/terminos</p>
+			<p>{c.footerVersion}</p>
+			<p class="affil">{c.affil}</p>
+			<p class="print-only generated">{c.printGenerated.replace('{date}', today)}</p>
 		</footer>
 	</div>
 </div>
@@ -257,6 +163,10 @@
 	.hdr { margin-bottom: 40px; }
 
 	.hdr-actions {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 12px;
 		margin-bottom: 24px;
 	}
 

@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { i18n } from '$lib/stores/i18n.svelte';
+	import LangSwitcher from '$lib/components/LangSwitcher.svelte';
 
 	let { data } = $props();
 	const title = $derived(i18n.t(data.titleKey));
 	const description = $derived(data.descKey ? i18n.t(data.descKey) : null);
+	const locale = $derived(i18n.locale);
 
 	const today = new Date().toLocaleDateString('es-AR', {
 		year: 'numeric',
@@ -32,36 +34,39 @@
 
 	<header class="hdr">
 		<div class="hdr-actions no-print">
-			<a class="back-link" href="/?a={data.id}">&larr; Volver al mapa</a>
-			<button class="print-btn" onclick={handlePrint} type="button">
-				↓ Imprimir / Guardar PDF
-			</button>
+			<a class="back-link" href="/?a={data.id}">{i18n.t('nav.backToMap')}</a>
+			<div class="hdr-right">
+				<LangSwitcher variant="mono" />
+				<button class="print-btn" onclick={handlePrint} type="button">
+					{i18n.t('nav.printSave')}
+				</button>
+			</div>
 		</div>
 		<h1 class="title">{title}</h1>
-		<div class="kicker">Metodología · nealab · inteligencia geoespacial abierta</div>
+		<div class="kicker">{i18n.t('page.metodologia.kicker.detail')}</div>
 		{#if description}
 			<p class="desc">{description}</p>
 		{/if}
 	</header>
 
 	<section class="section">
-		<h2>¿Cómo leer el mapa?</h2>
-		<p>{data.content.howToRead}</p>
+		<h2>{i18n.t('section.howToRead')}</h2>
+		<p>{@html data.content.howToRead[locale] ?? data.content.howToRead.es}</p>
 	</section>
 
 	<section class="section">
-		<h2>Implicaciones</h2>
-		<p>{data.content.implications}</p>
+		<h2>{i18n.t('section.implications')}</h2>
+		<p>{@html data.content.implications[locale] ?? data.content.implications.es}</p>
 	</section>
 
 	<section class="section">
-		<h2>Metodología y fuentes</h2>
-		<p>{data.content.method}</p>
+		<h2>{i18n.t('section.methodology')}</h2>
+		<p>{@html data.content.method[locale === 'pt' || locale === 'gn' ? 'es' : locale] ?? data.content.method.es}</p>
 	</section>
 
 	{#if data.variables.length > 0}
 		<section class="section">
-			<h2>Variables incluidas</h2>
+			<h2>{i18n.t('section.variables')}</h2>
 			<ul class="vars">
 				{#each data.variables as v}
 					<li><code>{v.col}</code> — {i18n.t(v.labelKey)}</li>
@@ -71,15 +76,15 @@
 	{/if}
 
 	<section class="section">
-		<h2>Datos descargables</h2>
+		<h2>{i18n.t('section.downloads')}</h2>
 		<p class="note">
-			Los datos crudos de este análisis pueden descargarse en CSV o GeoJSON desde el panel lateral del mapa una vez seleccionado un departamento.
+			{@html i18n.t('page.metodologia.downloadsText')}
 		</p>
 	</section>
 
 	<footer class="footer">
 		<p>
-			Citación sugerida: Gomez, R. E. (2026). nealab: A Zero-Cost Platform for Subnational Territorial Intelligence (Version v2). Zenodo. <a href="https://doi.org/10.5281/zenodo.19543818">https://doi.org/10.5281/zenodo.19543818</a>
+			{i18n.t('section.citation')}: Gomez, R. E. (2026). nealab: A Zero-Cost Platform for Subnational Territorial Intelligence (Version v2). Zenodo. <a href="https://doi.org/10.5281/zenodo.19543818">https://doi.org/10.5281/zenodo.19543818</a>
 		</p>
 		<p class="affil">CONICET · FHyCS-UNaM · Google Earth Engine Partner Tier</p>
 		<p class="print-only generated">Documento generado el {today} desde spatia.ar/metodologia/{data.id}</p>
@@ -106,6 +111,11 @@
 		align-items: center;
 		gap: 12px;
 		margin-bottom: 16px;
+	}
+	.hdr-right {
+		display: flex;
+		align-items: center;
+		gap: 8px;
 	}
 	.back-link {
 		display: inline-block;

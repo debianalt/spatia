@@ -225,7 +225,7 @@
 				{/if}
 			</button>
 			{#if territoryStore.compareModeActive}
-				<button class="close-btn" onclick={() => territoryStore.exitCompareMode()}>×</button>
+				<button class="close-btn" onclick={() => territoryStore.exitCompareMode()}>← volver</button>
 			{/if}
 			{#if selectorOpen}
 				<div class="compare-dropdown">
@@ -325,9 +325,8 @@
 	.cp-root { }
 
 	.cp-root.cp-full {
-		flex: 1;
+		max-height: 280px;
 		overflow-y: auto;
-		min-height: 0;
 	}
 
 	/* Selector row */
@@ -354,16 +353,18 @@
 	.compare-row-btn:hover { color: #bfdbfe; }
 
 	.close-btn {
-		background: none;
-		border: none;
-		color: rgba(255, 255, 255, 0.35);
-		font-size: 14px;
+		background: rgba(255, 255, 255, 0.07);
+		border: 1px solid rgba(255, 255, 255, 0.15);
+		border-radius: 3px;
+		color: rgba(255, 255, 255, 0.7);
+		font-size: 9px;
+		font-weight: 600;
 		cursor: pointer;
-		padding: 0 2px;
-		line-height: 1;
+		padding: 2px 6px;
+		line-height: 1.4;
 		margin-left: auto;
 	}
-	.close-btn:hover { color: rgba(255, 255, 255, 0.7); }
+	.close-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.12); }
 
 	/* Hierarchical dropdown */
 	.compare-dropdown {

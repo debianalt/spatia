@@ -10,6 +10,7 @@ Usage:
   python pipeline/compute_territorial_classification.py
   python pipeline/compute_territorial_classification.py --k 7
   python pipeline/compute_territorial_classification.py --k-range 5,8
+  python pipeline/compute_territorial_classification.py --territory corrientes
 """
 
 import argparse
@@ -28,6 +29,9 @@ from sklearn.preprocessing import StandardScaler
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
 from config import OUTPUT_DIR
+
+# Set by main() for non-Misiones territories; load_and_merge() reads this.
+_INPUT_DIR = OUTPUT_DIR
 
 # ── Source definitions ────────────────────────────────────────────────────────
 # Each entry: (parquet_stem, prefix, columns_to_load)
@@ -82,7 +86,7 @@ def load_and_merge():
     total_cols = 0
 
     for stem, prefix, cols in SOURCES:
-        path = os.path.join(OUTPUT_DIR, f"{stem}.parquet")
+        path = os.path.join(_INPUT_DIR, f"{stem}.parquet")
         if not os.path.exists(path):
             print(f"  SKIP {stem}: file not found")
             continue
@@ -265,11 +269,23 @@ def characterise_clusters(base, labels, meta_cols, short_names, k):
 
 
 def main():
+    global _INPUT_DIR
+
     parser = argparse.ArgumentParser(description="Territorial classification: PCA + metabolic clustering")
     parser.add_argument("--k", type=int, default=None, help="Fixed number of clusters (skip evaluation)")
     parser.add_argument("--k-range", default="5,8", help="Range of k to evaluate (min,max)")
-    parser.add_argument("--output-dir", default=OUTPUT_DIR)
+    parser.add_argument("--territory", default="misiones", help="Territory ID (default: misiones)")
+    parser.add_argument("--output-dir", default=None)
     args = parser.parse_args()
+
+    if args.territory != "misiones":
+        t_dir = os.path.join(OUTPUT_DIR, args.territory)
+        _INPUT_DIR = t_dir
+        if args.output_dir is None:
+            args.output_dir = t_dir
+    else:
+        if args.output_dir is None:
+            args.output_dir = OUTPUT_DIR
 
     t0 = time.time()
 

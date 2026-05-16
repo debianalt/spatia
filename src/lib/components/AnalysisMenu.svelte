@@ -32,7 +32,7 @@
 {#if cfg && lens}
 	<div class="analysis-menu">
 		<div class="menu-header">
-			<span class="header-label">{cfg.label[i18n.locale as 'es' | 'en' | 'gn']}</span>
+			<span class="header-label">{cfg.label[i18n.locale as 'es' | 'en' | 'gn' | 'pt']}</span>
 		</div>
 
 		<div class="analysis-list">

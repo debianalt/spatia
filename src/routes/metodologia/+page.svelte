@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { i18n } from '$lib/stores/i18n.svelte';
+	import LangSwitcher from '$lib/components/LangSwitcher.svelte';
 
 	let { data } = $props();
 
@@ -29,16 +30,18 @@
 
 	<header class="hdr">
 		<div class="hdr-actions no-print">
-			<a class="back-link" href="/">&larr; Volver al mapa</a>
-			<button class="print-btn" onclick={handlePrint} type="button">
-				↓ Imprimir / Guardar PDF
-			</button>
+			<a class="back-link" href="/">{i18n.t('nav.backToMap')}</a>
+			<div class="hdr-right">
+				<LangSwitcher variant="mono" />
+				<button class="print-btn" onclick={handlePrint} type="button">
+					{i18n.t('nav.printSave')}
+				</button>
+			</div>
 		</div>
-		<h1 class="title">Metodología e indicadores</h1>
-		<div class="kicker">nealab · noreste argentino y regiones transfronterizas</div>
+		<h1 class="title">{i18n.t('page.metodologia.title')}</h1>
+		<div class="kicker">{i18n.t('page.metodologia.kicker')}</div>
 		<p class="desc">
-			Documentación metodológica de cada indicador: fuentes de datos, variables incluidas, método de
-			normalización y limitaciones conocidas. Todos los análisis son reproducibles y auditables.
+			{i18n.t('page.metodologia.desc')}
 		</p>
 	</header>
 
@@ -53,7 +56,7 @@
 							{#if analysis.descKey}
 								<span class="analysis-desc">{i18n.t(analysis.descKey)}</span>
 							{/if}
-							<span class="analysis-arrow">Ver metodología →</span>
+							<span class="analysis-arrow">{i18n.t('page.metodologia.arrowLink')}</span>
 						</a>
 					</li>
 				{/each}
@@ -91,6 +94,11 @@
 		align-items: center;
 		gap: 12px;
 		margin-bottom: 16px;
+	}
+	.hdr-right {
+		display: flex;
+		align-items: center;
+		gap: 8px;
 	}
 	.back-link {
 		display: inline-block;

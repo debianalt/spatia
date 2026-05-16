@@ -18,7 +18,7 @@
 			style:--lc={cfg.color}
 			onclick={() => lensStore.setLens(id)}
 		>
-			{cfg.label[i18n.locale as 'es' | 'en' | 'gn']}
+			{cfg.label[i18n.locale as 'es' | 'en' | 'gn' | 'pt']}
 		</button>
 	{/each}
 </div>

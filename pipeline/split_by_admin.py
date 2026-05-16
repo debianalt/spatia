@@ -41,6 +41,8 @@ SAT_ANALYSES = [
     "carbon_stock", "pm25_drivers", "deforestation_dynamics",
     "climate_vulnerability", "productive_activity", "location_value",
     "land_use", "accessibility", "soil_water",
+    # territorial_types is satellite-based (PCA+k-means on sat parquets), not census-limited
+    "territorial_types",
 ]
 
 # Analyses based on AR census data (Misiones + Corrientes + other AR provinces)
@@ -48,7 +50,7 @@ AR_CENSUS_ANALYSES = {
     "service_deprivation", "territorial_isolation",
     "health_access", "education_capital", "education_flow",
     "territorial_gap", "education_gap",
-    "territorial_types", "sociodemographic", "economic_activity",
+    "sociodemographic", "economic_activity",
 }
 
 
