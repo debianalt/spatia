@@ -4,26 +4,43 @@
 	import HistogramPanel from './HistogramPanel.svelte';
 	import ParallelCoords from './ParallelCoords.svelte';
 
+	let { territory }: { territory: string } = $props();
+
+	const TERR_LABEL: Record<string, string> = { misiones: 'Misiones', corrientes: 'Corrientes' };
+
 	let radioData = $state<Map<string, Record<string, any>> | null>(null);
+	let activeVars = $state(PETAL_VARS as typeof PETAL_VARS);
 	let loadError = $state(false);
 	let selectedVar = $state(PETAL_VARS[0].col);
 
-	// Plain var (NOT $state): a $state guard read+written inside the effect
-	// would re-trigger it. Mirrors `prevLens` in Sidebar.svelte.
-	let loadStarted = false;
+	// Plain var (NOT $state): tracks which territory is loaded so the effect
+	// neither loops nor re-queries. Set before the await. Mirrors `prevLens`.
+	let loadedFor: string | null = null;
 
 	$effect(() => {
-		if (loadStarted) return;
-		loadStarted = true;
-		loadRadioPopulation()
-			.then((m) => { radioData = m; })
-			.catch(() => { loadError = true; });
+		const terr = territory; // reactive dep — reload on territory switch
+		if (terr === loadedFor) return;
+		loadedFor = terr;
+		radioData = null;
+		loadError = false;
+		loadRadioPopulation(terr)
+			.then(({ data, vars }) => {
+				if (loadedFor !== terr) return;
+				radioData = data;
+				activeVars = vars;
+			})
+			.catch(() => { if (loadedFor === terr) loadError = true; });
 	});
+
+	// Defensive: when vars shrink (MIS 6 → COR 5) keep a valid selection.
+	const effVar = $derived(
+		activeVars.some((v) => v.col === selectedVar) ? selectedVar : activeVars[0].col
+	);
 </script>
 
 <div class="chart-root">
 	<div class="rc-header">
-		<span class="rc-title">{i18n.t('side.radioCensus.title')}</span>
+		<span class="rc-title">{i18n.t('side.radioCensus.title')} — {TERR_LABEL[territory] ?? territory}</span>
 	</div>
 	<p class="rc-subtitle">{i18n.t('side.radioCensus.subtitle')}</p>
 
@@ -37,14 +54,14 @@
 		<label class="rc-select-row">
 			<span class="rc-select-label">{i18n.t('side.radioCensus.variable')}</span>
 			<select class="rc-select" bind:value={selectedVar}>
-				{#each PETAL_VARS as v}
+				{#each activeVars as v}
 					<option value={v.col}>{i18n.t(v.labelKey)}</option>
 				{/each}
 			</select>
 		</label>
 
-		<HistogramPanel data={radioData} variable={selectedVar} xLabel="%" />
-		<ParallelCoords data={radioData} variables={PETAL_VARS} />
+		<HistogramPanel data={radioData} variable={effVar} xLabel="%" />
+		<ParallelCoords data={radioData} variables={activeVars} />
 	{/if}
 </div>
 
@@ -74,8 +91,9 @@
 	.rc-select {
 		flex: 1;
 		font-size: 10px; padding: 2px 6px; border-radius: 4px;
-		background: rgba(255,255,255,0.06); border: 1px solid #334155;
+		background: #1e293b; border: 1px solid #334155;
 		color: #e2e8f0; cursor: pointer; font-family: inherit;
 	}
+	.rc-select option { background: #1e293b; color: #e2e8f0; }
 	.rc-select:focus { outline: none; border-color: #64748b; }
 </style>

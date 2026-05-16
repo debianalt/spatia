@@ -115,6 +115,11 @@
 
 	const isCatastroAnalysis = $derived(lensStore.activeAnalysis?.id === 'catastro');
 	const isFloodRiskAnalysis = $derived(lensStore.activeAnalysis?.id === 'flood_risk');
+	// Territories with radio-level census data for the base-map RadioCensusPanel.
+	const isCensusTerritory = $derived(
+		territoryStore.activeTerritory.id === 'misiones' ||
+		territoryStore.activeTerritory.id === 'corrientes'
+	);
 
 	function handleBack() {
 		lensStore.clearAnalysis();
@@ -237,7 +242,8 @@
 			/>
 		</div>
 	{:else if mapStore.selectedRadios.size > 0}
-		<!-- No lens, radios selected: comparison chart -->
+		<!-- No lens, radios selected: comparison chart; census panel stays
+		     below it on the base map so it is never hidden behind clearing. -->
 		<div class="chart-scroll">
 			<ComparisonChart
 				radios={mapStore.selectedRadios}
@@ -247,16 +253,19 @@
 				{onDownloadRadioGeoJson}
 				{onDownloadRadiosSummary}
 			/>
+			{#if !lensStore.activeLens && isCensusTerritory}
+				<RadioCensusPanel territory={territoryStore.activeTerritory.id} />
+			{/if}
 		</div>
 	{:else if lensStore.activeLens}
 		<!-- Lens active, no analysis, no radio: show analysis menu -->
 		<div class="chart-scroll">
 			<AnalysisMenu {lensStore} activeTerritory={territoryStore.activeTerritory} {onSelectAnalysis} />
 		</div>
-	{:else if territoryStore.activeTerritory.id === 'misiones'}
-		<!-- Base map, no lens, no selection: census-radios exploratory panel -->
+	{:else if isCensusTerritory}
+		<!-- Base map, no lens, no selection: census-radios panel (default) -->
 		<div class="chart-scroll">
-			<RadioCensusPanel />
+			<RadioCensusPanel territory={territoryStore.activeTerritory.id} />
 		</div>
 	{/if}
 

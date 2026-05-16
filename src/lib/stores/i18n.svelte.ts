@@ -900,7 +900,7 @@ const dict: Record<string, Record<Locale, string>> = {
 	'lasso.clearZones': { es: 'Limpiar zonas', en: 'Clear zones', gn: 'Emopotĩ zona', pt: 'Limpar zonas' },
 	'side.radios': { es: 'Radios censales', en: 'Census tracts', gn: 'Radio censal', pt: 'Setores censitários' },
 	'side.clearRadios': { es: 'Limpiar', en: 'Clear', gn: 'Emopotĩ', pt: 'Limpar' },
-	'side.radioCensus.title': { es: 'Radios censales — Misiones', en: 'Census tracts — Misiones', gn: 'Radio censal — Misiones', pt: 'Setores censitários — Misiones' },
+	'side.radioCensus.title': { es: 'Radios censales', en: 'Census tracts', gn: 'Radio censal', pt: 'Setores censitários' },
 	'side.radioCensus.subtitle': { es: 'Distribución de indicadores censales en todos los radios', en: 'Distribution of census indicators across all tracts', gn: "Indicadores censales jehaipy opavave radio rehe", pt: 'Distribuição de indicadores censitários em todos os setores' },
 	'side.radioCensus.variable': { es: 'Variable', en: 'Variable', gn: 'Variable', pt: 'Variável' },
 	'side.radioCensus.loading': { es: 'Cargando radios…', en: 'Loading tracts…', gn: 'Omyenyhẽhína radio…', pt: 'Carregando setores…' },
