@@ -264,11 +264,6 @@
 		<div class="chart-scroll">
 			<AnalysisMenu {lensStore} activeTerritory={territoryStore.activeTerritory} {onSelectAnalysis} />
 		</div>
-	{:else if isCensusTerritory}
-		<!-- Base map, no lens, no selection: census-radios panel (default) -->
-		<div class="chart-scroll">
-			<RadioCensusPanel territory={territoryStore.activeTerritory.id} onBrushSelect={onRadioCensusBrush ?? (() => {})} />
-		</div>
 	{/if}
 
 </div>

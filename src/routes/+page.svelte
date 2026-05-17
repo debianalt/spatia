@@ -4,7 +4,6 @@
 	import MapLegend from '$lib/components/MapLegend.svelte';
 	import Controls from '$lib/components/Controls.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
-	import TerritorySelector from '$lib/components/TerritorySelector.svelte';
 	import LensSelector from '$lib/components/LensSelector.svelte';
 	import { MapStore } from '$lib/stores/map.svelte';
 	import { LensStore } from '$lib/stores/lens.svelte';
@@ -18,6 +17,7 @@
 	import { isInsideCorrientes } from '$lib/utils/corrientes-pip';
 	import { isInsideAltoParana } from '$lib/utils/alto_parana-pip';
 	import { findDeptFeature } from '$lib/utils/deptBoundaries';
+	import { loadDeptSummary } from '$lib/utils/deptSummaries';
 	import { PARQUETS, MAP_INIT, HEX_LAYER_REGISTRY, TERRITORY_REGISTRY, getAnalysisById, getAnalysesForLens, type AnalysisConfig, type LensId, type CountryId } from '$lib/config';
 	import { i18n, type Locale } from '$lib/stores/i18n.svelte';
 	import { terms } from '$lib/stores/terms.svelte';
@@ -40,7 +40,7 @@
 		if (lensStore.activeAnalysis) params.set('a', lensStore.activeAnalysis.id);
 		if (hexStore.selectedDpto) params.set('dept', hexStore.selectedDpto);
 		if (hexStore.temporalMode !== 'current') params.set('tm', hexStore.temporalMode);
-		if (territoryStore.countryFilter !== 'ar') params.set('cf', territoryStore.countryFilter);
+		if (territoryStore.countryFilter && territoryStore.countryFilter !== 'ar') params.set('cf', territoryStore.countryFilter);
 		const qs = params.toString();
 		window.history.replaceState({}, '', qs ? `?${qs}` : window.location.pathname);
 	}
@@ -171,6 +171,34 @@
 		initDuckDB()
 			.then(() => {
 				warmupRadioStats();
+				// Cold-open: trinational deforestation surface, unless a deep-link
+				// (?lens=/?a=) already restored an analysis. Runs post-DuckDB
+				// because isReady() is non-reactive — setLayer→loadVisibleData
+				// no-ops if DuckDB isn't ready yet and nothing re-triggers it.
+				if (!lensStore.activeLens && !params.get('a')) {
+					lensStore.setLens('vivir');
+					const cold = getAnalysisById('deforestation_dynamics');
+					if (cold) {
+						lensStore.setAnalysis(cold);
+						// deforestation_dynamics is perDepartment: it renders only
+						// after a department is loaded. Auto-select the Misiones
+						// department with the highest deforestation so the layer
+						// opens populated, clickable and "shining". Same code path
+						// as a manual dept click (loadDeptSummary → handleSelectFloodDpto).
+						loadDeptSummary('deforestation_dynamics', '').then(summary => {
+							// Bail if the user already navigated while the summary loaded.
+							if (lensStore.activeAnalysis?.id !== 'deforestation_dynamics') return;
+							if (hexStore.selectedDpto) return;
+							const depts = summary?.departments as any[] | undefined;
+							if (!depts?.length) return;
+							const top = [...depts].sort((a, b) => (b.avg_score ?? 0) - (a.avg_score ?? 0))[0];
+							const name = top?.dpto ?? top?.distrito ?? '';
+							if (name && top?.parquetKey && top?.centroid) {
+								handleSelectFloodDpto(name, top.parquetKey, top.centroid as [number, number]);
+							}
+						});
+					}
+				}
 			})
 			.catch(e => { console.warn('DuckDB init failed:', e); duckdbFailed = true; });
 
@@ -436,12 +464,6 @@
 		}
 	});
 
-	// Dismiss welcome panel when user selects a lens
-	$effect(() => {
-		if (lensStore.activeLens) {
-			showAbout = false;
-		}
-	});
 
 	$effect(() => {
 		const analysis = lensStore.activeAnalysis;
@@ -1242,11 +1264,6 @@
 </script>
 
 <div class="flex h-screen w-full">
-	<!-- Territory column: vertical list, always visible -->
-	<div class="territory-col">
-		<TerritorySelector {territoryStore} activeCoverage={hexStore.activeLayer?.coverage} />
-	</div>
-
 	<!-- Map + overlays -->
 	<div class="flex-1 flex flex-col relative min-w-0">
 		<!-- Header -->
@@ -1265,7 +1282,7 @@
 			</div>
 
 			<!-- Lens selector (center) -->
-			<LensSelector {lensStore} />
+			<LensSelector {lensStore} onPick={() => { showAbout = false; }} />
 
 			<div class="flex items-center gap-0.5">
 				{#each (['es', 'en', 'gn', 'pt'] as Locale[]) as lang}

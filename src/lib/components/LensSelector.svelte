@@ -3,7 +3,7 @@
 	import type { LensStore } from '$lib/stores/lens.svelte';
 	import { i18n, type Locale } from '$lib/stores/i18n.svelte';
 
-	let { lensStore }: { lensStore: LensStore } = $props();
+	let { lensStore, onPick }: { lensStore: LensStore; onPick?: () => void } = $props();
 
 	const lensIds: LensId[] = ['vivir', 'invertir', 'producir', 'servir'];
 </script>
@@ -16,7 +16,7 @@
 			class="lens-btn"
 			class:active
 			style:--lc={cfg.color}
-			onclick={() => lensStore.setLens(id)}
+			onclick={() => { onPick?.(); lensStore.setLens(id); }}
 		>
 			{cfg.label[i18n.locale as 'es' | 'en' | 'gn' | 'pt']}
 		</button>

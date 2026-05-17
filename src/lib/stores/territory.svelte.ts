@@ -5,7 +5,8 @@ export class TerritoryStore {
 	compareTerritory: TerritoryConfig | null = $state(null);
 	compareModeActive: boolean = $state(false);
 	regionalMode: boolean = $state(true);
-	countryFilter: CountryId = $state('ar');
+	// null = trinational scope (all available territories, no country-first funnel)
+	countryFilter: CountryId | null = $state(null);
 
 	setTerritory(id: string) {
 		const t = TERRITORY_REGISTRY[id];
@@ -32,11 +33,15 @@ export class TerritoryStore {
 	enterRegionalMode(country: CountryId | null = null) {
 		this.compareTerritory = null;
 		this.compareModeActive = false;
-		this.countryFilter = country ?? 'ar';
+		this.countryFilter = country;
 		this.regionalMode = true;
-		const resolved = country ?? 'ar';
-		const first = Object.values(TERRITORY_REGISTRY).find(t => t.country === resolved && t.available);
-		if (first) this.activeTerritory = first;
+		// null = trinational: keep the default primary (Misiones) so the
+		// regional engine routes Itapúa+Alto Paraná into the compare/regional
+		// slots (the cross-frontier deforestation surface).
+		if (country) {
+			const first = Object.values(TERRITORY_REGISTRY).find(t => t.country === country && t.available);
+			if (first) this.activeTerritory = first;
+		}
 	}
 
 	enterCountryView(country: CountryId) {
