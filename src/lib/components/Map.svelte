@@ -280,7 +280,7 @@
 				paint: {
 					'fill-extrusion-height': ['max', ['coalesce', ['get', 'best_height_m'], 5], 5],
 					'fill-extrusion-base': 0,
-					'fill-extrusion-color': mapStore.getHeightColorExpr() as any,
+					'fill-extrusion-color': mapStore.getColorExpr() as any,
 					'fill-extrusion-opacity': 0.92
 				}
 			});
@@ -338,7 +338,7 @@
 				paint: {
 					'fill-extrusion-height': ['max', ['coalesce', ['get', 'best_height_m'], 5], 5],
 					'fill-extrusion-base': 0,
-					'fill-extrusion-color': mapStore.getHeightColorExpr() as any,
+					'fill-extrusion-color': mapStore.getColorExpr() as any,
 					'fill-extrusion-opacity': 0.92
 				}
 			});
@@ -917,6 +917,31 @@
 			}
 		});
 
+		// Itapúa buildings: click → district profile. PY has no radio census, so
+		// the district is the finest census unit available — this mirrors the AR
+		// building→radio click, reusing the district-select machinery
+		// (DistrictComparisonChart + fetchDistrictEnrichment: DGEEC pop/hog + NBI).
+		map.on('click', 'itapua-buildings-3d', (e) => {
+			if (lassoActive || mapStore.activeHexLayer) return;
+			const p = e.features![0].properties!;
+			const distrito = p.distrito;
+			if (!distrito) return;
+			const personas = p.distrito_pop ?? p.est_personas ?? 0;
+			const event = mapStore.hasDistrict(distrito) ? 'district-deselect' : 'district-select';
+			container.dispatchEvent(new CustomEvent(event, { bubbles: true, detail: { distrito, personas, territory: 'itapua_py' } }));
+		});
+
+		// Alto Paraná buildings: click → district profile (mirrors Itapúa).
+		map.on('click', 'alto_parana-buildings-3d', (e) => {
+			if (lassoActive || mapStore.activeHexLayer) return;
+			const p = e.features![0].properties!;
+			const distrito = p.distrito;
+			if (!distrito) return;
+			const personas = p.distrito_pop ?? p.est_personas ?? 0;
+			const event = mapStore.hasDistrict(distrito) ? 'district-deselect' : 'district-select';
+			container.dispatchEvent(new CustomEvent(event, { bubbles: true, detail: { distrito, personas, territory: 'alto_parana_py' } }));
+		});
+
 		// Itapúa district click: select/deselect district
 		map.on('click', 'itapua-district-fill', (e) => {
 			if (lassoActive || mapStore.activeHexLayer) return;
@@ -1274,8 +1299,10 @@
 		if (regionalModeActive) {
 			// Regional mode: show ALL territory buildings simultaneously (all 3 PMTiles pre-loaded).
 			// Fog masks and borders are managed by setRegionalMapMode().
+			// All territories' buildings colored by est_personas (dasymetric
+			// population) — consistent meaning across the frontier, not height.
 			const colorExprDefault = mapStore.getColorExpr();
-			const colorExprItapua = mapStore.getHeightColorExpr();
+			const colorExprItapua = colorExprDefault;
 			for (const l of ['buildings-3d', 'itapua-buildings-3d', 'corrientes-buildings-3d', 'alto_parana-buildings-3d']) {
 				if (map.getLayer(l)) {
 					map.setLayoutProperty(l, 'visibility', 'visible');
@@ -1348,7 +1375,7 @@
 		}
 		if (map.getLayer(activeLayer)) {
 			map.setLayoutProperty(activeLayer, 'visibility', 'visible');
-			const colorExpr = (isItapua || isAltoParana) ? mapStore.getHeightColorExpr() : mapStore.getColorExpr();
+			const colorExpr = mapStore.getColorExpr();
 			map.setPaintProperty(activeLayer, 'fill-extrusion-color', colorExpr as any);
 		}
 	}
