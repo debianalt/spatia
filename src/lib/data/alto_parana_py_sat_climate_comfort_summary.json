@@ -2,54 +2,14 @@
   "territory": "alto_parana_py",
   "province": {
     "total_hexes": 147913,
-    "avg_score": 60.1,
+    "avg_score": 49.4,
     "unassigned": 0
   },
   "departments": [
     {
-      "distrito": "DR. RAÚL PEÑA",
-      "parquetKey": "dr_raul_pena",
-      "avg_score": 65.5,
-      "hex_count": 2569,
-      "centroid": [
-        -55.2241,
-        -26.1362
-      ]
-    },
-    {
-      "distrito": "ÑACUNDAY",
-      "parquetKey": "nacunday",
-      "avg_score": 64.8,
-      "hex_count": 9053,
-      "centroid": [
-        -54.7844,
-        -26.0741
-      ]
-    },
-    {
-      "distrito": "DOMINGO MARTÍNEZ DE IRALA",
-      "parquetKey": "domingo_martinez_de_irala",
-      "avg_score": 64.2,
-      "hex_count": 3552,
-      "centroid": [
-        -54.6889,
-        -25.8607
-      ]
-    },
-    {
-      "distrito": "IRUÑA",
-      "parquetKey": "iruna",
-      "avg_score": 64.2,
-      "hex_count": 5643,
-      "centroid": [
-        -55.0381,
-        -26.1334
-      ]
-    },
-    {
       "distrito": "NARANJAL",
       "parquetKey": "naranjal",
-      "avg_score": 62.6,
+      "avg_score": 58.8,
       "hex_count": 6626,
       "centroid": [
         -55.208,
@@ -57,19 +17,29 @@
       ]
     },
     {
-      "distrito": "PRESIDENTE FRANCO",
-      "parquetKey": "presidente_franco",
-      "avg_score": 62.2,
-      "hex_count": 1267,
+      "distrito": "MINGA PORÁ",
+      "parquetKey": "minga_pora",
+      "avg_score": 57.5,
+      "hex_count": 9057,
       "centroid": [
-        -54.6414,
-        -25.5971
+        -54.8684,
+        -24.7658
+      ]
+    },
+    {
+      "distrito": "DR. RAÚL PEÑA",
+      "parquetKey": "dr_raul_pena",
+      "avg_score": 57.3,
+      "hex_count": 2569,
+      "centroid": [
+        -55.2241,
+        -26.1362
       ]
     },
     {
       "distrito": "TAVAPY",
       "parquetKey": "tavapy",
-      "avg_score": 62.2,
+      "avg_score": 56.6,
       "hex_count": 4566,
       "centroid": [
         -55.0691,
@@ -77,119 +47,9 @@
       ]
     },
     {
-      "distrito": "SANTA ROSA DEL MONDAY",
-      "parquetKey": "santa_rosa_del_monday",
-      "avg_score": 62.1,
-      "hex_count": 6533,
-      "centroid": [
-        -54.9236,
-        -25.8464
-      ]
-    },
-    {
-      "distrito": "LOS CEDRALES",
-      "parquetKey": "los_cedrales",
-      "avg_score": 61.6,
-      "hex_count": 4204,
-      "centroid": [
-        -54.7516,
-        -25.6831
-      ]
-    },
-    {
-      "distrito": "SANTA RITA",
-      "parquetKey": "santa_rita",
-      "avg_score": 61.5,
-      "hex_count": 6228,
-      "centroid": [
-        -55.1372,
-        -25.7706
-      ]
-    },
-    {
-      "distrito": "CIUDAD DEL ESTE",
-      "parquetKey": "ciudad_del_este",
-      "avg_score": 61.2,
-      "hex_count": 1573,
-      "centroid": [
-        -54.6775,
-        -25.5031
-      ]
-    },
-    {
-      "distrito": "SANTA FE DEL PARANÁ",
-      "parquetKey": "santa_fe_del_parana",
-      "avg_score": 61.2,
-      "hex_count": 8382,
-      "centroid": [
-        -54.6299,
-        -25.1914
-      ]
-    },
-    {
-      "distrito": "SAN CRISTÓBAL",
-      "parquetKey": "san_cristobal",
-      "avg_score": 60.9,
-      "hex_count": 9768,
-      "centroid": [
-        -55.3862,
-        -25.7898
-      ]
-    },
-    {
-      "distrito": "YGUAZÚ",
-      "parquetKey": "yguazu",
-      "avg_score": 60.8,
-      "hex_count": 8295,
-      "centroid": [
-        -55.0999,
-        -25.4145
-      ]
-    },
-    {
-      "distrito": "DR. JUAN LEÓN MALLORQUÍN",
-      "parquetKey": "dr_juan_leon_mallorquin",
-      "avg_score": 60.4,
-      "hex_count": 2799,
-      "centroid": [
-        -55.2555,
-        -25.4849
-      ]
-    },
-    {
-      "distrito": "HERNANDARIAS",
-      "parquetKey": "hernandarias",
-      "avg_score": 60.3,
-      "hex_count": 8051,
-      "centroid": [
-        -54.7802,
-        -25.3136
-      ]
-    },
-    {
-      "distrito": "MINGA GUAZÚ",
-      "parquetKey": "minga_guazu",
-      "avg_score": 59.9,
-      "hex_count": 5048,
-      "centroid": [
-        -54.8404,
-        -25.5054
-      ]
-    },
-    {
-      "distrito": "JUAN E. O'LEARY",
-      "parquetKey": "juan_e_oleary",
-      "avg_score": 59.6,
-      "hex_count": 2364,
-      "centroid": [
-        -55.3633,
-        -25.4804
-      ]
-    },
-    {
       "distrito": "MBARACAYÚ",
       "parquetKey": "mbaracayu",
-      "avg_score": 59.2,
+      "avg_score": 55.7,
       "hex_count": 11587,
       "centroid": [
         -54.6833,
@@ -199,7 +59,7 @@
     {
       "distrito": "SAN ALBERTO",
       "parquetKey": "san_alberto",
-      "avg_score": 56.6,
+      "avg_score": 52.8,
       "hex_count": 10527,
       "centroid": [
         -54.6794,
@@ -207,9 +67,119 @@
       ]
     },
     {
+      "distrito": "SANTA ROSA DEL MONDAY",
+      "parquetKey": "santa_rosa_del_monday",
+      "avg_score": 52.7,
+      "hex_count": 6533,
+      "centroid": [
+        -54.9236,
+        -25.8464
+      ]
+    },
+    {
+      "distrito": "ÑACUNDAY",
+      "parquetKey": "nacunday",
+      "avg_score": 52.5,
+      "hex_count": 9053,
+      "centroid": [
+        -54.7844,
+        -26.0741
+      ]
+    },
+    {
+      "distrito": "SAN CRISTÓBAL",
+      "parquetKey": "san_cristobal",
+      "avg_score": 52.2,
+      "hex_count": 9768,
+      "centroid": [
+        -55.3862,
+        -25.7898
+      ]
+    },
+    {
+      "distrito": "IRUÑA",
+      "parquetKey": "iruna",
+      "avg_score": 51.6,
+      "hex_count": 5643,
+      "centroid": [
+        -55.0381,
+        -26.1334
+      ]
+    },
+    {
+      "distrito": "SANTA RITA",
+      "parquetKey": "santa_rita",
+      "avg_score": 50.4,
+      "hex_count": 6228,
+      "centroid": [
+        -55.1372,
+        -25.7706
+      ]
+    },
+    {
+      "distrito": "SANTA FE DEL PARANÁ",
+      "parquetKey": "santa_fe_del_parana",
+      "avg_score": 50.2,
+      "hex_count": 8382,
+      "centroid": [
+        -54.6299,
+        -25.1914
+      ]
+    },
+    {
+      "distrito": "DOMINGO MARTÍNEZ DE IRALA",
+      "parquetKey": "domingo_martinez_de_irala",
+      "avg_score": 49.4,
+      "hex_count": 3552,
+      "centroid": [
+        -54.6889,
+        -25.8607
+      ]
+    },
+    {
+      "distrito": "YGUAZÚ",
+      "parquetKey": "yguazu",
+      "avg_score": 46.2,
+      "hex_count": 8295,
+      "centroid": [
+        -55.0999,
+        -25.4145
+      ]
+    },
+    {
+      "distrito": "HERNANDARIAS",
+      "parquetKey": "hernandarias",
+      "avg_score": 43.4,
+      "hex_count": 8051,
+      "centroid": [
+        -54.7802,
+        -25.3136
+      ]
+    },
+    {
+      "distrito": "LOS CEDRALES",
+      "parquetKey": "los_cedrales",
+      "avg_score": 42.8,
+      "hex_count": 4204,
+      "centroid": [
+        -54.7516,
+        -25.6831
+      ]
+    },
+    {
+      "distrito": "DR. JUAN LEÓN MALLORQUÍN",
+      "parquetKey": "dr_juan_leon_mallorquin",
+      "avg_score": 42.7,
+      "hex_count": 2799,
+      "centroid": [
+        -55.2555,
+        -25.4849
+      ]
+    },
+    {
       "distrito": "ITAKYRY",
       "parquetKey": "itakyry",
-      "avg_score": 56.5,
+      "avg_score": 42.7,
       "hex_count": 20221,
       "centroid": [
         -55.1516,
@@ -217,13 +187,43 @@
       ]
     },
     {
-      "distrito": "MINGA PORÁ",
-      "parquetKey": "minga_pora",
-      "avg_score": 53.9,
-      "hex_count": 9057,
+      "distrito": "MINGA GUAZÚ",
+      "parquetKey": "minga_guazu",
+      "avg_score": 42.2,
+      "hex_count": 5048,
       "centroid": [
-        -54.8684,
-        -24.7658
+        -54.8404,
+        -25.5054
+      ]
+    },
+    {
+      "distrito": "JUAN E. O'LEARY",
+      "parquetKey": "juan_e_oleary",
+      "avg_score": 35.2,
+      "hex_count": 2364,
+      "centroid": [
+        -55.3633,
+        -25.4804
+      ]
+    },
+    {
+      "distrito": "PRESIDENTE FRANCO",
+      "parquetKey": "presidente_franco",
+      "avg_score": 30.9,
+      "hex_count": 1267,
+      "centroid": [
+        -54.6414,
+        -25.5971
+      ]
+    },
+    {
+      "distrito": "CIUDAD DEL ESTE",
+      "parquetKey": "ciudad_del_este",
+      "avg_score": 18.7,
+      "hex_count": 1573,
+      "centroid": [
+        -54.6775,
+        -25.5031
       ]
     }
   ]

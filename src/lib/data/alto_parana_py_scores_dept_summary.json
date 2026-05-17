@@ -1,0 +1,457 @@
+{
+  "province": {
+    "total_hexes": 35154,
+    "avg_scores": {
+      "paving_index": 10.6,
+      "urban_consolidation": 2.9,
+      "service_access": 6.6,
+      "commercial_vitality": 6.1,
+      "road_connectivity": 4.4,
+      "building_mix": 0.7,
+      "urbanization": 2.0,
+      "water_exposure": 6.9
+    }
+  },
+  "departments": [
+    {
+      "distrito": "CIUDAD DEL ESTE",
+      "parquetKey": "ciudad_del_este",
+      "avg_scores": {
+        "paving_index": 57.4,
+        "urban_consolidation": 17.4,
+        "service_access": 57.8,
+        "commercial_vitality": 54.8,
+        "road_connectivity": 19.3,
+        "building_mix": 7.6,
+        "urbanization": 5.1,
+        "water_exposure": 26.8
+      },
+      "overall_score": 30.8,
+      "hex_count": 1446,
+      "centroid": [
+        -54.6776,
+        -25.4985
+      ]
+    },
+    {
+      "distrito": "PRESIDENTE FRANCO",
+      "parquetKey": "presidente_franco",
+      "avg_scores": {
+        "paving_index": 33.6,
+        "urban_consolidation": 10.7,
+        "service_access": 30.6,
+        "commercial_vitality": 31.4,
+        "road_connectivity": 12.1,
+        "building_mix": 3.5,
+        "urbanization": 3.5,
+        "water_exposure": 8.2
+      },
+      "overall_score": 16.7,
+      "hex_count": 706,
+      "centroid": [
+        -54.6447,
+        -25.587
+      ]
+    },
+    {
+      "distrito": "HERNANDARIAS",
+      "parquetKey": "hernandarias",
+      "avg_scores": {
+        "paving_index": 17.0,
+        "urban_consolidation": 3.3,
+        "service_access": 12.4,
+        "commercial_vitality": 11.8,
+        "road_connectivity": 5.4,
+        "building_mix": 1.0,
+        "urbanization": 2.1,
+        "water_exposure": 13.8
+      },
+      "overall_score": 8.3,
+      "hex_count": 2570,
+      "centroid": [
+        -54.7698,
+        -25.3291
+      ]
+    },
+    {
+      "distrito": "SANTA RITA",
+      "parquetKey": "santa_rita",
+      "avg_scores": {
+        "paving_index": 13.8,
+        "urban_consolidation": 2.5,
+        "service_access": 9.4,
+        "commercial_vitality": 9.6,
+        "road_connectivity": 4.7,
+        "building_mix": 0.2,
+        "urbanization": 2.4,
+        "water_exposure": 9.4
+      },
+      "overall_score": 6.5,
+      "hex_count": 1722,
+      "centroid": [
+        -55.1176,
+        -25.7792
+      ]
+    },
+    {
+      "distrito": "MINGA GUAZÚ",
+      "parquetKey": "minga_guazu",
+      "avg_scores": {
+        "paving_index": 16.0,
+        "urban_consolidation": 3.5,
+        "service_access": 9.3,
+        "commercial_vitality": 8.2,
+        "road_connectivity": 6.5,
+        "building_mix": 0.6,
+        "urbanization": 2.4,
+        "water_exposure": 3.6
+      },
+      "overall_score": 6.3,
+      "hex_count": 2586,
+      "centroid": [
+        -54.8305,
+        -25.4993
+      ]
+    },
+    {
+      "distrito": "SAN ALBERTO",
+      "parquetKey": "san_alberto",
+      "avg_scores": {
+        "paving_index": 12.9,
+        "urban_consolidation": 2.4,
+        "service_access": 3.0,
+        "commercial_vitality": 3.6,
+        "road_connectivity": 3.8,
+        "building_mix": 0.0,
+        "urbanization": 1.6,
+        "water_exposure": 7.0
+      },
+      "overall_score": 4.3,
+      "hex_count": 1624,
+      "centroid": [
+        -54.8213,
+        -24.8976
+      ]
+    },
+    {
+      "distrito": "DR. JUAN LEÓN MALLORQUÍN",
+      "parquetKey": "dr._juan_leon_mallorquin",
+      "avg_scores": {
+        "paving_index": 5.2,
+        "urban_consolidation": 2.0,
+        "service_access": 7.4,
+        "commercial_vitality": 5.4,
+        "road_connectivity": 3.4,
+        "building_mix": 0.4,
+        "urbanization": 1.9,
+        "water_exposure": 6.5
+      },
+      "overall_score": 4.0,
+      "hex_count": 1013,
+      "centroid": [
+        -55.2626,
+        -25.4717
+      ]
+    },
+    {
+      "distrito": "YGUAZÚ",
+      "parquetKey": "yguazu",
+      "avg_scores": {
+        "paving_index": 12.6,
+        "urban_consolidation": 2.3,
+        "service_access": 4.8,
+        "commercial_vitality": 3.6,
+        "road_connectivity": 3.0,
+        "building_mix": 0.6,
+        "urbanization": 1.9,
+        "water_exposure": 0.8
+      },
+      "overall_score": 3.7,
+      "hex_count": 1350,
+      "centroid": [
+        -55.0625,
+        -25.4474
+      ]
+    },
+    {
+      "distrito": "SANTA ROSA DEL MONDAY",
+      "parquetKey": "santa_rosa_del_monday",
+      "avg_scores": {
+        "paving_index": 8.4,
+        "urban_consolidation": 2.4,
+        "service_access": 1.7,
+        "commercial_vitality": 1.6,
+        "road_connectivity": 3.4,
+        "building_mix": 0.3,
+        "urbanization": 1.6,
+        "water_exposure": 8.7
+      },
+      "overall_score": 3.5,
+      "hex_count": 1481,
+      "centroid": [
+        -54.925,
+        -25.8315
+      ]
+    },
+    {
+      "distrito": "NARANJAL",
+      "parquetKey": "naranjal",
+      "avg_scores": {
+        "paving_index": 9.8,
+        "urban_consolidation": 1.8,
+        "service_access": 2.8,
+        "commercial_vitality": 2.2,
+        "road_connectivity": 3.2,
+        "building_mix": 0.0,
+        "urbanization": 2.0,
+        "water_exposure": 5.0
+      },
+      "overall_score": 3.4,
+      "hex_count": 1453,
+      "centroid": [
+        -55.1949,
+        -25.9582
+      ]
+    },
+    {
+      "distrito": "DR. RAÚL PEÑA",
+      "parquetKey": "dr._raul_pena",
+      "avg_scores": {
+        "paving_index": 2.2,
+        "urban_consolidation": 1.6,
+        "service_access": 3.9,
+        "commercial_vitality": 1.5,
+        "road_connectivity": 2.8,
+        "building_mix": 0.0,
+        "urbanization": 1.9,
+        "water_exposure": 10.0
+      },
+      "overall_score": 3.0,
+      "hex_count": 730,
+      "centroid": [
+        -55.2274,
+        -26.1514
+      ]
+    },
+    {
+      "distrito": "MBARACAYÚ",
+      "parquetKey": "mbaracayu",
+      "avg_scores": {
+        "paving_index": 9.9,
+        "urban_consolidation": 1.9,
+        "service_access": 0.5,
+        "commercial_vitality": 0.6,
+        "road_connectivity": 3.2,
+        "building_mix": 0.6,
+        "urbanization": 1.6,
+        "water_exposure": 6.0
+      },
+      "overall_score": 3.0,
+      "hex_count": 1949,
+      "centroid": [
+        -54.7365,
+        -25.0225
+      ]
+    },
+    {
+      "distrito": "LOS CEDRALES",
+      "parquetKey": "los_cedrales",
+      "avg_scores": {
+        "paving_index": 7.8,
+        "urban_consolidation": 2.3,
+        "service_access": 3.0,
+        "commercial_vitality": 2.4,
+        "road_connectivity": 3.3,
+        "building_mix": 0.4,
+        "urbanization": 1.7,
+        "water_exposure": 1.3
+      },
+      "overall_score": 2.8,
+      "hex_count": 1043,
+      "centroid": [
+        -54.7329,
+        -25.689
+      ]
+    },
+    {
+      "distrito": "MINGA PORÁ",
+      "parquetKey": "minga_pora",
+      "avg_scores": {
+        "paving_index": 5.3,
+        "urban_consolidation": 1.7,
+        "service_access": 2.1,
+        "commercial_vitality": 1.7,
+        "road_connectivity": 3.0,
+        "building_mix": 0.2,
+        "urbanization": 1.7,
+        "water_exposure": 6.7
+      },
+      "overall_score": 2.8,
+      "hex_count": 2064,
+      "centroid": [
+        -54.871,
+        -24.7765
+      ]
+    },
+    {
+      "distrito": "SAN CRISTÓBAL",
+      "parquetKey": "san_cristobal",
+      "avg_scores": {
+        "paving_index": 3.8,
+        "urban_consolidation": 1.6,
+        "service_access": 1.0,
+        "commercial_vitality": 1.6,
+        "road_connectivity": 2.7,
+        "building_mix": 0.0,
+        "urbanization": 1.6,
+        "water_exposure": 10.1
+      },
+      "overall_score": 2.8,
+      "hex_count": 1868,
+      "centroid": [
+        -55.3935,
+        -25.7838
+      ]
+    },
+    {
+      "distrito": "SANTA FE DEL PARANÁ",
+      "parquetKey": "santa_fe_del_parana",
+      "avg_scores": {
+        "paving_index": 5.7,
+        "urban_consolidation": 1.9,
+        "service_access": 0.9,
+        "commercial_vitality": 1.2,
+        "road_connectivity": 3.4,
+        "building_mix": 0.5,
+        "urbanization": 1.6,
+        "water_exposure": 6.9
+      },
+      "overall_score": 2.8,
+      "hex_count": 963,
+      "centroid": [
+        -54.6831,
+        -25.2036
+      ]
+    },
+    {
+      "distrito": "IRUÑA",
+      "parquetKey": "iruna",
+      "avg_scores": {
+        "paving_index": 3.8,
+        "urban_consolidation": 1.7,
+        "service_access": 1.2,
+        "commercial_vitality": 1.2,
+        "road_connectivity": 2.9,
+        "building_mix": 0.5,
+        "urbanization": 1.7,
+        "water_exposure": 8.6
+      },
+      "overall_score": 2.7,
+      "hex_count": 1022,
+      "centroid": [
+        -55.0525,
+        -26.1265
+      ]
+    },
+    {
+      "distrito": "JUAN E. O'LEARY",
+      "parquetKey": "juan_e._o'leary",
+      "avg_scores": {
+        "paving_index": 2.7,
+        "urban_consolidation": 2.1,
+        "service_access": 5.2,
+        "commercial_vitality": 4.7,
+        "road_connectivity": 3.2,
+        "building_mix": 0.3,
+        "urbanization": 2.0,
+        "water_exposure": 1.4
+      },
+      "overall_score": 2.7,
+      "hex_count": 1179,
+      "centroid": [
+        -55.3657,
+        -25.4772
+      ]
+    },
+    {
+      "distrito": "ÑACUNDAY",
+      "parquetKey": "nacunday",
+      "avg_scores": {
+        "paving_index": 5.1,
+        "urban_consolidation": 1.5,
+        "service_access": 0.7,
+        "commercial_vitality": 0.4,
+        "road_connectivity": 2.5,
+        "building_mix": 0.3,
+        "urbanization": 1.5,
+        "water_exposure": 8.6
+      },
+      "overall_score": 2.6,
+      "hex_count": 1803,
+      "centroid": [
+        -54.7512,
+        -26.083
+      ]
+    },
+    {
+      "distrito": "DOMINGO MARTÍNEZ DE IRALA",
+      "parquetKey": "domingo_martinez_de_irala",
+      "avg_scores": {
+        "paving_index": 5.1,
+        "urban_consolidation": 1.5,
+        "service_access": 0.1,
+        "commercial_vitality": 0.7,
+        "road_connectivity": 2.3,
+        "building_mix": 0.1,
+        "urbanization": 1.4,
+        "water_exposure": 4.2
+      },
+      "overall_score": 1.9,
+      "hex_count": 1171,
+      "centroid": [
+        -54.6795,
+        -25.86
+      ]
+    },
+    {
+      "distrito": "TAVAPY",
+      "parquetKey": "tavapy",
+      "avg_scores": {
+        "paving_index": 2.1,
+        "urban_consolidation": 1.7,
+        "service_access": 0.7,
+        "commercial_vitality": 1.5,
+        "road_connectivity": 2.8,
+        "building_mix": 0.2,
+        "urbanization": 1.8,
+        "water_exposure": 3.3
+      },
+      "overall_score": 1.8,
+      "hex_count": 904,
+      "centroid": [
+        -55.0276,
+        -25.6425
+      ]
+    },
+    {
+      "distrito": "ITAKYRY",
+      "parquetKey": "itakyry",
+      "avg_scores": {
+        "paving_index": 2.3,
+        "urban_consolidation": 1.5,
+        "service_access": 1.1,
+        "commercial_vitality": 0.6,
+        "road_connectivity": 2.6,
+        "building_mix": 0.0,
+        "urbanization": 1.5,
+        "water_exposure": 0.7
+      },
+      "overall_score": 1.3,
+      "hex_count": 4507,
+      "centroid": [
+        -55.1518,
+        -24.8384
+      ]
+    }
+  ]
+}
