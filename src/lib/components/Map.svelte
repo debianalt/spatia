@@ -8,6 +8,7 @@
 	import { i18n } from '$lib/stores/i18n.svelte';
 	import { formatDept } from '$lib/utils/format';
 	import misionesBoundary from '$lib/data/misiones_boundary.json';
+	import arDeptBoundaries from '$lib/data/ar_dept_boundaries.json';
 	import misionesMask from '$lib/data/misiones_mask.json';
 	import itapuaBoundary from '$lib/data/itapua_boundary.json';
 	import itapuaMask from '$lib/data/itapua_mask.json';
@@ -553,6 +554,45 @@
 					'line-width': ['interpolate', ['linear'], ['zoom'], 4, 2.5, 8, 1.5, 12, 1],
 					'line-opacity': 0
 				}
+			});
+
+			// ── AR department picker (Misiones + Corrientes clickable polygons) ──
+			// Phase 2: click a department polygon → load that dept's hexes for the
+			// active analysis. Shown only in the department-selection state.
+			map.addSource('ar-depts', {
+				type: 'geojson',
+				data: arDeptBoundaries as any
+			});
+			map.addLayer({
+				id: 'ar-dept-fill',
+				type: 'fill',
+				source: 'ar-depts',
+				layout: { visibility: 'none' },
+				paint: { 'fill-color': '#60a5fa', 'fill-opacity': 0.05 }
+			});
+			map.addLayer({
+				id: 'ar-dept-line',
+				type: 'line',
+				source: 'ar-depts',
+				layout: { visibility: 'none' },
+				paint: {
+					'line-color': '#93c5fd',
+					'line-width': ['interpolate', ['linear'], ['zoom'], 5, 1.4, 9, 0.9, 13, 0.6],
+					'line-opacity': 0.5
+				}
+			});
+			map.on('mouseenter', 'ar-dept-fill', () => { if (!lassoActive) map.getCanvas().style.cursor = 'pointer'; });
+			map.on('mouseleave', 'ar-dept-fill', () => { if (!lassoActive) map.getCanvas().style.cursor = ''; });
+			map.on('click', 'ar-dept-fill', (e) => {
+				if (lassoActive) return;
+				const p = e.features![0].properties!;
+				const rc = String(p.redcode ?? '');
+				const territory = rc.startsWith('54') ? 'misiones' : rc.startsWith('18') ? 'corrientes' : '';
+				if (!p.nombre || !territory) return;
+				container.dispatchEvent(new CustomEvent('dept-map-select', {
+					bubbles: true,
+					detail: { name: p.nombre, territory }
+				}));
 			});
 
 			// ── Selected department outline (real polygon, single-dept mode) ──
@@ -1442,6 +1482,15 @@
 		if (!map) return;
 		if (regionalModeActive) setRegionalMapMode(true);
 		else applyTerritoryVisibility();
+	}
+
+	// Phase 2: show/hide the AR department-picker polygons (clickable selection
+	// surface, shown when an analysis is active and no department is selected).
+	export function setDeptPickerVisible(visible: boolean) {
+		if (!map) return;
+		for (const id of ['ar-dept-fill', 'ar-dept-line']) {
+			if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
+		}
 	}
 
 	// ── Lens opportunity glow layers ─────────────────────────────────────────

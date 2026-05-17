@@ -179,24 +179,10 @@
 					lensStore.setLens('vivir');
 					const cold = getAnalysisById('deforestation_dynamics');
 					if (cold) {
+						// Cold-open = department-selection view (no auto-dive). The
+						// deforestation analysis is set; the user picks a department
+						// by clicking its polygon on the map (Phase 2 dept picker).
 						lensStore.setAnalysis(cold);
-						// deforestation_dynamics is perDepartment: it renders only
-						// after a department is loaded. Auto-select the Misiones
-						// department with the highest deforestation so the layer
-						// opens populated, clickable and "shining". Same code path
-						// as a manual dept click (loadDeptSummary → handleSelectFloodDpto).
-						loadDeptSummary('deforestation_dynamics', '').then(summary => {
-							// Bail if the user already navigated while the summary loaded.
-							if (lensStore.activeAnalysis?.id !== 'deforestation_dynamics') return;
-							if (hexStore.selectedDpto) return;
-							const depts = summary?.departments as any[] | undefined;
-							if (!depts?.length) return;
-							const top = [...depts].sort((a, b) => (b.avg_score ?? 0) - (a.avg_score ?? 0))[0];
-							const name = top?.dpto ?? top?.distrito ?? '';
-							if (name && top?.parquetKey && top?.centroid) {
-								handleSelectFloodDpto(name, top.parquetKey, top.centroid as [number, number]);
-							}
-						});
 					}
 				}
 			})
@@ -259,6 +245,30 @@
 			const { distrito } = e.detail;
 			mapStore.removeDistrict(distrito);
 			mapComponent?.setDistrictHighlight(getDistrictHighlightEntries());
+		}) as EventListener);
+
+		// Phase 2: click a department polygon → load that dept's hexes for the
+		// active analysis. Resolves parquetKey/centroid from the analysis dept
+		// summary by normalized-name match (handles AP caps / "L.G." vs "L. G.").
+		mapContainer?.addEventListener('dept-map-select', (async (e: CustomEvent) => {
+			const { name, territory } = e.detail;
+			const t = TERRITORY_REGISTRY[territory];
+			if (!t || !name) return;
+			showAbout = false;
+			if (territoryStore.activeTerritory.id !== territory) {
+				territoryStore.setTerritory(territory);
+				hexStore.setTerritoryPrefix(t.parquetPrefix);
+			}
+			const a = lensStore.activeAnalysis;
+			if (!a) return;
+			const summary = await loadDeptSummary(a.id, t.parquetPrefix);
+			const depts = summary?.departments as any[] | undefined;
+			if (!depts?.length) return;
+			const norm = (s: string) => (s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+			const key = norm(name);
+			const entry = depts.find(d => norm(d.dpto ?? d.distrito ?? '') === key);
+			if (!entry?.parquetKey || !entry?.centroid) return;
+			handleSelectFloodDpto(entry.dpto ?? entry.distrito, entry.parquetKey, entry.centroid as [number, number]);
 		}) as EventListener);
 
 		mapContainer?.addEventListener('compare-hex-select', ((e: CustomEvent) => {
@@ -714,6 +724,16 @@
 	$effect(() => {
 		mapStore.activeHexLayer; // reactive dependency
 		mapComponent?.refreshCensusVisibility();
+	});
+
+	// Phase 2: the department-picker polygons are the selection surface — shown
+	// when an analysis is active and no department is selected yet; hidden once
+	// a department's hexes are loaded (or for catastro/parcel analyses).
+	$effect(() => {
+		const a = lensStore.activeAnalysis;
+		const dpto = hexStore.selectedDpto;
+		const show = !!a && a.spatialUnit !== 'catastro' && !dpto;
+		mapComponent?.setDeptPickerVisible(show);
 	});
 
 	// ── Dept bbox outlines + auto-fly when both depts are loaded ────────────
