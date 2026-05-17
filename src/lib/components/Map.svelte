@@ -1329,10 +1329,11 @@
 		// PY district polygons: show BOTH Itapúa + Alto Paraná whenever any
 		// PY territory is active, so districts of the two can be selected and
 		// compared together on the base map (no territory switch needed).
-		const showPYDistricts = (isItapua || isAltoParana) && !mapStore.activeHexLayer;
+		// PY district outlines retired from the base/general view (same as census
+		// radios). Reachable only via a deliberate flow (Phase 2), never auto-shown.
 		for (const l of ['itapua-district-fill', 'itapua-district-line', 'itapua-district-selected-fill', 'itapua-district-selected-line',
 			'alto_parana-district-fill', 'alto_parana-district-line', 'alto_parana-district-selected-fill', 'alto_parana-district-selected-line']) {
-			if (map.getLayer(l)) map.setLayoutProperty(l, 'visibility', showPYDistricts ? 'visible' : 'none');
+			if (map.getLayer(l)) map.setLayoutProperty(l, 'visibility', 'none');
 		}
 
 		// Buildings: show only the active territory's layer, hide the others
@@ -1393,10 +1394,11 @@
 			}
 			// Itapúa + Alto Paraná district outlines: visible in regional census/base
 			// mode only — hidden while a hex analysis is active (cold-open clutter).
-			const showRegionalDistricts = !mapStore.activeHexLayer;
+			// PY district outlines retired from the base/general view (same as census
+			// radios). Never auto-shown, including regional mode.
 			for (const id of ['itapua-district-fill', 'itapua-district-line', 'itapua-district-selected-fill', 'itapua-district-selected-line',
 				'alto_parana-district-fill', 'alto_parana-district-line', 'alto_parana-district-selected-fill', 'alto_parana-district-selected-line']) {
-				if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', showRegionalDistricts ? 'visible' : 'none');
+				if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
 			}
 			// Census-radio click selection retired (radios no longer shown).
 			map.off('click', 'province-fill', regionalProvinceClickHandler);
