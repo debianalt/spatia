@@ -1291,9 +1291,9 @@
 		const isCorrientes = activeTerritoryId === 'corrientes';
 		const isAltoParana = activeTerritoryId === 'alto_parana_py';
 
-		// Province outline (radios): visible for Misiones + Corrientes, filtered by
-		// codprov — but only in census/base mode, never while a hex analysis is active.
-		const showProvinceRadios = (isMisiones || isCorrientes) && !mapStore.activeHexLayer;
+		// Census radios retired from the base/general view (legacy census-centric
+		// model). Department selection is not radio-based — never auto-show them.
+		const showProvinceRadios = false;
 		for (const layerId of ['province-fill', 'province-line']) {
 			if (map.getLayer(layerId)) {
 				map.setLayoutProperty(layerId, 'visibility', showProvinceRadios ? 'visible' : 'none');
@@ -1386,12 +1386,10 @@
 			// Census radios are a census/base-mode visual. Keep them hidden while a
 			// hex analysis is active (e.g. the deforestation cold-open) so the general
 			// view isn't covered by radio polygons before zooming to the department.
-			const showCensus = !mapStore.activeHexLayer;
+			// Census radios retired from the base/general view (legacy census-centric
+			// model). Never auto-shown, including regional mode.
 			for (const id of ['province-fill', 'province-line']) {
-				if (map.getLayer(id)) {
-					map.setLayoutProperty(id, 'visibility', showCensus ? 'visible' : 'none');
-					if (showCensus) map.setFilter(id, null);
-				}
+				if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
 			}
 			// Itapúa + Alto Paraná district outlines: visible in regional census/base
 			// mode only — hidden while a hex analysis is active (cold-open clutter).
@@ -1400,10 +1398,8 @@
 				'alto_parana-district-fill', 'alto_parana-district-line', 'alto_parana-district-selected-fill', 'alto_parana-district-selected-line']) {
 				if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', showRegionalDistricts ? 'visible' : 'none');
 			}
-			// Enable radio selection by clicking directly on census radio polygons
-			// (off-then-on dedupes — setRegionalMapMode may be re-invoked).
+			// Census-radio click selection retired (radios no longer shown).
 			map.off('click', 'province-fill', regionalProvinceClickHandler);
-			map.on('click', 'province-fill', regionalProvinceClickHandler);
 		} else {
 			map.off('click', 'province-fill', regionalProvinceClickHandler);
 			// Full restore via standard territory visibility logic
