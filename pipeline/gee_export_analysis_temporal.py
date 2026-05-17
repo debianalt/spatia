@@ -227,8 +227,6 @@ def dynamic_forest_health(bbox, date_start, date_end):
 TEMPORAL_BUILDERS = {
     'environmental_risk': dynamic_environmental_risk,
     'climate_comfort': dynamic_climate_comfort,
-    'green_capital': dynamic_green_capital,
-    'agri_potential': dynamic_agri_potential,
 }
 
 

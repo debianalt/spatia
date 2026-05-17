@@ -69,32 +69,11 @@ TEMPORAL_COMPONENTS = {
         ],
         'fixed_from_original': [],
     },
-    'green_capital': {
-        'dynamic': [
-            (1, 'c_ndvi', 0.25, False),
-            (2, 'c_npp', 0.20, False),
-            (3, 'c_lai', 0.15, False),
-            (4, 'c_vcf', 0.20, False),
-        ],
-        'fixed_from_original': [
-            ('c_treecover', 0.20, False),
-        ],
-    },
-    # change_pressure intentionally NOT temporal — canonical version is the
-    # trend-based pixel pipeline (build_change_pressure). The level variant
-    # here was clobbering it and breaking cross-territory comparability.
-    'agri_potential': {
-        'dynamic': [
-            (1, 'c_precipitation', 0.20, False),
-            (2, 'c_gdd', 0.15, False),
-        ],
-        'fixed_from_original': [
-            ('c_soc', 0.20, False),
-            ('c_ph_optimal', 0.15, False),
-            ('c_clay', 0.15, False),
-            ('c_slope', 0.15, True),
-        ],
-    },
+    # change_pressure, forest_health, green_capital, agri_potential
+    # intentionally NOT temporal — canonical is the pixel pipeline
+    # (build_*). The temporal variants emitted a divergent/reduced
+    # component set and clobbered the canonical parquet, breaking
+    # cross-territory comparability (Cor/Ita lost scored components).
     # forest_health intentionally NOT temporal — canonical is the trend-based
     # pixel pipeline (build_forest_health → c_ndvi_trend). The level variant
     # here (c_ndvi_mean) was clobbering it and breaking comparability.

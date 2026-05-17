@@ -22,17 +22,20 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
 from config import OUTPUT_DIR, GCS_BUCKET, TERRITORY_CONFIGS, get_territory
 
-# change_pressure + forest_health EXCLUDED from temporal: their temporal
-# variants (dynamic_change_pressure → level cols; dynamic_forest_health →
-# c_ndvi_mean) OVERWRITE the canonical pixel parquet (build_* → trend cols
-# = what Misiones has, what config.ts petalVars + goalposts
-# pca_variable_selection expect). That broke cross-territory comparability
-# (Misiones=trend vs Cor/Ita/AP=level/mean). Rule: temporal must NEVER
-# clobber a pixel-canonical analysis with a divergently-defined component.
-# These two stay strictly on the pixel/trend pipeline.
+# change_pressure, forest_health, green_capital, agri_potential EXCLUDED
+# from temporal: their temporal variants (dynamic_*) emit a DIFFERENT /
+# FEWER component set than the canonical pixel build_* (what Misiones has
+# + config petalVars + goalposts pca_variable_selection expect), and the
+# temporal run OVERWRITES the canonical parquet. Verified breaks:
+# change_pressure (trend→level), forest_health (c_ndvi_trend→c_ndvi_mean),
+# green_capital (Cor/Ita lost scored c_treecover), agri_potential (Cor/Ita
+# lost scored c_soc/c_ph_optimal/c_clay). RULE: temporal must NEVER clobber
+# a pixel-canonical analysis with a divergent/reduced component set. These
+# stay strictly on the pixel pipeline. Remaining temporal = env_risk
+# (de-facto inactive: baseline 100% nodata) + climate_comfort (verified
+# 4-territory consistent).
 TEMPORAL_ANALYSES = [
-    "environmental_risk", "climate_comfort", "green_capital",
-    "agri_potential",
+    "environmental_risk", "climate_comfort",
 ]
 GCS_PREFIX = "satellite"
 

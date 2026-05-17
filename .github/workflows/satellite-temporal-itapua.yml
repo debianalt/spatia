@@ -9,7 +9,7 @@ on:
     inputs:
       analyses:
         description: 'Comma-separated analysis IDs (default: all 6)'
-        default: 'environmental_risk,climate_comfort,green_capital,agri_potential'
+        default: 'environmental_risk,climate_comfort'
       include_baseline:
         description: 'Also export baseline from GEE (first run or re-calibration)'
         type: boolean
@@ -53,7 +53,7 @@ jobs:
       - name: Run temporal update pipeline (Itapúa)
         run: |
           python pipeline/run_temporal_update.py \
-            --analyses ${{ github.event.inputs.analyses || 'environmental_risk,climate_comfort,green_capital,agri_potential' }} \
+            --analyses ${{ github.event.inputs.analyses || 'environmental_risk,climate_comfort' }} \
             --territory itapua_py \
             ${{ github.event.inputs.include_baseline == 'true' && '--include-baseline' || '' }}
         env:
