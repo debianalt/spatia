@@ -2,6 +2,7 @@
 	import type { HexStore } from '$lib/stores/hex.svelte';
 	import type { TerritoryStore } from '$lib/stores/territory.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
+	import { formatDept } from '$lib/utils/format';
 	import CTADiagnostic from '$lib/components/CTADiagnostic.svelte';
 	import PetalChart from '$lib/components/PetalChart.svelte';
 	import TemporalToggle from '$lib/components/TemporalToggle.svelte';
@@ -634,7 +635,7 @@
 	<div class="view">
 		<button class="back-btn" onclick={handleBackToDepts}>{i18n.t('analysis.flood.topDepts')}</button>
 
-		<div class="dept-active-title">{selectedDpto}</div>
+		<div class="dept-active-title">{formatDept(selectedDpto)}</div>
 
 		{#if dataUrl}
 			<div class="download-row">
@@ -773,7 +774,7 @@
 				{/if}
 				{#each deptList as dept}
 					<button class="dept-row dept-clickable" onclick={() => handleDptoClick(dept)}>
-						<div class="dept-name">{dept.dpto ?? dept.distrito}</div>
+						<div class="dept-name">{formatDept(dept.dpto ?? dept.distrito)}</div>
 						<div class="dept-score">
 							{dept.hex_count?.toLocaleString() ?? ''} hex
 						</div>

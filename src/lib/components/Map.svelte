@@ -6,6 +6,7 @@
 	import { getTilesUrl, BASEMAP, MAP_INIT, MAP_PROVINCE, TERRAIN_CONFIG } from '$lib/config';
 	import { MapStore } from '$lib/stores/map.svelte';
 	import { i18n } from '$lib/stores/i18n.svelte';
+	import { formatDept } from '$lib/utils/format';
 	import misionesBoundary from '$lib/data/misiones_boundary.json';
 	import misionesMask from '$lib/data/misiones_mask.json';
 	import itapuaBoundary from '$lib/data/itapua_boundary.json';
@@ -798,7 +799,7 @@
 			const res = p.is_residential ? 'residencial' : (p.subtype || 'no residencial');
 			const dist = p.distrito || '';
 			const est = p.est_personas > 0 ? ` | ~${p.est_personas} pers.` : '';
-			tooltip.innerHTML = `<b style="color:#60a5fa">${i18n.t('tip.building')}</b> ${h} m | ${a} m\u00B2 | ${res}${est}${dist ? ` | ${dist}` : ''}`;
+			tooltip.innerHTML = `<b style="color:#60a5fa">${i18n.t('tip.building')}</b> ${h} m | ${a} m\u00B2 | ${res}${est}${dist ? ` | ${formatDept(dist)}` : ''}`;
 			tooltip.style.display = 'block';
 			tooltip.style.left = (e.originalEvent.clientX + 14) + 'px';
 			tooltip.style.top = (e.originalEvent.clientY + 14) + 'px';
@@ -821,7 +822,7 @@
 			const res = p.is_residential ? 'residencial' : (p.subtype || 'no residencial');
 			const dist = p.distrito || '';
 			const est = p.est_personas > 0 ? ` | ~${p.est_personas} pers.` : '';
-			tooltip.innerHTML = `<b style="color:#60a5fa">${i18n.t('tip.building')}</b> ${h} m | ${a} m² | ${res}${est}${dist ? ` | ${dist}` : ''}`;
+			tooltip.innerHTML = `<b style="color:#60a5fa">${i18n.t('tip.building')}</b> ${h} m | ${a} m² | ${res}${est}${dist ? ` | ${formatDept(dist)}` : ''}`;
 			tooltip.style.display = 'block';
 			tooltip.style.left = (e.originalEvent.clientX + 14) + 'px';
 			tooltip.style.top = (e.originalEvent.clientY + 14) + 'px';

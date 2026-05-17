@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { loadDeptSummary } from '$lib/utils/deptSummaries';
+	import { formatDept } from '$lib/utils/format';
 	import ChartFrame from './ChartFrame.svelte';
 
 	let {
@@ -175,9 +176,9 @@
 	<div class="bump-panel">
 	<div class="bump-subheader">
 		{#if hoverInfo}
-			<span class="bump-hover">{hoverInfo.dept} · {hoverInfo.label}: #{hoverInfo.rank}/{hoverInfo.total} ({hoverInfo.score.toFixed(1)})</span>
+			<span class="bump-hover">{formatDept(hoverInfo.dept)} · {hoverInfo.label}: #{hoverInfo.rank}/{hoverInfo.total} ({hoverInfo.score.toFixed(1)})</span>
 		{:else if selectedDept && selectedEntry}
-			<span class="bump-rank">#{selectedEntry.rank}/{totalDepts} · {selectedEntry.score.toFixed(1)} · {selectedDept}</span>
+			<span class="bump-rank">#{selectedEntry.rank}/{totalDepts} · {selectedEntry.score.toFixed(1)} · {formatDept(selectedDept)}</span>
 		{:else if loading}
 			<span class="bump-hint">cargando…</span>
 		{:else}
