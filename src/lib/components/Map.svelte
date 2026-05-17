@@ -982,25 +982,24 @@
 			container.dispatchEvent(new CustomEvent(event, { bubbles: true, detail: { distrito, personas, territory: 'alto_parana_py' } }));
 		});
 
-		// Itapúa district click: select/deselect district
-		map.on('click', 'itapua-district-fill', (e) => {
-			if (lassoActive || mapStore.activeHexLayer) return;
-			const distrito = e.features![0].properties!.district;
-			const personas = e.features![0].properties!.personas ?? 0;
-			if (!distrito) return;
-			const event = mapStore.hasDistrict(distrito) ? 'district-deselect' : 'district-select';
-			container.dispatchEvent(new CustomEvent(event, { bubbles: true, detail: { distrito, personas, territory: 'itapua_py' } }));
-		});
-
-		// Alto Paraná district click: select/deselect district
-		map.on('click', 'alto_parana-district-fill', (e) => {
-			if (lassoActive || mapStore.activeHexLayer) return;
-			const distrito = e.features![0].properties!.district;
-			const personas = e.features![0].properties!.personas ?? 0;
-			if (!distrito) return;
-			const event = mapStore.hasDistrict(distrito) ? 'district-deselect' : 'district-select';
-			container.dispatchEvent(new CustomEvent(event, { bubbles: true, detail: { distrito, personas, territory: 'alto_parana_py' } }));
-		});
+		// Phase 2b: Itapúa / Alto Paraná district polygon click → load that
+		// district's hexes for the active analysis (same dept-map-select
+		// resolver as the AR picker). The building→district NBI profile
+		// (Option A) is a separate affordance, unaffected.
+		for (const lyr of ['itapua-district-fill', 'alto_parana-district-fill']) {
+			const terr = lyr === 'itapua-district-fill' ? 'itapua_py' : 'alto_parana_py';
+			map.on('mouseenter', lyr, () => { if (!lassoActive) map.getCanvas().style.cursor = 'pointer'; });
+			map.on('mouseleave', lyr, () => { if (!lassoActive) map.getCanvas().style.cursor = ''; });
+			map.on('click', lyr, (e) => {
+				if (lassoActive) return;
+				const name = e.features![0].properties!.district;
+				if (!name) return;
+				container.dispatchEvent(new CustomEvent('dept-map-select', {
+					bubbles: true,
+					detail: { name, territory: terr }
+				}));
+			});
+		}
 
 		// Click on hexagon: emit hex-select event
 		map.on('click', 'hex-fill', (e) => {
@@ -1396,10 +1395,10 @@
 		// PY district polygons: show BOTH Itapúa + Alto Paraná whenever any
 		// PY territory is active, so districts of the two can be selected and
 		// compared together on the base map (no territory switch needed).
-		// PY district outlines retired from the base/general view (same as census
-		// radios). Reachable only via a deliberate flow (Phase 2), never auto-shown.
-		for (const l of ['itapua-district-fill', 'itapua-district-line', 'itapua-district-selected-fill', 'itapua-district-selected-line',
-			'alto_parana-district-fill', 'alto_parana-district-line', 'alto_parana-district-selected-fill', 'alto_parana-district-selected-line']) {
+		// PY district fill/line are the Phase-2 dept picker (setDeptPickerVisible
+		// controls them). Only the -selected- highlight layers stay retired here.
+		for (const l of ['itapua-district-selected-fill', 'itapua-district-selected-line',
+			'alto_parana-district-selected-fill', 'alto_parana-district-selected-line']) {
 			if (map.getLayer(l)) map.setLayoutProperty(l, 'visibility', 'none');
 		}
 
@@ -1461,10 +1460,10 @@
 			}
 			// Itapúa + Alto Paraná district outlines: visible in regional census/base
 			// mode only — hidden while a hex analysis is active (cold-open clutter).
-			// PY district outlines retired from the base/general view (same as census
-			// radios). Never auto-shown, including regional mode.
-			for (const id of ['itapua-district-fill', 'itapua-district-line', 'itapua-district-selected-fill', 'itapua-district-selected-line',
-				'alto_parana-district-fill', 'alto_parana-district-line', 'alto_parana-district-selected-fill', 'alto_parana-district-selected-line']) {
+			// PY district fill/line are the Phase-2 dept picker (setDeptPickerVisible
+			// controls them). Only the -selected- highlight layers stay retired here.
+			for (const id of ['itapua-district-selected-fill', 'itapua-district-selected-line',
+				'alto_parana-district-selected-fill', 'alto_parana-district-selected-line']) {
 				if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
 			}
 			// Census-radio click selection retired (radios no longer shown).
@@ -1488,7 +1487,9 @@
 	// surface, shown when an analysis is active and no department is selected).
 	export function setDeptPickerVisible(visible: boolean) {
 		if (!map) return;
-		for (const id of ['ar-dept-fill', 'ar-dept-line']) {
+		for (const id of ['ar-dept-fill', 'ar-dept-line',
+			'itapua-district-fill', 'itapua-district-line',
+			'alto_parana-district-fill', 'alto_parana-district-line']) {
 			if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
 		}
 	}
