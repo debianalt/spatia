@@ -6,7 +6,7 @@
   },
   "departments": [
     {
-      "dpto": "CIUDAD DEL ESTE",
+      "dpto": "Ciudad Del Este",
       "parquetKey": "ciudad_del_este",
       "avg_score": 1.3,
       "hex_count": 1573,
@@ -17,7 +17,7 @@
       ]
     },
     {
-      "dpto": "DOMINGO MARTÍNEZ DE IRALA",
+      "dpto": "Domingo Martínez De Irala",
       "parquetKey": "domingo_martinez_de_irala",
       "avg_score": 1.1,
       "hex_count": 3552,
@@ -28,7 +28,7 @@
       ]
     },
     {
-      "dpto": "DR. JUAN LEÓN MALLORQUÍN",
+      "dpto": "Dr. Juan León Mallorquín",
       "parquetKey": "dr_juan_leon_mallorquin",
       "avg_score": 1.3,
       "hex_count": 2799,
@@ -39,7 +39,7 @@
       ]
     },
     {
-      "dpto": "DR. RAÚL PEÑA",
+      "dpto": "Dr. Raúl Peña",
       "parquetKey": "dr_raul_pena",
       "avg_score": 1.1,
       "hex_count": 2569,
@@ -50,7 +50,7 @@
       ]
     },
     {
-      "dpto": "HERNANDARIAS",
+      "dpto": "Hernandarias",
       "parquetKey": "hernandarias",
       "avg_score": 1.5,
       "hex_count": 8051,
@@ -61,7 +61,7 @@
       ]
     },
     {
-      "dpto": "IRUÑA",
+      "dpto": "Iruña",
       "parquetKey": "iruna",
       "avg_score": 1.2,
       "hex_count": 5643,
@@ -72,7 +72,7 @@
       ]
     },
     {
-      "dpto": "ITAKYRY",
+      "dpto": "Itakyry",
       "parquetKey": "itakyry",
       "avg_score": 1.1,
       "hex_count": 20221,
@@ -83,7 +83,7 @@
       ]
     },
     {
-      "dpto": "JUAN E. O'LEARY",
+      "dpto": "Juan E. O'Leary",
       "parquetKey": "juan_e_oleary",
       "avg_score": 1.4,
       "hex_count": 2364,
@@ -94,7 +94,7 @@
       ]
     },
     {
-      "dpto": "LOS CEDRALES",
+      "dpto": "Los Cedrales",
       "parquetKey": "los_cedrales",
       "avg_score": 1.1,
       "hex_count": 4204,
@@ -105,7 +105,7 @@
       ]
     },
     {
-      "dpto": "MBARACAYÚ",
+      "dpto": "Mbaracayú",
       "parquetKey": "mbaracayu",
       "avg_score": 1.5,
       "hex_count": 11587,
@@ -116,7 +116,7 @@
       ]
     },
     {
-      "dpto": "MINGA GUAZÚ",
+      "dpto": "Minga Guazú",
       "parquetKey": "minga_guazu",
       "avg_score": 1.1,
       "hex_count": 5048,
@@ -127,7 +127,7 @@
       ]
     },
     {
-      "dpto": "MINGA PORÁ",
+      "dpto": "Minga Porá",
       "parquetKey": "minga_pora",
       "avg_score": 1.0,
       "hex_count": 9057,
@@ -138,7 +138,7 @@
       ]
     },
     {
-      "dpto": "NARANJAL",
+      "dpto": "Naranjal",
       "parquetKey": "naranjal",
       "avg_score": 1.1,
       "hex_count": 6626,
@@ -149,7 +149,7 @@
       ]
     },
     {
-      "dpto": "PRESIDENTE FRANCO",
+      "dpto": "Presidente Franco",
       "parquetKey": "presidente_franco",
       "avg_score": 1.2,
       "hex_count": 1267,
@@ -160,7 +160,7 @@
       ]
     },
     {
-      "dpto": "SAN ALBERTO",
+      "dpto": "San Alberto",
       "parquetKey": "san_alberto",
       "avg_score": 1.5,
       "hex_count": 10527,
@@ -171,7 +171,7 @@
       ]
     },
     {
-      "dpto": "SAN CRISTÓBAL",
+      "dpto": "San Cristóbal",
       "parquetKey": "san_cristobal",
       "avg_score": 1.2,
       "hex_count": 9768,
@@ -182,7 +182,7 @@
       ]
     },
     {
-      "dpto": "SANTA FE DEL PARANÁ",
+      "dpto": "Santa Fe Del Paraná",
       "parquetKey": "santa_fe_del_parana",
       "avg_score": 1.8,
       "hex_count": 8382,
@@ -193,7 +193,7 @@
       ]
     },
     {
-      "dpto": "SANTA RITA",
+      "dpto": "Santa Rita",
       "parquetKey": "santa_rita",
       "avg_score": 1.1,
       "hex_count": 6228,
@@ -204,7 +204,7 @@
       ]
     },
     {
-      "dpto": "SANTA ROSA DEL MONDAY",
+      "dpto": "Santa Rosa Del Monday",
       "parquetKey": "santa_rosa_del_monday",
       "avg_score": 1.1,
       "hex_count": 6533,
@@ -215,7 +215,7 @@
       ]
     },
     {
-      "dpto": "TAVAPY",
+      "dpto": "Tavapy",
       "parquetKey": "tavapy",
       "avg_score": 1.1,
       "hex_count": 4566,
@@ -226,7 +226,7 @@
       ]
     },
     {
-      "dpto": "YGUAZÚ",
+      "dpto": "Yguazú",
       "parquetKey": "yguazu",
       "avg_score": 1.8,
       "hex_count": 8295,
@@ -237,7 +237,7 @@
       ]
     },
     {
-      "dpto": "ÑACUNDAY",
+      "dpto": "Ñacunday",
       "parquetKey": "nacunday",
       "avg_score": 1.1,
       "hex_count": 9053,

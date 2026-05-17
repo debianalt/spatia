@@ -14,7 +14,7 @@
   },
   "departments": [
     {
-      "distrito": "CIUDAD DEL ESTE",
+      "distrito": "Ciudad Del Este",
       "parquetKey": "ciudad_del_este",
       "avg_scores": {
         "paving_index": 57.4,
@@ -34,7 +34,7 @@
       ]
     },
     {
-      "distrito": "PRESIDENTE FRANCO",
+      "distrito": "Presidente Franco",
       "parquetKey": "presidente_franco",
       "avg_scores": {
         "paving_index": 33.6,
@@ -54,7 +54,7 @@
       ]
     },
     {
-      "distrito": "HERNANDARIAS",
+      "distrito": "Hernandarias",
       "parquetKey": "hernandarias",
       "avg_scores": {
         "paving_index": 17.0,
@@ -74,7 +74,7 @@
       ]
     },
     {
-      "distrito": "SANTA RITA",
+      "distrito": "Santa Rita",
       "parquetKey": "santa_rita",
       "avg_scores": {
         "paving_index": 13.8,
@@ -94,7 +94,7 @@
       ]
     },
     {
-      "distrito": "MINGA GUAZÚ",
+      "distrito": "Minga Guazú",
       "parquetKey": "minga_guazu",
       "avg_scores": {
         "paving_index": 16.0,
@@ -114,7 +114,7 @@
       ]
     },
     {
-      "distrito": "SAN ALBERTO",
+      "distrito": "San Alberto",
       "parquetKey": "san_alberto",
       "avg_scores": {
         "paving_index": 12.9,
@@ -134,7 +134,7 @@
       ]
     },
     {
-      "distrito": "DR. JUAN LEÓN MALLORQUÍN",
+      "distrito": "Dr. Juan León Mallorquín",
       "parquetKey": "dr._juan_leon_mallorquin",
       "avg_scores": {
         "paving_index": 5.2,
@@ -154,7 +154,7 @@
       ]
     },
     {
-      "distrito": "YGUAZÚ",
+      "distrito": "Yguazú",
       "parquetKey": "yguazu",
       "avg_scores": {
         "paving_index": 12.6,
@@ -174,7 +174,7 @@
       ]
     },
     {
-      "distrito": "SANTA ROSA DEL MONDAY",
+      "distrito": "Santa Rosa Del Monday",
       "parquetKey": "santa_rosa_del_monday",
       "avg_scores": {
         "paving_index": 8.4,
@@ -194,7 +194,7 @@
       ]
     },
     {
-      "distrito": "NARANJAL",
+      "distrito": "Naranjal",
       "parquetKey": "naranjal",
       "avg_scores": {
         "paving_index": 9.8,
@@ -214,7 +214,7 @@
       ]
     },
     {
-      "distrito": "DR. RAÚL PEÑA",
+      "distrito": "Dr. Raúl Peña",
       "parquetKey": "dr._raul_pena",
       "avg_scores": {
         "paving_index": 2.2,
@@ -234,7 +234,7 @@
       ]
     },
     {
-      "distrito": "MBARACAYÚ",
+      "distrito": "Mbaracayú",
       "parquetKey": "mbaracayu",
       "avg_scores": {
         "paving_index": 9.9,
@@ -254,7 +254,7 @@
       ]
     },
     {
-      "distrito": "LOS CEDRALES",
+      "distrito": "Los Cedrales",
       "parquetKey": "los_cedrales",
       "avg_scores": {
         "paving_index": 7.8,
@@ -274,7 +274,7 @@
       ]
     },
     {
-      "distrito": "MINGA PORÁ",
+      "distrito": "Minga Porá",
       "parquetKey": "minga_pora",
       "avg_scores": {
         "paving_index": 5.3,
@@ -294,7 +294,7 @@
       ]
     },
     {
-      "distrito": "SAN CRISTÓBAL",
+      "distrito": "San Cristóbal",
       "parquetKey": "san_cristobal",
       "avg_scores": {
         "paving_index": 3.8,
@@ -314,7 +314,7 @@
       ]
     },
     {
-      "distrito": "SANTA FE DEL PARANÁ",
+      "distrito": "Santa Fe Del Paraná",
       "parquetKey": "santa_fe_del_parana",
       "avg_scores": {
         "paving_index": 5.7,
@@ -334,7 +334,7 @@
       ]
     },
     {
-      "distrito": "IRUÑA",
+      "distrito": "Iruña",
       "parquetKey": "iruna",
       "avg_scores": {
         "paving_index": 3.8,
@@ -354,7 +354,7 @@
       ]
     },
     {
-      "distrito": "JUAN E. O'LEARY",
+      "distrito": "Juan E. O'Leary",
       "parquetKey": "juan_e._o'leary",
       "avg_scores": {
         "paving_index": 2.7,
@@ -374,7 +374,7 @@
       ]
     },
     {
-      "distrito": "ÑACUNDAY",
+      "distrito": "Ñacunday",
       "parquetKey": "nacunday",
       "avg_scores": {
         "paving_index": 5.1,
@@ -394,7 +394,7 @@
       ]
     },
     {
-      "distrito": "DOMINGO MARTÍNEZ DE IRALA",
+      "distrito": "Domingo Martínez De Irala",
       "parquetKey": "domingo_martinez_de_irala",
       "avg_scores": {
         "paving_index": 5.1,
@@ -414,7 +414,7 @@
       ]
     },
     {
-      "distrito": "TAVAPY",
+      "distrito": "Tavapy",
       "parquetKey": "tavapy",
       "avg_scores": {
         "paving_index": 2.1,
@@ -434,7 +434,7 @@
       ]
     },
     {
-      "distrito": "ITAKYRY",
+      "distrito": "Itakyry",
       "parquetKey": "itakyry",
       "avg_scores": {
         "paving_index": 2.3,
