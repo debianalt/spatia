@@ -412,6 +412,7 @@ export const HEX_LAYER_REGISTRY: Record<string, HexLayerConfig> = {
 		id: 'environmental_risk',
 		parquet: 'sat_environmental_risk',
 		variables: [
+			{ col: 'c_fire', labelKey: 'sat.envRisk.fire', aggregation: 'mean', unit: '/100' },
 			{ col: 'c_thermal_amp', labelKey: 'sat.envRisk.thermal', aggregation: 'mean', unit: '/100' },
 			{ col: 'c_deforest', labelKey: 'sat.envRisk.deforest', aggregation: 'mean', unit: '/100' },
 			{ col: 'c_slope', labelKey: 'sat.envRisk.slope', aggregation: 'mean', unit: '/100' },
