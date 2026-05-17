@@ -107,6 +107,7 @@
 				type: 'fill',
 				source: 'radios',
 				'source-layer': 'radios',
+				layout: { visibility: 'none' },
 				paint: { 'fill-color': '#60a5fa', 'fill-opacity': 0.06 }
 			});
 
@@ -116,6 +117,7 @@
 				type: 'line',
 				source: 'radios',
 				'source-layer': 'radios',
+				layout: { visibility: 'none' },
 				paint: {
 					'line-color': '#d4d4d4',
 					'line-width': [
@@ -1289,11 +1291,13 @@
 		const isCorrientes = activeTerritoryId === 'corrientes';
 		const isAltoParana = activeTerritoryId === 'alto_parana_py';
 
-		// Province outline (radios): visible for Misiones + Corrientes, filtered by codprov
+		// Province outline (radios): visible for Misiones + Corrientes, filtered by
+		// codprov — but only in census/base mode, never while a hex analysis is active.
+		const showProvinceRadios = (isMisiones || isCorrientes) && !mapStore.activeHexLayer;
 		for (const layerId of ['province-fill', 'province-line']) {
 			if (map.getLayer(layerId)) {
-				map.setLayoutProperty(layerId, 'visibility', (isMisiones || isCorrientes) ? 'visible' : 'none');
-				if (isMisiones || isCorrientes) {
+				map.setLayoutProperty(layerId, 'visibility', showProvinceRadios ? 'visible' : 'none');
+				if (showProvinceRadios) {
 					map.setFilter(layerId, ['==', ['get', 'codprov'], isCorrientes ? '18' : '54']);
 				}
 			}
@@ -1379,11 +1383,14 @@
 			for (const id of ['province-border', 'itapua-border', 'corrientes-border', 'alto_parana-border']) {
 				if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible');
 			}
-			// Province fill/line: show both AR provinces (remove codprov filter)
+			// Census radios are a census/base-mode visual. Keep them hidden while a
+			// hex analysis is active (e.g. the deforestation cold-open) so the general
+			// view isn't covered by radio polygons before zooming to the department.
+			const showCensus = !mapStore.activeHexLayer;
 			for (const id of ['province-fill', 'province-line']) {
 				if (map.getLayer(id)) {
-					map.setLayoutProperty(id, 'visibility', 'visible');
-					map.setFilter(id, null);
+					map.setLayoutProperty(id, 'visibility', showCensus ? 'visible' : 'none');
+					if (showCensus) map.setFilter(id, null);
 				}
 			}
 			// Itapúa + Alto Paraná district outlines + selection layers: always visible in regional mode
@@ -1392,12 +1399,22 @@
 				if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible');
 			}
 			// Enable radio selection by clicking directly on census radio polygons
+			// (off-then-on dedupes — setRegionalMapMode may be re-invoked).
+			map.off('click', 'province-fill', regionalProvinceClickHandler);
 			map.on('click', 'province-fill', regionalProvinceClickHandler);
 		} else {
 			map.off('click', 'province-fill', regionalProvinceClickHandler);
 			// Full restore via standard territory visibility logic
 			applyTerritoryVisibility();
 		}
+	}
+
+	// Re-apply census-radio visibility after the active hex layer changes
+	// (cold-open analysis set, analysis switched, or cleared back to census).
+	export function refreshCensusVisibility() {
+		if (!map) return;
+		if (regionalModeActive) setRegionalMapMode(true);
+		else applyTerritoryVisibility();
 	}
 
 	// ── Lens opportunity glow layers ─────────────────────────────────────────

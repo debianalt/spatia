@@ -708,6 +708,14 @@
 		hexStore.clearLoadError();
 	});
 
+	// Census radios are census/base-mode only — hide them whenever a hex
+	// analysis is active so the deforestation cold-open general view isn't
+	// covered by radio polygons before zooming to the department.
+	$effect(() => {
+		mapStore.activeHexLayer; // reactive dependency
+		mapComponent?.refreshCensusVisibility();
+	});
+
 	// ── Dept bbox outlines + auto-fly when both depts are loaded ────────────
 	// Primary + compare bbox rectangles are only rendered as a fallback when no real
 	// polygon exists (e.g. Itapúa, PY — no polygons in ar_dept_boundaries.json).
